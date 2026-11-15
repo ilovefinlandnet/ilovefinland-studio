@@ -11,11 +11,11 @@ services:
         value: 8787
       - key: HOST
         value: 0.0.0.0
-      - key: ILF_WP_BASE_URL
+      - key: WP_BASE_URL
+        value: https://ilovefinland.net
+      - key: WP_USERNAME
         sync: false
-      - key: ILF_WP_USER
-        sync: false
-      - key: ILF_WP_APP_PASSWORD
+      - key: WP_APPLICATION_PASSWORD
         sync: false
       - key: OPENAI_API_KEY
         sync: false
