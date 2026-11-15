@@ -1,0 +1,13 @@
+.env
+.env.*
+server_keys.txt
+*.key
+*.pem
+*.token
+*.bak*
+*.log
+__pycache__/
+*.py[cod]
+.git
+.DS_Store
+tests/

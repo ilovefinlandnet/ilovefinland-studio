@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ILoveFinland Studio — Editorial Review, Research &amp; Publishing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=6.0" />
+  <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
+</head>
+<body>
+  <!-- SIGN-IN SCREEN (Direct Login Enabled: Hidden by default) -->
+  <div id="signin-gate" class="signin-gate hidden">
+    <div class="signin-card">
+      <div class="signin-logo-wrap">
+        <img src="/assets/ilf-heart.png" alt="ILoveFinland Logo" class="brand-heart-lg" width="68" height="68" style="width:68px;height:68px;object-fit:contain;" />
+      </div>
+      <h1 class="signin-title">ILoveFinland Studio</h1>
+      <p class="signin-sub">Private editorial workbench for story assignments, AI research, multi-clip Reel production, and scheduled publishing in Europe/Helsinki.</p>
+
+      <div class="security-banner">
+        <span class="badge badge-sec">Private Access</span>
+        <p class="hint-text" style="margin:4px 0 0;">Authorized access only: <code>editor@ilovefinland.net</code>. Previews &amp; media links protected.</p>
+      </div>
+
+      <div id="google-btn-container" class="google-btn-wrap">
+        <button id="btn-google-signin" class="btn btn-google">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Sign in with Google
+        </button>
+      </div>
+
+      <div class="signin-divider"><span>or use private preview key</span></div>
+
+      <form id="key-signin-form" class="key-signin-form">
+        <label for="access-key-input" class="label-sm">Preview Access Key</label>
+        <div class="key-input-row">
+          <input id="access-key-input" type="password" placeholder="Enter private access key" autocomplete="current-password" />
+          <button id="btn-key-signin" type="button" class="btn btn-primary">Enter Studio</button>
+        </div>
+      </form>
+
+      <div id="signin-error" class="signin-error hidden"></div>
+      <p class="hint-text signin-foot">Milestone 2 • Live WordPress, email &amp; social publishing disconnected.</p>
+    </div>
+  </div>
+
+  <!-- MAIN APP WRAPPER -->
+  <div id="studio-shell" class="studio-shell">
+    <!-- Mobile Drawer Overlay Backdrop -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop hidden"></div>
+
+    <!-- Desktop / Tablet Navy Sidebar -->
+    <aside id="sidebar-drawer" class="sidebar">
+      <div class="sidebar-brand">
+        <img src="/assets/ilf-heart.png" alt="ILoveFinland Heart" class="brand-heart" />
+        <div style="flex:1;">
+          <div class="brand-title">ILoveFinland</div>
+          <div class="brand-sub">Studio Workbench</div>
+        </div>
+        <button type="button" id="btn-close-sidebar" class="btn-sidebar-close" aria-label="Close menu">✕</button>
+      </div>
+
+      <nav class="side-nav" aria-label="Main navigation">
+        <div class="nav-section-label">EDITORIAL DESK</div>
+        <button class="nav-item active" data-view="projects">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Stories &amp; Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="ideas">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>
+          <span>Article Suggestions</span>
+          <span id="badge-ideas-count" class="badge" style="margin-left:auto;font-size:0.7rem;padding:2px 7px;background:var(--accent);color:#fff;border-radius:10px;font-weight:700;">17</span>
+        </button>
+        <button class="nav-item" data-view="review">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span>Workbench (Article, Reel, IG)</span>
+        </button>
+        <button class="nav-item" data-view="assignments">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+          <span>New Story &amp; Upload Clips</span>
+        </button>
+
+        <div class="nav-section-label" style="margin-top:10px;">CREATIVE &amp; SOURCES</div>
+        <button class="nav-item" data-view="ai-media">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+          <span>AI Media Studio</span>
+        </button>
+        <button class="nav-item" data-view="research">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Official Finnish Sources</span>
+        </button>
+
+        <div class="nav-section-label" style="margin-top:10px;">PUBLISHING &amp; ENGAGEMENT</div>
+        <button class="nav-item" data-view="calendar">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Publishing Calendar</span>
+        </button>
+        <button class="nav-item" data-view="inbox">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span>Reader Inbox &amp; Voice</span>
+        </button>
+        <button class="nav-item" data-view="performance">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Performance &amp; Stats</span>
+        </button>
+
+        <div class="nav-section-label" style="margin-top:10px;">SYSTEM</div>
+        <button class="nav-item" data-view="connections">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          <span>Platform Connections</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="nav-section-label" style="padding:4px 14px 2px;margin:0;">SESSION &amp; NETWORK</div>
+
+        <div class="sidebar-session-row">
+          <span class="sidebar-session-dot" title="Authenticated / Online"></span>
+          <span id="user-pill" class="sidebar-session-email">editor@ilovefinland.net</span>
+        </div>
+
+        <a href="http://172.20.10.3:8787" target="_blank" class="sidebar-wifi-link" title="Open on Mobile / Tablet Wi-Fi">
+          <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          <span>Wi-Fi: 172.20.10.3:8787</span>
+        </a>
+
+        <button id="btn-logout" class="nav-item-logout" title="Sign Out">
+          <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="workspace-wrap">
+      <!-- Phone & Tablet Top Bar (Sticky, with Hamburger Menu & Quick Actions) -->
+      <header class="mobile-header">
+        <button type="button" id="btn-sidebar-toggle" class="btn-hamburger" aria-label="Open Studio Navigation Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="brand-row" id="mobile-brand-link" style="cursor:pointer;" title="Go to Stories & Dashboard">
+          <img src="/assets/ilf-heart.png" alt="ILoveFinland Heart Logo" class="brand-heart-sm" />
+          <span class="mobile-title">ILoveFinland Studio</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+          <span class="pill pill-approved" style="font-size:0.68rem;padding:3px 7px;" title="Local Network Wi-Fi IP">172.20.10.3</span>
+          <button type="button" id="btn-mobile-new-story" class="btn btn-primary btn-sm" style="padding:4px 9px;font-size:0.75rem;white-space:nowrap;">+ Story</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <!-- VIEW 0: PROJECTS & STORIES HUB -->
+        <section id="view-projects" class="view active">
+          <div class="card">
+            <div class="panel-header" style="flex-wrap:wrap;gap:12px;">
+              <div>
+                <h2 class="panel-title">Projects &amp; Editorial Pipeline</h2>
+                <p class="hint-text">Manage all Finnish news stories, Reels, and Instagram Carousels in one unified workspace.</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button type="button" id="btn-goto-ideas" class="btn btn-ghost btn-sm" style="border:1px solid #cbd5e1;">
+                  💡 View Suggestions (<span id="btn-ideas-count-inline">17</span>)
+                </button>
+                <button type="button" id="btn-proj-new" class="btn btn-primary btn-sm">
+                  <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>New Story Assignment</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- View Switcher Banner -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+              <div style="display:flex;gap:8px;">
+                <button type="button" id="tab-btn-active-pipeline" class="btn btn-sm btn-primary">
+                  📋 Active Work Pipeline (<span id="active-work-count">3</span>)
+                </button>
+                <button type="button" id="tab-btn-suggestions-pool" class="btn btn-sm btn-ghost">
+                  💡 Article Suggestions &amp; Ideas (<span id="suggestions-tab-count">17</span>)
+                </button>
+              </div>
+              <div style="font-size:0.75rem;color:var(--text-muted);display:none;align-items:center;gap:4px;" class="desktop-only">
+                🔒 Suggestions only start after your approval. Unapproved ideas never clutter your working pipeline.
+              </div>
+            </div>
+
+            <!-- Pipeline Stage KPI Summary Chips -->
+            <div class="proj-kpi-bar">
+              <div class="proj-chip active" data-filter="all">
+                <span class="proj-chip-label">All Projects</span>
+                <span id="chip-count-total" class="proj-chip-count">3</span>
+              </div>
+              <div class="proj-chip" data-filter="in_review">
+                <span class="proj-chip-label">Ready for Review</span>
+                <span id="chip-count-review" class="proj-chip-count badge-count-warn">0</span>
+              </div>
+              <div class="proj-chip" data-filter="in_progress">
+                <span class="proj-chip-label">In Progress (AI Working)</span>
+                <span id="chip-count-progress" class="proj-chip-count badge-count-blue">0</span>
+              </div>
+              <div class="proj-chip" data-filter="approved">
+                <span class="proj-chip-label">Approved &amp; Scheduled</span>
+                <span id="chip-count-approved" class="proj-chip-count badge-count-green">1</span>
+              </div>
+            </div>
+
+            <!-- Search & Format Filter Bar -->
+            <div class="proj-filter-row">
+              <div class="proj-search-box">
+                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="proj-search-input" placeholder="Filter projects by title, topic, or format..." />
+              </div>
+              <div class="proj-scope-filters">
+                <select id="proj-format-filter" class="form-select-sm">
+                  <option value="all">All Formats</option>
+                  <option value="Article">Article</option>
+                  <option value="Reel">Reel (9:16)</option>
+                  <option value="Instagram Post">Instagram Carousel (4:5)</option>
+                  <option value="Both">Both (Article + Reel)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Projects Table -->
+            <div class="table-wrap" style="margin-top:14px;">
+              <table class="projects-table" id="projects-table">
+                <thead>
+                  <tr>
+                    <th style="width:48px;">#</th>
+                    <th>Story &amp; Project Title</th>
+                    <th>Format / Scope</th>
+                    <th>Pipeline Status</th>
+                    <th>Version</th>
+                    <th>Sources</th>
+                    <th>Deadline (HKI)</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="projects-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: ARTICLE SUGGESTIONS & DAILY NEWS RESEARCH -->
+        <section id="view-ideas" class="view hidden">
+          <div class="card">
+            <div class="panel-header">
+              <div>
+                <span class="badge badge-accent">Autonomous 24/7 Discovery</span>
+                <h2 class="panel-title" style="margin-top:4px;">Article Suggestions &amp; Topic Pool</h2>
+                <p class="hint-text">
+                  Our background researcher scans Finnish news, guides &amp; hot international tech topics every hour (finding 3–4 daily).
+                  <br /><strong>Rule:</strong> Ideas remain strictly in this pool until you approve them. Unapproved items never enter your working pipeline.
+                </p>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" id="btn-scan-now" class="btn btn-primary btn-sm">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>⚡ Scan Internet &amp; News Now</span>
+                </button>
+                <button type="button" id="btn-back-to-projects" class="btn btn-ghost btn-sm">
+                  &larr; Back to Active Projects
+                </button>
+              </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+              <div style="position:relative;flex:1;min-width:260px;">
+                <input type="text" id="ideas-search-input" placeholder="Search suggestions by topic, country, keyword, or source..." style="width:100%;box-sizing:border-box;padding:8px 12px 8px 34px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;background:#fff;" />
+                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.9rem;pointer-events:none;">🔍</span>
+              </div>
+            </div>
+
+            <!-- Priority & Scope Filters -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+              <span style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-right:4px;">Editorial Scope:</span>
+              <button type="button" class="btn btn-sm btn-outline active filter-idea-scope" data-scope="all">All Suggestions (<span id="ideas-filter-count-all">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-scope" data-scope="finland">🇫🇮 Finland (Top Priority) (<span id="ideas-filter-count-finland">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-scope" data-scope="international">🌐 International News (<span id="ideas-filter-count-intl">0</span>)</button>
+            </div>
+
+            <!-- Website Sections Filters (ilovefinland.net structure) -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+              <span style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-right:4px;">Website Section:</span>
+              <button type="button" class="btn btn-sm btn-outline active filter-idea-sec" data-sec="all">All Sections (<span id="ideas-sec-count-all">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="News">News (<span id="ideas-sec-count-news">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Finland Guide">Finland Guide (<span id="ideas-sec-count-guide">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Things to Do">Things to Do (<span id="ideas-sec-count-things">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Travel">Travel (<span id="ideas-sec-count-travel">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Food & Restaurants">Food &amp; Restaurants (<span id="ideas-sec-count-food">0</span>)</button>
+              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Events">Events (<span id="ideas-sec-count-events">0</span>)</button>
+            </div>
+
+            <!-- Suggestions Cards Grid -->
+            <div id="ideas-cards-grid" class="plan-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:14px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </section>
+
+
+
+        <!-- VIEW 1: REVIEW QUEUE -->
+        <section id="view-review" class="view hidden">
+          <!-- Top package header card -->
+          <div class="card package-bar">
+            <div class="package-top">
+              <div>
+                <div class="eyebrow">
+                  <span id="pkg-origin-badge" class="badge badge-origin">AI Research</span>
+                  <span id="pkg-model-badge" class="badge badge-model">OpenAI (Default)</span>
+                  <span id="pkg-source-check" class="badge badge-check">Verified</span>
+                </div>
+                <div class="pkg-select-row">
+                  <button type="button" id="btn-back-to-projects" class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;" title="Back to All Projects">
+                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    <span>All Projects</span>
+                  </button>
+                  <select id="package-selector" aria-label="Select package"></select>
+                  <h1 id="pkg-title" class="pkg-title">Loading…</h1>
+                </div>
+                <div id="revision-banner" class="revision-banner hidden"></div>
+              </div>
+              <div class="approval-summary">
+                <span id="status-article-pill" class="pill">Article: Pending</span>
+                <span id="status-reel-pill" class="pill">Reel: Pending</span>
+                <span id="status-ig-pill" class="pill hidden">IG Post: Pending</span>
+              </div>
+            </div>
+
+            <div class="package-controls">
+              <div class="version-group">
+                <span class="label-sm">Version:</span>
+                <div id="version-tabs" class="version-tabs"></div>
+              </div>
+              <div class="claude-actions">
+                <button id="btn-claude-article" class="btn btn-claude btn-sm">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>Rewrite Article with Claude</span>
+                </button>
+                <button id="btn-claude-caption-top" class="btn btn-claude btn-sm">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>Polish Caption &amp; Hashtags</span>
+                </button>
+                <button id="btn-claude-reel" class="btn btn-claude btn-sm">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>Rewrite Reel Script with Claude</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pre-Approval Quality Checks Banner -->
+          <div id="pre-approval-checks-card" class="card checks-card">
+            <div class="checks-header">
+              <div class="checks-title-group">
+                <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <strong style="color:var(--navy);">Pre-Approval Editorial &amp; Safe Area Checks</strong>
+              </div>
+              <span class="hint-text">Only approved versions can be scheduled or published</span>
+            </div>
+            <div id="pre-approval-checks-list" class="checks-grid"></div>
+          </div>
+
+          <!-- Clips Breakdown Strip (Visible when package contains multiple clips) -->
+          <div id="clips-summary-card" class="card clips-summary-card hidden">
+            <div class="panel-header" style="margin-bottom:8px;">
+              <div>
+                <span class="badge badge-origin">Multi-Clip Reel Package</span>
+                <strong style="color:var(--navy);margin-left:6px;">Uploaded Video Clips &amp; Attribution</strong>
+              </div>
+              <span id="clips-count-badge" class="pill pill-approved">2 Clips</span>
+            </div>
+            <div id="clips-summary-list" class="clips-strip"></div>
+          </div>
+
+          <!-- Section Navigation / Quick Jump Bar -->
+          <div class="mobile-tabs" role="tablist">
+            <span class="jump-nav-label" style="font-size:0.75rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:4px;padding:0 4px;">
+              <span>Jump to:</span>
+            </span>
+            <button class="tab-btn active" data-tab="article" id="tab-btn-article">
+              <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <span>1. WordPress Article</span>
+            </button>
+            <button class="tab-btn" data-tab="reel" id="tab-btn-reel">
+              <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              <span>2. Vertical Reel</span>
+            </button>
+            <button class="tab-btn" data-tab="ig" id="tab-btn-ig">
+              <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              <span>3. IG &amp; Facebook Post (1080×1350)</span>
+            </button>
+          </div>
+
+          <div class="workspace-grid">
+            <!-- Article Preview Card: WordPress Article Form (ilovefinland.net) -->
+            <section id="panel-article" class="card panel active-mobile" data-panel="article">
+              <div class="panel-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon bg-blue">
+                    <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                  </div>
+                  <div>
+                    <h2 class="panel-title">1. WordPress Article (ilovefinland.net)</h2>
+                    <div class="panel-subtitle-row">
+                      <span class="badge badge-sample" id="article-source-label">WordPress Article Draft</span>
+                      <span class="badge badge-check" id="article-lang-badge">Language: English</span>
+                      <span class="badge badge-origin" id="article-taxonomy-badge">News → Transport</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-header-actions">
+                  <button type="button" id="btn-save-article-edits" class="btn btn-ghost btn-sm" title="Save in-Studio changes">
+                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <span>Save Edits</span>
+                  </button>
+                  <button type="button" id="btn-push-wordpress-draft" class="btn btn-primary btn-sm" title="Push Draft directly to WordPress (ilovefinland.net)" style="background:#003882;color:#ffffff;border:none;">
+                    <span>🚀 Push Draft to WordPress</span>
+                  </button>
+                  <button id="btn-approve-article" class="btn btn-approve">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>For Approval</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Recommendation & Search Phrase Summary Banner -->
+              <div id="wp-verification-banner" class="hidden" style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.82rem;"></div>
+              <div class="wp-recommendation-box" id="wp-recommendation-box">
+                <div class="wp-rec-row">
+                  <div class="wp-rec-col">
+                    <span class="label-xs">Website Section &amp; Category Recommendation</span>
+                    <div class="wp-rec-val" id="wp-rec-taxonomy">News → Transport &amp; Infrastructure</div>
+                    <p class="hint-text" id="wp-rec-reason" style="margin:2px 0 0;"></p>
+                  </div>
+                  <div class="wp-rec-col">
+                    <span class="label-xs">Natural Google Search Phrase</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <code class="wp-search-phrase" id="wp-search-phrase">is tesla assisted driving allowed in finland</code>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-search-phrase" title="Copy Search Phrase">📋 Copy</button>
+                    </div>
+                    <p class="hint-text" id="wp-search-integration" style="margin:2px 0 0;"></p>
+                  </div>
+                </div>
+              </div>
+              <div id="wp-prior-coverage-detail" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:0.8rem;"></div>
+
+              <!-- SECTION 1: ARTICLE DETAILS -->
+              <div class="wp-section-block">
+                <div class="wp-section-title">
+                  <span class="wp-step-num">1</span>
+                  <strong>Article Details</strong>
+                  <span class="hint-text" style="margin-left:auto;">ilovefinland.net Form</span>
+                </div>
+
+                <!-- Headline / Title * -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-headline">Headline / Title <span class="req-star">*</span></label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-headline">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-headline" class="wp-input" />
+                </div>
+
+                <!-- Short description (Summary) * -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-dek">Short description (Summary) <span class="req-star">*</span></label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-dek">📋 Copy</button>
+                  </div>
+                  <textarea id="wp-field-dek" class="wp-textarea" rows="2"></textarea>
+                </div>
+
+                <!-- Language *, Website section *, Category * -->
+                <div class="wp-field-row-3">
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-lang">Language <span class="req-star">*</span></label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-lang">📋 Copy</button>
+                    </div>
+                    <select id="wp-field-lang" class="wp-select">
+                      <option value="English">English (Default)</option>
+                      <option value="Finnish">Finnish (Suomi)</option>
+                    </select>
+                  </div>
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-section">Website section <span class="req-star">*</span></label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-section">📋 Copy</button>
+                    </div>
+                    <select id="wp-field-section" class="wp-select"></select>
+                  </div>
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-category">Category <span class="req-star">*</span></label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-category">📋 Copy</button>
+                    </div>
+                    <select id="wp-field-category" class="wp-select"></select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 2: ARTICLE CONTENT (Visual & Code Views) -->
+              <div class="wp-section-block">
+                <div class="wp-section-title">
+                  <span class="wp-step-num">2</span>
+                  <strong>Article Content <span class="req-star">*</span></strong>
+                  <div class="wp-view-tabs" style="margin-left:auto;">
+                    <button type="button" class="wp-tab-btn active" id="wp-tab-visual">👁️ Visual View</button>
+                    <button type="button" class="wp-tab-btn" id="wp-tab-code">💻 Code (HTML) View</button>
+                  </div>
+                </div>
+
+                <div class="wp-content-actions">
+                  <button type="button" id="btn-copy-visual-article" class="btn btn-secondary btn-sm">
+                    📋 Copy formatted article <span class="hint-inline">(WordPress Visual Editor)</span>
+                  </button>
+                  <button type="button" id="btn-copy-html-article" class="btn btn-ghost btn-sm">
+                    📋 Copy HTML <span class="hint-inline">(WordPress Code Editor)</span>
+                  </button>
+                </div>
+
+                <!-- Visual View Container -->
+                <div id="wp-visual-view" class="wp-visual-view">
+                  <article class="article-preview-body" id="article-body-visual"></article>
+                </div>
+
+                <!-- Code View Container -->
+                <div id="wp-code-view" class="wp-code-view hidden">
+                  <textarea id="wp-code-textarea" class="wp-code-textarea" rows="12" spellcheck="false"></textarea>
+                </div>
+              </div>
+
+              <!-- SECTION 3: FEATURED IMAGE (Verified Rights & Downloads) -->
+              <div class="wp-section-block">
+                <div class="wp-section-title">
+                  <span class="wp-step-num">3</span>
+                  <strong>Featured Image <span class="req-star">*</span></strong>
+                  <span id="feat-img-status-badge" class="badge badge-check" style="margin-left:auto;">Verified Rights Cleared</span>
+                </div>
+
+                <!-- Missing photo warning banner (when flagged) -->
+                <div id="wp-photo-flag-banner" class="wp-flag-banner hidden">
+                  <div style="display:flex;align-items:flex-start;gap:8px;">
+                    <span style="font-size:1.2rem;">⚠️</span>
+                    <div>
+                      <strong>No verified reuse-rights photo found in archive for this story.</strong>
+                      <p class="hint-text" style="margin:2px 0 0;">Please upload a licensed replacement photo (JPEG, PNG, WebP up to 5 MB) with photographer credit and license.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Featured Image Card & Downloads -->
+                <div class="wp-image-card">
+                  <div class="wp-image-preview-col">
+                    <img id="wp-feat-img-preview" src="/assets/sample-clips/tesla-clean-bg.jpg" alt="Featured Photo" class="wp-feat-img" />
+                    <div class="wp-image-downloads-row">
+                      <button type="button" class="btn-save-photos-direct" id="btn-save-photos-featured" title="Save directly to iPhone Photos / Android Gallery without iCloud or Google Drive">
+                        📲 Save to Photos
+                      </button>
+                      <button type="button" class="btn-download-img" data-format="jpeg" id="btn-dl-jpeg">📥 JPEG</button>
+                      <button type="button" class="btn-download-img" data-format="png" id="btn-dl-png">📥 PNG</button>
+                      <button type="button" class="btn-download-img" data-format="webp" id="btn-dl-webp">📥 WebP</button>
+                      <span class="hint-text" id="wp-img-size" style="font-size:0.7rem;margin-left:auto;">Max 5 MB</span>
+                    </div>
+                  </div>
+
+                  <div class="wp-image-meta-col">
+                    <!-- Featured image alt text * -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="wp-field-img-alt">Featured image alt text <span class="req-star">*</span></label>
+                        <button type="button" class="btn-copy-field" data-copy-target="wp-field-img-alt">📋 Copy</button>
+                      </div>
+                      <input type="text" id="wp-field-img-alt" class="wp-input" />
+                    </div>
+
+                    <!-- Image caption (optional) -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="wp-field-img-caption">Image caption (optional)</label>
+                        <button type="button" class="btn-copy-field" data-copy-target="wp-field-img-caption">📋 Copy</button>
+                      </div>
+                      <input type="text" id="wp-field-img-caption" class="wp-input" />
+                    </div>
+
+                    <!-- Photographer, source URL and licence -->
+                    <div class="wp-credit-box">
+                      <input type="hidden" id="wp-field-img-credit" value="" />
+                      <div class="wp-field-label-row">
+                        <span class="label-sm">Photographer, Source URL &amp; Licence</span>
+                        <button type="button" id="btn-copy-full-credit" class="btn-copy-field">📋 Copy image credit</button>
+                      </div>
+                      <div class="wp-credit-row">
+                        <span class="meta-label">Photographer / Agency:</span>
+                        <span id="wp-photo-photographer" class="meta-val">Jesse Peltola / Unsplash</span>
+                        <button type="button" class="btn-copy-field-mini" data-copy-target="wp-photo-photographer">Copy</button>
+                      </div>
+                      <div class="wp-credit-row">
+                        <span class="meta-label">Original Source URL:</span>
+                        <a id="wp-photo-source-link" href="#" target="_blank" rel="noopener" class="meta-link">—</a>
+                        <button type="button" class="btn-copy-field-mini" data-copy-target="wp-photo-source-link">Copy</button>
+                      </div>
+                      <div class="wp-credit-row">
+                        <span class="meta-label">Reuse Licence:</span>
+                        <span id="wp-photo-licence" class="meta-val">Unsplash Editorial Cleared</span>
+                        <button type="button" class="btn-copy-field-mini" data-copy-target="wp-photo-licence">Copy</button>
+                      </div>
+                    </div>
+
+                    <!-- Upload Replacement Photo Trigger & AI Photo Generator -->
+                    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                      <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                        <span>📷 Upload Replacement Photo (Max 5 MB)</span>
+                        <input type="file" id="input-upload-featured" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                      </label>
+                      <button type="button" id="btn-quick-ai-photo" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                        <span>✨ Generate AI Photo (Gemini / Nano Banana)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 4: REMAINING WORDPRESS FIELDS (Exact Order) -->
+              <div class="wp-section-block">
+                <div class="wp-section-title">
+                  <span class="wp-step-num">4</span>
+                  <strong>Remaining Fields (In Exact Order)</strong>
+                </div>
+
+                <!-- 1. Region -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-region">Region</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-region">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-region" class="wp-input" />
+                </div>
+
+                <!-- 2. City / Location (required for location-specific articles) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-city">City / Location <span class="hint-inline">(required for location-specific articles)</span></label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-city">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-city" class="wp-input" />
+                </div>
+
+                <!-- 3. Exact place or address, where applicable -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-address">Exact place or address, where applicable</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-address">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-address" class="wp-input" />
+                </div>
+
+                <!-- 4. Event date, time and venue (for Events) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-event">Event date, time and venue (for Events)</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-event">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-event" class="wp-input" />
+                </div>
+
+                <!-- 5. Add another image (one per save, max 5 MB) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm">Add another image <span class="hint-inline">(one per save, max 5 MB)</span></label>
+                    <label class="btn btn-ghost btn-sm" style="cursor:pointer;padding:2px 8px;font-size:0.72rem;">
+                      <span>Choose Image</span>
+                      <input type="file" id="input-upload-additional" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                    </label>
+                  </div>
+                  <div id="additional-image-preview-wrap" class="additional-img-box hidden">
+                    <img id="wp-add-img-preview" src="" alt="Additional Image" style="max-height:120px;border-radius:6px;" />
+                    <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">
+                      <button type="button" class="btn-save-photos-direct" id="btn-save-photos-addl">📲 Save to Photos</button>
+                      <button type="button" class="btn-download-img" data-format="jpeg" id="btn-dl-add-jpeg">JPEG</button>
+                      <button type="button" class="btn-download-img" data-format="png" id="btn-dl-add-png">PNG</button>
+                      <button type="button" class="btn-download-img" data-format="webp" id="btn-dl-add-webp">WebP</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 6. Additional image alt text -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-add-alt">Additional image alt text</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-add-alt">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-add-alt" class="wp-input" />
+                </div>
+
+                <!-- 7. Additional image caption -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-add-caption">Additional image caption</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-add-caption">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-add-caption" class="wp-input" />
+                </div>
+
+                <!-- 8. Additional image credit and licence -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-add-credit">Additional image credit and licence</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-add-credit">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-add-credit" class="wp-input" />
+                </div>
+
+                <!-- 9. Source links (for externally sourced reporting) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm">Source links (for externally sourced reporting)</label>
+                    <button type="button" class="btn-copy-field" id="btn-copy-all-sources">📋 Copy sources</button>
+                  </div>
+                  <div id="wp-source-links-list" class="wp-sources-list"></div>
+                </div>
+
+                <!-- 10. Related article URLs / internal links -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm">Related article URLs / internal links</label>
+                    <button type="button" class="btn-copy-field" id="btn-copy-internal-links">📋 Copy links</button>
+                  </div>
+                  <div id="wp-internal-links-list" class="wp-sources-list"></div>
+                </div>
+
+                <!-- 11. Private editorial verification notes (Editor/Admin only) -->
+                <div class="wp-field-wrap wp-private-notes-box">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-private-notes" style="color:#b45309;">
+                      🔒 Private editorial verification notes <span class="hint-inline" style="color:#92400e;">(Editor/Admin only • Excluded from public copy)</span>
+                    </label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-private-notes">📋 Copy</button>
+                  </div>
+                  <textarea id="wp-field-private-notes" class="wp-textarea" rows="2" style="background:#fffbeb;border-color:#fde68a;font-size:0.8rem;"></textarea>
+                </div>
+
+                <!-- 12. Tags, separated by commas (optional) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-tags">Tags, separated by commas (optional)</label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-tags">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-tags" class="wp-input" />
+                </div>
+
+                <!-- 13. SEO title (optional override) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-seo-title">SEO title (optional override) <span id="wp-seo-title-count" class="hint-inline">(0/60)</span></label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-seo-title">📋 Copy</button>
+                  </div>
+                  <input type="text" id="wp-field-seo-title" class="wp-input" maxlength="60" />
+                </div>
+
+                <!-- 14. Meta description (optional override) -->
+                <div class="wp-field-wrap">
+                  <div class="wp-field-label-row">
+                    <label class="label-sm" for="wp-field-meta-desc">Meta description (optional override) <span id="wp-meta-desc-count" class="hint-inline">(0/155)</span></label>
+                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-meta-desc">📋 Copy</button>
+                  </div>
+                  <textarea id="wp-field-meta-desc" class="wp-textarea" rows="2" maxlength="155"></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- Playable Vertical Reel Card -->
+            <section id="panel-reel" class="card panel active-mobile" data-panel="reel">
+              <div class="panel-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon bg-purple">
+                    <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                  </div>
+                  <div>
+                    <h2 class="panel-title">2. Vertical Reel (9:16 Video)</h2>
+                    <div class="panel-subtitle-row">
+                      <span class="badge badge-sample">9:16 Vertical Video</span>
+                      <span class="badge badge-check">Safe Area Checked</span>
+                      <span class="badge badge-origin">1080×1920 Full HD</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-header-actions">
+                  <button id="btn-approve-reel" class="btn btn-approve">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>For Approval</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Reel On-Demand Placeholder (Visible when reel_status === 'none') -->
+              <div id="reel-on-demand-notice" class="reel-on-demand-card hidden">
+                <div style="font-size:2.2rem;margin-bottom:6px;">🎬</div>
+                <h3 style="margin:0 0 4px;color:var(--navy);font-size:1.05rem;">Reel Not Yet Generated for this Story</h3>
+                <p class="hint-text" style="max-width:440px;margin:0 auto 12px;font-size:0.8rem;">
+                  A straight-news article and 1080×1350 static social post have been prepared for this story.
+                  Reels are kept behind an explicit separate action.
+                </p>
+                <button type="button" id="btn-create-reel-on-demand" class="btn btn-primary btn-sm" style="gap:6px;">
+                  <span>🎬 Create 9:16 Reel for this Story</span>
+                </button>
+              </div>
+
+              <div class="reel-layout" id="reel-player-workspace">
+                <div class="player-column">
+                  <div id="phone-frame" class="phone-frame">
+                    <canvas id="reel-canvas" width="540" height="960"></canvas>
+                    <audio id="reel-audio" preload="auto" playsinline></audio>
+                    <button id="btn-fs-close" class="fs-close" type="button" aria-label="Exit fullscreen">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      <span>Close</span>
+                    </button>
+                    <button id="btn-fs-play" class="fs-play" type="button" aria-label="Play or pause">
+                      <svg class="lucide" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    </button>
+                  </div>
+                  <div class="player-controls">
+                    <button id="btn-play" class="btn btn-secondary btn-sm">
+                      <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span id="btn-play-text">Play</span>
+                    </button>
+                    <button id="btn-restart" class="btn btn-ghost btn-sm btn-icon-only" title="Restart" aria-label="Restart">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                    </button>
+                    <input id="reel-scrubber" type="range" min="0" max="12" step="0.05" value="0" aria-label="Seek timeline" />
+                    <span id="time-display" class="time-display">0.0s</span>
+                    <button id="btn-mute" class="btn btn-ghost btn-sm btn-icon-only" title="Mute / Unmute" aria-label="Mute or unmute">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                    </button>
+                    <button id="btn-fullscreen" class="btn btn-ghost btn-sm btn-icon-only" title="Fullscreen" aria-label="Open fullscreen">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                    </button>
+                  </div>
+                  <div class="player-toggles">
+                    <label class="toggle-label">
+                      <input type="checkbox" id="toggle-safe-area" checked />
+                      <span>4:5 Profile-Grid Safe Area</span>
+                    </label>
+                    <span id="layout-readout" class="layout-readout"></span>
+                  </div>
+
+                  <!-- Clean MP4 Export Button -->
+                  <div style="display:flex;gap:6px;width:100%;margin-top:6px;">
+                    <button type="button" id="btn-export-reel-mp4" class="btn btn-secondary btn-sm" style="flex:1;font-size:0.75rem;justify-content:center;gap:6px;">
+                      📥 Download Clean Reel (MP4)
+                    </button>
+                  </div>
+
+                  <!-- Direct Edit Toggle Button -->
+                  <div style="margin-top:10px;">
+                    <button type="button" id="btn-toggle-reel-editor" class="btn btn-secondary btn-sm" style="width:100%;gap:8px;">
+                      <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                      <span id="reel-editor-toggle-text">Direct Edit Reel (Text, Audio, Clips, Logo)</span>
+                    </button>
+                  </div>
+
+                  <!-- DIRECT REEL EDITOR DOCK -->
+                  <div id="reel-direct-editor" class="reel-direct-editor hidden">
+                    <div class="reel-edit-header">
+                      <span style="font-size:0.82rem;color:var(--navy);font-weight:700;">Direct In-Studio Adjustments</span>
+                      <span class="hint-text" style="font-size:0.75rem;">Live Canvas Preview</span>
+                    </div>
+
+                    <!-- Editor Tabs -->
+                    <div class="reel-edit-tabs">
+                      <button type="button" class="reel-edit-tab active" data-tab="text">✍️ Text</button>
+                      <button type="button" class="reel-edit-tab" data-tab="audio">🎵 Audio</button>
+                      <button type="button" class="reel-edit-tab" data-tab="clips">🎬 Clips</button>
+                      <button type="button" class="reel-edit-tab" data-tab="logo">🏷️ Logo</button>
+                    </div>
+
+                    <!-- Tab 1: Text & Captions -->
+                    <div class="reel-edit-pane" id="pane-reel-text">
+                      <!-- Scene Selector Tabs -->
+                      <div style="background:#f1f5f9;padding:8px 10px;border-radius:8px;margin-bottom:12px;border:1px solid #cbd5e1;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                          <span style="font-size:0.75rem;font-weight:700;color:var(--navy);">Select Scene to Edit:</span>
+                          <span id="re-active-scene-time" style="font-size:0.72rem;color:var(--brand-blue);font-weight:700;">Scene 1 (0.0s – 3.0s)</span>
+                        </div>
+                        <div class="scene-pills" id="re-scene-selector-pills" style="display:flex;gap:6px;flex-wrap:wrap;">
+                          <button type="button" class="btn btn-ghost btn-sm re-scene-pill active" data-scene="0">🎬 Scene 1 (0–3s)</button>
+                          <button type="button" class="btn btn-ghost btn-sm re-scene-pill" data-scene="1">🎬 Scene 2 (3–6s)</button>
+                          <button type="button" class="btn btn-ghost btn-sm re-scene-pill" data-scene="2">🎬 Scene 3 (6–9s)</button>
+                          <button type="button" class="btn btn-ghost btn-sm re-scene-pill" data-scene="3">🎬 Scene 4 (9–12s)</button>
+                        </div>
+                      </div>
+
+                      <!-- 3 Headline Lines (Balanced Ratio) -->
+                      <div>
+                        <label class="label-sm" for="re-line1-text">Line 1 (White)</label>
+                        <input type="text" id="re-line1-text" placeholder="e.g. WINTER TYRES IN FINLAND" />
+                      </div>
+
+                      <div style="margin-top:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                          <label class="label-sm" for="re-line2-text" style="margin:0;">Line 2 (Middle Line)</label>
+                          <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;">
+                            <span style="color:#64748b;">Color:</span>
+                            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-weight:600;">
+                              <input type="radio" name="re-line2-color-choice" value="white" checked /> ⚪ White
+                            </label>
+                            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-weight:600;">
+                              <input type="radio" name="re-line2-color-choice" value="blue" /> 🔵 Blue
+                            </label>
+                          </div>
+                        </div>
+                        <input type="text" id="re-line2-text" placeholder="e.g. WHEN TO SWITCH &amp; RULES" style="margin-top:3px;" />
+                      </div>
+
+                      <div style="margin-top:8px;">
+                        <label class="label-sm" for="re-line3-text">Line 3 (Electric Blue #00A3FF)</label>
+                        <input type="text" id="re-line3-text" placeholder="e.g. STUDDED GRIP ON ICY ROADS" />
+                      </div>
+
+                      <div style="margin-top:8px;">
+                        <label class="label-sm" for="re-sub-text">Secondary Explainer Subtitle (All Scenes / Explainer Text)</label>
+                        <textarea id="re-sub-text" rows="2" style="width:100%;font-size:0.82rem;padding:6px 8px;border-radius:6px;border:1px solid #cbd5e1;line-height:1.35;" placeholder="e.g. Required by law between 1 Nov and 31 Mar when conditions demand."></textarea>
+                      </div>
+
+                      <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div>
+                          <label class="label-sm" for="re-badge-text">Pill Badge Text</label>
+                          <input type="text" id="re-badge-text" placeholder="e.g. FINLAND GUIDE" value="FINLAND GUIDE" />
+                        </div>
+                        <div>
+                          <label class="label-sm" for="re-line2-size">Headline Font Size (All 3 Lines)</label>
+                          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                            <input type="range" id="re-line2-size" min="18" max="42" value="28" style="flex:1;" />
+                            <span id="re-line2-size-val" style="font-weight:700;color:var(--brand-blue);font-size:0.8rem;min-width:30px;">28px</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style="margin-top:10px;">
+                        <label class="label-sm" for="re-hook-y">Vertical Position (Safe Area 45% - 85%)</label>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <input type="range" id="re-hook-y" min="45" max="85" value="68" style="flex:1;" />
+                          <span id="re-hook-y-val" style="font-weight:700;color:var(--navy);font-size:0.82rem;min-width:32px;">68%</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                          <button type="button" class="btn btn-ghost btn-sm preset-btn" data-hook-y="68">Lower Third 68% (News Style)</button>
+                          <button type="button" class="btn btn-ghost btn-sm preset-btn" data-hook-y="54">Safe Center 54% (Classic)</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tab 2: Audio & Mix -->
+                    <div class="reel-edit-pane hidden" id="pane-reel-audio">
+                      <label class="label-sm">Mix Mode</label>
+                      <div class="audio-mode-group">
+                        <button type="button" class="btn btn-ghost btn-sm audio-mode-btn active" data-mode="field_pulse">Field + Nordic Pulse</button>
+                        <button type="button" class="btn btn-ghost btn-sm audio-mode-btn" data-mode="field_only">Ambient Only</button>
+                        <button type="button" class="btn btn-ghost btn-sm audio-mode-btn" data-mode="music_only">Music Only</button>
+                      </div>
+                      <div style="margin-top:10px;">
+                        <label class="label-sm" for="re-audio-track">Audio Track</label>
+                        <select id="re-audio-track" style="width:100%;font-size:0.82rem;padding:6px 10px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;">
+                          <option value="/assets/audio/arctic-kaamos-ambient.wav">Arctic Kaamos Polar Night (Atmospheric Nordic Pad & Crystal Shimmer)</option>
+                          <option value="/assets/sample-audio-tesla.m4a">Tesla Authentic Field Audio + Nordic Pulse (15.8s)</option>
+                          <option value="/assets/nordic-pulse.wav">Nordic Pulse Synth Loop</option>
+                        </select>
+                      </div>
+                      <div style="margin-top:10px;">
+                        <label class="label-sm" for="re-music-vol">Music Volume</label>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <input type="range" id="re-music-vol" min="0" max="100" value="70" style="flex:1;" />
+                          <span id="re-music-vol-val" style="font-weight:700;color:var(--brand-blue);font-size:0.82rem;min-width:32px;">70%</span>
+                        </div>
+                      </div>
+                      <div style="margin-top:8px;">
+                        <label class="label-sm" for="re-field-vol">Field Audio Volume</label>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <input type="range" id="re-field-vol" min="0" max="100" value="85" style="flex:1;" />
+                          <span id="re-field-vol-val" style="font-weight:700;color:var(--brand-blue);font-size:0.82rem;min-width:32px;">85%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tab 3: Clips & Timing -->
+                    <div class="reel-edit-pane hidden" id="pane-reel-clips">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <label class="label-sm" style="margin:0;">Target Length &amp; Pacing</label>
+                        <label class="btn btn-primary btn-sm" style="cursor:pointer;font-size:0.75rem;padding:4px 10px;margin:0;display:inline-flex;align-items:center;gap:4px;">
+                          <span>➕ Upload Video Clip</span>
+                          <input type="file" id="direct-reel-clip-file" accept="video/mp4,video/quicktime,video/webm" style="display:none;" />
+                        </label>
+                      </div>
+                      <div id="direct-reel-clip-status" class="hint-text hidden" style="margin-bottom:6px;font-size:0.75rem;color:var(--primary);font-weight:600;"></div>
+                      <div style="display:flex;gap:6px;margin-bottom:8px;">
+                        <button type="button" class="btn btn-ghost btn-sm re-dur-btn" data-dur="9">9s Fast</button>
+                        <button type="button" class="btn btn-ghost btn-sm re-dur-btn" data-dur="12">12s Standard</button>
+                        <button type="button" class="btn btn-ghost btn-sm re-dur-btn active" data-dur="16">16s Tesla Paced</button>
+                      </div>
+                      <div id="re-clips-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+                    </div>
+
+                    <!-- Tab 4: Logo & Safe Area -->
+                    <div class="reel-edit-pane hidden" id="pane-reel-logo">
+                      <label class="label-sm">Logo Position Presets</label>
+                      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                        <button type="button" class="btn btn-ghost btn-sm re-logo-pos-btn active" data-y="15.5" data-x="15.5">Top Left (News Style - Guide Cleared)</button>
+                        <button type="button" class="btn btn-ghost btn-sm re-logo-pos-btn" data-y="18" data-x="16">Top Left Safe (Profile)</button>
+                        <button type="button" class="btn btn-ghost btn-sm re-logo-pos-btn" data-y="20" data-x="50">Top Center (Classic)</button>
+                        <button type="button" class="btn btn-ghost btn-sm re-logo-pos-btn" data-y="15" data-x="82">Top Right</button>
+                        <button type="button" class="btn btn-ghost btn-sm re-logo-pos-btn" data-hide="1">Hide Logo</button>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
+                        <div>
+                          <label class="label-sm" for="re-logo-x">Logo X Offset</label>
+                          <div style="display:flex;align-items:center;gap:6px;">
+                            <input type="range" id="re-logo-x" min="5" max="95" value="15.5" step="0.5" style="flex:1;" />
+                            <span id="re-logo-x-val" style="font-weight:700;color:var(--navy);font-size:0.8rem;min-width:30px;">15.5%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label class="label-sm" for="re-logo-y">Logo Y Offset</label>
+                          <div style="display:flex;align-items:center;gap:6px;">
+                            <input type="range" id="re-logo-y" min="5" max="85" value="15.5" step="0.5" style="flex:1;" />
+                            <span id="re-logo-y-val" style="font-weight:700;color:var(--navy);font-size:0.8rem;min-width:30px;">15.5%</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style="margin-top:8px;">
+                        <label class="label-sm" for="re-logo-size">Logo Size (Clears Guide)</label>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <input type="range" id="re-logo-size" min="36" max="96" value="62" style="flex:1;" />
+                          <span id="re-logo-size-val" style="font-weight:700;color:var(--navy);font-size:0.82rem;min-width:32px;">62px</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Action Footer -->
+                    <div class="reel-edit-footer">
+                      <button type="button" id="btn-re-reset" class="btn btn-ghost btn-sm">Reset</button>
+                      <button type="button" id="btn-re-save" class="btn btn-primary btn-sm">
+                        <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Save Revision</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="reel-details">
+                  <!-- Reel Caption & Script Call-To-Action -->
+                  <div class="detail-block" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                      <span class="label-sm" style="margin:0;font-weight:700;color:var(--navy);">Reel Caption &amp; Call-To-Action</span>
+                      <button type="button" class="btn-copy-field" data-copy-target="reel-caption">📋 Copy</button>
+                    </div>
+                    <p id="reel-caption" class="caption-text" style="margin:0;font-size:0.84rem;line-height:1.45;color:#1e293b;"></p>
+                  </div>
+
+                  <!-- Music Credit & Authentic Audio Mode -->
+                  <div class="detail-block" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin-top:12px;">
+                    <div class="label-sm" style="font-weight:700;color:var(--navy);margin-bottom:4px;">🎵 Music Credit &amp; Authentic Audio Mode</div>
+                    <p id="reel-music" class="meta-text" style="margin:0 0 4px;font-size:0.82rem;font-weight:600;"></p>
+                    <p id="reel-vo-rule" class="meta-sub" style="margin:0;font-size:0.75rem;color:#64748b;"></p>
+                    <p id="reel-higgsfield" class="hint-text" style="margin:4px 0 0;"></p>
+                  </div>
+
+                  <!-- Hashtags -->
+                  <div class="detail-block" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin-top:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                      <span class="label-sm" style="margin:0;font-weight:700;color:var(--navy);">Hashtags (<span id="hashtag-count">0</span>/5 max)</span>
+                      <button type="button" class="btn-copy-field" data-copy-target="reel-hashtags">📋 Copy</button>
+                    </div>
+                    <div id="reel-hashtags" class="hashtag-list"></div>
+                  </div>
+
+                  <!-- Reel Video Cover & Profile Crop (Compact Thumbnail Previews) -->
+                  <div class="detail-block" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin-top:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                      <div class="label-sm" style="margin:0;font-weight:700;color:var(--navy);">Video Cover &amp; Grid Thumbnails</div>
+                      <div style="display:flex;gap:4px;">
+                        <button type="button" id="btn-export-cover-45" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid #cbd5e1;background:#fff;">📥 4:5</button>
+                        <button type="button" id="btn-export-cover-34" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid #cbd5e1;background:#fff;">📥 3:4</button>
+                      </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:135px 135px;gap:12px;align-items:start;">
+                      <!-- Full 4:5 Feed Cover -->
+                      <div style="background:#fff;padding:6px;border-radius:8px;border:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.68rem;font-weight:700;color:var(--navy);margin-bottom:3px;">
+                          <span>4:5 Feed</span>
+                          <span style="color:#0284c7;">Feed View</span>
+                        </div>
+                        <div style="width:121px;aspect-ratio:4/5;border-radius:6px;overflow:hidden;border:1px solid #94a3b8;">
+                          <canvas id="cover-canvas" width="360" height="450" style="width:100%;height:100%;display:block;"></canvas>
+                        </div>
+                      </div>
+
+                      <!-- 3:4 Profile-Grid Crop -->
+                      <div style="background:#fff;padding:6px;border-radius:8px;border:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.68rem;font-weight:700;color:var(--navy);margin-bottom:3px;">
+                          <span>3:4 Crop</span>
+                          <span style="color:#059669;">Profile Grid</span>
+                        </div>
+                        <div style="width:121px;aspect-ratio:3/4;border-radius:6px;overflow:hidden;border:1px dashed #00a3ff;">
+                          <canvas id="cover-34-canvas" width="338" height="450" style="width:100%;height:100%;display:block;"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                    <p id="reel-canva-info" class="hint-text" style="margin-top:6px;font-size:0.72rem;"></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Visual Storyboard Deck & Scenes Overview (Up to 8 clips + Dedicated Branded Outro) -->
+              <div class="collapsible-scenes-card" id="block-reel-scenes-overview" style="margin-top:16px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                <div class="scenes-collapsible-bar" id="btn-toggle-scenes-collapse" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;gap:12px;flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span id="scenes-collapse-icon" style="font-size:0.95rem;color:var(--brand-blue);font-weight:700;display:inline-block;transition:transform 0.2s;">▼</span>
+                    <div>
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <strong style="font-size:0.95rem;color:var(--navy);">🎬 Visual Storyboard Deck &amp; Scene Clips</strong>
+                        <span class="badge" id="scenes-count-badge" style="background:#e0f2fe;color:#0369a1;font-size:0.75rem;font-weight:700;">6 Clips + Outro • 23.8s</span>
+                      </div>
+                      <p class="hint-text" style="margin:2px 0 0;font-size:0.75rem;">1-click photo replacement per clip • Dynamic story length (2–8 clips) • Max 4s static slides • Dedicated closing branded outro card</p>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" onclick="event.stopPropagation();">
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-add-reel-scene" style="font-size:0.78rem;padding:6px 12px;font-weight:700;gap:6px;">
+                      ➕ Add Clip (Up to 8)
+                    </button>
+                    <label class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:6px 12px;font-weight:600;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer;margin:0;">
+                      📁 Multi-Upload (2–8 Photos)
+                      <input type="file" id="batch-scene-file-input" multiple accept="image/*,video/*" class="hidden" />
+                    </label>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-scenes-minmax" style="font-size:0.76rem;padding:6px 12px;font-weight:600;border:1px solid #cbd5e1;background:#fff;border-radius:6px;gap:6px;">
+                      <span id="scenes-minmax-text">➖ Minimize</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="scenes-collapsible-body" style="margin-top:14px;border-top:1px solid #e2e8f0;padding-top:14px;">
+                  <!-- Pacing Presets & Batch Controls Bar -->
+                  <div id="reel-pacing-presets-bar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="font-size:0.78rem;font-weight:700;color:#334155;">⚡ Pacing Presets:</span>
+                      <button type="button" class="btn btn-ghost btn-xs btn-pacing-preset" data-duration="2.0" style="background:#fff;border:1px solid #cbd5e1;font-weight:700;font-size:0.74rem;padding:4px 10px;border-radius:6px;cursor:pointer;">⚡ Fast (2.0s)</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-pacing-preset" data-duration="3.0" style="background:#fff;border:1px solid #cbd5e1;font-weight:700;font-size:0.74rem;padding:4px 10px;border-radius:6px;cursor:pointer;">🎬 Cinematic (3.0s)</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-pacing-preset" data-duration="4.0" style="background:#fff;border:1px solid #cbd5e1;font-weight:700;font-size:0.74rem;padding:4px 10px;border-radius:6px;cursor:pointer;">📖 Story (4.0s)</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="font-size:0.78rem;font-weight:700;color:#334155;">Apply Transition to All:</span>
+                      <select id="select-apply-all-transition" class="input-text" style="font-size:0.75rem;padding:4px 8px;width:auto;height:auto;font-weight:600;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;">
+                        <option value="">— Choose Transition —</option>
+                        <option value="dissolve">🎬 Smooth Dissolve</option>
+                        <option value="zoom_push">🔍 Zoom Push (Ken Burns)</option>
+                        <option value="fade_black">🌑 Dip to Black</option>
+                        <option value="cut">✂️ Hard Cut</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div id="reel-scenes-table-wrap" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Interactive Static Social Post (1080×1350) & 3:4 Profile Crop Card -->
+            <section id="panel-ig" class="card panel" data-panel="ig">
+              <div class="panel-header">
+                <div class="card-header-left">
+                  <div class="card-header-icon bg-pink">
+                    <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                  </div>
+                  <div>
+                    <h2 class="panel-title">3. Instagram &amp; Facebook Post Formats</h2>
+                    <div class="panel-subtitle-row">
+                      <span class="badge" style="background:#E1306C;color:#fff;">📸 Instagram (1080×1350)</span>
+                      <span class="badge" style="background:#1877F2;color:#fff;">📘 Facebook (1080×1350 &amp; 1200×630)</span>
+                      <span class="badge badge-check">Synced with Article Photo</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-header-actions">
+                  <button id="btn-approve-ig" class="btn btn-approve">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>For Approval</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Format Explanation & Guidance Banner -->
+              <div class="social-guidance-card">
+                <div class="social-guide-grid">
+                  <div class="social-guide-item active-guide" id="guide-item-feed">
+                    <div class="guide-tag-row">
+                      <span class="badge" style="background:#E1306C;color:#fff;font-size:0.68rem;">Instagram Feed</span>
+                      <span class="badge" style="background:#1877F2;color:#fff;font-size:0.68rem;">Facebook Mobile</span>
+                      <strong class="guide-dim">1080 × 1350 px (4:5)</strong>
+                    </div>
+                    <p class="guide-desc"><strong>Main Publishing File:</strong> Upload the 4:5 vertical card to BOTH Instagram and Facebook. It gives maximum mobile screen coverage and highest reader engagement.</p>
+                  </div>
+
+                  <div class="social-guide-item" id="guide-item-fb">
+                    <div class="guide-tag-row">
+                      <span class="badge" style="background:#1877F2;color:#fff;font-size:0.68rem;">Facebook Desktop</span>
+                      <strong class="guide-dim">1200 × 630 px (1.91:1)</strong>
+                    </div>
+                    <p class="guide-desc"><strong>Facebook Landscape:</strong> Optimized wide format for Facebook Page desktop feeds and link shares.</p>
+                  </div>
+
+                  <div class="social-guide-item" id="guide-item-crop">
+                    <div class="guide-tag-row">
+                      <span class="badge" style="background:#833AB4;color:#fff;font-size:0.68rem;">IG Profile Grid</span>
+                      <strong class="guide-dim">3:4 Safety Check</strong>
+                    </div>
+                    <p class="guide-desc"><strong>Profile Grid Preview:</strong> Visual verification that your headline and category badge remain safely visible inside your Instagram account profile grid.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Format Switch Tabs (Mobile & Tablet) -->
+              <div class="social-format-tabs" role="tablist">
+                <button type="button" class="social-tab-btn active" data-format-target="format-view-feed">
+                  📱 IG &amp; FB Feed (1080×1350)
+                </button>
+                <button type="button" class="social-tab-btn" data-format-target="format-view-fb">
+                  📘 Facebook Landscape (1200×630)
+                </button>
+                <button type="button" class="social-tab-btn" data-format-target="format-view-crop">
+                  🔍 IG Profile Grid (3:4)
+                </button>
+              </div>
+
+              <div class="static-post-workspace">
+                <!-- Visual Cards Preview Container -->
+                <div class="static-canvas-card">
+                  <div class="static-canvas-views">
+                    <!-- Format 1: Instagram & Facebook Vertical Feed (1080x1350) -->
+                    <div class="static-canvas-col format-col active-format" id="format-view-feed">
+                      <div class="format-header-badge">
+                        <span class="badge" style="background:#E1306C;color:#fff;">Instagram</span>
+                        <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
+                        <span class="format-dim-pill">1080 × 1350 (4:5)</span>
+                      </div>
+                      <span class="static-canvas-label">Full Feed Post (Universal Vertical)</span>
+                      <canvas id="static-post-canvas" width="1080" height="1350"></canvas>
+                      
+                      <!-- Direct Mobile Save Button -->
+                      <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
+                        📲 Save to Photos / Camera Roll
+                      </button>
+
+                      <div class="static-dl-row">
+                        <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
+                        <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                      </div>
+                    </div>
+
+                    <!-- Format 2: Facebook Landscape (1200x630) -->
+                    <div class="static-canvas-col format-col" id="format-view-fb">
+                      <div class="format-header-badge">
+                        <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
+                        <span class="format-dim-pill">1200 × 630 (1.91:1)</span>
+                      </div>
+                      <span class="static-canvas-label">Facebook Desktop &amp; Link Post</span>
+                      <canvas id="static-fb-canvas" width="1200" height="630"></canvas>
+                      
+                      <!-- Direct Mobile Save Button -->
+                      <button type="button" id="btn-save-photos-fb" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
+                        📲 Save to Photos / Camera Roll
+                      </button>
+
+                      <div class="static-dl-row">
+                        <button type="button" id="btn-dl-static-fb-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (1200×630)</button>
+                        <button type="button" id="btn-dl-static-fb-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (1200×630)</button>
+                      </div>
+                    </div>
+
+                    <!-- Format 3: Instagram Profile Grid Crop (3:4) -->
+                    <div class="static-canvas-col format-col" id="format-view-crop">
+                      <div class="format-header-badge">
+                        <span class="badge" style="background:#833AB4;color:#fff;">Instagram</span>
+                        <span class="format-dim-pill">1012 × 1350 (3:4)</span>
+                      </div>
+                      <span class="static-canvas-label">Profile Grid Safety Preview</span>
+                      <canvas id="static-crop-canvas" width="1012" height="1350"></canvas>
+                      
+                      <!-- Direct Mobile Save Button -->
+                      <button type="button" id="btn-save-photos-crop" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
+                        📲 Save to Photos / Camera Roll
+                      </button>
+
+                      <div class="static-dl-row">
+                        <button type="button" id="btn-dl-static-34-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (3:4)</button>
+                        <button type="button" id="btn-dl-static-34-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (3:4)</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="hint-text" style="margin-top:10px;font-size:0.75rem;text-align:center;">
+                    Auto-synced with article photo • Original heart logo • Navy scrim • Blue category badge • High-contrast typography
+                  </div>
+                </div>
+
+                <!-- Direct Editor Controls & Caption -->
+                <div class="static-controls-col">
+                  <!-- Category Badge & Headlines -->
+                  <div class="wp-field-wrap">
+                    <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
+                    <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <label class="label-sm" for="static-edit-line1">Headline Line 1 (White Bold)</label>
+                    <input type="text" id="static-edit-line1" class="wp-input" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <label class="label-sm" for="static-edit-line2">Headline Line 2 (White Bold)</label>
+                    <input type="text" id="static-edit-line2" class="wp-input" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-line3">Headline Line 3 (Electric Blue #00A3FF Emphasis)</label>
+                      <span class="hint-inline" id="static-line2-size-val">32px</span>
+                    </div>
+                    <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:0.72rem;color:#64748b;font-weight:600;">Color:</span>
+                        <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;">
+                          <option value="white" selected>⚪ White (Default)</option>
+                          <option value="blue">🔵 Electric Blue</option>
+                        </select>
+                      </div>
+                    </div>
+                    <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
+                    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:2px 8px;background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;font-weight:700;cursor:pointer;">+ DISCOVER MORE AT ILOVEFINLAND.NET</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:2px 8px;background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;font-weight:700;cursor:pointer;">+ READ FULL GUIDE</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:2px 8px;background:#fff;border:1px solid #e2e8f0;color:#64748b;font-weight:600;cursor:pointer;">✕ Clear (Hide)</button>
+                    </div>
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Category Badge)</label>
+                      <span class="hint-inline" id="static-line2-size-val">32px</span>
+                    </div>
+                    <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
+                      <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption + Hashtags</button>
+                    </div>
+                    <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
+                      <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
+                    </div>
+                    <input type="text" id="static-edit-hashtags" class="wp-input" />
+                    <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
+                  </div>
+
+                  <!-- Save & Polish Controls -->
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px;">
+                    <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;">
+                      <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                      <span>Polish Caption with Claude</span>
+                    </button>
+                    <button type="button" id="btn-save-static-post" class="btn btn-secondary btn-sm" style="gap:6px;">
+                      <span>💾 Save Static Post Adjustments</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Feedback & Voice Note Revision Card -->
+          <section class="card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Feedback &amp; Revision (Text or Voice Note)</h2>
+                <p class="hint-text">Previous versions stay available above. Revisions require fresh approval.</p>
+              </div>
+            </div>
+
+            <!-- Target Selection Checkboxes -->
+            <div class="revision-target-selector" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                <span>🎯 What should be revised? (Tick all that apply):</span>
+                <span class="hint-text" style="font-size:0.75rem;font-weight:400;">Selected components will be updated in the new version</span>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #3b82f6;border-radius:6px;background:#eff6ff;cursor:pointer;font-size:0.83rem;font-weight:600;color:#1e40af;user-select:none;">
+                  <input type="checkbox" id="rev-target-article" checked style="cursor:pointer;width:16px;height:16px;accent-color:#2563eb;" />
+                  <span>📝 Article (Text, Photo &amp; Category)</span>
+                </label>
+                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #3b82f6;border-radius:6px;background:#eff6ff;cursor:pointer;font-size:0.83rem;font-weight:600;color:#1e40af;user-select:none;">
+                  <input type="checkbox" id="rev-target-post" checked style="cursor:pointer;width:16px;height:16px;accent-color:#2563eb;" />
+                  <span>📱 Static Post (Social Graphic &amp; Caption)</span>
+                </label>
+                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:0.83rem;font-weight:600;color:#475569;user-select:none;">
+                  <input type="checkbox" id="rev-target-reel" style="cursor:pointer;width:16px;height:16px;accent-color:#2563eb;" />
+                  <span>🎬 Reel (Video Script &amp; Voiceover)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="quick-chips">
+              <span class="label-sm">Quick editorial feedback:</span>
+              <button class="btn btn-ghost btn-sm chip-btn" data-comment="move the logo lower and make the second line bigger">
+                “move the logo lower and make the second line bigger”
+              </button>
+              <button class="btn btn-ghost btn-sm chip-btn" data-comment="tighten article headline for faster mobile scanning">
+                “tighten article headline for faster scanning”
+              </button>
+              <button class="btn btn-ghost btn-sm chip-btn" data-comment="increase background contrast scrim behind text">
+                “increase background contrast scrim”
+              </button>
+            </div>
+
+            <form id="comment-form" class="stack-form">
+              <!-- Voice Note Bar -->
+              <div class="voice-bar" data-voice-for="comment-input">
+                <button type="button" class="btn btn-ghost btn-sm btn-rec">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                  <span>Record Voice Note</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-sim-voice">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>Sample Voice Note</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-replay hidden">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Replay</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-discard hidden">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  <span>Discard</span>
+                </button>
+                <span class="voice-status hint-text"></span>
+                <audio class="voice-audio hidden"></audio>
+              </div>
+
+              <textarea
+                id="comment-input"
+                rows="3"
+                placeholder="Leave feedback (e.g. “use my uploaded winter tyre video clip and move logo lower”) or record voice note above…"
+              ></textarea>
+
+              <!-- Clip / Video Upload Zone for Reel Feedback -->
+              <div class="feedback-clip-upload-zone" style="margin-top:10px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <label style="font-weight:600;font-size:0.83rem;color:var(--navy);display:flex;align-items:center;gap:6px;margin:0;">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                    <span>🎬 Attach Custom Video Clip or Photo for Reel Revision</span>
+                  </label>
+                  <span class="hint-text" style="font-size:0.72rem;">MP4, MOV, WebM, JPG (Max 100 MB)</span>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                  <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" class="form-control" style="font-size:12px;padding:6px;flex:1;" />
+                  <button type="button" id="btn-feedback-clear-clip" class="btn btn-ghost btn-sm hidden" style="color:#ef4444;white-space:nowrap;">✕ Remove Clip</button>
+                </div>
+
+                <!-- Live Preview Pill when Clip is Chosen -->
+                <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:12px;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #e2e8f0;">
+                  <video id="feedback-clip-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;background:#000;" muted playsinline></video>
+                  <img id="feedback-img-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;display:none;" />
+                  <div style="flex:1;min-width:0;">
+                    <div id="feedback-clip-name" style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--navy);">video_clip.mp4</div>
+                    <div id="feedback-clip-meta" style="font-size:0.72rem;color:#64748b;">Ready to attach • Will be stitched into new Reel revision</div>
+                  </div>
+                  <span class="badge badge-success" style="font-size:0.7rem;white-space:nowrap;">Attached</span>
+                </div>
+              </div>
+
+              <div class="comment-actions">
+                <button type="submit" id="btn-submit-comment" class="btn btn-primary">
+                  <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Submit Feedback &amp; Generate Revision</span>
+                </button>
+              </div>
+            </form>
+
+            <div class="history-block">
+              <div class="label-sm">Revision &amp; Decision History</div>
+              <div id="comment-history" class="comment-history"></div>
+            </div>
+          </section>
+
+          <!-- Schedule Package Card -->
+          <section class="card">
+            <h2 class="panel-title">Publishing Schedule (Europe/Helsinki)</h2>
+            <p class="hint-text">
+              Scheduling is permitted only for the exact approved version. Articles and Reels can have separate publishing slots.
+            </p>
+            <div class="form-row" style="margin-top:12px;">
+              <div>
+                <label class="label-sm" for="sched-article-dt">Article Publishing Slot (WordPress)</label>
+                <input id="sched-article-dt" type="datetime-local" />
+              </div>
+              <div>
+                <label class="label-sm" for="sched-reel-dt">Reel Publishing Slot (IG &amp; TikTok)</label>
+                <input id="sched-reel-dt" type="datetime-local" />
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <button id="btn-save-schedule" class="btn btn-secondary">
+                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Save Schedule (Simulated)</span>
+              </button>
+              <span id="schedule-msg" class="hint-text"></span>
+            </div>
+          </section>
+        </section>
+
+        <!-- VIEW 2: ASSIGNMENTS & UPLOAD CLIPS -->
+        <section id="view-assignments" class="view hidden">
+          <div class="card">
+            <h2 class="panel-title">Assign Story or Upload Reel Clips</h2>
+            <p class="hint-text">AI drafts straight-news copy, verifies sources, and composes a 9:16 Reel inside the 4:5 safe area.</p>
+            
+            <form id="assignment-form" class="stack-form">
+              <div class="form-row assign-top-row">
+                <div class="form-field-group">
+                  <label class="label-sm" for="assign-topic">Topic / Story Title</label>
+                  <input id="assign-topic" type="text" placeholder="e.g., Winter Transit in Finland: Green Trams to Lapland Snow" required />
+                </div>
+                <div class="form-field-group">
+                  <label class="label-sm" for="assign-scope">Scope</label>
+                  <select id="assign-scope">
+                    <option value="Article + Static Post" selected>Article + Static Social Post (Recommended)</option>
+                    <option value="Article">Article Only</option>
+                    <option value="Reel">Reel Only (Upload Clips)</option>
+                    <option value="Both">Both (Article + Reel)</option>
+                  </select>
+                </div>
+                <div class="form-field-group">
+                  <label class="label-sm" for="assign-deadline">Production Deadline (Europe/Helsinki)</label>
+                  <input id="assign-deadline" type="datetime-local" />
+                </div>
+              </div>
+
+              <!-- MULTI-CLIP & PHOTO UPLOAD SECTION (Available for All Stories & Reels) -->
+              <div id="clips-upload-section" class="clips-upload-container">
+                <div class="clips-section-header">
+                  <div>
+                    <h3 id="clips-section-title" style="margin:0;font-size:1.05rem;color:var(--navy);">
+                      <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                      Primary Featured Photo for Article &amp; Post (JPG, PNG, WebP)
+                    </h3>
+                    <p id="clips-section-hint" class="hint-text" style="margin:2px 0 0;">Upload your own authentic photo (used as the primary featured image for your Article &amp; Instagram post). Drag &amp; drop or tap to browse from photo library.</p>
+                  </div>
+                  <button type="button" id="btn-load-demo-clips" class="btn btn-ghost btn-sm">
+                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                    <span>Load Sample Clips (Tram &amp; Lapland)</span>
+                  </button>
+                </div>
+
+                <!-- Dropzone / Picker: sleek, compact, space-efficient -->
+                <div id="clip-dropzone" class="clip-dropzone">
+                  <input type="file" id="clip-file-input" multiple accept="video/mp4,video/quicktime,video/mov,video/*,image/jpeg,image/png,image/webp,image/heic,image/*" class="file-input-hidden" />
+                  <div class="dropzone-compact-inner">
+                    <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-blue);" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span class="dropzone-text"><strong>Choose Primary Featured Photo</strong> from phone photo library or computer <span class="hint-inline">(drag &amp; drop or tap to browse JPG, PNG, WebP)</span></span>
+                  </div>
+                  <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
+                    <div class="progress-bar-bg"><div id="upload-progress-bar" class="progress-bar-fill"></div></div>
+                    <span id="upload-progress-text" class="hint-text" style="font-size:0.8rem;">Uploading 100%…</span>
+                  </div>
+                </div>
+
+                <!-- Clips List (Enlarges into rich cards when clips exist) -->
+                <div id="clips-list" class="clips-list"></div>
+
+                <!-- Editorial Clip Instructions & Settings -->
+                <div class="clips-editorial-box hidden">
+                  <div class="form-row">
+                    <div>
+                      <label class="label-sm" for="clip-opening-select">Opening Shot Choice</label>
+                      <select id="clip-opening-select">
+                        <option value="Clip 1">Clip 1 as Opening Hook (Recommended)</option>
+                        <option value="Clip 2">Clip 2 as Opening Hook</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label-sm" for="clip-target-length">Target Reel Length</label>
+                      <select id="clip-target-length">
+                        <option value="9">9 seconds (Fast Civic Contrast)</option>
+                        <option value="15">15 seconds (Standard Nordic Utility)</option>
+                        <option value="30">30 seconds (In-depth explainer)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label-sm" for="clip-audio-mode">Audio Mix Mode</label>
+                      <select id="clip-audio-mode">
+                        <option value="authentic_source_and_music">Authentic Field Audio + Nordic Pulse Bed</option>
+                        <option value="music_only">Nordic Pulse Music Only (No Narration)</option>
+                        <option value="source_only">Authentic Ambient Audio Only</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- INSTAGRAM POST / CAROUSEL DESIGNER SECTION (Visible when scope includes Instagram Post) -->
+              <div id="ig-post-section" class="ig-post-container hidden">
+                <div class="clips-section-header">
+                  <div>
+                    <h3 style="margin:0;font-size:1.05rem;color:var(--navy);">
+                      <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                      Instagram Feed Carousel Designer (4:5)
+                    </h3>
+                    <p class="hint-text" style="margin:2px 0 0;">Visual multi-slide carousel cards designed for high saves, reference, and shares on Instagram.</p>
+                  </div>
+                  <button type="button" id="btn-load-demo-ig" class="btn btn-ghost btn-sm">
+                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                    <span>Load Sample IG Carousel (Winter Tires)</span>
+                  </button>
+                </div>
+                <div class="ig-designer-box">
+                  <div class="form-row">
+                    <div>
+                      <label class="label-sm" for="ig-slide-count">Number of Slides</label>
+                      <select id="ig-slide-count">
+                        <option value="3">3 Slides (Quick Visual Checklist)</option>
+                        <option value="4">4 Slides (Standard Civic Guide)</option>
+                        <option value="5">5 Slides (In-depth Explainer)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label-sm" for="ig-theme-select">Visual Theme / Template</label>
+                      <select id="ig-theme-select">
+                        <option value="navy_frost">Nordic Navy &amp; Ice Blue (Brand Clean)</option>
+                        <option value="aurora_night">Lapland Aurora &amp; Dark Sky</option>
+                        <option value="civic_alert">Civic Alert &amp; Warning Border</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label-sm" for="ig-aspect-select">Aspect Ratio</label>
+                      <select id="ig-aspect-select">
+                        <option value="4:5">4:5 Vertical Feed (1080×1350 — Recommended)</option>
+                        <option value="1:1">1:1 Square Feed (1080×1080)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Instructions (Text or Voice Note) -->
+              <label class="label-sm">Instructions &amp; Angle (Type or Voice Note)</label>
+              <div class="voice-bar" data-voice-for="assign-instructions">
+                <button type="button" class="btn btn-ghost btn-sm btn-rec">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                  <span>Record Voice Note</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-sim-voice">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>Sample Voice Note</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-replay hidden">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Replay</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-discard hidden">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  <span>Discard</span>
+                </button>
+                <span class="voice-status hint-text"></span>
+                <audio class="voice-audio hidden"></audio>
+              </div>
+              <textarea id="assign-instructions" rows="2" placeholder="Key angle, opening shot instructions, or facts to highlight…"></textarea>
+
+              <label class="label-sm" for="assign-links">Source Links (one per line)</label>
+              <textarea id="assign-links" rows="2" placeholder="https://kaupunkiliikenne.fi/en/&#10;https://en.ilmatieteenlaitos.fi/warnings"></textarea>
+
+              <button type="submit" class="btn btn-primary">
+                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                <span>Create Assignment &amp; Generate Draft</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- VIEW 3: CALENDAR & PLAN MY WEEK -->
+        <section id="view-calendar" class="view hidden">
+          <!-- "Plan My Week" AI suggestions section -->
+          <div class="card plan-week-card">
+            <div class="panel-header">
+              <div>
+                <span class="badge badge-origin">AI Editorial Planning</span>
+                <h2 class="panel-title" style="margin-top:4px;">Plan My Week — Finnish News, Events &amp; Guides</h2>
+                <p class="hint-text">Curated mix using upcoming Finnish dates, verified official sources, and performance data. Accept, edit, or dismiss each idea.</p>
+              </div>
+              <button id="btn-refresh-plan" class="btn btn-ghost btn-sm">
+                <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                <span>Refresh Suggestions</span>
+              </button>
+            </div>
+            <div id="plan-ideas-grid" class="plan-grid"></div>
+          </div>
+
+          <!-- Calendar Controls & Schedule Grid -->
+          <div class="card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Editorial Calendar (Europe/Helsinki)</h2>
+                <p class="hint-text">Production deadlines shown separately from Article &amp; Reel publishing times. Missed times and same-channel collisions (&le;90 min) are flagged.</p>
+              </div>
+              <div class="cal-nav-group">
+                <div class="cal-arrows">
+                  <button id="btn-cal-prev" class="btn btn-ghost btn-sm" aria-label="Previous">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  </button>
+                  <button id="btn-cal-today" class="btn btn-ghost btn-sm">Today</button>
+                  <button id="btn-cal-next" class="btn btn-ghost btn-sm" aria-label="Next">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+                <div class="cal-views">
+                  <button class="btn btn-ghost btn-sm cal-mode active" data-cal="week">Week</button>
+                  <button class="btn btn-ghost btn-sm cal-mode" data-cal="agenda">Agenda</button>
+                  <button class="btn btn-ghost btn-sm cal-mode" data-cal="month">Month</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Calendar Filters -->
+            <div class="cal-filters-bar">
+              <div class="filter-item">
+                <label class="label-sm" for="cal-filter-channel">Channel</label>
+                <select id="cal-filter-channel">
+                  <option value="all">All Channels</option>
+                  <option value="WordPress">WordPress (Articles)</option>
+                  <option value="Instagram & TikTok">Instagram &amp; TikTok (Reels)</option>
+                  <option value="Production Queue">Production Queue</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="label-sm" for="cal-filter-format">Format</label>
+                <select id="cal-filter-format">
+                  <option value="all">All Formats</option>
+                  <option value="Article">Article</option>
+                  <option value="Reel">Reel</option>
+                  <option value="Deadline">Deadline</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="label-sm" for="cal-filter-status">Status</label>
+                <select id="cal-filter-status">
+                  <option value="all">All Statuses</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="overlap">Channel Overlaps (Alert)</option>
+                  <option value="missed">Missed Slots</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Calendar Container -->
+            <div id="calendar-body"></div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: INBOX -->
+        <section id="view-inbox" class="view hidden">
+          <div class="card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Unified Editorial Inbox</h2>
+                <p class="hint-text">Email, WordPress, Facebook &amp; Instagram comments. Only the editor can authorize sending replies.</p>
+              </div>
+              <span class="pill pill-offline">Live Auto-Send Disconnected</span>
+            </div>
+            <div id="inbox-list" class="inbox-list"></div>
+          </div>
+        </section>
+
+        <!-- VIEW 5: RESEARCH & OFFICIAL SOURCES -->
+        <section id="view-research" class="view hidden">
+          <div class="card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Official Finnish Sources &amp; Fact Verification</h2>
+                <p class="hint-text">Search official registers, meteorological alerts, legal decrees, and civic updates. Verified claims linked.</p>
+              </div>
+              <span class="pill pill-approved">Official Finnish Feeds</span>
+            </div>
+            
+            <div class="search-box-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <input type="text" id="source-search-input" placeholder="Search official sources (e.g. FMI, Traficom, Migri, THL, Vero, Poliisi)…" style="flex:1;min-width:240px;" />
+              <button id="btn-search-sources" class="btn btn-secondary">
+                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Search</span>
+              </button>
+              <button id="btn-toggle-add-source" class="btn btn-primary" style="font-size:0.8rem;padding:6px 12px;white-space:nowrap;">
+                <span>➕ Add Source</span>
+              </button>
+            </div>
+
+            <!-- Inline Add Custom Official Source Form -->
+            <div id="add-source-form-wrap" class="hidden" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin:12px 0;">
+              <strong style="color:var(--navy);font-size:0.88rem;display:block;margin-bottom:8px;">Add Verified Official Finnish Source</strong>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <input type="text" id="new-src-outlet" placeholder="Authority / Outlet (e.g. Traficom, FMI, Vero)" style="font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;" />
+                <input type="text" id="new-src-category" placeholder="Category (e.g. Transport, Tax, Road Safety)" style="font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;" />
+              </div>
+              <input type="text" id="new-src-title" placeholder="Source Headline (e.g. Finnish Studded Tyre Regulations)" style="width:100%;font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;" />
+              <input type="text" id="new-src-url" placeholder="Official Source URL (https://...)" style="width:100%;font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;" />
+              <textarea id="new-src-claim" placeholder="Verified Claim / Rule Summary" style="width:100%;height:52px;font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;resize:vertical;"></textarea>
+              <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button type="button" id="btn-cancel-add-source" class="btn btn-ghost btn-sm">Cancel</button>
+                <button type="button" id="btn-save-new-source" class="btn btn-primary btn-sm">Save Official Source</button>
+              </div>
+            </div>
+
+            <div id="sources-results-list" class="sources-grid"></div>
+
+            <h3 style="margin-top:24px;color:var(--navy);">Trend &amp; Competitor Signals</h3>
+            <div id="research-list" class="research-grid"></div>
+          </div>
+        </section>
+
+        <!-- VIEW 6: PERFORMANCE BENCHMARKS -->
+        <section id="view-performance" class="view hidden">
+          <div class="card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Performance Intelligence &amp; Search Demand</h2>
+                <p id="perf-notice" class="hint-text" style="margin-top:2px;"></p>
+              </div>
+              <span class="pill pill-offline">
+                <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                Live IG &amp; GSC Disconnected (Sandbox)
+              </span>
+            </div>
+
+            <!-- Top Executive KPI Metric Cards -->
+            <div class="perf-kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-label">48h Avg Watch Time</div>
+                <div class="kpi-val">10.4s</div>
+                <div class="kpi-sub">Top: Winter Tyre Change Guide</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Top Engagement at 48h</div>
+                <div class="kpi-val">142 Saves</div>
+                <div class="kpi-sub">84 Shares • High Utility Hook</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Highest Performing Format</div>
+                <div class="kpi-val">12s Utility &amp; 4:5 Carousel</div>
+                <div class="kpi-sub">+45% Save rate vs general clips</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Follower Conversion</div>
+                <div class="kpi-val">+29 Follows</div>
+                <div class="kpi-sub">Highest per-post conversion</div>
+              </div>
+            </div>
+
+            <!-- AI Editorial Performance Briefing -->
+            <div id="perf-digest" class="perf-digest-box"></div>
+
+            <div class="perf-layout">
+              <div>
+                <div class="table-header-row">
+                  <h3 style="margin:0;font-size:1.02rem;color:var(--navy);">Recent Posts at Comparable 48h Age</h3>
+                  <span class="hint-text" style="font-size:0.78rem;">Sorted by 48h Engagement</span>
+                </div>
+                <div class="table-wrap" style="margin-top:8px;">
+                  <table id="perf-table" class="perf-table">
+                    <thead>
+                      <tr>
+                        <th>Post &amp; Format</th><th>Watch(s)</th><th>Shares</th><th>Saves</th><th>Follows</th><th>Clicks</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <h3 style="margin-top:0;font-size:1.02rem;color:var(--navy);">Search Demand (FI vs EN)</h3>
+                <div id="search-demand-box" class="search-demand-grid"></div>
+
+                <div class="csv-import-box">
+                  <div class="csv-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <h3 style="margin:0;font-size:0.95rem;color:var(--navy);">Manual / CSV Data Import</h3>
+                    <button type="button" id="btn-demo-csv" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:0.75rem;">Load Demo Row</button>
+                  </div>
+                  <textarea id="csv-import-input" rows="3" placeholder="title,format,age_hours,watch_time_sec,shares,saves,follows,site_clicks&#10;Finland Winter Tire Rules,Instagram Carousel (4:5),48,,108,235,41,88"></textarea>
+                  <button id="btn-import-csv" class="btn btn-primary btn-sm" style="margin-top:8px;">Import CSV Rows</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+
+        <!-- VIEW 7: CONNECTIONS & SECRETS -->
+        <section id="view-connections" class="view hidden">
+          <div class="card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Service Connections, AI Secrets &amp; Handover</h2>
+                <p class="hint-text">All credentials stay server-side in host environment secrets. Keys never enter the browser. Target domain: <code>studio.ilovefinland.net</code>.</p>
+              </div>
+              <span class="pill pill-approved">Safe Sandbox Mode</span>
+            </div>
+            
+            <!-- SECURE OPENAI CONNECTION PROBE & SPENDING PROTECTION -->
+            <div id="openai-spending-guard" class="probe-guard-panel" style="background:var(--sky-soft);border:1px solid #BAE6FD;border-radius:10px;padding:16px;margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:1.2rem;">🔒</span>
+                  <div>
+                    <h3 style="margin:0;font-size:1rem;color:var(--navy);">Secure OpenAI Connection Probe (Strict Spending Protection)</h3>
+                    <p class="hint-text" style="margin:2px 0 0;">Zero automatic calls on load • Single-request spending limiter • Lowest-cost model: <code>gpt-4o-mini</code></p>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <span id="probe-demo-pill" class="pill pill-approved">Live Production Ready</span>
+                  <span id="probe-quota-pill" class="pill pill-scheduled">0/1 Tests Used</span>
+                  <span id="probe-kill-pill" class="pill pill-missed hidden">Kill Switch ENGAGED</span>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px;background:#fff;padding:12px;border-radius:8px;border:1px solid #E2E8F0;">
+                <div>
+                  <div class="label-sm">Active Test Model</div>
+                  <strong style="color:var(--navy);font-size:0.92rem;">gpt-4o-mini</strong>
+                  <div class="hint-text">Lowest-cost supported text model</div>
+                </div>
+                <div>
+                  <div class="label-sm">Verified OpenAI Pricing</div>
+                  <div style="font-size:0.85rem;color:var(--navy);">$0.150 / 1M in • $0.600 / 1M out</div>
+                  <div class="hint-text">$0.00000015 / input token</div>
+                </div>
+                <div>
+                  <div class="label-sm">Estimated Test Cost</div>
+                  <div style="font-size:0.85rem;font-weight:700;color:var(--green);">&lt; $0.00001 USD</div>
+                  <div class="hint-text">1 probe: ~14 in + 2 out tokens</div>
+                </div>
+                <div>
+                  <div class="label-sm">Single-Use Limit</div>
+                  <div id="probe-limit-desc" style="font-size:0.85rem;color:var(--navy);">Max 1 request allowed</div>
+                  <div class="hint-text">Requires manual admin reset</div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <button type="button" id="btn-run-mock-probe" class="btn btn-secondary btn-sm">
+                  <span>🧪 Test with Mocked Response (Zero Cost)</span>
+                </button>
+                <button type="button" id="btn-run-live-probe" class="btn btn-primary btn-sm" disabled style="opacity:0.6;cursor:not-allowed;" title="Requires explicit administrator approval to activate">
+                  <span>⚡ Test OpenAI Connection (Paid — Locked)</span>
+                </button>
+                <button type="button" id="btn-toggle-kill-switch" class="btn btn-ghost btn-sm" style="color:#DC2626;border-color:#FCA5A5;">
+                  <span>🛑 Emergency Kill Switch</span>
+                </button>
+                <button type="button" id="btn-reset-probe-quota" class="btn btn-ghost btn-sm">
+                  <span>🔄 Reset Single-Use Quota</span>
+                </button>
+              </div>
+
+              <div id="probe-result-box" class="conn-test-box hidden" style="margin-top:12px;background:#fff;"></div>
+            </div>
+
+            <div id="connections-catalog" class="connections-catalog-grid"></div>
+
+            <!-- DATABASE BACKUPS & DISASTER RECOVERY -->
+            <div class="card" style="margin-top:20px;border-top:1px solid #E2E8F0;padding-top:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+                <div>
+                  <h3 style="margin:0;font-size:1rem;color:var(--navy);">Studio Database Backups &amp; Disaster Recovery</h3>
+                  <p class="hint-text" style="margin:2px 0 0;">Zero-downtime hot snapshots via SQLite Online Backup API. Preserves all stories, revisions, assets, and comments.</p>
+                </div>
+                <button type="button" id="btn-trigger-backup" class="btn btn-primary btn-sm" style="background:#003882;color:#fff;">
+                  <span>💾 Create Backup Snapshot Now</span>
+                </button>
+              </div>
+              <div id="backup-status-msg" class="hidden" style="margin-bottom:12px;padding:8px 12px;border-radius:6px;font-size:0.85rem;"></div>
+              <div id="backups-list-table-wrap">
+                <table class="wp-table" style="width:100%;font-size:0.85rem;" id="backups-table">
+                  <thead>
+                    <tr style="text-align:left;border-bottom:1px solid #cbd5e1;">
+                      <th style="padding:6px 8px;">Backup Snapshot</th>
+                      <th style="padding:6px 8px;">Database Size</th>
+                      <th style="padding:6px 8px;">Local Directory</th>
+                    </tr>
+                  </thead>
+                  <tbody id="backups-tbody">
+                    <tr><td colspan="3" style="padding:10px;color:#64748b;text-align:center;">Loading backups...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+
+        <!-- AI Media Studio: Gemini & Veo Photographic Engine -->
+        <section id="view-ai-media" class="view hidden">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">AI Media Studio</h1>
+              <p class="view-subtitle">Professional photographic &amp; cinematic generation (Google Gemini &amp; Veo) with authentic Finnish aesthetics.</p>
+            </div>
+            <div class="view-actions">
+              <span id="ai-demo-badge" class="badge badge-info">Production Mode: Cost Safeguard Active</span>
+            </div>
+          </div>
+
+          <div class="ethics-advisory-box">
+            <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <div>
+              <strong>Editorial Ethics Rule:</strong> AI-generated content is strictly for illustrative lifestyle, travel, concept, and seasonal features. It must never replace genuine photojournalism of real breaking news events. All exports carry authentic metadata.
+            </div>
+          </div>
+
+          <div class="ai-media-grid">
+            <!-- Left Column: Generation Controls -->
+            <div class="ai-controls-card">
+              <!-- Mode Tabs -->
+              <div class="ai-mode-tabs">
+                <button class="ai-mode-tab active" data-mode="text_to_image" type="button">📷 Text-to-Image</button>
+                <button class="ai-mode-tab" data-mode="image_to_image" type="button">🖼️ Image-to-Image</button>
+                <button class="ai-mode-tab" data-mode="text_to_video" type="button">🎬 Text-to-Video</button>
+                <button class="ai-mode-tab" data-mode="image_to_video" type="button">🎥 Image-to-Video</button>
+              </div>
+
+              <!-- Prompt Input -->
+              <div class="form-group" style="margin-top:16px;">
+                <label for="ai-prompt-input"><strong>Prompt / Story Visual Brief *</strong></label>
+                <textarea id="ai-prompt-input" rows="3" class="form-control" placeholder="Describe the visual scene (e.g., A car fitted with studded tyres driving down a snow-covered highway in Lapland at golden hour...)"></textarea>
+              </div>
+
+              <!-- Reference Image (shown for I2I and I2V) -->
+              <div id="ai-ref-group" class="form-group hidden">
+                <label><strong>Reference Image (Subject Appearance Preservation)</strong></label>
+                <div class="ref-upload-row" style="display:flex;gap:8px;">
+                  <input type="file" id="ai-ref-file-input" accept="image/*" class="form-control" style="font-size:12px;">
+                  <button id="ai-btn-use-featured-ref" class="btn btn-secondary btn-sm" type="button">Use Story Photo</button>
+                </div>
+                <div id="ai-ref-preview-wrap" class="ref-preview-wrap hidden" style="margin-top:8px;">
+                  <img id="ai-ref-preview-img" src="" alt="Reference Preview" style="max-height:80px;border-radius:6px;border:1px solid #ccc;">
+                  <span id="ai-ref-name" style="font-size:12px;color:#666;margin-left:8px;"></span>
+                </div>
+                <div style="margin-top:8px;">
+                  <label for="ai-fidelity-slider" style="font-size:12px;color:#555;">Subject Fidelity: <span id="ai-fidelity-val">85%</span></label>
+                  <input type="range" id="ai-fidelity-slider" min="50" max="95" value="85" style="width:100%;">
+                </div>
+              </div>
+
+              <!-- Model Selector -->
+              <div class="form-row" style="display:flex;gap:12px;margin-top:12px;">
+                <div class="form-group" style="flex:1;">
+                  <label for="ai-model-select"><strong>AI Model</strong></label>
+                  <select id="ai-model-select" class="form-control">
+                    <optgroup label="Google Gemini Image Models">
+                      <option value="nano-banana-pro" selected>Google Gemini Nano Banana Pro ($0.03/img)</option>
+                      <option value="imagen-3.0-generate-002">Google Imagen 3 Photorealistic ($0.03/img)</option>
+                      <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Multimodal ($0.02/img)</option>
+                      <option value="studio-dslr-engine">Studio Native DSLR Engine (Demo / $0.00)</option>
+                    </optgroup>
+                    <optgroup label="Google Veo Video Models">
+                      <option value="veo-2.0-generate-001">Google Veo 2.0 Motion ($0.15/sec)</option>
+                      <option value="veo-preview">Google Veo Preview ($0.12/sec)</option>
+                      <option value="studio-veo-engine">Studio Native Motion Engine (Demo / $0.00)</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div class="form-group" style="flex:1;">
+                  <label for="ai-surface-select"><strong>Surface &amp; Aspect Ratio</strong></label>
+                  <select id="ai-surface-select" class="form-control">
+                    <option value="4:5" selected>1080 × 1350 (4:5 Social Graphic)</option>
+                    <option value="9:16">1080 × 1920 (9:16 Vertical Reel)</option>
+                    <option value="3:2">1200 × 800 (3:2 WordPress Featured Image)</option>
+                    <option value="16:9">1200 × 675 (16:9 WordPress Banner)</option>
+                    <option value="1:1">1080 × 1080 (1:1 Feed Square)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Finnish Environment & Camera Controls -->
+              <div class="form-row" style="display:flex;gap:12px;margin-top:12px;">
+                <div class="form-group" style="flex:1;">
+                  <label for="ai-env-select"><strong>Finnish Environment Preset</strong></label>
+                  <select id="ai-env-select" class="form-control">
+                    <option value="winter_subzero" selected>Finnish Winter — Sub-Zero &amp; Snowbanks</option>
+                    <option value="golden_hour_sunset">Nordic Golden Hour Sunset</option>
+                    <option value="helsinki_urban">Urban Helsinki — Architecture &amp; Cobbles</option>
+                    <option value="midsummer_midnight_sun">Finnish Midsummer — Midnight Sun</option>
+                    <option value="autumn_ruska">Lapland Autumn Ruska</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="flex:1;">
+                  <label for="ai-camera-select"><strong>DSLR Optics &amp; Lens</strong></label>
+                  <select id="ai-camera-select" class="form-control">
+                    <option value="reportage_35mm" selected>35mm f/2.0 — Environmental Reportage</option>
+                    <option value="portrait_detail_85mm">85mm f/1.8 — Subject Separation &amp; Bokeh</option>
+                    <option value="landscape_24mm">24mm f/5.6 — Expansive Landscape</option>
+                    <option value="macro_100mm">100mm f/2.8 Macro — Stud &amp; Tread Precision</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Video Motion Controls (shown when video mode active) -->
+              <div id="ai-video-controls" class="form-row hidden" style="display:flex;gap:12px;margin-top:12px;">
+                <div class="form-group" style="flex:1;">
+                  <label for="ai-duration-select"><strong>Duration</strong></label>
+                  <select id="ai-duration-select" class="form-control">
+                    <option value="12" selected>12 seconds (Reel standard)</option>
+                    <option value="5">5 seconds (Quick clip)</option>
+                    <option value="10">10 seconds</option>
+                    <option value="15">15 seconds (Max loop)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1;">
+                  <label for="ai-camera-motion-select"><strong>Veo Camera Movement</strong></label>
+                  <select id="ai-camera-motion-select" class="form-control">
+                    <option value="forward_tracking" selected>Smooth Forward Tracking</option>
+                    <option value="low_angle_wheel_follow">Low-Angle Wheel Follow</option>
+                    <option value="wide_forest_drone">Wide Forest Drone</option>
+                    <option value="expansive_crane_pan">Expansive Crane Pan</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Cost Estimate & Approval Gate -->
+              <div class="ai-cost-card" style="margin-top:16px;">
+                <div class="ai-cost-row">
+                  <div>
+                    <span class="ai-cost-label">Estimated API Cost:</span>
+                    <strong id="ai-cost-display" class="ai-cost-val">$0.00 USD (Manual Approval Required)</strong>
+                  </div>
+                  <div id="ai-approval-gate" class="ai-approval-gate hidden">
+                    <label style="font-size:12px;cursor:pointer;">
+                      <input type="checkbox" id="ai-approval-checkbox">
+                      <span>Approve billed API spend</span>
+                    </label>
+                  </div>
+                </div>
+                <p id="ai-approval-subtext" style="font-size:11px;color:#666;margin:4px 0 0 0;">Zero charges apply until you explicitly approve paid generation.</p>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="ai-action-buttons" style="margin-top:16px;">
+                <button id="btn-ai-generate" class="btn btn-primary" style="flex:2;" type="button">
+                  <span id="btn-ai-generate-spinner" class="spinner-sm hidden"></span>
+                  <span id="btn-ai-generate-text">✨ Generate Photographic Visual (Stage 1)</span>
+                </button>
+                <button id="btn-ai-regen" class="btn btn-secondary hidden" style="flex:1;" type="button">
+                  🔄 Regenerate
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Column: Dual Stage Output (Clean vs Branded) -->
+            <div class="ai-output-card">
+              <div class="ai-output-header">
+                <h3>Visual Output &amp; Studio Exports</h3>
+                <div class="ai-stage-toggle">
+                  <button id="btn-show-clean" class="btn btn-sm btn-secondary active" type="button">Stage 1: Clean Raw</button>
+                  <button id="btn-show-branded" class="btn btn-sm btn-secondary" type="button">Stage 2: Branded</button>
+                </div>
+              </div>
+
+              <div id="ai-preview-placeholder" class="ai-preview-empty">
+                <svg class="lucide" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                <p style="margin:12px 0 4px 0;font-weight:600;">Generated photo or video preview will appear here.</p>
+                <span style="font-size:12px;color:#888;">Supports clean raw download and Studio-branded social export.</span>
+              </div>
+
+              <div id="ai-preview-active" class="ai-preview-content hidden">
+                <!-- Image Display -->
+                <div id="ai-img-container" class="ai-media-container">
+                  <img id="ai-result-clean-img" src="" alt="Clean Generated Output" class="ai-media-preview">
+                  <img id="ai-result-branded-img" src="" alt="Branded Output" class="ai-media-preview hidden">
+                </div>
+
+                <!-- Video Display -->
+                <div id="ai-vid-container" class="ai-media-container hidden">
+                  <video id="ai-result-video" controls playsinline class="ai-media-preview"></video>
+                </div>
+
+                <!-- Technical Specs & Ethics Tag -->
+                <div id="ai-meta-specs" class="ai-meta-specs" style="margin-top:12px;"></div>
+
+                <!-- Export & Integration Buttons -->
+                <div class="ai-export-row" style="margin-top:16px;">
+                  <a id="ai-btn-download-clean" href="#" download class="btn btn-secondary btn-sm" style="flex:1;text-align:center;">
+                    ⬇️ Download Clean Asset
+                  </a>
+                  <a id="ai-btn-download-branded" href="#" download class="btn btn-primary btn-sm" style="flex:1;text-align:center;">
+                    ⬇️ Download Branded Asset
+                  </a>
+                </div>
+
+                <div class="ai-story-integrate-row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                  <button id="ai-btn-apply-to-featured" class="btn btn-ghost btn-sm" type="button" style="flex:1;min-width:180px;">
+                    📌 Apply as Article Featured Image
+                  </button>
+                  <button id="ai-btn-apply-to-post" class="btn btn-ghost btn-sm" type="button" style="flex:1;min-width:180px;">
+                    📱 Apply as Static Post Background
+                  </button>
+                  <button id="ai-btn-apply-to-reel" class="btn btn-ghost btn-sm" type="button" style="flex:1;min-width:180px;">
+                    🎬 Apply as Reel Video Background
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+      </main>
+    </div>
+
+    <!-- Phone: always-reachable approval bar above bottom navigation (only active on Review screen) -->
+    <div id="approve-bar" class="approve-bar hidden" aria-label="Approvals">
+      <button id="btn-approve-article-m" class="btn btn-approve">
+        <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>For Approval</span>
+      </button>
+      <button id="btn-approve-reel-m" class="btn btn-approve">
+        <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>For Approval</span>
+      </button>
+      <button id="btn-approve-ig-m" class="btn btn-approve hidden">
+        <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>For Approval</span>
+      </button>
+    </div>
+
+    <!-- Phone Bottom Navigation -->
+    <nav class="bottom-nav" aria-label="Mobile navigation">
+      <button class="bnav-item active" data-view="projects">
+        <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Projects</span>
+      </button>
+      <button class="bnav-item" data-view="review">
+        <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <span>Review</span>
+      </button>
+      <button class="bnav-item" data-view="assignments">
+        <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+        <span>Assign</span>
+      </button>
+      <button class="bnav-item" data-view="calendar">
+        <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <span>Calendar</span>
+      </button>
+      <button class="bnav-item" data-view="connections">
+        <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+        <span>More</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Quick Edit Project Modal -->
+  <div id="modal-edit-proj" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="margin:0;font-size:1.05rem;color:var(--navy);">Quick Edit Project</h3>
+        <button type="button" id="btn-close-edit-modal" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:1rem;line-height:1;">✕</button>
+      </div>
+      <form id="form-edit-proj" class="stack-form" style="margin-top:12px;">
+        <input type="hidden" id="edit-proj-id" />
+        <div>
+          <label class="label-sm" for="edit-proj-title">Project / Story Title</label>
+          <input type="text" id="edit-proj-title" required />
+        </div>
+        <div>
+          <label class="label-sm" for="edit-proj-scope">Format / Scope</label>
+          <select id="edit-proj-scope">
+            <option value="Both">Both (Article + Reel)</option>
+            <option value="Both (Article + Instagram Post)">Both (Article + Instagram Post)</option>
+            <option value="Instagram Post">Instagram Post / Carousel (4:5)</option>
+            <option value="Reel">Reel Only</option>
+            <option value="Article">Article Only</option>
+          </select>
+        </div>
+        <div>
+          <label class="label-sm" for="edit-proj-deadline">Production Deadline (Europe/Helsinki)</label>
+          <input type="datetime-local" id="edit-proj-deadline" />
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+          <button type="button" id="btn-cancel-edit-proj" class="btn btn-ghost btn-sm">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Direct Save to Photos Modal (iPhone Apple Photos & Android Gallery) -->
+  <div id="modal-save-to-photos" class="modal-overlay hidden">
+    <div class="modal-card save-photos-card">
+      <div class="modal-header">
+        <h3 style="margin:0;font-size:1.05rem;color:var(--navy);display:flex;align-items:center;gap:6px;">
+          <span>📲</span> Save Directly to Photos
+        </h3>
+        <button type="button" id="btn-close-save-photos" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:4px 8px;">✕</button>
+      </div>
+
+      <div class="save-photos-instructions">
+        <strong>📸 Save to Camera Roll (No iCloud/Drive required):</strong>
+        <p style="margin:4px 0 0;">
+          <strong>• iPhone / iPad:</strong> Press and hold the picture below, then tap <strong>“Save to Photos”</strong>.<br />
+          <strong>• Android:</strong> Press and hold the picture below, then tap <strong>“Download image”</strong> (saved straight into your Gallery).
+        </p>
+      </div>
+
+      <div class="save-photos-img-container">
+        <img id="save-photos-modal-img" src="" alt="High Resolution Post Graphic" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button type="button" id="btn-save-photos-native-share" class="btn btn-primary" style="flex:1;padding:10px 12px;font-size:0.85rem;">
+          <span>📤 Open Native Share / Save Sheet</span>
+        </button>
+        <button type="button" id="btn-close-save-photos-done" class="btn btn-secondary" style="padding:10px 16px;">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/reel-player.js?v=23.0"></script>
+  <script src="/app.js?v=23.0"></script>
+</body>
+</html>

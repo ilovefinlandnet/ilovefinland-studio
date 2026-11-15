@@ -1,0 +1,32 @@
+{
+  "created_at": "2026-11-13T04:38:44",
+  "source": "/Users/binod721/.gemini/antigravity/scratch/ilovefinland-studio",
+  "database": "studio.db",
+  "db_counts": {
+    "packages": 1,
+    "package_versions": 9,
+    "assignments": 1,
+    "comments": 6,
+    "approval_history": 4,
+    "daily_review_runs": 15,
+    "integrity_check": "ok"
+  },
+  "files": {
+    "studio.db": "bfd52f6875b352876bac8ce2d9a4f741e6ddd3500dece530d9344607576f8edf",
+    "files/static/assets/photos/studded-winter-tyre-original.jpg": "cd6cfd6d52554da5163029bad016a457b6b30f5059928e8adf1169e43b441b76",
+    "files/static/assets/photos/user-studded-winter-tyre.jpg": "cc06550cc33a2b0f4183311e6b5c83535506bdfea3c57000653d7534beb8ed0a",
+    "files/static/assets/photos/winter-tyre-michelin-xice-original.jpg": "edeec772ce246662b05bed8a02244aad63662e81b1390648aaa6cceff87c94ab",
+    "files/static/assets/photos/winter-tyre-michelin-xice-original.provenance.json": "9ce4f923a8ab1f629760eaf42e8cecf42fa061d0bbe13bb722ca79ba5ec5b5fa",
+    "files/static/assets/uploads/clip_6254ed83_gemini_generated_video_b8bc3442.mp4": "f425d445cd98b8af3e259420b7acbc103bedab212d7d84573e8baeedecd296db",
+    "files/static/assets/uploads/clip_c423203d_gemini_generated_video_b8bc3442.mp4": "f425d445cd98b8af3e259420b7acbc103bedab212d7d84573e8baeedecd296db",
+    "files/static/assets/uploads/clip_f863b52e_my_studded_tyre_clip.mp4": "7169944dcbb0fb2c4f1ed1be6e2acb3206932feb983aa984db0ae09423121b9c",
+    "files/static/assets/uploads/clip_fc81b772_my_studded_tyre_clip.mp4": "7169944dcbb0fb2c4f1ed1be6e2acb3206932feb983aa984db0ae09423121b9c",
+    "files/static/assets/uploads/user-studded-winter-tyre.jpg": "cc06550cc33a2b0f4183311e6b5c83535506bdfea3c57000653d7534beb8ed0a",
+    "files/data/live_snapshot.json": "2a22f302809f018d348c0515ab8230f6ff2646743ba0f7c2a30d7039b41d7826",
+    "files/data/studio.db": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "excluded": [
+    ".env",
+    "server_keys.txt"
+  ]
+}

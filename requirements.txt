@@ -1,0 +1,4 @@
+# ILoveFinland Studio - Python Dependencies
+# The core studio is built primarily on the Python standard library (sqlite3, urllib, http.server, wave, etc.)
+# Lightweight utilities:
+pillow>=10.0.0

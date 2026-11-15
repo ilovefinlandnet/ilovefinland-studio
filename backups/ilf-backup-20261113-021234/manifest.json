@@ -1,0 +1,24 @@
+{
+  "created_at": "2026-11-13T02:12:34",
+  "source": "/Users/binod721/.gemini/antigravity/scratch/ilovefinland-studio",
+  "database": "studio.db",
+  "db_counts": {
+    "packages": 39,
+    "package_versions": 73,
+    "assignments": 33,
+    "comments": 25,
+    "approval_history": 4,
+    "daily_review_runs": 6,
+    "integrity_check": "ok"
+  },
+  "files": {
+    "studio.db": "867e6c06ab274569a92866ea80c7d0e3a14f3970ed9c1a993c62e6761f1cfc2d",
+    "files/static/assets/photos/winter-tyre-michelin-xice-original.jpg": "edeec772ce246662b05bed8a02244aad63662e81b1390648aaa6cceff87c94ab",
+    "files/static/assets/photos/winter-tyre-michelin-xice-original.provenance.json": "9ce4f923a8ab1f629760eaf42e8cecf42fa061d0bbe13bb722ca79ba5ec5b5fa",
+    "files/data/live_snapshot.json": "2a22f302809f018d348c0515ab8230f6ff2646743ba0f7c2a30d7039b41d7826"
+  },
+  "excluded": [
+    ".env",
+    "server_keys.txt"
+  ]
+}

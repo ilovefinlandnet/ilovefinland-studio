@@ -1,0 +1,1098 @@
+<?php
+/**
+ * Plugin Name: ILoveFinland Content
+ * Plugin URI: https://ilovefinland.net
+ * Description: Editorial sections, article details and writer permissions for the separate ILoveFinland WordPress edition. Does not connect to or migrate the AI site's database.
+ * Version: 0.4.6
+ * Author: ILF Team
+ * Author URI: https://ilovefinland.net
+ * License: GPL-2.0-or-later
+ * Text Domain: ilf-content
+ */
+if (!defined('ABSPATH')) exit;
+
+function ilfc_sections() { return array('news'=>'News','things-to-do'=>'Things to Do','events'=>'Events','guide'=>'Finland Guide','food'=>'Food & Restaurants','travel'=>'Travel','shopping'=>'Shopping'); }
+
+function ilfc_section_categories_map() {
+    return array(
+        'news' => array('finland','international','business','education','sports','culture-events','weather','politics','society','technology'),
+        'things-to-do' => array('nature','outdoor-activities','family-activities','winter-activities','summer-activities','beaches','museums','culture-traditions','activities','attractions'),
+        'events' => array('culture-events','festivals','concerts','sports-events','exhibitions','events','music'),
+        'guide' => array('residence-permits','work','work-in-finland','study-in-finland','moving-to-finland','housing','housing-in-finland','banking','banking-money','cost-of-living','driving','healthcare','finnish-language','government-services','everyday-life','taxes'),
+        'food' => array('restaurants-cafes','restaurants','cafes','finnish-food','recipes-experiences','bars-nightlife','food'),
+        'travel' => array('lapland','finnish-archipelago','finnish-lakeland','national-parks','northern-lights','hotels','cabins','camping','lakes','helsinki','destinations'),
+        'shopping' => array('shopping','shopping-in-finland','finnish-design','markets','malls','souvenirs'),
+    );
+}
+
+function ilfc_register() {
+    register_taxonomy('ilf_section',array('post','ilf_event'),array('label'=>'Section','labels'=>array('name'=>'Sections','singular_name'=>'Section'),'public'=>true,'hierarchical'=>true,'show_in_rest'=>true,'rewrite'=>array('slug'=>'section'),'show_admin_column'=>true,'meta_box_cb'=>false));
+    register_post_type('ilf_job',array('label'=>'Jobs','public'=>true,'has_archive'=>'jobs','rewrite'=>array('slug'=>'jobs'),'show_in_rest'=>true,'supports'=>array('title','editor','author','thumbnail','excerpt','revisions'),'menu_icon'=>'dashicons-businessperson'));
+    register_post_type('ilf_classified',array('label'=>'Classifieds','public'=>true,'has_archive'=>'classifieds','rewrite'=>array('slug'=>'classifieds'),'show_in_rest'=>true,'supports'=>array('title','editor','author','thumbnail','excerpt','revisions'),'menu_icon'=>'dashicons-megaphone'));
+    register_post_type('ilf_event',array('label'=>'Events','public'=>true,'has_archive'=>'events-all','rewrite'=>array('slug'=>'event'),'show_in_rest'=>true,'supports'=>array('title','editor','author','thumbnail','excerpt','revisions','custom-fields'),'menu_icon'=>'dashicons-calendar-alt'));
+    foreach(array('ilf_language','ilf_location','ilf_credit','ilf_exact_place','ilf_event_start','ilf_expires') as $key) {
+        register_post_meta('post',$key,array('type'=>'string','single'=>true,'show_in_rest'=>true,'sanitize_callback'=>$key==='ilf_credit'?'wp_kses_post':'sanitize_text_field','auth_callback'=>function($allowed,$meta_key,$post_id){return current_user_can('edit_post',$post_id);}));
+        register_post_meta('ilf_event',$key,array('type'=>'string','single'=>true,'show_in_rest'=>true,'sanitize_callback'=>$key==='ilf_credit'?'wp_kses_post':'sanitize_text_field','auth_callback'=>function($allowed,$meta_key,$post_id){return current_user_can('edit_post',$post_id);}));
+    }
+    foreach(array_keys(ilfc_sections()) as $slug) add_rewrite_rule('^'.$slug.'/?$','index.php?ilf_section='.$slug,'top');
+    add_rewrite_rule('^articles/?$','index.php?post_type=post','top');
+    add_rewrite_rule('^advertise/?$','index.php?ilf_info=advertise','top');
+}
+add_action('init','ilfc_register');
+add_filter('query_vars',function($vars){$vars[]='ilf_info';return $vars;});
+add_filter('template_include',function($template){if(get_query_var('ilf_info')==='advertise'){ $candidate=locate_template('page-advertise.php'); if($candidate)return $candidate;}return $template;});
+
+/** Keep the existing writer role aligned after plugin updates as well as activation. */
+function ilfc_enforce_writer_caps() {
+    $writer = get_role('ilf_writer');
+    if (!$writer) return;
+    foreach (array('delete_posts','delete_published_posts','delete_others_posts','publish_posts','edit_others_posts','edit_published_posts','read_private_posts','edit_private_posts','delete_private_posts','promote_users','edit_users','create_users','delete_users','remove_users','list_users') as $cap) {
+        $writer->remove_cap($cap);
+    }
+    foreach (array('read'=>true,'edit_posts'=>true,'upload_files'=>true) as $cap=>$grant) $writer->add_cap($cap,$grant);
+}
+add_action('init','ilfc_enforce_writer_caps',20);
+
+function ilfc_activate() {
+    ilfc_register();
+    foreach(ilfc_sections() as $slug=>$label) if(!term_exists($slug,'ilf_section')) wp_insert_term($label,'ilf_section',array('slug'=>$slug));
+    $topics=array('Finland','International','Business','Education','Sports','Culture & Events','Weather','Nature','National Parks','Lakes','Beaches','Museums','Family Activities','Outdoor Activities','Winter Activities','Summer Activities','Moving to Finland','Residence Permits','Work','Study in Finland','Healthcare','Banking','Taxes','Public Transport','Driving','Housing','Finnish Language','Cost of Living','Government Services','Culture & Traditions','Lapland','Helsinki','Finnish Lakeland','Finnish Archipelago','Northern Lights','Summer Travel','Winter Travel','Road Trips','Camping','Cabins','Hotels');
+    foreach($topics as $topic) if(!term_exists($topic,'category')) wp_insert_term($topic,'category');
+    add_role('ilf_writer','ILF Writer',array('read'=>true,'edit_posts'=>true,'upload_files'=>true));
+    ilfc_enforce_writer_caps();
+    // New installation only. Existing WordPress permalink settings are preserved.
+    if(!get_option('permalink_structure')) update_option('permalink_structure','/articles/%postname%/');
+    flush_rewrite_rules(false);
+}
+register_activation_hook(__FILE__,'ilfc_activate');
+
+/** Writers can edit their own unpublished drafts or assigned drafts, and cannot delete editorial records. */
+add_filter('map_meta_cap',function($caps,$cap,$user_id,$args){
+    if (!in_array($cap,array('edit_post','delete_post'),true) || empty($args[0])) return $caps;
+    $user=get_userdata($user_id);
+    if (!$user || !in_array('ilf_writer',(array)$user->roles,true)) return $caps;
+    $post=get_post((int)$args[0]);
+    if (!$post || $post->post_type!=='post') return $caps;
+    if ($cap==='delete_post') return array('do_not_allow');
+    // Writers cannot edit published, scheduled, private or trashed articles.
+    if (in_array($post->post_status,array('publish','future','private','trash'),true)) return array('do_not_allow');
+    // Writers can edit their own drafts, drafts created for the team/seeded (author ID 1), or drafts assigned to them.
+    $assigned_writer=(int)get_post_meta($post->ID,'_ilfa_assigned_writer',true);
+    if ((int)$post->post_author===(int)$user_id || ((int)$post->post_author===1 && in_array($post->post_status,array('draft','auto-draft','pending'),true)) || $assigned_writer===(int)$user_id) {
+        return array('edit_posts');
+    }
+    return array('do_not_allow');
+},10,4);
+
+/** Enforce review-only status transitions even when a request bypasses the editor UI. */
+add_filter('wp_insert_post_data',function($data,$postarr){
+    $user=wp_get_current_user();
+    if (!$user || !in_array('ilf_writer',(array)$user->roles,true) || empty($data['post_type']) || $data['post_type']!=='post') return $data;
+    $existing=!empty($postarr['ID'])?get_post((int)$postarr['ID']):null;
+    if ($existing && (int)$existing->post_author!==(int)$user->ID && (int)$existing->post_author!==1) return $data;
+    if (!$existing) $data['post_author']=(int)$user->ID;
+    if ($existing && in_array($existing->post_status,array('publish','future','private','trash'),true)) {
+        $data['post_status']=$existing->post_status;
+        return $data;
+    }
+    if (in_array($data['post_status'],array('publish','future','private','trash'),true)) $data['post_status']=$existing?$existing->post_status:'pending';
+    return $data;
+},10,2);
+
+add_action('add_meta_boxes',function(){ add_meta_box('ilf-article-details','ILoveFinland article details','ilfc_details','post','normal','high'); });
+function ilfc_details($post) {
+    wp_nonce_field('ilfc_save','ilfc_nonce');
+    $section=wp_get_object_terms($post->ID,'ilf_section',array('fields'=>'slugs'));$selected_section=!is_wp_error($section)&&$section?$section[0]:'';
+    $current_lang=get_post_meta($post->ID,'ilf_language',true)?:(function_exists('ilf_language')?ilf_language():'en');
+    echo '<p>Complete these editorial details, save a draft and preview it. When ready, submit it for editorial review. Writers cannot publish or delete articles.</p>';
+    echo '<p><label><strong>Article Language</strong><br><select name="ilf_language" style="width:100%;max-width:320px">';
+    echo '<option value="en" '.selected($current_lang,'en',false).'>English (EN)</option>';
+    echo '<option value="fi" '.selected($current_lang,'fi',false).'>Finnish (FI) — Suomi</option>';
+    echo '</select></label></p>';
+    echo '<p><label><strong>Section</strong><br><select name="ilf_section" style="width:100%;max-width:320px"><option value="">Select a section</option>';
+    foreach(ilfc_sections() as $slug=>$label)echo '<option value="'.esc_attr($slug).'"'.selected($selected_section,$slug,false).'>'.esc_html($label).'</option>';
+    echo '</select></label></p>';
+    $fields=array('ilf_location'=>array('Location / City','text'),'ilf_exact_place'=>array('Exact place or address (optional)','text'),'ilf_event_start'=>array('Event start (Europe/Helsinki, for Upcoming Events)','datetime-local'),'ilf_credit'=>array('Main image credit / caption (optional; links allowed)','textarea'));
+    foreach($fields as $key=>$spec){echo '<p><label><strong>'.esc_html($spec[0]).'</strong><br>';if($spec[1]==='textarea')echo '<textarea name="'.esc_attr($key).'" rows="3" class="widefat">'.esc_textarea(get_post_meta($post->ID,$key,true)).'</textarea>';else echo '<input class="widefat" type="'.esc_attr($spec[1]).'" name="'.esc_attr($key).'" value="'.esc_attr(get_post_meta($post->ID,$key,true)).'">';echo '</label></p>';}
+    echo '<p>For additional images, use Image or Gallery blocks and fill their individual captions and alt text. Select one topic using WordPress Categories. Author, publication dates and URL are generated by WordPress.</p>';
+}
+
+add_action('save_post_post',function($id){
+    if(defined('DOING_AUTOSAVE')&&DOING_AUTOSAVE)return;
+    if(wp_is_post_revision($id)||!current_user_can('edit_post',$id))return;
+    if(!isset($_POST['ilfc_nonce'])||!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ilfc_nonce'])),'ilfc_save')){
+        if(!get_post_meta($id,'ilf_language',true))update_post_meta($id,'ilf_language','en');
+        return;
+    }
+    $lang=isset($_POST['ilf_language'])&&in_array($_POST['ilf_language'],array('en','fi'),true)?sanitize_key($_POST['ilf_language']):'en';
+    update_post_meta($id,'ilf_language',$lang);
+    foreach(array('ilf_location','ilf_exact_place','ilf_event_start','ilf_credit') as $key){if(!isset($_POST[$key]))continue;$raw=wp_unslash($_POST[$key]);$value=$key==='ilf_credit'?wp_kses_post($raw):sanitize_text_field($raw);update_post_meta($id,$key,$value);}
+    if(isset($_POST['ilf_section'])){$slug=sanitize_key(wp_unslash($_POST['ilf_section']));if(array_key_exists($slug,ilfc_sections()))wp_set_object_terms($id,$slug,'ilf_section');}
+});
+
+/** ILoveFinland account workspace. Existing WordPress authentication remains authoritative. */
+if (!defined('ABSPATH')) exit;
+
+function ilfa_t($en,$fi=''){return function_exists('ilf_text')?ilf_text($en,$fi?:$en):$en;}
+function ilfa_url($view='overview',$args=array()){return add_query_arg(array_merge(array('ilf_portal'=>$view,'lang'=>function_exists('ilf_language')?ilf_language():'en'),$args),home_url('/'));}
+function ilfa_editor(){return current_user_can('edit_others_posts')&&current_user_can('publish_posts');}
+function ilfa_writer(){return current_user_can('edit_posts');}
+function ilfa_stage($p){return get_post_meta($p->ID,'_ilfa_stage',true)?:array('pending'=>'submitted','publish'=>'published','future'=>'scheduled','trash'=>'removed')[$p->post_status]??'draft';}
+function ilfa_stages(){return array('draft'=>ilfa_t('Draft','Luonnos'),'submitted'=>ilfa_t('Submitted','Lähetetty'),'assigned'=>ilfa_t('Assigned to Editor','Osoitettu toimittajalle'),'in_review'=>ilfa_t('In Review','Tarkistuksessa'),'changes'=>ilfa_t('Corrections Requested','Korjauspyyntö'),'resubmitted'=>ilfa_t('Resubmitted','Lähetetty uudelleen'),'approved'=>ilfa_t('Approved','Hyväksytty'),'scheduled'=>ilfa_t('Scheduled','Ajastettu'),'published'=>ilfa_t('Published','Julkaistu'),'rejected'=>ilfa_t('Rejected','Hylätty'),'closed'=>ilfa_t('Closed / Sold','Suljettu / Myyty'));}
+function ilfa_can_edit($p){if(!$p)return false;$uid=get_current_user_id();if(!$uid)return false;if($p->post_type==='post'){if(current_user_can('manage_options')||current_user_can('edit_others_posts'))return true;if(current_user_can('edit_post',$p->ID)&&!in_array($p->post_status,array('publish','future','trash'),true))return true;return false;}if(in_array($p->post_type,array('ilf_job','ilf_classified','ilfa_pitch'),true))return current_user_can('manage_options')||(int)$p->post_author===$uid;return false;}
+function ilfa_notice($uid,$message,$id=0){$n=get_user_meta($uid,'_ilfa_notices',true);if(!is_array($n))$n=array();array_unshift($n,array('time'=>current_time('mysql'),'message'=>sanitize_text_field($message),'post'=>(int)$id));update_user_meta($uid,'_ilfa_notices',array_slice($n,0,100));$user=get_userdata($uid);if($user&&get_option('ilfa_transactional_email_enabled',false))wp_mail($user->user_email,'ILoveFinland — account update',sanitize_text_field($message)."\n\n".ilfa_url('notifications'));}
+function ilfa_audit($action,$id=0){$n=get_option('ilfa_audit',array());$n[]=array('time'=>current_time('mysql'),'user'=>get_current_user_id(),'action'=>sanitize_text_field($action),'post'=>(int)$id);update_option('ilfa_audit',array_slice($n,-500),false);}
+function ilfa_form_start($action,$id=0){echo '<form method="post" enctype="multipart/form-data" action="'.esc_url(admin_url('admin-post.php')).'" class="ilfa-form" novalidate>';wp_nonce_field('ilfa_'.$action);echo '<input type="hidden" name="action" value="ilfa_action"><input type="hidden" name="task" value="'.esc_attr($action).'"><input type="hidden" name="post_id" value="'.(int)$id.'">';}
+function ilfa_field($name,$label,$value='',$type='text',$required=false){echo '<label>'.esc_html($label);if($type==='textarea')echo '<textarea name="'.esc_attr($name).'" rows="5" '.($required?'required':'').'>'.esc_textarea($value).'</textarea>';else echo '<input type="'.esc_attr($type).'" name="'.esc_attr($name).'" value="'.esc_attr($value).'" '.($required?'required':'').'>';echo '</label>';}
+function ilfa_select($name,$label,$options,$value=''){echo '<label>'.esc_html($label).'<select name="'.esc_attr($name).'">';foreach($options as $k=>$v)echo '<option value="'.esc_attr($k).'" '.selected((string)$value,(string)$k,false).'>'.esc_html($v).'</option>';echo '</select></label>';}
+function ilfa_meta($p,$key){return $p?get_post_meta($p->ID,$key,true):'';}
+function ilfa_button($text,$value='save'){echo '<button class="button button-primary" name="intent" value="'.esc_attr($value).'">'.esc_html($text).'</button>';}
+function ilfa_link($text,$view,$args=array()){echo '<a class="ilfa-link" href="'.esc_url(ilfa_url($view,$args)).'">'.esc_html($text).'</a>';}
+
+add_action('init',function(){register_post_type('ilfa_pitch',array('label'=>'Story pitches','public'=>false,'show_ui'=>false,'supports'=>array('title','editor','author','revisions')));});
+/* Jobs and classifieds never inherit an Editor's article-publishing permission. */
+add_filter('map_meta_cap',function($caps,$cap,$uid,$args){if(!in_array($cap,array('edit_post','delete_post','read_post'),true)||empty($args[0]))return $caps;$p=get_post((int)$args[0]);if(!$p||!in_array($p->post_type,array('ilf_job','ilf_classified'),true))return $caps;if(user_can($uid,'manage_options'))return $caps;if((int)$p->post_author!==(int)$uid&&$p->post_status!=='publish')return array('do_not_allow');if($cap!=='read_post')return array('do_not_allow');return $caps;},40,4);
+add_filter('wp_insert_post_data',function($data){if(in_array($data['post_type']??'',array('ilf_job','ilf_classified'),true)&&is_user_logged_in()&&!current_user_can('manage_options')&&in_array($data['post_status'],array('publish','future','private'),true))$data['post_status']='pending';return $data;},40);
+
+/* Every mutation is authenticated, nonce-protected, allowlisted and checked for ownership. */
+add_action('admin_post_ilfa_action',function(){
+ if(!is_user_logged_in())wp_die('Sign in required.',403);
+ $task=sanitize_key(wp_unslash($_POST['task']??''));
+ if(!in_array($task,array('save','review','listing_state','pitch','save_item','report','preferences','assign','update_request','post_action','user_role','add_term','upload_media','delete_media','site_settings','comment_action'),true))wp_die('Unknown action.',400);
+ check_admin_referer('ilfa_'.$task);
+ $uid=get_current_user_id();$id=absint($_POST['post_id']??0);$p=$id?get_post($id):null;
+ $return='overview';
+ if($task==='save'){
+  $type=sanitize_key($_POST['kind']??'post');if(!in_array($type,array('post','ilf_job','ilf_classified'),true))wp_die('Invalid content type.',400);
+  if($p&&($p->post_type!==$type||!ilfa_can_edit($p)))wp_die('You cannot edit this item.',403);
+  if($type==='post'&&!ilfa_writer())wp_die('Writer approval required.',403);
+  $title=sanitize_text_field(wp_unslash($_POST['headline']??''));$body=wp_kses_post(wp_unslash($_POST['article_body']??''));$excerpt=sanitize_textarea_field(wp_unslash($_POST['excerpt']??''));
+  $intent=sanitize_key($_POST['intent']??'save');if(!in_array($intent,array('save','preview','submit','publish','schedule'),true))wp_die('Invalid action.',400);
+  if(in_array($intent,array('publish','schedule'),true)&&!ilfa_editor())wp_die('Publishing and scheduling require Editor or Admin permissions.',403);
+  if($intent==='save'&&$title===''){$title=ilfa_t('Untitled Draft','Nimetön luonnos');}
+  $language=sanitize_key($_POST['language']??'en');if(!in_array($language,array('en','fi'),true))$language='en';
+  $section=sanitize_key($_POST['section']??'');$category=absint($_POST['category']??0);
+  if($type==='post'&&in_array($intent,array('submit','publish','schedule'),true)){
+    if($title===''||$title===ilfa_t('Untitled Draft','Nimetön luonnos'))wp_die(ilfa_t('Headline / Title is required before submission or publication.','Otsikko on pakollinen ennen lähetystä tai julkaisua.'),400);
+    if(!$excerpt)wp_die(ilfa_t('Short description (Summary) is required before submission or publication.','Lyhyt kuvaus on pakollinen ennen lähetystä tai julkaisua.'),400);
+    if(!$body)wp_die(ilfa_t('Article content is required before submission or publication.','Artikkelin sisältö on pakollinen ennen lähetystä tai julkaisua.'),400);
+    if(!$section||!term_exists($section,'ilf_section'))wp_die(ilfa_t('Website section is required.','Sivuston osio on pakollinen.'),400);
+    if(!$category||!term_exists($category,'category'))wp_die(ilfa_t('Category is required.','Kategoria on pakollinen.'),400);
+    $has_thumb=($p&&has_post_thumbnail($p->ID))||(!empty($_FILES['featured']['name']));
+    if(!$has_thumb)wp_die(ilfa_t('Featured image is required before publication.','Artikkelikuva on pakollinen ennen julkaisua.'),400);
+    $alt_text=sanitize_text_field(wp_unslash($_POST['alt']??''));
+    $existing_alt=($p&&has_post_thumbnail($p->ID))?get_post_meta(get_post_thumbnail_id($p->ID),'_wp_attachment_image_alt',true):'';
+    if(!$alt_text&&!$existing_alt)wp_die(ilfa_t('Featured image alt text is required before publication.','Artikkelikuvan vaihtoehtoinen teksti on pakollinen.'),400);
+    if(in_array($section,array('travel','things-to-do','food'),true)&&empty($_POST['city']))wp_die(ilfa_t('City / location is required for location-specific stories.','Kaupunki / sijainti on pakollinen tähän osioon.'),400);
+  }
+  if($type!=='post'&&$intent==='submit'&&(!$body||empty($_POST['city'])))wp_die('Description and location are required.',400);
+  if(!$p&&count(get_posts(array('post_type'=>array('post','ilf_job','ilf_classified'),'author'=>$uid,'post_status'=>array('draft','pending'),'date_query'=>array(array('after'=>'24 hours ago')),'numberposts'=>31,'fields'=>'ids')))>=30)wp_die('Daily draft limit reached.',429);
+  $target_status='draft';
+  if($intent==='submit')$target_status='pending';
+  elseif($intent==='publish')$target_status='publish';
+  elseif($intent==='schedule')$target_status='future';
+  $data=array('post_type'=>$type,'post_title'=>$title,'post_content'=>$body,'post_excerpt'=>$excerpt,'post_status'=>$target_status);
+  if($intent==='schedule'){
+    $time=sanitize_text_field($_POST['schedule_time']??'');
+    if(!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/',$time)||strtotime($time)<=current_time('timestamp'))wp_die(ilfa_t('Choose a future local publication time to schedule.','Valitse tuleva julkaisuaika ajastusta varten.'),400);
+    $data['post_date']=str_replace('T',' ',$time).':00';
+    $data['post_date_gmt']=get_gmt_from_date($data['post_date']);
+  }
+  if($p){$data['ID']=$p->ID;$data['post_author']=$p->post_author;}else $data['post_author']=$uid;
+  $saved=wp_insert_post(wp_slash($data),true);if(is_wp_error($saved))wp_die(esc_html($saved->get_error_message()),400);$id=$saved;
+  foreach(array('region','city','place','sources','verification','seo_title','seo_description','company','employment','salary','requirements','deadline','apply','contact','price','currency','condition','expiry','related') as $key){$value=sanitize_textarea_field(wp_unslash($_POST[$key]??''));if(in_array($key,array('deadline','expiry'),true)&&$value!==''&&!preg_match('/^\d{4}-\d{2}-\d{2}$/',$value))wp_die('Invalid date.',400);if($key==='apply'&&$value!==''&&!is_email($value)&&!wp_http_validate_url($value))wp_die('Use a valid public application URL or email.',400);update_post_meta($id,'_ilfa_'.$key,$value);}
+  update_post_meta($id,'ilf_language',$language);update_post_meta($id,'ilf_location',sanitize_text_field(wp_unslash($_POST['city']??'')));update_post_meta($id,'ilf_exact_place',sanitize_text_field(wp_unslash($_POST['place']??'')));
+  $credit=wp_kses_post(wp_unslash($_POST['credit']??''));update_post_meta($id,'ilf_credit',$credit);update_post_meta($id,'_ilf_image_credit',$credit);update_post_meta($id,'_ilf_image_caption',sanitize_text_field(wp_unslash($_POST['caption']??'')));
+  if($type==='post'){if(term_exists($section,'ilf_section'))wp_set_object_terms($id,$section,'ilf_section');if(term_exists($category,'category'))wp_set_post_categories($id,array($category));wp_set_post_tags($id,sanitize_text_field(wp_unslash($_POST['tags']??'')));}
+  $uploads=array('featured'=>'featured','additional'=>'additional');
+  foreach($uploads as $field=>$purpose){if(empty($_FILES[$field]['name']))continue;if($_FILES[$field]['size']>10*1024*1024)wp_die('Each image must be no larger than 10 MB. The article was saved; return to the editor.',400);require_once ABSPATH.'wp-admin/includes/file.php';require_once ABSPATH.'wp-admin/includes/media.php';require_once ABSPATH.'wp-admin/includes/image.php';$media=media_handle_upload($field,$id,array(),array('test_form'=>false,'mimes'=>array('jpg'=>'image/jpeg','jpeg'=>'image/jpeg','jpe'=>'image/jpeg','png'=>'image/png','webp'=>'image/webp')));if(is_wp_error($media))wp_die(esc_html($media->get_error_message()).' Your draft was saved.',400);if($purpose==='featured'){set_post_thumbnail($id,$media);update_post_meta($media,'_wp_attachment_image_alt',sanitize_text_field(wp_unslash($_POST['alt']??'')));}else{$gallery=get_post_meta($id,'_ilfa_gallery',true);if(!is_array($gallery))$gallery=array();$gallery[]=$media;update_post_meta($id,'_ilfa_gallery',array_slice($gallery,-12));update_post_meta($media,'_wp_attachment_image_alt',sanitize_text_field(wp_unslash($_POST['additional_alt']??'')));wp_update_post(array('ID'=>$media,'post_excerpt'=>sanitize_text_field(wp_unslash($_POST['additional_caption']??''))));update_post_meta($media,'_ilfa_credit',sanitize_text_field(wp_unslash($_POST['additional_credit']??'')));}}
+  $old=get_post_meta($id,'_ilfa_stage',true);
+  if($intent==='publish')$stage='published';
+  elseif($intent==='schedule')$stage='scheduled';
+  elseif($intent==='submit')$stage=($old==='changes'?'resubmitted':'submitted');
+  else $stage='draft';
+  update_post_meta($id,'_ilfa_stage',$stage);
+  if($intent==='submit'){
+    update_post_meta($id,'_ilfa_submitted',current_time('mysql'));
+    $recipients=$type==='post'?get_users(array('role__in'=>array('editor','administrator'),'fields'=>'ID')):get_users(array('role'=>'administrator','fields'=>'ID'));
+    foreach($recipients as $recipient)ilfa_notice($recipient,'New submission: '.$title,$id);
+    ilfa_notice($uid,'Submitted for review: '.$title,$id);
+  }
+  ilfa_audit('Saved '.$type.' as '.$stage,$id);
+  if($intent==='publish')$return='published';
+  elseif($intent==='schedule')$return='calendar';
+  elseif($intent==='submit')$return='submitted';
+  else $return=$type==='post'?'drafts':($type==='ilf_job'?'jobs':'classifieds');
+  if($intent==='preview'){wp_safe_redirect($type==='post'?get_preview_post_link($id):ilfa_url('preview',array('id'=>$id)));exit;}
+ }elseif($task==='review'){
+  if(!$p)wp_die('Item not found.',404);$article=$p->post_type==='post';if(($article&&!ilfa_editor())||(!$article&&!current_user_can('manage_options')))wp_die('Review permission required.',403);
+  if(!in_array($p->post_type,array('post','ilf_job','ilf_classified'),true))wp_die('Invalid item.',400);
+  $state=sanitize_key($_POST['state']??'in_review');if(!in_array($state,array('assigned','in_review','changes','approved','scheduled','published','rejected'),true))wp_die('Invalid transition.',400);
+  $feedback=sanitize_textarea_field(wp_unslash($_POST['feedback']??''));if(in_array($state,array('changes','rejected'),true)&&!$feedback)wp_die('Explain the requested changes or rejection.',400);
+  if(in_array($state,array('published','scheduled'),true)&&!current_user_can('publish_posts'))wp_die('Publishing permission required.',403);
+  if($article&&in_array($state,array('published','scheduled'),true)&&(!has_post_thumbnail($p)||!trim($p->post_content)||!trim($p->post_excerpt)||!has_term('','ilf_section',$p)))wp_die('Complete article text, excerpt, section and featured image before publication.',400);
+  $changes=array('ID'=>$id,'post_author'=>$p->post_author);if($state==='published')$changes['post_status']='publish';elseif($state==='scheduled'){$time=sanitize_text_field($_POST['schedule']??'');if(!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/',$time)||strtotime($time)<=current_time('timestamp'))wp_die('Choose a future local publication time.',400);$changes['post_status']='future';$changes['post_date']=str_replace('T',' ',$time).':00';$changes['post_date_gmt']=get_gmt_from_date($changes['post_date']);}elseif(in_array($state,array('changes','rejected'),true))$changes['post_status']='draft';else $changes['post_status']='pending';
+  wp_update_post($changes);update_post_meta($id,'_ilfa_stage',$state);$editor=absint($_POST['editor_id']??$uid);if($editor&&user_can($editor,'edit_others_posts'))update_post_meta($id,'_ilfa_editor',$editor);if($feedback){$history=get_post_meta($id,'_ilfa_feedback',true);if(!is_array($history))$history=array();$history[]=array('user'=>$uid,'time'=>current_time('mysql'),'message'=>$feedback);update_post_meta($id,'_ilfa_feedback',array_slice($history,-100));}if($p->post_status==='publish'&&$feedback)update_post_meta($id,'_ilfa_public_correction',array('date'=>current_time('mysql'),'note'=>$feedback));ilfa_notice($p->post_author,'Editorial update: '.$p->post_title.' — '.(ilfa_stages()[$state]??$state),$id);ilfa_audit('Review: '.$state,$id);$return='inbox';
+ }elseif($task==='listing_state'){
+  if(!$p||!in_array($p->post_type,array('ilf_job','ilf_classified'),true)||!ilfa_can_edit($p))wp_die('Own listing required.',403);$state=sanitize_key($_POST['state']??'closed');if(!in_array($state,array('closed','renew'),true))wp_die('Invalid action.',400);wp_update_post(array('ID'=>$id,'post_status'=>$state==='renew'?'pending':'draft'));update_post_meta($id,'_ilfa_stage',$state==='renew'?'submitted':'closed');if($state==='renew')foreach(get_users(array('role'=>'administrator','fields'=>'ID')) as $a)ilfa_notice($a,'Listing renewal awaiting review: '.$p->post_title,$id);ilfa_audit('Listing '.$state,$id);$return=$p->post_type==='ilf_job'?'jobs':'classifieds';
+ }elseif($task==='pitch'){
+  if(!ilfa_writer())wp_die('Writer approval required.',403);$title=sanitize_text_field(wp_unslash($_POST['headline']??''));$body=sanitize_textarea_field(wp_unslash($_POST['brief']??''));if(!$title||!$body)wp_die('Add a pitch title and brief.',400);$id=wp_insert_post(array('post_type'=>'ilfa_pitch','post_author'=>$uid,'post_title'=>$title,'post_content'=>$body,'post_status'=>'private'));foreach(get_users(array('role__in'=>array('editor','administrator'),'fields'=>'ID')) as $a)ilfa_notice($a,'New story pitch: '.$title,$id);ilfa_audit('Story pitch',$id);$return='pitches';
+ }elseif($task==='assign'){
+  if(!ilfa_editor())wp_die('Editor permission required.',403);$author=absint($_POST['writer_id']??0);if(!user_can($author,'edit_posts'))wp_die('Choose an approved Writer.',400);$title=sanitize_text_field(wp_unslash($_POST['headline']??''));if(!$title)wp_die('Add an assignment headline.',400);$id=wp_insert_post(array('post_type'=>'post','post_author'=>$author,'post_title'=>$title,'post_content'=>wp_kses_post(wp_unslash($_POST['brief']??'')),'post_status'=>'draft'));update_post_meta($id,'_ilfa_assignment',sanitize_textarea_field(wp_unslash($_POST['brief']??'')));update_post_meta($id,'_ilfa_deadline',sanitize_text_field($_POST['deadline']??''));update_post_meta($id,'_ilfa_editor',$uid);ilfa_notice($author,'New assignment: '.$title,$id);ilfa_audit('Assigned story',$id);$return='assignments';
+ }elseif($task==='update_request'){
+  if(!$p||$p->post_type!=='post'||(int)$p->post_author!==$uid)wp_die('Own article required.',403);$note=sanitize_textarea_field(wp_unslash($_POST['feedback']??''));if(!$note)wp_die('Describe the requested update.',400);update_post_meta($id,'_ilfa_update_request',$note);foreach(get_users(array('role__in'=>array('editor','administrator'),'fields'=>'ID')) as $a)ilfa_notice($a,'Published update request: '.$p->post_title,$id);$return='published';
+ }elseif($task==='save_item'){
+  if(!$p||$p->post_status!=='publish')wp_die('Published item required.',400);$saved=get_user_meta($uid,'_ilfa_saved',true);if(!is_array($saved))$saved=array();$saved=in_array($id,$saved,true)?array_values(array_diff($saved,array($id))):array_merge($saved,array($id));update_user_meta($uid,'_ilfa_saved',array_slice($saved,-200));$return='saved';
+ }elseif($task==='report'){
+  if(!$p||!in_array($p->post_type,array('ilf_job','ilf_classified'),true)||$p->post_status!=='publish')wp_die('Published listing required.',400);$reason=sanitize_textarea_field(wp_unslash($_POST['reason']??''));if(strlen($reason)<10)wp_die('Please describe the concern.',400);foreach(get_users(array('role'=>'administrator','fields'=>'ID')) as $a)ilfa_notice($a,'Listing report #'.$id.': '.$reason,$id);ilfa_audit('Listing report',$id);$return='notifications';
+  }elseif($task==='post_action'){
+  $action=sanitize_key($_POST['subaction']??'');
+  if(!in_array($action,array('unpublish','trash','restore','delete'),true))wp_die('Invalid action.',400);
+  if(!$p)wp_die('Item not found.',404);
+  if($action==='unpublish'){
+    if(!ilfa_editor())wp_die('Editorial permission required.',403);
+    wp_update_post(array('ID'=>$id,'post_status'=>'draft'));
+    update_post_meta($id,'_ilfa_stage','draft');
+    ilfa_audit('Unpublished article',$id);
+    $return='drafts';
+  }elseif($action==='trash'){
+    if(!ilfa_editor()&&(int)$p->post_author!==$uid)wp_die('Permission denied.',403);
+    wp_trash_post($id);
+    update_post_meta($id,'_ilfa_stage','removed');
+    ilfa_audit('Trashed article',$id);
+    $return='drafts';
+  }elseif($action==='restore'){
+    if(!ilfa_editor())wp_die('Editorial permission required.',403);
+    wp_untrash_post($id);
+    update_post_meta($id,'_ilfa_stage','draft');
+    ilfa_audit('Restored article',$id);
+    $return='drafts';
+  }elseif($action==='delete'){
+    if(!current_user_can('manage_options'))wp_die('Only administrators can permanently delete articles.',403);
+    wp_delete_post($id,true);
+    ilfa_audit('Permanently deleted article',$id);
+    $return='overview';
+  }
+}elseif($task==='preferences'){
+  $lang=sanitize_key($_POST['language']??'en');if(!in_array($lang,array('en','fi'),true))wp_die('Invalid language.',400);update_user_meta($uid,'_ilfa_language',$lang);update_user_meta($uid,'_ilfa_communication',!empty($_POST['communication'])?'1':'0');$return='settings';
+ }elseif($task==='user_role'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  $target_uid=absint($_POST['user_id']??0);
+  $new_role=sanitize_key($_POST['role']??'');
+  if(!$target_uid||$target_uid===$uid||!in_array($new_role,array('subscriber','ilf_writer','editor','administrator'),true))wp_die('Invalid user or role.',400);
+  $u=get_userdata($target_uid);if(!$u)wp_die('User not found.',404);
+  $u->set_role($new_role);
+  ilfa_audit('Changed user #'.$target_uid.' role to '.$new_role,$target_uid);
+  $return='users';
+ }elseif($task==='add_term'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  $tax=sanitize_key($_POST['taxonomy']??'category');
+  $name=sanitize_text_field(wp_unslash($_POST['term_name']??''));
+  if(!in_array($tax,array('category','ilf_section'),true)||!$name)wp_die('Invalid category or section.',400);
+  $res=wp_insert_term($name,$tax);
+  if(is_wp_error($res))wp_die(esc_html($res->get_error_message()),400);
+  ilfa_audit('Added '.$tax.' term: '.$name,(int)($res['term_id']??0));
+  $return='taxonomies';
+ }elseif($task==='upload_media'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  if(empty($_FILES['media_file']['name']))wp_die('Choose an image file to upload.',400);
+  if($_FILES['media_file']['size']>10*1024*1024)wp_die('Maximum image size is 10 MB.',400);
+  require_once ABSPATH.'wp-admin/includes/file.php';require_once ABSPATH.'wp-admin/includes/media.php';require_once ABSPATH.'wp-admin/includes/image.php';
+  $media=media_handle_upload('media_file',0,array(),array('test_form'=>false,'mimes'=>array('jpg'=>'image/jpeg','jpeg'=>'image/jpeg','jpe'=>'image/jpeg','png'=>'image/png','webp'=>'image/webp')));
+  if(is_wp_error($media))wp_die(esc_html($media->get_error_message()),400);
+  $alt=sanitize_text_field(wp_unslash($_POST['alt']??''));if($alt)update_post_meta($media,'_wp_attachment_image_alt',$alt);
+  ilfa_audit('Uploaded media #'.$media,$media);
+  $return='media';
+ }elseif($task==='delete_media'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  if(!$p||$p->post_type!=='attachment')wp_die('Media item not found.',404);
+  wp_delete_attachment($id,true);
+  ilfa_audit('Deleted media #'.$id,$id);
+  $return='media';
+ }elseif($task==='site_settings'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  $blogname=sanitize_text_field(wp_unslash($_POST['blogname']??''));
+  if($blogname)update_option('blogname',$blogname);
+  update_option('blogdescription',sanitize_text_field(wp_unslash($_POST['blogdescription']??'')));
+  update_option('posts_per_page',max(1,min(50,absint($_POST['posts_per_page']??10))));
+  update_option('users_can_register',!empty($_POST['users_can_register'])?1:0);
+  update_option('ilfa_transactional_email_enabled',!empty($_POST['ilfa_email'])?1:0);
+  ilfa_audit('Updated website settings',0);
+  $return='site_settings';
+ }elseif($task==='comment_action'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  $cid=absint($_POST['comment_id']??0);$cstate=sanitize_key($_POST['subaction']??'');
+  if(!$cid||!in_array($cstate,array('approve','hold','spam','trash'),true))wp_die('Invalid comment action.',400);
+  wp_set_comment_status($cid,$cstate);
+  ilfa_audit('Comment #'.$cid.' -> '.$cstate,$cid);
+  $return='comments';
+ }
+ if($task==='save'&&!empty($_POST['autosave']))wp_send_json_success(array('id'=>$id,'time'=>current_time('mysql')));
+ wp_safe_redirect(ilfa_url($return,array('saved'=>'1')));exit;
+});
+
+function ilfa_items($view){
+ $type=in_array($view,array('jobs','classifieds'),true)?($view==='jobs'?'ilf_job':'ilf_classified'):($view==='pitches'?'ilfa_pitch':'post');$args=array('post_type'=>$type,'posts_per_page'=>30,'post_status'=>array('draft','pending','publish','future','private'),'author'=>get_current_user_id(),'orderby'=>'modified','order'=>'DESC');
+ if(in_array($view,array('inbox','reviews','all','calendar','moderation','updates','trash'),true)){if($view==='moderation'){if(!current_user_can('manage_options'))return;$args['post_type']=array('ilf_job','ilf_classified');}elseif(!ilfa_editor())return;unset($args['author']);if($view==='inbox'||$view==='moderation')$args['post_status']='pending';if($view==='calendar')$args['post_status']='future';if($view==='reviews')$args['meta_query']=array(array('key'=>'_ilfa_editor','value'=>get_current_user_id()));if($view==='updates')$args['meta_query']=array(array('key'=>'_ilfa_update_request','compare'=>'EXISTS'));if($view==='trash')$args['post_status']='trash';}
+ if($view==='drafts')$args['post_status']='draft';if($view==='submitted')$args['post_status']='pending';if($view==='published')$args['post_status']=array('publish','future');if($view==='corrections')$args['meta_query']=array(array('key'=>'_ilfa_stage','value'=>'changes'));
+ if($view==='assignments'){$args['meta_query']=array(array('key'=>'_ilfa_assignment','compare'=>'EXISTS'));if(ilfa_editor())unset($args['author']);}
+ if($view==='saved'){$ids=get_user_meta(get_current_user_id(),'_ilfa_saved',true);if(!$ids){echo '<p>'.esc_html(ilfa_t('No saved items yet. Use Save item on an article or listing.','Ei vielä tallennettuja kohteita.')).'</p>';return;}$args=array('post_type'=>array('post','ilf_job','ilf_classified'),'post_status'=>'publish','post__in'=>array_map('absint',$ids),'posts_per_page'=>100);}
+ $role_arg=(($_GET['role']??'')==='admin'&&current_user_can('manage_options'))?array('role'=>'admin'):array();
+ $fstatus='any';$q_search='';$paged=1;
+ if($view==='all'){
+  $fstatus=sanitize_key($_GET['fstatus']??'any');
+  if(!in_array($fstatus,array('any','publish','draft','pending','future'),true))$fstatus='any';
+  $q_search=sanitize_text_field(wp_unslash($_GET['q']??''));
+  $paged=max(1,absint($_GET['paged']??1));
+  $args['posts_per_page']=25;$args['paged']= $paged;
+  if($fstatus!=='any')$args['post_status']=$fstatus;
+  if($q_search!=='')$args['s']=$q_search;
+  $statuses=array('any'=>ilfa_t('All','Kaikki'),'publish'=>ilfa_t('Published','Julkaistut'),'draft'=>ilfa_t('Drafts','Luonnokset'),'pending'=>ilfa_t('Pending','Odottaa'),'future'=>ilfa_t('Scheduled','Ajastetut'));
+  echo '<div class="ilfa-toolbar"><div class="ilfa-filter-pills">';
+  foreach($statuses as $sk=>$sl){
+   $pargs=array_merge($role_arg,array('fstatus'=>$sk));if($q_search!=='')$pargs['q']=$q_search;
+   echo '<a href="'.esc_url(ilfa_url('all',$pargs)).'" '.($fstatus===$sk?'class="is-active" aria-current="true"':'').'>'.esc_html($sl).'</a>';
+  }
+  echo '</div><div class="ilfa-toolbar-right"><form method="get" action="'.esc_url(home_url('/')).'" class="ilfa-search-form">';
+  echo '<input type="hidden" name="ilf_portal" value="all"><input type="hidden" name="lang" value="'.esc_attr(function_exists('ilf_language')?ilf_language():'en').'">';
+  if($role_arg)echo '<input type="hidden" name="role" value="admin">';
+  if($fstatus!=='any')echo '<input type="hidden" name="fstatus" value="'.esc_attr($fstatus).'">';
+  echo '<input type="search" name="q" value="'.esc_attr($q_search).'" placeholder="'.esc_attr(ilfa_t('Search articles...','Hae artikkeleita...')).'">';
+  echo '<button type="submit" class="ilfa-btn ilfa-btn-dark">'.ilfa_portal_icon('search',14).'<span>'.esc_html(ilfa_t('Search','Hae')).'</span></button>';
+  if($q_search!=='')echo '<a class="ilfa-btn" href="'.esc_url(ilfa_url('all',array_merge($role_arg,array('fstatus'=>$fstatus)))).'">'.esc_html(ilfa_t('Reset','Tyhjennä')).'</a>';
+  echo '</form><a class="ilfa-btn ilfa-btn-primary" href="'.esc_url(ilfa_url('edit',$role_arg?:array('role'=>'editor'))).'">'.ilfa_portal_icon('plus',14).'<span>'.esc_html(ilfa_t('Write New Article','Kirjoita artikkeli')).'</span></a></div></div>';
+ }
+ $q=new WP_Query($args);if(!$q->have_posts()){echo '<p class="ilfa-empty">'.esc_html(ilfa_t('No items here yet.','Ei vielä sisältöä.')).'</p>';return;}
+ echo '<div class="ilfa-items">';foreach($q->posts as $p){$stage=ilfa_stage($p);$can_ed=(ilfa_can_edit($p)&&$p->post_status!=='trash');$title_url=$can_ed?ilfa_url('edit',array('id'=>$p->ID,'kind'=>$p->post_type)):($p->post_status==='publish'?get_permalink($p):get_preview_post_link($p));
+ echo '<article><div class="ilfa-item-main"><span class="ilfa-pill ilfa-pill--'.esc_attr($stage).'">'.esc_html(ilfa_stages()[$stage]??$stage).'</span><h3><a href="'.esc_url($title_url).'">'.esc_html($p->post_title).'</a></h3><small>'.esc_html(get_the_modified_date('j.n.Y H:i',$p)).' · '.esc_html(get_the_author_meta('display_name',$p->post_author)).'</small></div><div class="ilfa-row-actions">';
+ if($can_ed)echo '<a class="ilfa-act-btn ilfa-act-primary" href="'.esc_url(ilfa_url('edit',array('id'=>$p->ID,'kind'=>$p->post_type))).'">'.ilfa_portal_icon('edit',14).'<span>'.esc_html(ilfa_t('Edit','Muokkaa')).'</span></a>';
+ if($p->post_status==='publish')echo '<a class="ilfa-act-btn" href="'.esc_url(get_permalink($p)).'">'.ilfa_portal_icon('external',14).'<span>'.esc_html(ilfa_t('View','Näytä')).'</span></a>';elseif(current_user_can('edit_post',$p->ID)&&$p->post_status!=='trash')echo '<a class="ilfa-act-btn" href="'.esc_url(get_preview_post_link($p)).'">'.ilfa_portal_icon('external',14).'<span>'.esc_html(ilfa_t('Preview','Esikatselu')).'</span></a>';
+ if(($p->post_type==='post'&&ilfa_editor())||(in_array($p->post_type,array('ilf_job','ilf_classified'),true)&&current_user_can('manage_options')))echo '<a class="ilfa-act-btn" href="'.esc_url(ilfa_url('review',array('id'=>$p->ID))).'">'.ilfa_portal_icon('eye',14).'<span>'.esc_html(ilfa_t('Review','Tarkista')).'</span></a>';
+ if($p->post_type==='post'&&$p->post_status==='publish'&&ilfa_editor()){
+   echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="ilfa-inline-form">'.wp_nonce_field('ilfa_post_action','_wpnonce',true,false).'<input type="hidden" name="action" value="ilfa_action"><input type="hidden" name="task" value="post_action"><input type="hidden" name="post_id" value="'.(int)$p->ID.'"><button type="submit" name="subaction" value="unpublish" class="ilfa-act-btn ilfa-act-muted">'.ilfa_portal_icon('undo',14).'<span>'.esc_html(ilfa_t('Unpublish','Poista julkaisusta')).'</span></button><button type="submit" name="subaction" value="trash" class="ilfa-act-btn ilfa-act-danger">'.ilfa_portal_icon('trash',14).'<span>'.esc_html(ilfa_t('Trash','Roskakoriin')).'</span></button></form>';
+ }elseif($p->post_type==='post'&&$p->post_status==='trash'){
+   echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="ilfa-inline-form">'.wp_nonce_field('ilfa_post_action','_wpnonce',true,false).'<input type="hidden" name="action" value="ilfa_action"><input type="hidden" name="task" value="post_action"><input type="hidden" name="post_id" value="'.(int)$p->ID.'">';
+   if(ilfa_editor())echo '<button type="submit" name="subaction" value="restore" class="ilfa-act-btn ilfa-act-success">'.ilfa_portal_icon('undo',14).'<span>'.esc_html(ilfa_t('Restore','Palauta')).'</span></button>';
+   if(current_user_can('manage_options'))echo '<button type="submit" name="subaction" value="delete" class="ilfa-act-btn ilfa-act-danger ilfa-confirm-delete">'.ilfa_portal_icon('trash',14).'<span>'.esc_html(ilfa_t('Delete Permanently','Poista pysyvästi')).'</span></button>';
+   echo '</form>';
+ }elseif($p->post_type==='post'&&in_array($p->post_status,array('draft','pending'),true)&&(ilfa_editor()||(int)$p->post_author===get_current_user_id())){
+   echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="ilfa-inline-form">'.wp_nonce_field('ilfa_post_action','_wpnonce',true,false).'<input type="hidden" name="action" value="ilfa_action"><input type="hidden" name="task" value="post_action"><input type="hidden" name="post_id" value="'.(int)$p->ID.'"><button type="submit" name="subaction" value="trash" class="ilfa-act-btn ilfa-act-danger">'.ilfa_portal_icon('trash',14).'<span>'.esc_html(ilfa_t('Trash','Roskakoriin')).'</span></button></form>';
+ }
+ if(in_array($p->post_type,array('ilf_job','ilf_classified'),true)&&ilfa_can_edit($p)){ilfa_form_start('listing_state',$p->ID);echo '<button class="ilfa-act-btn" name="state" value="renew">'.esc_html(ilfa_t('Renew for review','Uusi tarkistettavaksi')).'</button> <button class="ilfa-act-btn ilfa-act-muted" name="state" value="closed">'.esc_html(ilfa_t('Close / Mark sold','Sulje / Merkitse myydyksi')).'</button></form>';}
+ if($p->post_type==='post'&&$p->post_status==='publish'&&!ilfa_editor()&&(int)$p->post_author===get_current_user_id()){echo '<details class="ilfa-req-update"><summary class="ilfa-act-btn">'.esc_html(ilfa_t('Request update','Pyydä päivitystä')).'</summary>';ilfa_form_start('update_request',$p->ID);ilfa_field('feedback',ilfa_t('Requested correction','Korjauspyyntö'),'','textarea',true);ilfa_button(ilfa_t('Send request','Lähetä pyyntö'));echo '</form></details>';}
+ echo '</div></article>';}
+ echo '</div>';
+ if($view==='all'&&$q->max_num_pages>1){
+  $base=array_merge($role_arg,array('fstatus'=>$fstatus));if($q_search!=='')$base['q']=$q_search;
+  echo '<div class="ilfa-pagination">';
+  if($paged>1)echo '<a class="ilfa-btn" href="'.esc_url(ilfa_url('all',array_merge($base,array('paged'=>$paged-1)))).'">← '.esc_html(ilfa_t('Previous','Edellinen')).'</a>';else echo '<span></span>';
+  echo '<span>'.esc_html(sprintf(ilfa_t('Page %1$d of %2$d (%3$d articles)','Sivu %1$d / %2$d (%3$d artikkelia)'),$paged,(int)$q->max_num_pages,(int)$q->found_posts)).'</span>';
+  if($paged<(int)$q->max_num_pages)echo '<a class="ilfa-btn" href="'.esc_url(ilfa_url('all',array_merge($base,array('paged'=>$paged+1)))).'">'.esc_html(ilfa_t('Next','Seuraava')).' →</a>';else echo '<span></span>';
+  echo '</div>';
+ }
+ wp_reset_postdata();
+}
+
+function ilfa_edit_form(){
+ $id=absint($_GET['id']??0);$p=$id?get_post($id):null;$kind=$p?$p->post_type:sanitize_key($_GET['kind']??'post');if(!in_array($kind,array('post','ilf_job','ilf_classified'),true)||($p&&!ilfa_can_edit($p))||($kind==='post'&&!ilfa_writer())){echo '<p>'.esc_html(ilfa_t('You do not have permission to edit this item.','Sinulla ei ole muokkausoikeutta.')).'</p>';return;}
+ if($p){$history=get_post_meta($p->ID,'_ilfa_feedback',true);if($history){echo '<aside class="ilfa-feedback"><h3>'.esc_html(ilfa_t('Editorial feedback','Toimituksen palaute')).'</h3>';foreach($history as $h)echo '<p><small>'.esc_html($h['time']).'</small><br>'.nl2br(esc_html($h['message'])).'</p>';echo '</aside>';}}
+ echo '<div class="ilfa-edit-top-bar" style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;">';
+ echo '<a href="'.esc_url(home_url('/')).'" class="ilfa-link" style="background:#f1f5f9;color:#1e293b;text-decoration:none;font-weight:700;padding:8px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">← '.esc_html(ilfa_t('Back to Home Page','Takaisin etusivulle')).'</a>';
+ echo '<a href="'.esc_url(ilfa_url('overview')).'" class="ilfa-link" style="background:#f1f5f9;color:#1e293b;text-decoration:none;font-weight:700;padding:8px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">'.esc_html(ilfa_t('My Workspace','Oma työtila')).'</a>';
+ echo '<a href="'.esc_url(ilfa_url('drafts')).'" class="ilfa-link" style="background:#f1f5f9;color:#1e293b;text-decoration:none;font-weight:700;padding:8px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">'.esc_html(ilfa_t('My Drafts','Omat luonnokset')).'</a>';
+ echo '</div>';
+ ilfa_form_start('save',$id);echo '<input type="hidden" name="kind" value="'.esc_attr($kind).'">';
+ 
+ if($kind==='post'){
+   // 1. Article Details
+   echo '<fieldset class="ilfa-section-box"><legend><strong>1. '.esc_html(ilfa_t('Article Details','Artikkelin tiedot')).'</strong></legend>';
+   ilfa_field('headline',ilfa_t('Headline / Title *','Otsikko *'),$p?$p->post_title:'','text');
+   ilfa_field('excerpt',ilfa_t('Short description (Summary) *','Lyhyt kuvaus (tiivistelmä) *'),$p?$p->post_excerpt:'','textarea');
+   
+   echo '<div class="ilfa-fields">';
+   ilfa_select('language',ilfa_t('Language *','Kieli *'),array('en'=>'English','fi'=>'Suomi'),ilfa_meta($p,'ilf_language')?:'en');
+   $sections=ilfc_sections();
+   $selected_sec = $p ? current(wp_get_object_terms($id,'ilf_section',array('fields'=>'slugs'))) : 'news';
+   if(!$selected_sec) $selected_sec = 'news';
+   ilfa_select('section',ilfa_t('Website section *','Sivuston osio *'),$sections,$selected_sec);
+   
+   $cats_map = ilfc_section_categories_map();
+   $all_cats = get_categories(array('hide_empty'=>false));
+   $selected_cat = $p ? current(wp_get_post_categories($id)) : '';
+   echo '<label>'.esc_html(ilfa_t('Category *','Kategoria *')).'<select name="category" id="ilfa-category-select">';
+   foreach($all_cats as $c){
+     $c_slug = $c->slug;
+     $matched = array();
+     foreach($cats_map as $s_slug => $c_list){
+       if(in_array($c_slug, $c_list, true)) $matched[] = $s_slug;
+     }
+     if(empty($matched)){
+       if(strpos($c_slug,'news')!==false) $matched[]='news';
+       elseif(strpos($c_slug,'guide')!==false||strpos($c_slug,'living')!==false||strpos($c_slug,'finland')!==false) $matched[]='guide';
+       elseif(strpos($c_slug,'food')!==false) $matched[]='food';
+       elseif(strpos($c_slug,'travel')!==false) $matched[]='travel';
+       elseif(strpos($c_slug,'event')!==false) $matched[]='events';
+       elseif(strpos($c_slug,'shop')!==false) $matched[]='shopping';
+       else $matched[]='news';
+     }
+     echo '<option value="'.esc_attr($c->term_id).'" data-sections="'.esc_attr(implode(',',$matched)).'" '.selected((string)$selected_cat,(string)$c->term_id,false).'>'.esc_html($c->name).'</option>';
+   }
+   echo '</select></label>';
+   echo '</div></fieldset>';
+
+   // 2. Content (Visual editor by default)
+   echo '<fieldset class="ilfa-section-box"><legend><strong>2. '.esc_html(ilfa_t('Article Content *','Artikkelin sisältö *')).'</strong></legend>';
+   wp_editor($p?$p->post_content:'','ilfa-body',array('textarea_name'=>'article_body','media_buttons'=>false,'textarea_rows'=>16,'quicktags'=>true,'tinymce'=>array('toolbar1'=>'formatselect,bold,italic,bullist,numlist,blockquote,link,unlink,undo,redo'),'teeny'=>false));
+   echo '</fieldset>';
+
+   // 3. Featured Image
+   echo '<fieldset class="ilfa-section-box"><legend><strong>3. '.esc_html(ilfa_t('Featured Image *','Artikkelikuva *')).'</strong></legend>';
+   if($p&&has_post_thumbnail($p))echo '<div style="margin-bottom:10px;">'.get_the_post_thumbnail($p,'thumbnail').'</div>';
+   echo '<label>'.esc_html(ilfa_t('Featured image — JPEG, PNG or WebP, max 5 MB *','Artikkelikuva — JPEG, PNG tai WebP, enintään 5 Mt *')).'<input type="file" name="featured" accept="image/jpeg,image/png,image/webp"></label>';
+   ilfa_field('alt',ilfa_t('Featured image alt text (required before publication) *','Artikkelikuvan vaihtoehtoinen teksti (pakollinen ennen julkaisua) *'),$p?get_post_meta(get_post_thumbnail_id($p),'_wp_attachment_image_alt',true):'');
+   ilfa_field('caption',ilfa_t('Image caption (optional)','Kuvateksti (valinnainen)'),ilfa_meta($p,'_ilf_image_caption'));
+   ilfa_field('credit',ilfa_t('Photographer, source URL and licence (when applicable)','Kuvaaja, lähdelinkki ja lisenssi (tarvittaessa)'),ilfa_meta($p,'_ilf_image_credit'),'textarea');
+   echo '</fieldset>';
+
+   // 4. Location Details (expandable)
+   $has_loc = $p && (ilfa_meta($p,'ilf_location') || ilfa_meta($p,'_ilfa_region'));
+   echo '<details class="ilfa-expandable-box" '.($has_loc?'open':'').'><summary><strong>4. '.esc_html(ilfa_t('Location Details (expandable)','Sijaintitiedot (avautuva)')).'</strong></summary>';
+   echo '<div class="ilfa-fields">';
+   ilfa_field('region',ilfa_t('Region','Maakunta'),ilfa_meta($p,'_ilfa_region'));
+   ilfa_field('city',ilfa_t('City / Location (required for location-specific articles)','Kaupunki / Sijainti'),ilfa_meta($p,'ilf_location'));
+   ilfa_field('place',ilfa_t('Exact place or address, where applicable','Tarkka paikka tarvittaessa'),ilfa_meta($p,'ilf_exact_place'));
+   echo '</div>';
+   echo '<div class="ilfa-fields">';
+   ilfa_field('event_start',ilfa_t('Event date, time and venue (for Events)','Tapahtuma-aika ja paikka (tapahtumille)'),ilfa_meta($p,'ilf_event_start'));
+   echo '</div></details>';
+
+   // 5. Additional Images (expandable)
+   $has_gallery = $p && ilfa_meta($p,'_ilfa_gallery');
+   echo '<details class="ilfa-expandable-box" '.($has_gallery?'open':'').'><summary><strong>5. '.esc_html(ilfa_t('Additional Images (expandable)','Lisäkuvat (avautuva)')).'</strong></summary>';
+   echo '<label>'.esc_html(ilfa_t('Add another image (one per save, max 5 MB)','Lisää muu kuva (yksi tallennusta kohden, enintään 5 Mt)')).'<input type="file" name="additional" accept="image/jpeg,image/png,image/webp"></label>';
+   ilfa_field('additional_alt',ilfa_t('Additional image alt text','Lisäkuvan vaihtoehtoinen teksti'));
+   ilfa_field('additional_caption',ilfa_t('Additional image caption','Lisäkuvan kuvateksti'));
+   ilfa_field('additional_credit',ilfa_t('Additional image credit and licence','Lisäkuvan lähde ja lisenssi'));
+   $gallery=ilfa_meta($p,'_ilfa_gallery');
+   if(is_array($gallery)){
+     echo '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">';
+     foreach($gallery as $media)echo wp_get_attachment_image((int)$media,'thumbnail');
+     echo '</div>';
+   }
+   echo '</details>';
+
+   // 6. Sources and Related Articles (expandable)
+   $has_sources = $p && (ilfa_meta($p,'_ilfa_sources') || ilfa_meta($p,'_ilfa_related'));
+   echo '<details class="ilfa-expandable-box" '.($has_sources?'open':'').'><summary><strong>6. '.esc_html(ilfa_t('Sources and Related Articles (expandable)','Lähteet ja liittyvät artikkelit (avautuva)')).'</strong></summary>';
+   ilfa_field('sources',ilfa_t('Source links (for externally sourced reporting)','Lähdelinkit (ulkoisille lähteille)'),ilfa_meta($p,'_ilfa_sources'),'textarea');
+   ilfa_field('related',ilfa_t('Related article URLs / internal links','Aiheeseen liittyvät artikkelilinkit'),ilfa_meta($p,'_ilfa_related'),'textarea');
+   if(ilfa_editor()||current_user_can('manage_options')){
+     ilfa_field('verification',ilfa_t('Private editorial verification notes (Editor/Admin only)','Toimituksen sisäiset muistiinpanot (vain toimitus/ylläpito)'),ilfa_meta($p,'_ilfa_verification'),'textarea');
+   }
+   echo '</details>';
+
+   // 7. SEO and Advanced Options (expandable)
+   $has_seo = $p && (ilfa_meta($p,'_ilfa_seo_title') || wp_get_post_tags($id));
+   echo '<details class="ilfa-expandable-box" '.($has_seo?'open':'').'><summary><strong>7. '.esc_html(ilfa_t('SEO and Advanced Options (expandable)','SEO ja lisäasetukset (avautuva)')).'</strong></summary>';
+   ilfa_field('tags',ilfa_t('Tags, separated by commas (optional)','Avainsanat pilkuilla erotettuina (valinnainen)'),$p?implode(', ',wp_get_post_tags($id,array('fields'=>'names'))):'');
+   ilfa_field('seo_title',ilfa_t('SEO title (optional override)','SEO-otsikko (valinnainen ohitus)'),ilfa_meta($p,'_ilfa_seo_title'));
+   ilfa_field('seo_description',ilfa_t('Meta description (optional override)','Metakuvaus (valinnainen ohitus)'),ilfa_meta($p,'_ilfa_seo_description'),'textarea');
+   if(ilfa_editor()){
+     ilfa_field('schedule_time',ilfa_t('Schedule publication time (if scheduling)','Julkaisuaika (jos ajastetaan)'),'','datetime-local');
+   }
+   echo '</details>';
+
+ } else {
+   // Jobs and classifieds fields
+   ilfa_field('headline',ilfa_t('Headline / Listing title','Otsikko'),$p?$p->post_title:'','text');
+   ilfa_field('excerpt',ilfa_t('Short description','Lyhyt kuvaus'),$p?$p->post_excerpt:'','textarea');
+   ilfa_select('language',ilfa_t('Language','Kieli'),array('en'=>'English','fi'=>'Suomi'),ilfa_meta($p,'ilf_language')?:'en');
+   echo '<div class="ilfa-fields">';
+   ilfa_field('region',ilfa_t('Region','Maakunta'),ilfa_meta($p,'_ilfa_region'));
+   ilfa_field('city',ilfa_t('City / Location','Kaupunki / Sijainti'),ilfa_meta($p,'ilf_location'));
+   ilfa_field('place',ilfa_t('Exact place or address, where applicable','Tarkka paikka tarvittaessa'),ilfa_meta($p,'ilf_exact_place'));
+   echo '</div>';
+   echo '<label for="ilfa-body">'.esc_html(ilfa_t('Content','Sisältö')).'</label>';
+   wp_editor($p?$p->post_content:'','ilfa-body',array('textarea_name'=>'article_body','media_buttons'=>false,'textarea_rows'=>16,'quicktags'=>true,'tinymce'=>array('toolbar1'=>'formatselect,bold,italic,bullist,numlist,blockquote,link,unlink,undo,redo'),'teeny'=>false));
+   if($kind==='ilf_job'){foreach(array('company'=>ilfa_t('Company / Employer','Yritys / Työnantaja'),'employment'=>ilfa_t('Employment type','Työsuhteen tyyppi'),'salary'=>ilfa_t('Salary / Pay, if provided','Palkka, jos ilmoitettu'),'requirements'=>ilfa_t('Requirements','Vaatimukset'),'apply'=>ilfa_t('Application URL or email','Hakemuslinkki tai sähköposti'),'contact'=>ilfa_t('Contact information','Yhteystiedot')) as $k=>$label)ilfa_field($k,$label,ilfa_meta($p,'_ilfa_'.$k));ilfa_field('deadline',ilfa_t('Application deadline','Hakuaika päättyy'),ilfa_meta($p,'_ilfa_deadline'),'date');}
+   if($kind==='ilf_classified'){foreach(array('price'=>ilfa_t('Price','Hinta'),'currency'=>ilfa_t('Currency','Valuutta'),'condition'=>ilfa_t('Condition','Kunto'),'contact'=>ilfa_t('Contact preference / public contact details','Yhteydenottotapa / julkiset yhteystiedot')) as $k=>$label)ilfa_field($k,$label,ilfa_meta($p,'_ilfa_'.$k));ilfa_field('expiry',ilfa_t('Expiry date','Päättymispäivä'),ilfa_meta($p,'_ilfa_expiry'),'date');echo '<p>'.esc_html(ilfa_t('Only include contact information you want published. Buyer messaging is not enabled.','Lisää vain yhteystiedot, jotka haluat julkaista. Ostajaviestintä ei ole käytössä.')).'</p>';}
+   echo '<fieldset><legend>'.esc_html(ilfa_t('Images and rights','Kuvat ja käyttöoikeudet')).'</legend>';if($p&&has_post_thumbnail($p))echo get_the_post_thumbnail($p,'thumbnail');echo '<label>'.esc_html(ilfa_t('Featured image — JPEG, PNG or WebP, maximum 5 MB','Artikkelikuva — JPEG, PNG tai WebP, enintään 5 Mt')).'<input type="file" name="featured" accept="image/jpeg,image/png,image/webp"></label>';ilfa_field('alt',ilfa_t('Featured image alt text','Artikkelikuvan vaihtoehtoinen teksti'),$p?get_post_meta(get_post_thumbnail_id($p),'_wp_attachment_image_alt',true):'');ilfa_field('caption',ilfa_t('Image caption','Kuvateksti'),ilfa_meta($p,'_ilf_image_caption'));ilfa_field('credit',ilfa_t('Photographer, source URL and licence','Kuvaaja, lähdelinkki ja lisenssi'),ilfa_meta($p,'_ilf_image_credit'),'textarea');echo '</fieldset>';
+ }
+
+ echo '<div class="ilfa-actions" style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">';
+ ilfa_button(ilfa_t('Save Draft','Tallenna luonnos'),'save');
+ ilfa_button(ilfa_t('Preview','Esikatsele'),'preview');
+ if($kind==='post'){
+   if(ilfa_editor()){
+     echo '<button type="submit" class="button button-primary" name="intent" value="publish" style="background:#16a34a;border-color:#15803d;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;">'.esc_html(ilfa_t('Publish Now','Julkaise heti')).'</button>';
+     echo '<button type="submit" class="button" name="intent" value="schedule" style="background:#0284c7;border-color:#0369a1;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;">'.esc_html(ilfa_t('Schedule','Ajasta')).'</button>';
+   } else {
+     echo '<button type="submit" class="button button-primary" name="intent" value="submit" style="background:#0759b4;border-color:#05448c;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;">'.esc_html(ilfa_t('Submit for Review','Lähetä tarkistettavaksi')).'</button>';
+   }
+ } else {
+   echo '<button type="submit" class="button button-primary" name="intent" value="submit">'.esc_html(ilfa_t('Submit for Review','Lähetä tarkistettavaksi')).'</button>';
+ }
+ echo '<a href="'.esc_url(home_url('/')).'" class="ilfa-link" style="background:#f1f5f9;color:#334155;text-decoration:none;font-weight:700;padding:8px 14px;border-radius:6px;display:inline-flex;align-items:center;">'.esc_html(ilfa_t('Exit to Home','Poistu etusivulle')).'</a>';
+ echo '<a href="'.esc_url(ilfa_url('overview')).'" class="ilfa-link" style="background:#f1f5f9;color:#334155;text-decoration:none;font-weight:700;padding:8px 14px;border-radius:6px;display:inline-flex;align-items:center;">'.esc_html(ilfa_t('Exit to Workspace','Poistu työtilaan')).'</a>';
+ echo '</div><p style="margin-top:14px;font-size:13px;color:#64748b;">'.esc_html(ilfa_t('Save Draft works at any time with incomplete fields. Submit and Publish actions require mandatory fields.','Luonnoksen voi tallentaa milloin vain. Lähetys ja julkaisu vaativat pakolliset kentät.')).'</p></form>';
+}
+
+function ilfa_portal_icon($name,$size=20){
+ $s=(int)$size;
+ $attrs='width="'.$s.'" height="'.$s.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+ $paths=array(
+  'grid'=>'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  'user'=>'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  'users'=>'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'briefcase'=>'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  'tag'=>'<path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.41 0l8.59-8.59a1 1 0 0 0 0-1.41L12 2z"/><circle cx="7" cy="7" r="1.5"/>',
+  'bookmark'=>'<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  'bell'=>'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  'settings'=>'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.02 1.4 1.09H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  'edit'=>'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+  'file'=>'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+  'send'=>'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  'check'=>'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  'alert'=>'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  'bulb'=>'<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>',
+  'clipboard'=>'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  'inbox'=>'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  'eye'=>'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  'calendar'=>'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  'layers'=>'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  'trash'=>'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  'image'=>'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+  'shield'=>'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  'activity'=>'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  'database'=>'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+  'chat'=>'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  'search'=>'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  'plus'=>'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  'undo'=>'<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+  'external'=>'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+  'folder'=>'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+ );
+ return '<svg '.$attrs.'>'.($paths[$name]??$paths['folder']).'</svg>';
+}
+
+function ilfa_portal_tile($label,$url,$icon='folder'){
+ echo '<a class="ilfa-tile" href="'.esc_url($url).'"><span class="ilfa-tile-icon">'.ilfa_portal_icon($icon,21).'</span><span class="ilfa-tile-label">'.esc_html($label).'</span></a>';
+}
+
+add_action('template_redirect',function(){
+ if(!isset($_GET['ilf_portal']))return;if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);nocache_headers();if(!is_user_logged_in()){wp_safe_redirect(wp_login_url(ilfa_url()));exit;}
+ $view=sanitize_key($_GET['ilf_portal']);
+ $member=array('overview'=>array('Overview','Yleiskatsaus'),'profile'=>array('My Profile','Oma profiili'),'jobs'=>array('My Job Posts','Omat työpaikkailmoitukset'),'classifieds'=>array('My Classifieds','Omat ilmoitukset'),'saved'=>array('Saved Items','Tallennetut'),'notifications'=>array('Notifications','Ilmoitukset'),'settings'=>array('Account Settings','Tilin asetukset'));
+ $writer=array('writer'=>array('Writer Overview','Kirjoittajan yleiskatsaus'),'edit'=>array('Write New Article','Kirjoita artikkeli'),'drafts'=>array('My Drafts','Omat luonnokset'),'submitted'=>array('Submitted Articles','Lähetetyt artikkelit'),'corrections'=>array('Corrections Requested','Korjauspyynnöt'),'published'=>array('Published Articles','Julkaistut artikkelit'),'pitches'=>array('Story Pitches','Juttuideat'),'assignments'=>array('Assignments','Toimeksiannot'),'author'=>array('Author Profile','Kirjoittajaprofiili'));
+ $editor=array('editor'=>array('Editorial Overview','Toimituksen yleiskatsaus'),'inbox'=>array('Submission Inbox','Saapuneet jutut'),'reviews'=>array('My Reviews','Omat tarkistukset'),'calendar'=>array('Editorial Calendar','Julkaisukalenteri'),'assignments'=>array('Writer Assignments','Kirjoittajien toimeksiannot'),'all'=>array('All Editorial Articles','Kaikki artikkelit'),'updates'=>array('Corrections & Updates','Korjaukset ja päivitykset'),'trash'=>array('Trash','Roskakori'));
+ $admin=array('admin'=>array('Admin Overview','Ylläpidon yleiskatsaus'),'all'=>array('All Articles','Kaikki artikkelit'),'users'=>array('Users & Roles','Käyttäjät ja roolit'),'taxonomies'=>array('Categories & Locations','Kategoriat ja sijainnit'),'media'=>array('Media Library','Mediakirjasto'),'site_settings'=>array('Website Settings','Sivuston asetukset'),'comments'=>array('Comments','Kommentit'),'moderation'=>array('Jobs & Classifieds Moderation','Ilmoitusten tarkistus'),'audit'=>array('Activity & Audit Log','Toimintaloki'),'trash'=>array('Trash','Roskakori'));
+ $allowed=$member+array('edit'=>array('New item','Uusi kohde'),'preview'=>array('Listing Preview','Ilmoituksen esikatselu'));
+ if(ilfa_writer())$allowed=array_merge($allowed,$writer);
+ if(ilfa_editor())$allowed=array_merge($allowed,$editor,array('review'=>array('Review Article','Tarkista artikkeli')));
+ if(current_user_can('manage_options'))$allowed=array_merge($allowed,$admin);
+ if(!isset($allowed[$view])){status_header(403);wp_die('This workspace requires an approved role.',403);}
+
+ $edit_kind=sanitize_key($_GET['kind']??'post');
+ if($view==='edit'&&!empty($_GET['id'])){$ep=get_post(absint($_GET['id']));if($ep)$edit_kind=$ep->post_type;}
+ $req_role=sanitize_key($_GET['role']??'');
+ $active_role='member';
+ if(($req_role==='admin'||in_array($view,array('admin','users','taxonomies','media','site_settings','comments','moderation','audit'),true))&&current_user_can('manage_options'))$active_role='admin';
+ elseif(($req_role==='editor'||in_array($view,array('editor','inbox','reviews','calendar','all','updates','review','trash'),true))&&ilfa_editor())$active_role='editor';
+ elseif((in_array($view,array('writer','drafts','submitted','corrections','published','pitches','assignments','author'),true)||($view==='edit'&&$edit_kind==='post'))&&ilfa_writer())$active_role='writer';
+
+ $roles=array(
+  'member'=>array('label'=>ilfa_t('Member','Jäsen'),'dash'=>ilfa_t('Member Dashboard','Jäsenen hallintapaneeli'),'home'=>'overview','items'=>$member),
+ );
+ if(ilfa_writer())$roles['writer']=array('label'=>ilfa_t('Writer','Kirjoittaja'),'dash'=>ilfa_t('Writer / Reporter Dashboard','Kirjoittajan hallintapaneeli'),'home'=>'writer','items'=>$writer);
+ if(ilfa_editor())$roles['editor']=array('label'=>ilfa_t('Editor','Toimittaja'),'dash'=>ilfa_t('Editor Dashboard','Toimittajan hallintapaneeli'),'home'=>'editor','items'=>$editor);
+ if(current_user_can('manage_options'))$roles['admin']=array('label'=>ilfa_t('Admin','Ylläpito'),'dash'=>ilfa_t('Admin Dashboard','Ylläpidon hallintapaneeli'),'home'=>'admin','items'=>$admin);
+
+ $current_user=wp_get_current_user();
+ $role_info=$roles[$active_role];
+ $is_overview=in_array($view,array('overview','writer','editor','admin'),true);
+
+ get_header();
+ echo '<main id="main" class="wrap ilfa-portal"><div class="ilfa-shell">';
+ echo '<header class="ilfa-topbar-banner"><div class="ilfa-topbar-brand"><span class="ilfa-brand-name">ILoveFinland</span><span class="ilfa-brand-welcome">'.esc_html(sprintf(ilfa_t('Welcome, %s','Tervetuloa, %s'),$current_user->display_name)).'</span></div>';
+ echo '<div class="ilfa-account-wrap"><button type="button" class="ilfa-account-btn" id="ilfa-account-toggle" aria-expanded="false" aria-haspopup="menu"><span class="ilfa-account-ico">'.ilfa_portal_icon('user').'</span><span>'.esc_html(ilfa_t('My Account','Oma tili')).'</span><span class="ilfa-caret" aria-hidden="true">▾</span></button>';
+ echo '<div class="ilfa-account-menu" id="ilfa-account-menu" role="menu" hidden>';
+ echo '<a role="menuitem" href="'.esc_url(ilfa_url('overview')).'">'.esc_html(ilfa_t('Member Dashboard','Jäsenen hallintapaneeli')).'</a>';
+ echo '<a role="menuitem" href="'.esc_url(ilfa_url('profile')).'">'.esc_html(ilfa_t('My Profile','Oma profiili')).'</a>';
+ echo '<a role="menuitem" href="'.esc_url(ilfa_url('settings')).'">'.esc_html(ilfa_t('Account Settings','Tilin asetukset')).'</a>';
+ echo '<a role="menuitem" href="'.esc_url(home_url('/')).'">← '.esc_html(ilfa_t('Back to Website','Takaisin sivustolle')).'</a>';
+ echo '<a role="menuitem" class="is-danger" href="'.esc_url(wp_logout_url(home_url('/'))).'">'.esc_html(ilfa_t('Sign out','Kirjaudu ulos')).'</a>';
+ echo '</div></div></header>';
+
+ echo '<div class="ilfa-role-bar" aria-label="'.esc_attr(ilfa_t('Switch dashboard by role','Vaihda hallintapaneelia roolin mukaan')).'">';
+ echo '<p class="ilfa-role-caption">'.esc_html(ilfa_t('Select workspace by role','Valitse työtila roolin mukaan')).'</p>';
+ echo '<div class="ilfa-role-list">';
+ foreach($roles as $rk=>$r){
+  $cls='ilfa-role-option'.($active_role===$rk?' is-active':'');
+  echo '<a class="'.esc_attr($cls).'" href="'.esc_url(ilfa_url($r['home'])).'" '.($active_role===$rk?'aria-current="true"':'').'><span class="ilfa-role-radio" aria-hidden="true"></span><span>'.esc_html($r['label']).'</span></a>';
+ }
+ echo '</div></div>';
+
+ echo '<section class="ilfa-panel">';
+ if(isset($_GET['saved']))echo '<p role="status" class="ilfa-success">'.esc_html(ilfa_t('Saved successfully.','Tallennettu.')).'</p>';
+
+ if($is_overview){
+  echo '<div class="ilfa-dash-head"><h1 class="ilfa-dash-title"><span class="ilfa-dash-icon">'.ilfa_portal_icon('grid').'</span><span>'.esc_html($role_info['dash']).'</span></h1>';
+  echo '<span class="ilfa-role-badge">'.esc_html($role_info['label']).'</span></div>';
+
+  echo '<div class="ilfa-stats">';
+  foreach(array('draft'=>'Drafts','pending'=>'Awaiting review','publish'=>'Published') as $state=>$label){
+   $args=array('post_type'=>'post','post_status'=>$state,'author'=>get_current_user_id(),'posts_per_page'=>1);
+   if(ilfa_editor()&&in_array($view,array('editor','admin'),true))unset($args['author']);
+   $q=new WP_Query($args);
+   echo '<article><strong>'.(int)$q->found_posts.'</strong><span>'.esc_html(ilfa_t($label,array('Drafts'=>'Luonnokset','Awaiting review'=>'Odottaa tarkistusta','Published'=>'Julkaistu')[$label])).'</span></article>';
+  }
+  echo '</div>';
+
+  echo '<div class="ilfa-tile-grid">';
+  if($view==='overview'){
+   ilfa_portal_tile(ilfa_t('My Profile','Oma profiili'),ilfa_url('profile'),'user');
+   ilfa_portal_tile(ilfa_t('My Job Posts','Omat työpaikat'),ilfa_url('jobs'),'briefcase');
+   ilfa_portal_tile(ilfa_t('My Classifieds','Omat ilmoitukset'),ilfa_url('classifieds'),'tag');
+   ilfa_portal_tile(ilfa_t('Saved Articles','Tallennetut'),ilfa_url('saved'),'bookmark');
+   ilfa_portal_tile(ilfa_t('Notifications','Ilmoitukset'),ilfa_url('notifications'),'bell');
+   ilfa_portal_tile(ilfa_t('Settings','Asetukset'),ilfa_url('settings'),'settings');
+   ilfa_portal_tile(ilfa_t('Post a Job','Lisää työpaikka'),ilfa_url('edit',array('kind'=>'ilf_job')),'edit');
+   ilfa_portal_tile(ilfa_t('Post a Classified','Lisää ilmoitus'),ilfa_url('edit',array('kind'=>'ilf_classified')),'tag');
+  }elseif($view==='writer'){
+   ilfa_portal_tile(ilfa_t('Write New Article','Kirjoita artikkeli'),ilfa_url('edit'),'edit');
+   ilfa_portal_tile(ilfa_t('My Drafts','Omat luonnokset'),ilfa_url('drafts'),'file');
+   ilfa_portal_tile(ilfa_t('Submitted Articles','Lähetetyt artikkelit'),ilfa_url('submitted'),'send');
+   ilfa_portal_tile(ilfa_t('Published Articles','Julkaistut artikkelit'),ilfa_url('published'),'check');
+   ilfa_portal_tile(ilfa_t('Corrections Requested','Korjauspyynnöt'),ilfa_url('corrections'),'alert');
+   ilfa_portal_tile(ilfa_t('Story Pitches','Juttuideat'),ilfa_url('pitches'),'bulb');
+   ilfa_portal_tile(ilfa_t('Assignments','Toimeksiannot'),ilfa_url('assignments'),'clipboard');
+   ilfa_portal_tile(ilfa_t('Profile','Kirjoittajaprofiili'),ilfa_url('author'),'user');
+  }elseif($view==='editor'){
+   ilfa_portal_tile(ilfa_t('Pending Review','Odottaa tarkistusta'),ilfa_url('inbox'),'inbox');
+   ilfa_portal_tile(ilfa_t('All Articles','Kaikki artikkelit'),ilfa_url('all'),'layers');
+   ilfa_portal_tile(ilfa_t('Publish / Schedule','Julkaise / Ajasta'),ilfa_url('calendar'),'calendar');
+   ilfa_portal_tile(ilfa_t('My Reviews','Omat tarkistukset'),ilfa_url('reviews'),'eye');
+   ilfa_portal_tile(ilfa_t('Writer Assignments','Toimeksiannot'),ilfa_url('assignments',array('role'=>'editor')),'clipboard');
+   ilfa_portal_tile(ilfa_t('Corrections & Updates','Korjaukset ja päivitykset'),ilfa_url('updates'),'alert');
+   ilfa_portal_tile(ilfa_t('Trash / Restore','Roskakori / Palauta'),ilfa_url('trash'),'trash');
+   ilfa_portal_tile(ilfa_t('Write New Article','Kirjoita artikkeli'),ilfa_url('edit',array('role'=>'editor')),'edit');
+  }elseif($view==='admin'){
+   ilfa_portal_tile(ilfa_t('All Articles','Kaikki artikkelit'),ilfa_url('all',array('role'=>'admin')),'layers');
+   ilfa_portal_tile(ilfa_t('Users & Roles','Käyttäjät ja roolit'),ilfa_url('users'),'users');
+   ilfa_portal_tile(ilfa_t('Categories & Locations','Kategoriat ja sijainnit'),ilfa_url('taxonomies'),'tag');
+   ilfa_portal_tile(ilfa_t('Media Library','Mediakirjasto'),ilfa_url('media'),'image');
+   ilfa_portal_tile(ilfa_t('Website Settings','Sivuston asetukset'),ilfa_url('site_settings'),'settings');
+   ilfa_portal_tile(ilfa_t('Comments','Kommentit'),ilfa_url('comments'),'chat');
+   ilfa_portal_tile(ilfa_t('Jobs & Classifieds Moderation','Ilmoitusten tarkistus'),ilfa_url('moderation'),'shield');
+   ilfa_portal_tile(ilfa_t('Activity & Audit Log','Toimintaloki'),ilfa_url('audit'),'activity');
+   ilfa_portal_tile(ilfa_t('Trash / Restore','Roskakori / Palauta'),ilfa_url('trash',array('role'=>'admin')),'trash');
+  }
+  echo '</div>';
+
+  echo '<div class="ilfa-recent-wrap"><div class="ilfa-recent-head"><h2>'.esc_html(in_array($view,array('editor','admin'),true)?ilfa_t('Pending Review','Odottaa tarkistusta'):ilfa_t('Recent Drafts','Viimeisimmät luonnokset')).'</h2></div>';
+  ilfa_items(ilfa_editor()&&in_array($view,array('editor','admin'),true)?'inbox':'drafts');
+  echo '</div>';
+ }else{
+  echo '<div class="ilfa-dash-head"><div class="ilfa-subhead-left"><a class="ilfa-back-dash" href="'.esc_url(ilfa_url($role_info['home'])).'">← '.esc_html($role_info['dash']).'</a><h1 class="ilfa-sub-title">'.esc_html(ilfa_t(...$allowed[$view])).'</h1></div></div>';
+  echo '<nav class="ilfa-subnav" aria-label="'.esc_attr(ilfa_t('Section navigation','Osion valikko')).'">';
+  foreach($role_info['items'] as $key=>$label){
+   $nav_args=($active_role==='admin'&&in_array($key,array('all','trash'),true))?array('role'=>'admin'):array();
+   echo '<a href="'.esc_url(ilfa_url($key,$nav_args)).'" '.($view===$key?'aria-current="page"':'').'>'.esc_html(ilfa_t(...$label)).'</a>';
+  }
+  echo '</nav>';
+  if(in_array($view,array('profile','author'),true)){echo do_shortcode('[uwp_account]');}
+ elseif($view==='settings'){ilfa_form_start('preferences');ilfa_select('language',ilfa_t('Preferred language','Ensisijainen kieli'),array('en'=>'English','fi'=>'Suomi'),get_user_meta(get_current_user_id(),'_ilfa_language',true)?:'en');echo '<label><input type="checkbox" name="communication" value="1" '.checked(get_user_meta(get_current_user_id(),'_ilfa_communication',true),'1',false).'> '.esc_html(ilfa_t('Receive optional account updates','Vastaanota vapaaehtoisia tilitiedotteita')).'</label>';ilfa_button(ilfa_t('Save settings','Tallenna asetukset'));echo '</form><p><a href="'.esc_url(home_url('/change-password/')).'">'.esc_html(ilfa_t('Change password','Vaihda salasana')).'</a> · <a href="'.esc_url(get_privacy_policy_url()).'">'.esc_html(ilfa_t('Privacy Policy','Tietosuojaseloste')).'</a></p><p>'.esc_html(ilfa_t('For an account data export or deletion request, contact contact@ilovefinland.net.','Pyydä tietojen vientiä tai tilin poistamista osoitteesta contact@ilovefinland.net.')).'</p>';}
+ elseif($view==='notifications'){$items=get_user_meta(get_current_user_id(),'_ilfa_notices',true);if(!$items)echo '<p>'.esc_html(ilfa_t('No notifications yet.','Ei vielä ilmoituksia.')).'</p>';else foreach($items as $n)echo '<article class="ilfa-note"><small>'.esc_html($n['time']).'</small><p>'.esc_html($n['message']).'</p></article>';}
+ elseif($view==='preview'){$p=get_post(absint($_GET['id']??0));if(!$p||!in_array($p->post_type,array('ilf_job','ilf_classified'),true)||!ilfa_can_edit($p))echo '<p>Preview unavailable.</p>';else echo '<p><strong>'.esc_html(ilfa_t('Private preview — not published','Yksityinen esikatselu — ei julkaistu')).'</strong></p><h2>'.esc_html($p->post_title).'</h2>'.get_the_post_thumbnail($p,'large').'<div>'.wp_kses_post(wpautop($p->post_content)).'</div>'; }
+ elseif($view==='edit')ilfa_edit_form();
+ elseif($view==='review'){$p=get_post(absint($_GET['id']??0));if(!$p||!in_array($p->post_type,array('post','ilf_job','ilf_classified'),true)||($p->post_type==='post'?!ilfa_editor():!current_user_can('manage_options')))echo '<p>Review unavailable.</p>';else{echo '<h2>'.esc_html($p->post_title).'</h2>'.get_the_post_thumbnail($p,'medium_large').'<p>'.wp_kses_post(get_post_meta($p->ID,'_ilf_image_credit',true)).'</p><p>'.esc_html(ilfa_t('Original author','Alkuperäinen kirjoittaja')).': '.esc_html(get_the_author_meta('display_name',$p->post_author)).'</p><div class="ilfa-preview">'.wp_kses_post(wpautop($p->post_content)).'</div><details><summary>'.esc_html(ilfa_t('Sources and verification notes','Lähteet ja tarkistusmuistiinpanot')).'</summary><p>'.nl2br(esc_html(get_post_meta($p->ID,'_ilfa_sources',true))).'</p><p>'.nl2br(esc_html(get_post_meta($p->ID,'_ilfa_verification',true))).'</p></details>';if(current_user_can('edit_post',$p->ID))echo '<p><a href="'.esc_url(get_edit_post_link($p->ID)).'">'.esc_html(ilfa_t('Open full editor and revision history','Avaa koko editori ja versiohistoria')).'</a></p>';ilfa_form_start('review',$p->ID);ilfa_select('state',ilfa_t('Review decision','Tarkistuksen päätös'),array_intersect_key(ilfa_stages(),array_flip(array('assigned','in_review','changes','approved','scheduled','published','rejected'))),ilfa_stage($p));ilfa_field('feedback',ilfa_t('Feedback / public correction note for published articles','Palaute / julkaistun artikkelin julkinen korjausmerkintä'),'','textarea');$editors=array();foreach(get_users(array('role__in'=>array('editor','administrator'))) as $eu)$editors[$eu->ID]=$eu->display_name;ilfa_select('editor_id',ilfa_t('Assigned Editor','Vastaava toimittaja'),$editors,get_post_meta($p->ID,'_ilfa_editor',true)?:get_current_user_id());ilfa_field('schedule',ilfa_t('Schedule time (site timezone)','Ajastusaika (sivuston aikavyöhyke)'),'','datetime-local');ilfa_button(ilfa_t('Apply decision','Tallenna päätös'));echo '</form>';}}
+ elseif($view==='pitches'){ilfa_form_start('pitch');ilfa_field('headline',ilfa_t('Pitch title','Juttuidean otsikko'),'','text',true);ilfa_field('brief',ilfa_t('Angle, sources and why it matters','Näkökulma, lähteet ja merkitys'),'','textarea',true);ilfa_button(ilfa_t('Submit pitch','Lähetä idea'));echo '</form>';ilfa_items('pitches');}
+ elseif($view==='assignments'){if(ilfa_editor()){ilfa_form_start('assign');ilfa_field('headline',ilfa_t('Assignment headline','Toimeksiannon otsikko'),'','text',true);$writers=array();foreach(get_users(array('role__in'=>array('ilf_writer','editor','administrator'))) as $u)$writers[$u->ID]=$u->display_name;ilfa_select('writer_id',ilfa_t('Assign writer','Valitse kirjoittaja'),$writers);ilfa_field('brief',ilfa_t('Brief','Toimeksiannon kuvaus'),'','textarea',true);ilfa_field('deadline',ilfa_t('Deadline','Määräaika'),'','date');ilfa_button(ilfa_t('Create assignment','Luo toimeksianto'));echo '</form>';}ilfa_items('assignments');}
+ elseif($view==='users'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  $role_labels=array('subscriber'=>ilfa_t('Member','Jäsen'),'ilf_writer'=>ilfa_t('Writer','Kirjoittaja'),'editor'=>ilfa_t('Editor','Toimittaja'),'administrator'=>ilfa_t('Admin','Ylläpitäjä'));
+  $users=get_users(array('number'=>100,'orderby'=>'registered','order'=>'DESC'));
+  echo '<div class="ilfa-table-wrap"><table class="ilfa-table"><thead><tr><th>'.esc_html(ilfa_t('User','Käyttäjä')).'</th><th>'.esc_html(ilfa_t('Email','Sähköposti')).'</th><th>'.esc_html(ilfa_t('Role','Rooli')).'</th><th>'.esc_html(ilfa_t('Change Role','Vaihda rooli')).'</th></tr></thead><tbody>';
+  foreach($users as $u){
+   $ur=$u->roles[0]??'subscriber';$is_me=((int)$u->ID===(int)$current_user->ID);
+   echo '<tr><td><strong>'.esc_html($u->display_name).'</strong><br><small>@'.esc_html($u->user_login).'</small></td><td>'.esc_html($u->user_email).'</td><td><span class="ilfa-pill">'.esc_html($role_labels[$ur]??$ur).'</span></td><td>';
+   if($is_me){echo '<small>'.esc_html(ilfa_t('Current account','Nykyinen tili')).'</small>';}
+   else{
+    ilfa_form_start('user_role');echo '<input type="hidden" name="user_id" value="'.(int)$u->ID.'"><div class="ilfa-inline-form"><select name="role">';
+    foreach($role_labels as $rk=>$rl)echo '<option value="'.esc_attr($rk).'" '.selected($ur,$rk,false).'>'.esc_html($rl).'</option>';
+    echo '</select><button type="submit" class="ilfa-act-btn ilfa-act-primary">'.esc_html(ilfa_t('Update','Päivitä')).'</button></div></form>';
+   }
+   echo '</td></tr>';
+  }
+  echo '</tbody></table></div>';
+ }
+ elseif($view==='taxonomies'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  ilfa_form_start('add_term');
+  echo '<div class="ilfa-admin-card"><h3>'.esc_html(ilfa_t('Add New Section or Category','Lisää uusi osio tai kategoria')).'</h3><div class="ilfa-fields">';
+  ilfa_select('taxonomy',ilfa_t('Type','Tyyppi'),array('ilf_section'=>ilfa_t('Section','Osio'),'category'=>ilfa_t('Category','Kategoria')),'category');
+  ilfa_field('term_name',ilfa_t('Name','Nimi'),'','text',true);
+  echo '<div style="display:flex;align-items:flex-end;margin:18px 0;">';ilfa_button(ilfa_t('Add term','Lisää'));echo '</div></div></div></form>';
+  echo '<div class="ilfa-tax-grid">';
+  echo '<div class="ilfa-admin-card"><h3>'.esc_html(ilfa_t('Sections','Osiot')).'</h3><div class="ilfa-tag-list">';
+  $secs=get_terms(array('taxonomy'=>'ilf_section','hide_empty'=>false));
+  if(!is_wp_error($secs)&&$secs){foreach($secs as $t)echo '<span class="ilfa-tag-chip">'.esc_html($t->name).' <strong>'.(int)$t->count.'</strong></span>';}
+  echo '</div></div>';
+  echo '<div class="ilfa-admin-card"><h3>'.esc_html(ilfa_t('Categories','Kategoriat')).'</h3><div class="ilfa-tag-list">';
+  $cats=get_terms(array('taxonomy'=>'category','hide_empty'=>false,'number'=>80,'orderby'=>'count','order'=>'DESC'));
+  if(!is_wp_error($cats)&&$cats){foreach($cats as $t)echo '<span class="ilfa-tag-chip">'.esc_html($t->name).' <strong>'.(int)$t->count.'</strong></span>';}
+  echo '</div></div></div>';
+  global $wpdb;
+  $locs=$wpdb->get_results("SELECT pm.meta_value AS loc, COUNT(*) AS cnt FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID=pm.post_id WHERE pm.meta_key='ilf_location' AND pm.meta_value!='' AND p.post_status IN ('publish','draft','pending','future') GROUP BY pm.meta_value ORDER BY cnt DESC LIMIT 30");
+  echo '<div class="ilfa-admin-card"><h3>'.esc_html(ilfa_t('Article Locations','Artikkelien sijainnit')).'</h3>';
+  if($locs){echo '<div class="ilfa-tag-list">';foreach($locs as $l)echo '<span class="ilfa-tag-chip">'.esc_html($l->loc).' <strong>'.(int)$l->cnt.'</strong></span>';echo '</div>';}
+  else{echo '<p>'.esc_html(ilfa_t('No locations recorded yet. Set Location in article details when writing.','Ei vielä sijainteja.')).'</p>';}
+  echo '</div>';
+ }
+ elseif($view==='media'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  ilfa_form_start('upload_media');
+  echo '<div class="ilfa-admin-card"><h3>'.esc_html(ilfa_t('Upload New Image','Lataa uusi kuva')).'</h3><div class="ilfa-fields">';
+  echo '<label>'.esc_html(ilfa_t('Image file (JPG, PNG, WebP, max 10 MB)','Kuvatiedosto (JPG, PNG, WebP, maks. 10 Mt)')).'<input type="file" name="media_file" accept="image/*" required></label>';
+  ilfa_field('alt',ilfa_t('Alternative text (alt)','Vaihtoehtoinen teksti (alt)'),'','text');
+  echo '<div style="display:flex;align-items:flex-end;margin:18px 0;">';ilfa_button(ilfa_t('Upload Image','Lataa kuva'));echo '</div></div></div></form>';
+  $mq=new WP_Query(array('post_type'=>'attachment','post_mime_type'=>'image','post_status'=>'inherit','posts_per_page'=>24,'orderby'=>'date','order'=>'DESC'));
+  if(!$mq->have_posts()){echo '<p>'.esc_html(ilfa_t('No uploaded images yet.','Ei vielä ladattuja kuvia.')).'</p>';}
+  else{
+   echo '<div class="ilfa-media-grid">';
+   foreach($mq->posts as $m){
+    $url=wp_get_attachment_url($m->ID);
+    echo '<article class="ilfa-media-card"><div class="ilfa-media-thumb">'.wp_get_attachment_image($m->ID,'medium').'</div><div class="ilfa-media-meta"><strong>'.esc_html($m->post_title?:basename($url)).'</strong><small>'.esc_html(get_the_date('j.n.Y',$m)).'</small><div class="ilfa-media-actions"><a class="ilfa-act-btn" href="'.esc_url($url).'" target="_blank" rel="noopener">'.ilfa_portal_icon('external',14).'<span>'.esc_html(ilfa_t('Open','Avaa')).'</span></a>';
+    ilfa_form_start('delete_media',$m->ID);echo '<button type="submit" class="ilfa-act-btn ilfa-act-danger ilfa-confirm-delete">'.ilfa_portal_icon('trash',14).'<span>'.esc_html(ilfa_t('Delete','Poista')).'</span></button></form>';
+    echo '</div></div></article>';
+   }
+   echo '</div>';
+  }
+  wp_reset_postdata();
+ }
+ elseif($view==='site_settings'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  ilfa_form_start('site_settings');
+  echo '<div class="ilfa-admin-card">';
+  ilfa_field('blogname',ilfa_t('Website Title','Sivuston nimi'),get_option('blogname','ILoveFinland'),'text',true);
+  ilfa_field('blogdescription',ilfa_t('Tagline','Kuvaus'),get_option('blogdescription',''),'text');
+  ilfa_field('posts_per_page',ilfa_t('Articles per archive page','Artikkelia per sivu'),get_option('posts_per_page',10),'number',true);
+  echo '<label><input type="checkbox" name="users_can_register" value="1" '.checked(get_option('users_can_register'),1,false).'> '.esc_html(ilfa_t('Allow new users to register','Salli uusien käyttäjien rekisteröityminen')).'</label>';
+  echo '<label><input type="checkbox" name="ilfa_email" value="1" '.checked(get_option('ilfa_transactional_email_enabled'),1,false).'> '.esc_html(ilfa_t('Enable portal notification emails','Ota portaalin sähköposti-ilmoitukset käyttöön')).'</label>';
+  ilfa_button(ilfa_t('Save Website Settings','Tallenna sivuston asetukset'));
+  echo '</div></form>';
+ }
+ elseif($view==='comments'){
+  if(!current_user_can('manage_options'))wp_die('Admin permission required.',403);
+  $comments=get_comments(array('number'=>40,'status'=>'any','orderby'=>'comment_date_gmt','order'=>'DESC'));
+  if(!$comments){echo '<p>'.esc_html(ilfa_t('No comments yet.','Ei vielä kommentteja.')).'</p>';}
+  else{
+   echo '<div class="ilfa-items">';
+   foreach($comments as $c){
+    $st=wp_get_comment_status($c->comment_ID);
+    echo '<article><div><span class="ilfa-pill">'.esc_html($st).'</span> <strong>'.esc_html($c->comment_author).'</strong> · <small>'.esc_html(mysql2date('j.n.Y H:i',$c->comment_date)).'</small>';
+    echo '<p style="margin:8px 0 4px;">'.esc_html(wp_trim_words($c->comment_content,36)).'</p>';
+    echo '<small>'.esc_html(ilfa_t('On:','Artikkelissa:')).' <a href="'.esc_url(get_permalink($c->comment_post_ID)).'">'.esc_html(get_the_title($c->comment_post_ID)).'</a></small></div><div class="ilfa-row-actions">';
+    echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" class="ilfa-inline-form">'.wp_nonce_field('ilfa_comment_action','_wpnonce',true,false).'<input type="hidden" name="action" value="ilfa_action"><input type="hidden" name="task" value="comment_action"><input type="hidden" name="comment_id" value="'.(int)$c->comment_ID.'">';
+    if($st!=='approved')echo '<button type="submit" name="subaction" value="approve" class="ilfa-act-btn ilfa-act-primary">'.ilfa_portal_icon('check',14).'<span>'.esc_html(ilfa_t('Approve','Hyväksy')).'</span></button>';
+    if($st==='approved')echo '<button type="submit" name="subaction" value="hold" class="ilfa-act-btn">'.ilfa_portal_icon('undo',14).'<span>'.esc_html(ilfa_t('Unapprove','Piilota')).'</span></button>';
+    if($st!=='spam')echo '<button type="submit" name="subaction" value="spam" class="ilfa-act-btn ilfa-act-muted">'.ilfa_portal_icon('alert',14).'<span>'.esc_html(ilfa_t('Spam','Roskaposti')).'</span></button>';
+    echo '<button type="submit" name="subaction" value="trash" class="ilfa-act-btn ilfa-act-danger">'.ilfa_portal_icon('trash',14).'<span>'.esc_html(ilfa_t('Trash','Roskakoriin')).'</span></button></form></div></article>';
+   }
+   echo '</div>';
+  }
+ }
+ elseif($view==='audit'){
+  $log=array_reverse(get_option('ilfa_audit',array()));
+  if(!$log){echo '<p class="ilfa-empty">'.esc_html(ilfa_t('No activity recorded yet.','Ei vielä tapahtumia.')).'</p>';}
+  else{
+   echo '<div class="ilfa-table-wrap"><table class="ilfa-table"><thead><tr><th>'.esc_html(ilfa_t('Time','Aika')).'</th><th>'.esc_html(ilfa_t('User ID','Käyttäjä')).'</th><th>'.esc_html(ilfa_t('Action','Toiminto')).'</th><th>'.esc_html(ilfa_t('Target','Kohde')).'</th></tr></thead><tbody>';
+   foreach($log as $e){echo '<tr><td><small>'.esc_html($e['time']).'</small></td><td>#'.(int)$e['user'].'</td><td>'.esc_html($e['action']).'</td><td>#'.(int)$e['post'].'</td></tr>';}
+   echo '</tbody></table></div>';
+  }
+ }
+ else{if($view==='jobs'||$view==='classifieds'){ilfa_link(ilfa_t('Create new listing','Luo uusi ilmoitus'),'edit',array('kind'=>$view==='jobs'?'ilf_job':'ilf_classified'));}ilfa_items($view);}
+ }
+ echo '</section></div></main>';
+ echo '<script>(function(){var btn=document.getElementById("ilfa-account-toggle"),menu=document.getElementById("ilfa-account-menu");if(!btn||!menu)return;function close(){menu.setAttribute("hidden","");btn.setAttribute("aria-expanded","false");}btn.addEventListener("click",function(e){e.stopPropagation();var open=menu.hasAttribute("hidden");if(open){menu.removeAttribute("hidden");btn.setAttribute("aria-expanded","true");}else{close();}});document.addEventListener("click",function(e){if(!menu.contains(e.target)&&e.target!==btn)close();});document.addEventListener("keydown",function(e){if(e.key==="Escape")close();});})();</script>';
+ get_footer();exit;
+});
+
+add_action('wp_head',function(){if(!isset($_GET['ilf_portal']))return;?><style>
+.ilfa-portal{padding-top:26px;padding-bottom:54px}
+.ilfa-shell{max-width:1020px;margin-inline:auto}
+.ilfa-topbar-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-radius:14px;background:linear-gradient(135deg,#071d46 0%,#0757ad 100%);color:#fff;box-shadow:0 10px 26px rgba(7,29,70,.14)}
+.ilfa-topbar-brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ilfa-brand-name{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.ilfa-brand-welcome{font-size:13px;color:#cde7ff;font-weight:500}
+.ilfa-account-wrap{position:relative}
+.ilfa-account-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s ease}
+.ilfa-account-btn:hover{background:rgba(255,255,255,.22)}
+.ilfa-account-ico{display:inline-flex;align-items:center}
+.ilfa-account-ico svg{width:17px;height:17px}
+.ilfa-caret{font-size:12px;opacity:.9}
+.ilfa-account-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:220px;background:#fff;border:1px solid #dbe5ef;border-radius:12px;padding:7px;box-shadow:0 14px 34px rgba(7,29,70,.16);z-index:50}
+.ilfa-account-menu a{display:block;padding:9px 12px;border-radius:8px;color:#071d46;font-size:14px;font-weight:600;text-decoration:none}
+.ilfa-account-menu a:hover{background:#eef5fb;color:#0757ad}
+.ilfa-account-menu a.is-danger{color:#b91c1c;border-top:1px solid #eef2f7;margin-top:4px;padding-top:10px}
+.ilfa-role-bar{margin:18px 0 16px}
+.ilfa-role-caption{margin:0 0 10px;font-size:13px;font-weight:600;color:#53647b}
+.ilfa-role-list{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.ilfa-role-option{display:inline-flex;align-items:center;gap:9px;padding:8px 15px 8px 11px;border-radius:999px;border:1px solid #dbe5ef;background:#fff;color:#334155;font-size:14px;font-weight:600;text-decoration:none;transition:all .15s ease}
+.ilfa-role-option:hover{border-color:#0757ad;color:#071d46}
+.ilfa-role-radio{width:18px;height:18px;border-radius:50%;border:2px solid #94a3b8;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
+.ilfa-role-option.is-active{border-color:#0757ad;background:#eef5fb;color:#071d46;font-weight:700;box-shadow:0 2px 10px rgba(7,87,173,.10)}
+.ilfa-role-option.is-active .ilfa-role-radio{border-color:#0757ad;background:#0757ad}
+.ilfa-role-option.is-active .ilfa-role-radio::after{content:"";width:6px;height:6px;border-radius:50%;background:#fff}
+.ilfa-panel{background:#fff;border:1px solid #dbe5ef;border-radius:14px;padding:24px;box-shadow:0 8px 28px rgba(7,29,70,.06);min-width:0}
+.ilfa-dash-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:18px;border-bottom:1px solid #e6edf5}
+.ilfa-dash-title{display:flex;align-items:center;gap:10px;margin:0;font-size:22px;font-weight:800;color:#071d46;letter-spacing:-.02em}
+.ilfa-dash-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;background:#eef5fb;color:#0757ad}
+.ilfa-role-badge{font-size:12px;font-weight:700;color:#0757ad;background:#eef5fb;border:1px solid #d2e4f8;padding:5px 11px;border-radius:999px}
+.ilfa-subhead-left{display:grid;gap:6px}
+.ilfa-back-dash{font-size:13px;font-weight:700;color:#0757ad;text-decoration:none !important;width:fit-content}
+.ilfa-back-dash:hover{text-decoration:underline !important}
+.ilfa-sub-title{margin:0;font-size:24px;font-weight:800;color:#071d46}
+.ilfa-subnav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid #e6edf5}
+.ilfa-subnav a{display:inline-block;padding:7px 13px;border-radius:999px;background:#f1f6fc;color:#153452;font-size:13px;font-weight:600;text-decoration:none !important;transition:all .15s ease}
+.ilfa-subnav a:hover{background:#e2eefb;color:#0757ad}
+.ilfa-subnav a[aria-current="page"]{background:#0757ad;color:#fff}
+.ilfa-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.ilfa-stats article{background:#f4f8fd;border:1px solid #e1ebf6;border-radius:10px;padding:14px 16px}
+.ilfa-stats strong{display:block;font-size:24px;color:#0757ad;line-height:1.15}
+.ilfa-stats span{font-size:12px;font-weight:600;color:#53647b}
+.ilfa-tile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0 24px}
+.ilfa-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px 16px;border-radius:12px;border:1px solid #dbe5ef;background:#f8fbff;color:#071d46;text-decoration:none !important;text-align:center;transition:all .18s ease}
+.ilfa-tile:hover{border-color:#0757ad;background:#eef5fb;transform:translateY(-1px);box-shadow:0 6px 18px rgba(7,87,173,.10)}
+.ilfa-tile-icon{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#eef5ff 0%,#dcebfc 100%);border:1px solid #cce0f7;color:#0757ad;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(7,87,173,.08)}
+.ilfa-tile-label{font-size:15px;font-weight:700;line-height:1.3;color:#071d46}
+.ilfa-recent-wrap{margin-top:8px;padding-top:18px;border-top:1px solid #e6edf5}
+.ilfa-recent-head h2{margin:0 0 8px;font-size:16px;font-weight:800;color:#071d46}
+.ilfa-actions,.ilfa-admin-links{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}
+.ilfa-row-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:0}
+.ilfa-link{display:inline-block;padding:10px 14px;background:#eaf3ff;color:#0759b4;border-radius:7px;text-decoration:none !important;font-weight:600}
+.ilfa-items article{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 20px;border-bottom:1px solid #e6edf5;padding:15px 0}
+.ilfa-items article:last-child{border-bottom:0;padding-bottom:0}
+.ilfa-item-main{min-width:0}
+.ilfa-items h3{font-size:16px;font-weight:700;line-height:1.35;margin:6px 0 4px;color:#071d46}
+.ilfa-items h3 a{color:inherit;text-decoration:none !important}
+.ilfa-items h3 a:hover{color:#0757ad;text-decoration:underline !important}
+.ilfa-pill{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#eef4fa;color:#27577b;padding:3px 9px;border-radius:999px}
+.ilfa-pill--published,.ilfa-pill--approved{background:#eaf8ef;color:#166534}
+.ilfa-pill--draft,.ilfa-pill--closed{background:#f1f5f9;color:#475569}
+.ilfa-pill--submitted,.ilfa-pill--in_review,.ilfa-pill--assigned,.ilfa-pill--resubmitted,.ilfa-pill--changes{background:#fff7ed;color:#b45309}
+.ilfa-pill--scheduled{background:#eef5fb;color:#0757ad}
+.ilfa-pill--rejected,.ilfa-pill--removed{background:#fef2f2;color:#b91c1c}
+.ilfa-act-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:32px;padding:0 11px;border-radius:7px;border:1px solid #d5e2ef;background:#fff;color:#1e293b !important;font:inherit;font-size:12.5px;font-weight:600;line-height:1;white-space:nowrap;text-decoration:none !important;cursor:pointer;box-sizing:border-box;transition:all .14s ease}
+.ilfa-act-btn:hover{border-color:#0757ad;color:#0757ad !important;background:#f8fbff}
+.ilfa-act-primary{background:#eef5fb;border-color:#cfe0f5;color:#0757ad !important}
+.ilfa-act-primary:hover{background:#0757ad;border-color:#0757ad;color:#fff !important}
+.ilfa-act-muted{background:#f1f5f9;border-color:#cbd5e1;color:#334155 !important}
+.ilfa-act-muted:hover{background:#e2e8f0;color:#0f172a !important}
+.ilfa-act-success{background:#ecfdf5;border-color:#86efac;color:#047857 !important}
+.ilfa-act-success:hover{background:#d1fae5}
+.ilfa-act-danger{background:#fef2f2;border-color:#fca5a5;color:#b91c1c !important}
+.ilfa-act-danger:hover{background:#fee2e2;border-color:#f87171}
+.ilfa-req-update{display:inline-block}
+.ilfa-req-update summary{list-style:none}
+.ilfa-form label{display:block;font-weight:600;font-size:14px;margin:18px 0}
+.ilfa-form input:not([type=checkbox]),.ilfa-form select,.ilfa-form textarea{display:block;width:100%;padding:11px;border:1px solid #cbd9e7;border-radius:6px;margin-top:7px;font:inherit;box-sizing:border-box}
+.ilfa-form input[type=checkbox]{width:auto}
+.ilfa-form textarea{min-height:100px}
+.ilfa-form fieldset{border:1px solid #dbe5ef;padding:18px;margin:24px 0;border-radius:8px}
+.ilfa-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ilfa-form .wp-editor-area{border-radius:0}
+.ilfa-form button.button-primary,.ilfa-form .button-primary{height:38px;padding:0 18px;border:0;border-radius:8px;background:#0757ad;color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.ilfa-form button.button-primary:hover,.ilfa-form .button-primary:hover{background:#06478e}
+.ilfa-success{background:#edf9f1;color:#165b2a;padding:14px;border-radius:8px;margin:0 0 16px}
+.ilfa-feedback,.ilfa-note{padding:15px;background:#f2f7fd;border-radius:8px;margin:14px 0}
+.ilfa-preview{border-top:1px solid #dbe5ef;border-bottom:1px solid #dbe5ef;padding:24px 0;margin:20px 0}
+.ilfa-panel img{max-width:100%;height:auto}
+.ilfa-panel a{text-decoration:underline;text-underline-offset:3px}
+.ilfa-panel small{color:#60728a}
+.ilfa-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:12px 14px;background:#f4f8fd;border:1px solid #e1ebf6;border-radius:10px}
+.ilfa-toolbar-right{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ilfa-filter-pills{display:flex;flex-wrap:wrap;gap:6px}
+.ilfa-filter-pills a{display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:999px;background:#fff;border:1px solid #dbe5ef;color:#334155;font-size:13px;font-weight:600;text-decoration:none !important;box-sizing:border-box}
+.ilfa-filter-pills a.is-active,.ilfa-filter-pills a:hover{background:#0757ad;border-color:#0757ad;color:#fff}
+.ilfa-search-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0}
+.ilfa-search-form input[type="search"]{height:36px;padding:0 12px;border:1px solid #cbd9e7;border-radius:8px;font:inherit;font-size:13px;min-width:190px;background:#fff;color:#071d46;box-sizing:border-box;margin:0}
+.ilfa-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:8px;border:1px solid #d5e2ef;background:#fff;color:#071d46 !important;font:inherit;font-size:13px;font-weight:700;line-height:1;white-space:nowrap;text-decoration:none !important;cursor:pointer;box-sizing:border-box;transition:all .14s ease}
+.ilfa-btn:hover{border-color:#0757ad;color:#0757ad !important}
+.ilfa-btn-dark{background:#071d46;border-color:#071d46;color:#fff !important}
+.ilfa-btn-dark:hover{background:#0d2b63;color:#fff !important}
+.ilfa-btn-primary{background:#0757ad;border-color:#0757ad;color:#fff !important}
+.ilfa-btn-primary:hover{background:#06478e;color:#fff !important}
+.ilfa-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid #e6edf5;font-size:13px;color:#53647b}
+.ilfa-table-wrap{overflow-x:auto}
+.ilfa-table{width:100%;border-collapse:collapse;font-size:14px}
+.ilfa-table th,.ilfa-table td{padding:12px 10px;border-bottom:1px solid #e6edf5;text-align:left;vertical-align:middle}
+.ilfa-table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#53647b;background:#f8fbff}
+.ilfa-inline-form{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
+.ilfa-form .ilfa-inline-form select,.ilfa-inline-form select{width:auto;display:inline-block;margin-top:0;height:32px;padding:0 10px;border-radius:7px;border:1px solid #cbd9e7;font:inherit;font-size:13px;background:#fff}
+.ilfa-btn-danger{background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;padding:7px 11px;border-radius:7px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.ilfa-btn-danger:hover{background:#fee2e2}
+.ilfa-admin-card{background:#f8fbff;border:1px solid #dbe5ef;border-radius:12px;padding:18px;margin-bottom:16px}
+.ilfa-admin-card h3{margin:0 0 12px;font-size:16px;color:#071d46}
+.ilfa-tax-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ilfa-tag-list{display:flex;flex-wrap:wrap;gap:8px}
+.ilfa-tag-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:#fff;border:1px solid #dbe5ef;font-size:13px;font-weight:600;color:#071d46}
+.ilfa-tag-chip strong{background:#eef5fb;color:#0757ad;padding:1px 7px;border-radius:999px;font-size:11px}
+.ilfa-media-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+.ilfa-media-card{border:1px solid #dbe5ef;border-radius:10px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.ilfa-media-thumb{height:150px;background:#f1f6fc;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ilfa-media-thumb img{width:100%;height:100%;object-fit:cover}
+.ilfa-media-meta{padding:12px;display:grid;gap:4px}
+.ilfa-media-meta strong{font-size:13px;color:#071d46;word-break:break-word}
+.ilfa-media-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.ilfa-media-actions .ilfa-form{margin:0}
+@media(max-width:760px){
+ .ilfa-topbar-banner{padding:14px 16px}
+ .ilfa-brand-name{font-size:18px}
+ .ilfa-panel{padding:16px}
+ .ilfa-dash-title{font-size:19px}
+ .ilfa-tile{padding:18px 12px}
+ .ilfa-tile-label{font-size:14px}
+ .ilfa-stats article{padding:10px}
+ .ilfa-fields,.ilfa-tax-grid,.ilfa-media-grid{grid-template-columns:minmax(0,1fr)}
+ .ilfa-items article{grid-template-columns:1fr;gap:10px}
+ .ilfa-row-actions{justify-content:flex-start}
+ .ilfa-toolbar{flex-direction:column;align-items:stretch}
+ .ilfa-toolbar-right{width:100%}
+ .ilfa-search-form input[type="search"]{flex:1;min-width:140px}
+}
+@media(max-width:360px){
+ .ilfa-tile-grid{grid-template-columns:1fr}
+}
+</style><?php });
+
+add_filter('the_content',function($content){if(is_admin()||!is_singular(array('post','ilf_job','ilf_classified'))||!in_the_loop()||!is_main_query()||get_post_status()!=='publish')return $content;$id=get_the_ID();$gallery=get_post_meta($id,'_ilfa_gallery',true);if(is_array($gallery))foreach($gallery as $media){$content.='<figure>'.wp_get_attachment_image((int)$media,'large').'<figcaption>'.esc_html(wp_get_attachment_caption($media)).' '.esc_html(get_post_meta($media,'_ilfa_credit',true)).'</figcaption></figure>';}$correction=get_post_meta($id,'_ilfa_public_correction',true);if(is_array($correction))$content.='<aside><strong>'.esc_html(ilfa_t('Correction / Update','Korjaus / Päivitys')).'</strong> '.esc_html($correction['date']).'<p>'.esc_html($correction['note']).'</p></aside>';if(is_user_logged_in()&&in_array(get_post_type(),array('ilf_job','ilf_classified'),true)){ob_start();echo '<details><summary>'.esc_html(ilfa_t('Report this listing','Ilmianna ilmoitus')).'</summary>';ilfa_form_start('report',$id);ilfa_field('reason',ilfa_t('Reason','Syy'),'','textarea',true);ilfa_button(ilfa_t('Send report','Lähetä ilmoitus'));echo '</form></details>';$content.=ob_get_clean();}return $content;},25);
+
+add_filter('uwp_author_box_output',function($output){
+ if(!is_singular('post'))return $output;
+ $uid=(int)get_post_field('post_author',get_queried_object_id());
+ $name=$uid?get_the_author_meta('display_name',$uid):get_the_author();
+ if(!$name)return '';
+ return '<p class="ilfc-author-line">'.esc_html(ilfa_t('Written by','Kirjoittanut')).' <strong>'.esc_html($name).'</strong></p>';
+},20);
+
+add_filter('document_title_parts',function($parts){if(is_singular('post')){$title=get_post_meta(get_queried_object_id(),'_ilfa_seo_title',true);if($title)$parts['title']=$title;}return $parts;});
+add_action('wp_head',function(){if(is_singular('post')){$desc=get_post_meta(get_queried_object_id(),'_ilfa_seo_description',true);if($desc)echo '<meta name="description" content="'.esc_attr($desc).'">';}});
+
+/* Save metadata and revision history through the same authenticated form handler. */
+add_action('wp_footer',function(){if(!isset($_GET['ilf_portal'])||sanitize_key($_GET['ilf_portal'])!=='edit')return;?><script>
+(function(){
+  // 1. Dynamic Section -> Category filter
+  var secSelect = document.querySelector('.ilfa-form select[name="section"]');
+  var catSelect = document.getElementById('ilfa-category-select') || document.querySelector('.ilfa-form select[name="category"]');
+  if (secSelect && catSelect) {
+    var rawOptions = Array.from(catSelect.options).map(function(opt){
+      return {
+        value: opt.value,
+        text: opt.text,
+        sections: (opt.getAttribute('data-sections') || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean)
+      };
+    });
+
+    function filterCats(){
+      var chosenSec = secSelect.value;
+      var previousVal = catSelect.value;
+      catSelect.innerHTML = '';
+
+      var matched = rawOptions.filter(function(item){
+        return item.sections.length === 0 || item.sections.indexOf(chosenSec) !== -1;
+      });
+      if (matched.length === 0) matched = rawOptions;
+
+      var foundPrev = false;
+      matched.forEach(function(item){
+        var o = document.createElement('option');
+        o.value = item.value;
+        o.textContent = item.text;
+        if (item.value === previousVal) {
+          o.selected = true;
+          foundPrev = true;
+        }
+        catSelect.appendChild(o);
+      });
+
+      if (!foundPrev && catSelect.options.length > 0) {
+        catSelect.selectedIndex = 0;
+      }
+    }
+
+    secSelect.addEventListener('change', filterCats);
+    filterCats();
+  }
+
+  // 2. Safe autosave and unrestricted navigation
+  const form=document.querySelector('.ilfa-form input[name="task"][value="save"]')?.form;
+  if(!form)return;
+  let timer,busy=false,dirty=false,submitting=false,sequence=0;
+  const status=document.createElement('p');
+  status.setAttribute('role','status');
+  form.append(status);
+
+  function hasSubstantialContent(){
+    const headline = form.querySelector('[name="headline"]')?.value.trim();
+    const body = (window.tinymce && typeof tinymce.get === 'function' && tinymce.get('ilfa-body')) ? tinymce.get('ilfa-body').getContent().trim() : (form.querySelector('#ilfa-body')?.value.trim() || '');
+    return Boolean(headline || body);
+  }
+
+  function save(){
+    if(busy||!dirty||submitting||!hasSubstantialContent())return;
+    busy=true;
+    const sentSequence=sequence;
+    if(window.tinymce && typeof tinymce.triggerSave === 'function')tinymce.triggerSave();
+    const data=new FormData(form);
+    data.delete('featured');
+    data.delete('additional');
+    data.set('intent','save');
+    data.set('autosave','1');
+    fetch(form.action,{method:'POST',body:data,credentials:'same-origin'}).then(r=>r.json()).then(r=>{if(r.success){form.querySelector('[name="post_id"]').value=r.data.id;dirty=sequence!==sentSequence;status.textContent=document.documentElement.lang.startsWith('fi')?'Luonnos tallennettu automaattisesti.':'Draft autosaved.';}else throw Error();}).catch(()=>{status.textContent=document.documentElement.lang.startsWith('fi')?'Automaattitallennus epäonnistui. Tallenna luonnos.':'Autosave failed. Please save your draft.';}).finally(()=>{busy=false;if(dirty&&!submitting)timer=setTimeout(save,30000);});
+  }
+
+  function changed(){
+    if(hasSubstantialContent()){
+      dirty=true;
+      sequence++;
+      clearTimeout(timer);
+      timer=setTimeout(save,30000);
+    }
+  }
+
+  form.addEventListener('input',changed);
+  if(window.tinymce && typeof tinymce.on === 'function') {
+    tinymce.on('AddEditor', function(e){
+      if(e.editor) e.editor.on('input change', changed);
+    });
+  }
+
+  form.addEventListener('submit',()=>{
+    submitting=true;
+    dirty=false;
+    clearTimeout(timer);
+  });
+
+  // Never block clicking outside navigation (Header menu, Sidebar, Exit links)
+  document.querySelectorAll('a, button[type="button"], .menu-toggle').forEach(function(el){
+    if (el.closest('.ilfa-actions button[type="submit"]')) return;
+    el.addEventListener('click', function(){
+      if (!hasSubstantialContent()) {
+        dirty = false;
+      }
+    });
+  });
+
+  window.addEventListener('beforeunload',e=>{
+    if(dirty && !submitting && hasSubstantialContent()){
+      e.preventDefault();
+      e.returnValue='';
+    }
+  });
+})();
+</script><?php });
+add_action('transition_post_status',function($new,$old,$p){if($new===$old||!in_array($p->post_type,array('post','ilf_job','ilf_classified'),true))return;if(in_array($new,array('publish','future'),true))update_post_meta($p->ID,'_ilfa_stage',$new==='publish'?'published':'scheduled');},20,3);
+add_action('init',function(){if(!wp_next_scheduled('ilfa_expire_listings'))wp_schedule_event(time()+3600,'hourly','ilfa_expire_listings');});
+add_action('ilfa_expire_listings',function(){foreach(array('ilf_job'=>'_ilfa_deadline','ilf_classified'=>'_ilfa_expiry') as $type=>$key){$q=new WP_Query(array('post_type'=>$type,'post_status'=>'publish','posts_per_page'=>100,'meta_query'=>array(array('key'=>$key,'value'=>current_time('Y-m-d'),'compare'=>'<','type'=>'DATE'),array('key'=>$key,'value'=>'','compare'=>'!='))));foreach($q->posts as $p){wp_update_post(array('ID'=>$p->ID,'post_status'=>'draft'));update_post_meta($p->ID,'_ilfa_stage','closed');ilfa_notice($p->post_author,'Listing expired: '.$p->post_title,$p->ID);}}});
+add_filter('the_content',function($content){if(!is_singular(array('ilf_job','ilf_classified'))||!is_main_query()||!in_the_loop())return $content;$id=get_the_ID();$fields=get_post_type()==='ilf_job'?array('company'=>'Employer','employment'=>'Employment type','salary'=>'Pay','requirements'=>'Requirements','deadline'=>'Apply before','apply'=>'Application','contact'=>'Contact'):array('price'=>'Price','currency'=>'Currency','condition'=>'Condition','expiry'=>'Expiry','contact'=>'Contact');$details='<dl>';foreach($fields as $key=>$label){$value=get_post_meta($id,'_ilfa_'.$key,true);if($value==='')continue;$display=esc_html($value);if($key==='apply'&&wp_http_validate_url($value))$display='<a href="'.esc_url($value).'" rel="nofollow">'.esc_html(ilfa_t('Apply on the employer website','Hae työnantajan sivustolla')).'</a>';$details.='<dt>'.esc_html($label).'</dt><dd>'.$display.'</dd>';}$details.='</dl>';return $content.$details;},30);

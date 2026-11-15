@@ -1,0 +1,34 @@
+# ILoveFinland Studio — Git Ignore & Secret Protection
+
+# Secrets and keys
+.env
+.env.*
+server_keys.txt
+*.key
+*.pem
+*.token
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Databases & local state
+*.db
+*.sqlite3
+*.db-journal
+*.bak*
+
+# Large binaries & downloads
+bin/cloudflared*
+*.tgz
+*.zip
+
+# Logs
+*.log
+
+# OS & IDE metadata
+.DS_Store
+.idea/
+.vscode/
