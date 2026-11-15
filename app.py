@@ -437,6 +437,12 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             user = ALLOWED_EMAIL
         return user
 
+    def do_HEAD(self) -> None:  # noqa: N802
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("X-Render-Origin-Server", "ILoveFinlandStudio/2.0")
+        self.end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
