@@ -234,6 +234,37 @@ def revise_story_with_feedback(
     return call_openai_chat(system_prompt, user_prompt, model="gpt-4o-mini", key=key)
 
 
+def generate_polished_caption_with_gpt(
+    headline: str,
+    article_summary: str,
+    current_caption: str = "",
+    model: str = "gpt-4o",
+) -> Dict[str, Any]:
+    """Uses ChatGPT (GPT-4o) to write or polish an engaging Instagram/social post caption and hashtags."""
+    system_prompt = (
+        "You are an expert social media editor for ILoveFinland.net, Finland's leading English publication. "
+        "Your task is to write a high-engagement, factual Instagram/Facebook post caption and 5 relevant hashtags "
+        "based strictly on the news story provided. Never invent facts. Follow this exact format:\n"
+        "1. Hook headline with 1-2 relevant emojis (e.g. 🇫🇮🛡️ or 🇫🇮⚠️).\n"
+        "2. 1-2 sentence core factual summary.\n"
+        "3. 'Here's what you should know 👇' followed by 3-4 bullet points starting with ✅, ⚠️, 📌, or 💡.\n"
+        "4. Engagement question asking followers for their perspective.\n"
+        "5. Final line: '📲 Read the full verified report at ilovefinland.net (link in bio)'.\n\n"
+        "Return strictly JSON with keys:\n"
+        "{\n"
+        '  "caption": "Full formatted caption string with bullet points and line breaks",\n'
+        '  "hashtags": ["#Tag1", "#Tag2", "#Tag3", "#Tag4", "#Tag5"]\n'
+        "}"
+    )
+    user_prompt = (
+        f"Story Headline: {headline}\n"
+        f"Article Summary / Facts: {article_summary}\n"
+        + (f"Current Draft Caption: {current_caption}\n" if current_caption else "")
+        + "Write the polished, authentic social caption and 5 hashtags matching the exact story topic."
+    )
+    return call_openai_chat(system_prompt, user_prompt, model=model)
+
+
 def transcribe_audio_with_whisper(
     audio_bytes: bytes,
     filename: str = "voice_note.wav",

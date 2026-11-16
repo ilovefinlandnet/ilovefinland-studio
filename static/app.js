@@ -4254,8 +4254,8 @@
       if (!currentPackageId) return;
       const btnTop = $("btn-claude-caption-top");
       const btnBottom = $("btn-claude-caption-bottom");
-      if (btnTop) btnTop.innerHTML = "⏳ Polishing…";
-      if (btnBottom) btnBottom.innerHTML = "⏳ Polishing…";
+      if (btnTop) btnTop.innerHTML = "⏳ Polishing with ChatGPT…";
+      if (btnBottom) btnBottom.innerHTML = "⏳ Polishing with ChatGPT…";
       try {
         bundle = await api("/api/package/rewrite-claude", {
           method: "POST",
@@ -4266,8 +4266,8 @@
       } catch (err) {
         alert(`Failed to polish caption: ${err.message}`);
       } finally {
-        if (btnTop) btnTop.innerHTML = "✨ Polish Caption with AI";
-        if (btnBottom) btnBottom.innerHTML = "✨ Polish Caption with AI";
+        if (btnTop) btnTop.innerHTML = "✨ Polish Caption with ChatGPT";
+        if (btnBottom) btnBottom.innerHTML = "✨ Polish Caption with ChatGPT";
       }
     };
     $("btn-claude-caption-top")?.addEventListener("click", triggerPolishCaption);

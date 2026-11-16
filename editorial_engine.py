@@ -3419,7 +3419,36 @@ def build_concise_social_caption_and_hashtags(
     t_lower = topic.lower()
     headline = (article.get("headline") or topic).strip()
 
-    if is_tyre_topic(topic):
+    # Priority 1: Use live OpenAI GPT-4o (ChatGPT) to generate authentic, topic-tailored caption & hashtags
+    try:
+        import openai_client
+        if openai_client.get_openai_api_key():
+            summary = article.get("short_description") or " ".join(article.get("body_paragraphs", [])[:2])
+            res = openai_client.generate_polished_caption_with_gpt(
+                headline=headline,
+                article_summary=summary,
+            )
+            if res and res.get("caption") and res.get("hashtags"):
+                return res["caption"].strip(), [tag.strip() for tag in res["hashtags"]]
+    except Exception:
+        pass
+
+    # Priority 2: Curated, topic-specific editorial fallbacks with strict whole-word boundaries
+    if re.search(r"\b(nato|russia|ukraine|defence|defense|military|valtonen|häkkänen|hakkanen|abu dhabi)\b", t_lower):
+        lead_summary = article.get("short_description") or "Reports from Abu Dhabi peace talks suggest Russian negotiators proposed demands regarding Finland's NATO status, met with swift rejection from Finnish leaders."
+        caption = (
+            f"🇫🇮🛡️ {headline}\n\n"
+            f"{lead_summary}\n\n"
+            "Here's what you should know 👇\n"
+            "✅ Finnish Defence Minister Antti Häkkänen confirms Finland's NATO membership is not open for negotiation\n"
+            "✅ Foreign Minister Elina Valtonen affirms security decisions belong strictly to Finland and NATO allies\n"
+            "📌 German newspaper Bild reported Russian demands during peace discussions in Abu Dhabi\n"
+            "🛡️ Finland joined NATO in April 2023 with full parliamentary and democratic consensus\n\n"
+            "What are your thoughts on Finland's response to this proposal? Share your view below 👇\n\n"
+            "📲 Read the full verified report at ilovefinland.net (link in bio)"
+        )
+        hashtags = ["#FinlandNATO", "#FinlandNews", "#NordicSecurity", "#NATO", "#LivingInFinland"]
+    elif is_tyre_topic(topic):
         caption = (
             "🚗 Have you changed to winter tyres in Finland yet? 🇫🇮❄️\n\n"
             "Under the Finnish Road Traffic Act, winter tyres are required whenever winter weather conditions demand them.\n\n"
@@ -3486,7 +3515,7 @@ def build_concise_social_caption_and_hashtags(
             "📲 Want to know more? Read the full schedule on ilovefinland.net (link in bio)"
         )
         hashtags = ["#Posti", "#OmaPosti", "#SmartLockers", "#LivingInFinland", "#HelsinkiLife"]
-    elif "storm" in t_lower or "wind" in t_lower or "gale" in t_lower or "baltic" in t_lower:
+    elif re.search(r"\b(storm|gale warnings?|wind gusts?|myrsky)\b", t_lower):
         caption = (
             "🌊 Severe gale warnings issued for Baltic Sea & Gulf of Finland! 🇫🇮⚠️\n\n"
             "The Finnish Meteorological Institute warns of gale-force gusts exceeding 21 m/s and dangerous winter maritime conditions.\n\n"
@@ -3499,7 +3528,7 @@ def build_concise_social_caption_and_hashtags(
             "📲 Want to know more? Live weather updates on ilovefinland.net (link in bio)"
         )
         hashtags = ["#BalticSea", "#FinnishWeather", "#Ilmatieteenlaitos", "#HelsinkiWeather", "#FinlandNews"]
-    elif "sauna" in t_lower or "ice" in t_lower or "swimming" in t_lower:
+    elif re.search(r"\b(sauna|saunas|ice swimming|avantouinti)\b", t_lower):
         caption = (
             "🧖 From 90°C steam to ice-cold Baltic waters: Finnish sauna guide! 🇫🇮❄️\n\n"
             "Winter sauna and ice swimming (avantouinti) are essential Finnish rituals for health, resilience, and winter wellbeing.\n\n"
@@ -3512,7 +3541,7 @@ def build_concise_social_caption_and_hashtags(
             "📲 Want to know more? Top sauna locations & etiquette at ilovefinland.net (link in bio)"
         )
         hashtags = ["#SaunaCulture", "#IceSwimming", "#Avantouinti", "#HelsinkiSauna", "#VisitFinland"]
-    elif "tax" in t_lower or "vero" in t_lower:
+    elif re.search(r"\b(tax cards?|verokortti|verohallinto)\b", t_lower):
         caption = (
             "💶 New Finnish tax cards: what every worker needs to check! 🇫🇮📊\n\n"
             "Verohallinto reminds all residents that updated tax cards take effect from February, with new annual income calculation rules.\n\n"
@@ -3525,7 +3554,7 @@ def build_concise_social_caption_and_hashtags(
             "📲 Want to know more? Step-by-step tax guide on ilovefinland.net (link in bio)"
         )
         hashtags = ["#Vero", "#FinnishTax", "#OmaVero", "#LivingInFinland", "#WorkInFinland"]
-    elif "nvidia" in t_lower or "ai" in t_lower or "compute" in t_lower:
+    elif re.search(r"\b(nvidia|blackwell|compute cluster|data centre|supercomputer)\b", t_lower):
         caption = (
             "💻 Next-gen AI compute architecture arrives in the Nordics! 🇫🇮⚡\n\n"
             "New ultra-dense Blackwell AI computing systems are transforming Nordic data centre infrastructure and sovereign AI workloads.\n\n"
