@@ -452,8 +452,16 @@ def _recommend_legacy(topic: str, instructions: str = "") -> Tuple[str, str, str
 
 
 def is_tyre_topic(topic: str, instructions: str = "") -> bool:
-    t = f"{topic} {instructions}".lower()
-    return any(k in t for k in ["tyre", "tire", "rengas", "renkaan", "renkaat", "studded"])
+    """Strictly checks if topic is specifically about vehicle tyres/winter tyre change regulations.
+    Uses strict whole-word boundaries so words like 'entire' or 'retired' never match 'tire'.
+    Also guards against international affairs, NATO, diplomacy, and news topics.
+    """
+    topic_clean = topic.strip().lower()
+    # Guard: Political, diplomatic, defence, crime, or general news topics are never tyre topics
+    if re.search(r"\b(nato|russia|ukraine|military|war|defence|defense|minister|putin|police|knife|court|border|election|diplomacy)\b", topic_clean):
+        return False
+    tyre_pattern = r"\b(winter tyres?|winter tires?|summer tyres?|summer tires?|tyres?|tires?|talvirenkaat|kitkarenkaat|nastarenkaat|rengas|renkaan|renkaat|studded tyres?|studded tires?)\b"
+    return bool(re.search(tyre_pattern, topic_clean))
 
 
 # Internal (legacy) category → real ilovefinland.net category.  Anything not listed falls back to a
@@ -3100,7 +3108,7 @@ def build_wordpress_article(
 
     # Attempt live OpenAI GPT-4o generation for custom editorial topics
     ai_draft: Optional[Dict[str, Any]] = None
-    if not is_tyre_topic(topic, instructions):
+    if not is_tyre_topic(topic):
         try:
             import openai_client
             if openai_client.get_openai_api_key():
@@ -3122,7 +3130,7 @@ def build_wordpress_article(
         "ready_blockers": ["Fact-check every claim against the listed sources before marking ready."],
     }
 
-    if is_tyre_topic(topic, instructions):
+    if is_tyre_topic(topic):
         # Finland Guide / explainer: answer the main question first, then steps.
         headline = "Winter Tyre Change in Finland: When to Switch and What the Rules Say"
         short_desc = (
