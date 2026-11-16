@@ -3089,7 +3089,8 @@
       const isBlue = s.line2_color === "blue";
       const l3 = s.line3 || s.line2_highlight || "—";
       const sub = s.subtitle || "—";
-      const clipSrc = s.clip_url || (v.reel && v.reel.visual_asset) || "/assets/sample-clips/tesla-clean-bg.jpg";
+      const fallbackPoster = (v.article && v.article.featured_image && v.article.featured_image.url) || (v.reel && v.reel.visual_asset) || '/assets/ai-generated/ilf_ai_nano-banana-pro_4x5_208ae1cccd4f.jpg';
+      const clipSrc = s.clip_url || (v.reel && v.reel.visual_asset) || fallbackPoster;
       const isVideo = clipSrc && /\.(mp4|mov|webm)$/i.test(clipSrc);
       const curDur = s.duration != null ? s.duration : (Math.round((endS - startS) * 10) / 10);
       const curTrans = s.transition || "dissolve";
@@ -3104,7 +3105,11 @@
 
             <!-- Thumbnail Preview & One-Click Photo Replacement Drop Zone -->
             <div class="clip-thumb-dropzone" data-scene="${idx}" style="position:relative;width:100%;height:130px;border-radius:6px;overflow:hidden;background:#091e3a;margin-bottom:8px;border:1.5px dashed #cbd5e1;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-              <img src="${clipSrc}" alt="Clip ${idx + 1}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='/assets/sample-clips/tesla-clean-bg.jpg'" />
+              ${isVideo ? `
+                <video src="${clipSrc}" muted playsinline loop style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>
+              ` : `
+                <img src="${clipSrc}" alt="Clip ${idx + 1}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='${escapeHtml(fallbackPoster)}'" />
+              `}
               <div class="thumb-hover-overlay" style="position:absolute;inset:0;background:rgba(2,6,23,0.55);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:4px;opacity:0;transition:opacity 0.15s;">
                 <span style="font-size:1.1rem;">🔄</span>
                 <span style="font-size:0.74rem;font-weight:700;">Click or Drop Photo</span>
@@ -4524,7 +4529,7 @@
           has_voice_note: voiceBar ? voiceBar.dataset.hasVoice === "1" : false,
           custom_photo: customPhoto,
           custom_additional_photo: customAdditionalPhoto,
-          clips: videoClips.length > 0 ? videoClips : undefined,
+          clips: uploadedClips.length > 0 ? uploadedClips : undefined,
           target_length_sec: targetLength,
           audio_mode: audioMode,
           opening_shot_note: openingShot,

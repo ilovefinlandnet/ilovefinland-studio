@@ -1766,6 +1766,7 @@ def recalculate_reel_scenes_timings(reel: Dict[str, Any]) -> Dict[str, Any]:
     outro_scene = {
         "start_sec": round(cur_t, 2),
         "end_sec": round(cur_t + 2.8, 2),
+        "duration": 2.8,
         "is_outro": True,
         "tag": "ILOVEFINLAND",
         "badge": "DISCOVER MORE",
@@ -3066,25 +3067,35 @@ def create_assignment(
     )
 
     # 3. Decouple Reels: Reel is generated if explicitly requested in scope or if video clips are provided
-    is_reel_requested = scope in ("Reel", "Both") or (clips and len(clips) > 0)
+    has_script_in_instructions = bool(re.search(r'(?:IMAGE|SCENE|CLIP|SLIDE)\s+\d+', instructions, re.IGNORECASE))
+    is_reel_requested = scope in ("Reel", "Both") or (clips and len(clips) > 0) or has_script_in_instructions
     reel = None
     reel_status = "none"
     if is_reel_requested:
-        if clips and len(clips) > 0:
+        if (clips and len(clips) > 0) or has_script_in_instructions:
+            effective_clips = list(clips or [])
+            if not effective_clips:
+                if custom_photo and custom_photo.get("url"):
+                    effective_clips.append({"id": 1, "filename": custom_photo.get("filename", "Photo 1"), "url": custom_photo["url"]})
+                if custom_additional_photo and custom_additional_photo.get("url"):
+                    effective_clips.append({"id": 2, "filename": custom_additional_photo.get("filename", "Photo 2"), "url": custom_additional_photo["url"]})
+                if not effective_clips and article.get("featured_image", {}).get("url"):
+                    effective_clips.append({"id": 1, "filename": "featured-image.jpg", "url": article["featured_image"]["url"]})
+
             scenes, cover, caption, hashtags, total_dur = parse_reel_script_from_instructions(
                 instructions=instructions,
-                clips=clips,
+                clips=effective_clips,
                 topic=topic,
                 target_length=target_length_sec,
             )
-            first_clip_url = clips[0].get("url", "")
-            first_poster = clips[0].get("poster", first_clip_url)
+            first_clip_url = effective_clips[0].get("url", "") if effective_clips else (article.get("featured_image", {}).get("url") or "")
+            first_poster = effective_clips[0].get("poster", first_clip_url) if effective_clips else first_clip_url
             reel = {
                 "duration_sec": total_dur,
                 "video_url": first_clip_url,
-                "visual_asset": first_poster or "/assets/sample-clips/clip-1-tram-thumb.jpg",
+                "visual_asset": first_poster or article.get("featured_image", {}).get("url") or "",
                 "logo_asset": "/assets/ilf-heart.png",
-                "video_clips": clips,
+                "video_clips": effective_clips,
                 "scenes": scenes,
                 "audio": {
                     "track_url": "/assets/nordic-pulse.wav",
@@ -3112,6 +3123,7 @@ def create_assignment(
                 },
                 "status": "pending",
             }
+            reel = recalculate_reel_scenes_timings(reel)
         else:
             reel = editorial_engine.build_on_demand_reel(
                 topic=topic.strip(),
@@ -4122,44 +4134,113 @@ def parse_reel_script_from_instructions(
     topic: str,
     target_length: int = 30,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], str, List[str], int]:
-    """Parse scene-by-scene script from user instructions into structured scenes, cover, caption, and hashtags."""
-    scene_blocks = re.split(r'SCENE\s+(\d+)', instructions, flags=re.IGNORECASE)
+    """Parse scene-by-scene script from user instructions into structured scenes, cover, caption, and hashtags.
+    Supports:
+    - IMAGE 1, SCENE 1, CLIP 1, SLIDE 1 blocks with explicit duration (e.g. 3.5s) and 3-line headlines.
+    - Legacy SCENE 1 / Large on-screen headline / Voiceover blocks.
+    - Auto-distribution over uploaded clips.
+    """
     parsed_scenes = []
 
-    if len(scene_blocks) > 1:
-        for i in range(1, len(scene_blocks), 2):
-            num = int(scene_blocks[i])
-            block = scene_blocks[i + 1]
+    # Check for IMAGE/SCENE/CLIP/SLIDE numbered blocks (e.g., '3.5s IMAGE 1 \n LINE 1 \n LINE 2')
+    pattern = re.compile(r'(?:(\d+(?:\.\d+)?)\s*s\s*)?(?:IMAGE|SCENE|CLIP|SLIDE)\s+(\d+)', re.IGNORECASE)
+    matches = list(pattern.finditer(instructions))
 
-            time_m = re.search(r'(\d+)\s*[–-]\s*(\d+)\s*seconds?', block, re.IGNORECASE)
-            st = float(time_m.group(1)) if time_m else float((num - 1) * 5)
-            en = float(time_m.group(2)) if time_m else float(st + 5.0)
+    if matches:
+        t_cursor = 0.0
+        for i, m in enumerate(matches):
+            start_pos = m.end()
+            end_pos = matches[i + 1].start() if i + 1 < len(matches) else len(instructions)
+            block = instructions[start_pos:end_pos].strip()
 
-            head_m = re.search(r'(?:Large on-screen headline|Headline|On-screen text)[:\s]*\n+([^\n]+)', block, re.IGNORECASE)
-            headline = head_m.group(1).strip() if head_m else f"SCENE {num}"
-            headline = re.sub(r'^(?:Large on-screen headline|Headline|On-screen text)[:\s]*', '', headline, flags=re.IGNORECASE).strip()
+            dur_str = m.group(1)
+            dur = float(dur_str) if dur_str else 3.5
+            num = int(m.group(2))
 
-            vo_m = re.search(r'Voiceover[^:]*:\s*\n*(?:\"([^\"]+)\"|([^\n]+))', block, re.IGNORECASE)
-            voiceover = (vo_m.group(1) or vo_m.group(2) or "").strip() if vo_m else ""
+            raw_lines = [l.strip() for l in block.split('\n') if l.strip()]
+            cleaned_lines = []
+            for l in raw_lines:
+                if re.match(r'^(?:create reel|please create|use text as|on this topic|instructions?:)', l, re.IGNORECASE):
+                    continue
+                if ',' in l:
+                    parts = [p.strip() for p in l.split(',') if p.strip()]
+                    for p in parts:
+                        if not re.search(r'\b(create reel|use text|share your thoughts)\b', p, re.IGNORECASE):
+                            cleaned_lines.append(p)
+                        elif 'share your thoughts' in p.lower():
+                            cleaned_lines.append('SHARE YOUR THOUGHTS')
+                else:
+                    cleaned_lines.append(l)
 
-            vis_m = re.search(r'Visual[:\s]*([^\n]+)', block, re.IGNORECASE)
-            visual = vis_m.group(1).strip() if vis_m else ""
+            l1 = cleaned_lines[0] if len(cleaned_lines) > 0 else f"SCENE {num}"
+            l2 = cleaned_lines[1] if len(cleaned_lines) > 1 else ""
+            l3 = cleaned_lines[2] if len(cleaned_lines) > 2 else ""
 
             clip_idx = num - 1
             c = clips[clip_idx] if clip_idx < len(clips) else (clips[0] if clips else {})
 
+            st = round(t_cursor, 1)
+            en = round(t_cursor + dur, 1)
+            t_cursor = en
+
             parsed_scenes.append({
+                "id": num,
                 "start_sec": st,
                 "end_sec": en,
-                "tag": f"SCENE {num} • LAPLAND",
-                "line1": headline,
-                "line2": voiceover[:45] if voiceover else headline,
-                "subtitle": voiceover,
-                "visual_note": visual,
+                "duration": dur,
+                "badge": f"CLIP {num}",
+                "line1": l1.upper(),
+                "line2": l2.upper(),
+                "line2_color": "blue" if l2 else "white",
+                "line3": l3.upper(),
+                "line2_highlight": (f"{l2} {l3}").strip().upper() if l2 or l3 else l1.upper(),
+                "subtitle": " ".join(cleaned_lines[1:3]) if len(cleaned_lines) > 1 else l1,
                 "clip_id": c.get("id", num),
                 "clip_file": c.get("filename", f"clip-{num}.jpg"),
                 "clip_url": c.get("url", ""),
+                "transition": "dissolve",
             })
+
+    # Legacy SCENE parser fallback
+    if not parsed_scenes:
+        scene_blocks = re.split(r'SCENE\s+(\d+)', instructions, flags=re.IGNORECASE)
+        if len(scene_blocks) > 1:
+            for i in range(1, len(scene_blocks), 2):
+                num = int(scene_blocks[i])
+                block = scene_blocks[i + 1]
+
+                time_m = re.search(r'(\d+)\s*[–-]\s*(\d+)\s*seconds?', block, re.IGNORECASE)
+                st = float(time_m.group(1)) if time_m else float((num - 1) * 5)
+                en = float(time_m.group(2)) if time_m else float(st + 5.0)
+
+                head_m = re.search(r'(?:Large on-screen headline|Headline|On-screen text)[:\s]*\n+([^\n]+)', block, re.IGNORECASE)
+                headline = head_m.group(1).strip() if head_m else f"SCENE {num}"
+                headline = re.sub(r'^(?:Large on-screen headline|Headline|On-screen text)[:\s]*', '', headline, flags=re.IGNORECASE).strip()
+
+                vo_m = re.search(r'Voiceover[^:]*:\s*\n*(?:\"([^\"]+)\"|([^\n]+))', block, re.IGNORECASE)
+                voiceover = (vo_m.group(1) or vo_m.group(2) or "").strip() if vo_m else ""
+
+                vis_m = re.search(r'Visual[:\s]*([^\n]+)', block, re.IGNORECASE)
+                visual = vis_m.group(1).strip() if vis_m else ""
+
+                clip_idx = num - 1
+                c = clips[clip_idx] if clip_idx < len(clips) else (clips[0] if clips else {})
+
+                parsed_scenes.append({
+                    "id": num,
+                    "start_sec": st,
+                    "end_sec": en,
+                    "duration": round(en - st, 1),
+                    "badge": f"SCENE {num}",
+                    "line1": headline.upper(),
+                    "line2": voiceover[:45] if voiceover else headline,
+                    "line2_highlight": voiceover[:45] if voiceover else headline,
+                    "subtitle": voiceover,
+                    "clip_id": c.get("id", num),
+                    "clip_file": c.get("filename", f"clip-{num}.jpg"),
+                    "clip_url": c.get("url", ""),
+                    "transition": "dissolve",
+                })
 
     if not parsed_scenes and clips:
         t_cursor = 0.0
@@ -4167,15 +4248,19 @@ def parse_reel_script_from_instructions(
         for i, c in enumerate(clips):
             end_t = round(t_cursor + dur_per_clip, 1)
             parsed_scenes.append({
+                "id": i + 1,
                 "start_sec": t_cursor,
                 "end_sec": end_t,
-                "tag": f"SCENE {i + 1} • {topic[:16].upper()}",
+                "duration": dur_per_clip,
+                "badge": f"SCENE {i + 1}",
                 "line1": topic.upper()[:28],
                 "line2": c.get("filename", f"Scene {i + 1}"),
+                "line2_highlight": c.get("filename", f"Scene {i + 1}"),
                 "subtitle": f"Experience {topic} in Finland.",
                 "clip_id": c.get("id", i + 1),
                 "clip_file": c.get("filename", f"clip-{i + 1}.jpg"),
                 "clip_url": c.get("url", ""),
+                "transition": "dissolve",
             })
             t_cursor = end_t
 
