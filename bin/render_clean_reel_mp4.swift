@@ -40,10 +40,28 @@ struct ReelConfig: Codable {
     let scenes: [SceneConfig]?
 }
 
-func drawText(ctx: CGContext, text: String, fontName: String, fontSize: CGFloat, color: CGColor, x: CGFloat, yFromBottom: CGFloat) {
+func drawText(ctx: CGContext, text: String, fontName: String, fontSize: CGFloat, color: CGColor, x: CGFloat, yFromBottom: CGFloat, withHalo: Bool = false) {
     ctx.saveGState()
     ctx.translateBy(x: x, y: yFromBottom)
     let font = CTFontCreateWithName(fontName as CFString, fontSize, nil)
+
+    if withHalo {
+        ctx.saveGState()
+        ctx.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: CGColor(red: 0, green: 0, blue: 0, alpha: 0.85))
+        let strokeAttr: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font,
+            NSAttributedString.Key(rawValue: kCTForegroundColorAttributeName as String): CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.95),
+            NSAttributedString.Key(rawValue: kCTStrokeWidthAttributeName as String): 3.5,
+            NSAttributedString.Key(rawValue: kCTStrokeColorAttributeName as String): CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.95)
+        ]
+        if let strokeStr = CFAttributedStringCreate(nil, text as CFString, strokeAttr as CFDictionary) {
+            let strokeLine = CTLineCreateWithAttributedString(strokeStr)
+            ctx.textPosition = .zero
+            CTLineDraw(strokeLine, ctx)
+        }
+        ctx.restoreGState()
+    }
+
     let attr: [NSAttributedString.Key: Any] = [
         NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font,
         NSAttributedString.Key(rawValue: kCTForegroundColorAttributeName as String): color
@@ -378,18 +396,18 @@ func exportCleanMP4(configPath: String) {
                 ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
             }
 
-            // 2. Cinematic Navy Gradient Scrim in Lower Half (Reduced by 50% for vibrant visual transparency)
+            // 2. Protective Broadcast-Grade Navy Gradient Scrim (100% Contrast against Snow & Daylight)
             let colors = [
-                CGColor(red: 0.01, green: 0.03, blue: 0.08, alpha: 0.0),
-                CGColor(red: 0.01, green: 0.03, blue: 0.08, alpha: 0.22),
-                CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.38),
-                CGColor(red: 0.01, green: 0.02, blue: 0.05, alpha: 0.48)
+                CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.0),
+                CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.42),
+                CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.74),
+                CGColor(red: 0.01, green: 0.02, blue: 0.06, alpha: 0.90)
             ] as CFArray
-            let locations: [CGFloat] = [0.0, 0.35, 0.75, 1.0]
+            let locations: [CGFloat] = [0.0, 0.28, 0.65, 1.0]
             if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: locations) {
                 ctx.drawLinearGradient(
                     gradient,
-                    start: CGPoint(x: 0, y: CGFloat(height) * 0.48),
+                    start: CGPoint(x: 0, y: CGFloat(height) * 0.52),
                     end: CGPoint(x: 0, y: 0),
                     options: []
                 )
@@ -453,34 +471,35 @@ func exportCleanMP4(configPath: String) {
                 yCur -= (badgeH + 16.0)
             }
 
-            // Line 1: Bold White (Using unified headlineFontSize)
+            // Line 1: Bold White (Using unified headlineFontSize with protective contrast halo)
             if !line1Text.isEmpty {
                 let l1Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
                 let l1Lines = wrapLines(text: line1Text, font: l1Font, maxWidth: maxTextWidth)
                 for line in l1Lines {
-                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: CGColor(red: 1, green: 1, blue: 1, alpha: 1), x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90)
+                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: CGColor(red: 1, green: 1, blue: 1, alpha: 1), x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
                     yCur -= headlineFontSize * 1.18
                 }
             }
 
-            // Line 2: Bold White or Blue (Using same unified headlineFontSize)
+            // Line 2: Bold White or Ice Blue (Using same unified headlineFontSize with protective contrast halo)
             if !line2Text.isEmpty {
                 let l2Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
                 let l2Lines = wrapLines(text: line2Text, font: l2Font, maxWidth: maxTextWidth)
-                let l2Color = (curScene?.line2_color == "blue") ? CGColor(red: 0.0, green: 0.64, blue: 1.0, alpha: 1.0) : CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+                let iceBlueColor = CGColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0) // Ice Blue #38BDF8
+                let l2Color = (curScene?.line2_color == "blue") ? iceBlueColor : CGColor(red: 1, green: 1, blue: 1, alpha: 1)
                 for line in l2Lines {
-                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l2Color, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90)
+                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l2Color, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
                     yCur -= headlineFontSize * 1.18
                 }
             }
 
-            // Line 3: Electric Bright Blue (#00A3FF) (Using same unified headlineFontSize)
+            // Line 3: Electric Ice Blue (#38BDF8) (Using same unified headlineFontSize with protective contrast halo)
             if !line3Text.isEmpty && line3Text != line2Text {
                 let l3Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
                 let l3Lines = wrapLines(text: line3Text, font: l3Font, maxWidth: maxTextWidth)
-                let electricBlue = CGColor(red: 0.0, green: 0.64, blue: 1.0, alpha: 1.0)
+                let iceBlueColor = CGColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0)
                 for line in l3Lines {
-                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: electricBlue, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90)
+                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: iceBlueColor, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
                     yCur -= headlineFontSize * 1.18
                 }
             }

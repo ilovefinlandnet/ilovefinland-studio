@@ -602,14 +602,14 @@
 
       if (isTeslaNews) {
         // --- TESLA NEWS TEMPLATE STYLE ---
-        // 1. Lower Third Navy Gradient Scrim (Brought down by 50% for vibrant visual clarity)
-        const grad = ctx.createLinearGradient(0, H * 0.50, 0, H);
+        // 1. Lower Third Navy Gradient Scrim (Protective Broadcast Grade Scrim - 100% Contrast against Snow & Daylight)
+        const grad = ctx.createLinearGradient(0, H * 0.44, 0, H);
         grad.addColorStop(0, "rgba(2, 6, 23, 0)");
-        grad.addColorStop(0.35, "rgba(2, 6, 23, 0.22)");
-        grad.addColorStop(0.70, "rgba(2, 6, 23, 0.38)");
-        grad.addColorStop(1, "rgba(2, 6, 23, 0.48)");
+        grad.addColorStop(0.28, "rgba(2, 6, 23, 0.42)");
+        grad.addColorStop(0.65, "rgba(2, 6, 23, 0.74)");
+        grad.addColorStop(1, "rgba(2, 6, 23, 0.90)");
         ctx.fillStyle = grad;
-        ctx.fillRect(0, H * 0.50, W, H * 0.50);
+        ctx.fillRect(0, H * 0.44, W, H * 0.56);
 
         // 2. Original ILoveFinland Heart Logo (Upper Left, sized 62px, clearing guide)
         this._drawHeartLogo(ctx, W, H, layout);
@@ -651,49 +651,56 @@
         ctx.fillText(badgeText, safeMarginX + badgeW / 2, badgeY + badgeH / 2);
         ctx.restore();
 
-        // Left-Aligned Headline (Line 1: White, Line 2: Electric Bright Blue)
+        // Left-Aligned Headline (Line 1: White, Line 2: Ice Blue, Line 3: Ice Blue)
         ctx.save();
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
-        ctx.shadowColor = "rgba(0,0,0,0.65)";
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 2;
 
         // 3-Line News Headline (ALL 3 LINES SHARE THE SAME ADJUSTABLE FONT SIZE)
         const fHeadline = layout.headline_font_px || layout.line2_font_px || layout.line1_font_px || 28;
-        ctx.font = `800 ${fHeadline}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-
         let yCursor = badgeY + badgeH + 12;
+
+        const drawCrispTextLine = (textLines, fillColor, fontPx) => {
+          ctx.font = `800 ${fontPx}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          for (const line of textLines) {
+            // 1. Protective dark contrast outline & deep shadow
+            ctx.save();
+            ctx.lineWidth = 3.5;
+            ctx.lineJoin = "round";
+            ctx.miterLimit = 2;
+            ctx.strokeStyle = "rgba(2, 6, 23, 0.92)";
+            ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 2;
+            ctx.strokeText(line, safeMarginX, yCursor);
+            ctx.restore();
+
+            // 2. Crisp letter fill
+            ctx.fillStyle = fillColor;
+            ctx.fillText(line, safeMarginX, yCursor);
+            yCursor += fontPx * 1.15;
+          }
+        };
+
         const l1Text = scene.line1 || reel.hook_text || "";
         const l1Lines = this._wrapLines(ctx, l1Text, maxTextWidth);
-        ctx.fillStyle = "#ffffff";
-        for (const line of l1Lines) {
-          ctx.fillText(line, safeMarginX, yCursor);
-          yCursor += fHeadline * 1.15;
-        }
+        drawCrispTextLine(l1Lines, "#ffffff", fHeadline);
 
         // Line 2: Blue or White (selectable via scene.line2_color, same fHeadline)
         const l2Text = scene.line2 || "";
         if (l2Text) {
-          const l2Color = scene.line2_color === "blue" ? (layout.accent_color || "#00A3FF") : "#ffffff";
-          ctx.fillStyle = l2Color;
+          const l2Color = scene.line2_color === "blue" ? (layout.accent_color || "#38BDF8") : "#ffffff";
           const l2Lines = this._wrapLines(ctx, l2Text, maxTextWidth);
-          for (const line of l2Lines) {
-            ctx.fillText(line, safeMarginX, yCursor);
-            yCursor += fHeadline * 1.15;
-          }
+          drawCrispTextLine(l2Lines, l2Color, fHeadline);
         }
 
-        // Line 3: Electric Blue Emphasis (#00A3FF) (Same fHeadline)
+        // Line 3: Electric Blue Emphasis (#38BDF8) (Same fHeadline)
         const l3Text = scene.line3 || scene.line2_highlight || "";
         if (l3Text && l3Text !== l2Text) {
-          ctx.fillStyle = layout.accent_color || "#00A3FF";
+          const l3Color = layout.accent_color || "#38BDF8";
           const l3Lines = this._wrapLines(ctx, l3Text, maxTextWidth);
-          for (const line of l3Lines) {
-            ctx.fillText(line, safeMarginX, yCursor);
-            yCursor += fHeadline * 1.15;
-          }
+          drawCrispTextLine(l3Lines, l3Color, fHeadline);
         }
 
         // Secondary Explainer Subtitle (Prominent, High-Contrast Crisp Off-White)
@@ -702,14 +709,23 @@
           yCursor += 8;
           const fSub = layout.sub_font_px || 18;
           ctx.font = `600 ${fSub}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-          ctx.fillStyle = "#F1F5F9";
           const subLines = this._wrapLines(ctx, subText, maxTextWidth);
           for (const line of subLines) {
+            ctx.save();
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = "round";
+            ctx.strokeStyle = "rgba(2, 6, 23, 0.88)";
+            ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+            ctx.shadowBlur = 6;
+            ctx.strokeText(line, safeMarginX, yCursor);
+            ctx.restore();
+
+            ctx.fillStyle = "#F1F5F9";
             ctx.fillText(line, safeMarginX, yCursor);
             yCursor += fSub * 1.25;
           }
         }
-        ctx.restore(); // headline shadow restore
+        ctx.restore(); // headline restore
         ctx.restore(); // textOpacity restore
         ctx.restore();
 
