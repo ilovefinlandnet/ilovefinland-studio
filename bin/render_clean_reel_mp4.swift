@@ -413,8 +413,8 @@ func exportCleanMP4(configPath: String) {
                 )
             }
 
-            // 3. Heart Logo - TOP-LEFT (Cleanly inside Safe Area with breathing room)
-            let logoSize: CGFloat = 48.0
+            // 3. Heart Logo - TOP-LEFT (Exact 12.0% width proportion matching Instagram Feed Post: 130px on 1080p, 65px on 540p)
+            let logoSize: CGFloat = round(CGFloat(width) * 0.120)
             let safeTop = CGFloat(height) * 0.148 // Instagram 4:5 / 9:16 safe area top margin
             let logoX = safeLeft + 8.0 // 8px inside left safe line
             let logoYFromTop = safeTop + 14.0 // 14px inside top safe line

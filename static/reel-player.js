@@ -380,8 +380,10 @@
 
     _drawHeartLogo(ctx, cw, ch, layout) {
       if (!this.logoReady || layout.logo_visible === false) return;
-      // Default to top-left Instagram position safely inside the safe area guide
-      const size = layout.logo_size_px || (cw < 400 ? 46 : 50);
+      // Exact 12.0% width proportion matching Instagram Feed Post (130px on 1080p, 44px on 360p)
+      const size = layout.logo_size_px && layout.logo_size_px < 100 && cw > 500
+        ? Math.round((layout.logo_size_px / 1080) * cw)
+        : Math.round(cw * 0.120);
       const safeMarginX = (cw * (layout.safe_area?.horizontal_margin_pct || 8.5)) / 100;
       const topSafeY = (ch * (layout.safe_area?.profile_grid_top_pct || 14.8)) / 100;
 
