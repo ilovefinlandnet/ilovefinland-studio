@@ -5266,6 +5266,59 @@
     window.renderReview = renderReview;
     window.loadAll = loadAll;
 
+    // Cloud Auto-Sync Status & One-Click Sync
+    async function checkCloudSyncStatus() {
+      try {
+        const res = await api("/api/cloud-sync/status");
+        const deskBadge = $("desktop-sync-status-badge");
+        const mobBadge = $("mobile-cloud-pill");
+        if (!res || !res.enabled) return;
+
+        if (res.is_syncing) {
+          if (deskBadge) { deskBadge.textContent = "Syncing… ⏳"; deskBadge.className = "pill"; }
+          if (mobBadge) { mobBadge.textContent = "☁️ Syncing… ⏳"; }
+        } else if (res.pending_changes) {
+          if (deskBadge) { deskBadge.textContent = "Changes Pending 🟡"; deskBadge.className = "pill"; }
+          if (mobBadge) { mobBadge.textContent = "☁️ Pending 🟡"; }
+        } else {
+          if (deskBadge) { deskBadge.textContent = "Live 🟢"; deskBadge.className = "pill pill-approved"; }
+          if (mobBadge) { mobBadge.textContent = "☁️ Synced 🟢"; }
+        }
+      } catch (e) {
+        // quiet ignore
+      }
+    }
+
+    async function triggerManualCloudSync() {
+      const deskBadge = $("desktop-sync-status-badge");
+      const mobBadge = $("mobile-cloud-pill");
+      if (deskBadge) deskBadge.textContent = "Syncing… ⏳";
+      if (mobBadge) mobBadge.textContent = "☁️ Syncing… ⏳";
+      showToast("Syncing latest database to Cloud...", "info");
+      try {
+        const res = await api("/api/cloud-sync/push", {
+          method: "POST",
+          body: JSON.stringify({ reason: "Manual Sync from Studio" }),
+        });
+        if (res.ok) {
+          showToast("Cloud synced! Render is deploying your updates.", "success");
+          if (deskBadge) { deskBadge.textContent = "Live 🟢"; deskBadge.className = "pill pill-approved"; }
+          if (mobBadge) mobBadge.textContent = "☁️ Synced 🟢";
+        } else {
+          showToast(res.error || "Sync error", "warning");
+        }
+      } catch (err) {
+        showToast("Sync failed: " + err.message, "error");
+      }
+    }
+
+    $("btn-cloud-sync-desktop")?.addEventListener("click", triggerManualCloudSync);
+    $("mobile-cloud-pill")?.addEventListener("click", triggerManualCloudSync);
+
+    // Check sync status every 25 seconds
+    setInterval(checkCloudSyncStatus, 25000);
+    setTimeout(checkCloudSyncStatus, 3000);
+
     checkAuth();
   });
 })();

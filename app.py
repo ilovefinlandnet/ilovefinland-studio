@@ -551,6 +551,11 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"connections": get_connections_catalog()})
                 return
 
+            if path == "/api/cloud-sync/status":
+                from cloud_sync import get_sync_status
+                self._send_json(get_sync_status())
+                return
+
             if path == "/api/admin/openai-probe/status":
                 from db import get_openai_probe_status
                 res = get_openai_probe_status(db_path=db_path)
@@ -765,6 +770,13 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             body = self._read_json_body()
         except Exception:
             self._send_json({"error": "Invalid JSON body"}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/cloud-sync/push":
+            from cloud_sync import push_to_cloud
+            reason = (body or {}).get("reason", "Manual Sync from Studio")
+            res = push_to_cloud(reason=reason)
+            self._send_json(res)
             return
 
         if path == "/api/auth/google":
@@ -1920,6 +1932,11 @@ def create_server(host: str = "0.0.0.0", port: int = 8787, db_path: str = DB_PAT
     """Initialize SQLite DB and return configured HTTP server."""
     init_db(db_path=db_path)
     _start_background_scanner(db_path=db_path)
+    try:
+        from cloud_sync import start_auto_sync_watcher
+        start_auto_sync_watcher(db_path=db_path)
+    except Exception as e:
+        print(f"Cloud auto-sync watcher warning: {e}")
     server = ThreadingHTTPServer((host, port), StudioRequestHandler)
     server.db_path = db_path  # type: ignore[attr-defined]
     server.sessions = {}  # type: ignore[attr-defined]

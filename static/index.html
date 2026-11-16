@@ -127,10 +127,15 @@
           <span id="user-pill" class="sidebar-session-email">editor@ilovefinland.net</span>
         </div>
 
-        <a href="http://172.20.10.3:8787" target="_blank" class="sidebar-wifi-link" title="Open on Mobile / Tablet Wi-Fi">
-          <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-          <span>Wi-Fi: 172.20.10.3:8787</span>
-        </a>
+        <div style="padding:6px 14px;display:flex;flex-direction:column;gap:5px;">
+          <button type="button" id="btn-cloud-sync-desktop" class="btn btn-ghost btn-sm" style="width:100%;font-size:0.75rem;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;" title="Click to immediately sync laptop database to cloud">
+            <span>☁️ Cloud Auto-Sync</span>
+            <span id="desktop-sync-status-badge" class="pill pill-approved" style="font-size:0.65rem;padding:1px 6px;">Live 🟢</span>
+          </button>
+          <a href="https://ilovefinland-studio.onrender.com" target="_blank" style="font-size:0.72rem;color:#38bdf8;text-decoration:none;text-align:center;padding:2px 0;font-weight:600;">
+            🌐 Open 24/7 Cloud Link ↗
+          </a>
+        </div>
 
         <button id="btn-logout" class="nav-item-logout" title="Sign Out">
           <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -151,7 +156,7 @@
           <span class="mobile-title">ILoveFinland Studio</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-          <span id="mobile-cloud-pill" class="pill pill-approved" style="font-size:0.68rem;padding:3px 8px;font-weight:700;" title="Studio Cloud Live">Cloud Live 🟢</span>
+          <button type="button" id="mobile-cloud-pill" class="pill pill-approved" style="font-size:0.68rem;padding:4px 8px;font-weight:700;border:none;cursor:pointer;" title="Click to sync laptop to cloud">☁️ Synced 🟢</button>
           <button type="button" id="btn-mobile-new-story" class="btn btn-primary btn-sm" style="padding:6px 10px;font-size:0.75rem;min-height:34px;white-space:nowrap;">+ Story</button>
         </div>
       </header>
