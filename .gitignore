@@ -15,10 +15,14 @@ __pycache__/
 .pytest_cache/
 
 # Databases & local state
+backups/
+data/
 *.db
 *.sqlite3
 *.db-journal
 *.bak*
+*.db.bak*
+!/studio.db
 
 # Large binaries & downloads
 bin/cloudflared*
