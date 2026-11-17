@@ -1699,23 +1699,46 @@ def get_projects_dashboard(db_path: str = DB_PATH, include_archived: bool = Fals
                 stage_badge = "pill-neutral"
                 counts["in_progress"] += 1
 
-            # Fetch latest version info & sources count
+            # Fetch latest version info, metadata & sources count
             v_row = conn.execute(
-                "SELECT source_check_json FROM package_versions WHERE package_id = ? ORDER BY version DESC LIMIT 1",
+                "SELECT source_check_json, article_json FROM package_versions WHERE package_id = ? ORDER BY version DESC LIMIT 1",
                 (pkg["id"],),
             ).fetchone()
             sources_count = 0
-            if v_row and v_row["source_check_json"]:
-                try:
-                    s_data = json.loads(v_row["source_check_json"])
-                    sources_count = len(s_data.get("sources", [])) or (1 if s_data.get("passed") else 0)
-                except Exception:
-                    pass
+            thumb_url = ""
+            sec_name = "News"
+            cat_name = "Finland"
+            lang_name = "English"
+            wp_id = pkg.get("wordpress_post_id")
+
+            if v_row:
+                if v_row["source_check_json"]:
+                    try:
+                        s_data = json.loads(v_row["source_check_json"])
+                        sources_count = len(s_data.get("sources", [])) or (1 if s_data.get("passed") else 0)
+                    except Exception:
+                        pass
+                if v_row["article_json"]:
+                    try:
+                        art_data = json.loads(v_row["article_json"])
+                        feat_img = art_data.get("featured_image") or {}
+                        thumb_url = feat_img.get("url") or ""
+                        sec_name = art_data.get("section") or sec_name
+                        cat_name = art_data.get("category") or cat_name
+                        lang_name = art_data.get("language") or lang_name
+                        wp_id = art_data.get("wordpress_post_id") or wp_id
+                    except Exception:
+                        pass
 
             pkg["pipeline_stage"] = stage
             pkg["stage_badge"] = stage_badge
             pkg["sources_count"] = sources_count
             pkg["scope_label"] = scope
+            pkg["thumbnail_url"] = thumb_url
+            pkg["section"] = sec_name
+            pkg["category"] = cat_name
+            pkg["language"] = lang_name
+            pkg["wordpress_post_id"] = wp_id
             pkg["active_components"] = [
                 {"name": name, "status": st, "approved": st == "approved"}
                 for name, st in active_components
@@ -1792,6 +1815,102 @@ def archive_package(
         return get_package_bundle(package_id, db_path=db_path)
     finally:
         conn.close()
+
+
+def duplicate_package(package_id: int, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
+    """Create an exact copy of an existing article & post package."""
+    conn = get_connection(db_path)
+    try:
+        pkg_row = conn.execute("SELECT * FROM packages WHERE id = ?", (package_id,)).fetchone()
+        if not pkg_row:
+            return None
+        pkg = dict(pkg_row)
+        now = utc_now_iso()
+        new_slug = f"assign-{int(datetime.now(timezone.utc).timestamp())}-{abs(hash(pkg['title'])) % 10000}"
+        new_title = f"{pkg['title']} (Copy)"
+
+        cur = conn.execute(
+            """
+            INSERT INTO packages (
+                slug, title, story_type, origin, assignment_scope, deadline_at,
+                current_version, article_status, reel_status, ig_post_status,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 1, 'pending', 'pending', 'pending', ?, ?)
+            """,
+            (
+                new_slug,
+                new_title,
+                pkg.get("story_type") or "News",
+                pkg.get("origin") or "Direct Copy",
+                pkg.get("assignment_scope") or "Both",
+                pkg.get("deadline_at"),
+                now,
+                now,
+            ),
+        )
+        new_pkg_id = cur.lastrowid
+
+        v_row = conn.execute(
+            "SELECT * FROM package_versions WHERE package_id = ? ORDER BY version DESC LIMIT 1",
+            (package_id,),
+        ).fetchone()
+        if v_row:
+            v_dict = dict(v_row)
+            art_json = v_dict.get("article_json")
+            if art_json:
+                try:
+                    art_obj = json.loads(art_json)
+                    art_obj["headline"] = new_title
+                    art_obj["title"] = new_title
+                    art_obj["wordpress_post_id"] = None
+                    art_json = json.dumps(art_obj)
+                except Exception:
+                    pass
+
+            conn.execute(
+                """
+                INSERT INTO package_versions (
+                    package_id, version, author, rationale, source_check_json,
+                    article_json, reel_json, static_post_json, created_at
+                ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    new_pkg_id,
+                    "System (Duplicate)",
+                    f"Duplicated from #{package_id}",
+                    v_dict.get("source_check_json") or "{}",
+                    art_json or "{}",
+                    v_dict.get("reel_json") or "{}",
+                    v_dict.get("static_post_json") or "{}",
+                    now,
+                ),
+            )
+
+        assign_row = conn.execute("SELECT * FROM assignments WHERE package_id = ?", (package_id,)).fetchone()
+        if assign_row:
+            a_dict = dict(assign_row)
+            conn.execute(
+                """
+                INSERT INTO assignments (
+                    package_id, topic, scope, instructions, links_json, deadline_at, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    new_pkg_id,
+                    new_title,
+                    a_dict.get("scope") or "Both",
+                    a_dict.get("instructions") or "",
+                    a_dict.get("links_json") or "[]",
+                    a_dict.get("deadline_at"),
+                    now,
+                ),
+            )
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return get_package_bundle(new_pkg_id, db_path=db_path)
 
 
 def recalculate_reel_scenes_timings(reel: Dict[str, Any]) -> Dict[str, Any]:
@@ -3054,6 +3173,8 @@ def create_assignment(
     target_length_sec: int = 15,
     audio_mode: str = "authentic_source_and_music",
     opening_shot_note: str = "",
+    section: Optional[str] = None,
+    category: Optional[str] = None,
     db_path: str = DB_PATH,
 ) -> Dict[str, Any]:
     """Create a new editorial assignment: prepares WordPress-ready article, featured photo, and static social post.
@@ -3077,6 +3198,9 @@ def create_assignment(
         links=links,
         language=language,
         studio_titles=studio_titles,
+        custom_photo=custom_photo,
+        section=section,
+        category=category,
     )
 
     # If user provided a custom photo, use it as the featured image

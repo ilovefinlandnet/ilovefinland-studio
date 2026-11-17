@@ -3092,10 +3092,14 @@ def build_wordpress_article(
     language: str = "English",
     studio_titles: Optional[List[str]] = None,
     custom_photo: Optional[Dict[str, Any]] = None,
+    section: Optional[str] = None,
+    category: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Generate article matching ilovefinland.net WordPress fields, vertical writing styles, and exact order."""
     links = links or []
-    section, category, sec_reason, conf = recommend_section_and_category(topic, instructions)
+    rec_sec, rec_cat, sec_reason, conf = recommend_section_and_category(topic, instructions)
+    section = section.strip() if section and section.strip() else rec_sec
+    category = category.strip() if category and category.strip() else rec_cat
     if custom_photo and custom_photo.get("url"):
         featured_photo = copy.deepcopy(custom_photo)
     else:

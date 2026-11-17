@@ -898,6 +898,45 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
             return
 
+        if path == "/api/package/duplicate":
+            pkg_id = int(body.get("package_id", 0))
+            from db import duplicate_package
+            try:
+                bundle = duplicate_package(pkg_id, db_path=db_path)
+                if not bundle:
+                    self._send_json({"error": f"Package {pkg_id} not found"}, status=HTTPStatus.NOT_FOUND)
+                    return
+                projects_data = get_projects_dashboard(db_path=db_path)
+                self._send_json({
+                    "ok": True,
+                    "bundle": bundle,
+                    "projects": projects_data["projects"],
+                    "counts": projects_data["counts"],
+                })
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/package/rename":
+            pkg_id = int(body.get("package_id", 0))
+            new_title = (body.get("title") or "").strip()
+            if not new_title:
+                self._send_json({"error": "Title is required"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            from db import edit_project
+            try:
+                res = edit_project(pkg_id, new_title, assignment_scope="Both", db_path=db_path)
+                projects_data = get_projects_dashboard(db_path=db_path)
+                self._send_json({
+                    "ok": True,
+                    "project": res,
+                    "projects": projects_data["projects"],
+                    "counts": projects_data["counts"],
+                })
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
         # Modern Reel Studio REST API
         if path == "/api/reel/project/new":
             title = (body.get("title") or "Untitled Reel").strip()
@@ -1584,13 +1623,17 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
             bundle = create_assignment(
                 topic=topic,
-                scope=body.get("scope", "Both"),
+                scope=body.get("scope", "Article + Static Post"),
                 instructions=body.get("instructions", ""),
                 links=body.get("links") or [],
                 deadline_at=body.get("deadline_at", ""),
                 has_voice_note=bool(body.get("has_voice_note", False)),
+                language=body.get("language", "English"),
                 custom_photo=body.get("custom_photo"),
+                custom_additional_photo=body.get("custom_additional_photo"),
                 clips=body.get("clips"),
+                section=body.get("section"),
+                category=body.get("category"),
                 db_path=db_path,
             )
             bundle["integrations"] = INTEGRATIONS_STATUS

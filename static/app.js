@@ -1836,11 +1836,11 @@
           </div>
 
           <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f1f5f9;gap:6px;">
-            <button type="button" class="btn btn-primary btn-sm btn-approve-idea" style="font-size:0.78rem;padding:6px 10px;flex:1;">
-              ✓ Work on this
+            <button type="button" class="btn btn-primary btn-sm btn-write-article-from-idea" style="font-size:0.8rem;padding:7px 12px;font-weight:700;flex:1;background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:5px;">
+              <span>✍️ Write Article</span>
             </button>
             <button type="button" class="btn btn-ghost btn-sm btn-dismiss-idea" style="font-size:0.78rem;padding:6px 8px;color:#64748b;" title="Dismiss from suggestions">
-              ✕ No need
+              ✕ Dismiss
             </button>
             <button type="button" class="btn btn-ghost btn-sm btn-delete-idea" style="font-size:0.78rem;padding:6px 8px;color:#ef4444;" title="Delete permanently">
               🗑
@@ -1851,24 +1851,39 @@
     }).join("");
 
     // Wire actions
-    grid.querySelectorAll(".btn-approve-idea").forEach((b) => {
-      b.addEventListener("click", async (e) => {
+    grid.querySelectorAll(".btn-write-article-from-idea").forEach((b) => {
+      b.addEventListener("click", (e) => {
         const card = e.target.closest(".idea-card");
         const id = parseInt(card.dataset.id, 10);
-        b.disabled = true;
-        b.innerHTML = "⏳ AI Working (Drafting)...";
-        try {
-          const res = await api("/api/calendar/plan/action", {
-            method: "POST",
-            body: JSON.stringify({ action: "accept", id }),
-          });
-          currentPackageId = res.bundle.package.id;
-          await loadAll();
-          switchView("review");
-        } catch (err) {
-          alert(`Could not start project: ${err.message}`);
-          b.disabled = false;
-          b.innerHTML = "✓ Work on this";
+        const idea = cachedSuggestions.find((i) => i.id === id);
+        if (!idea) return;
+
+        // Open Creation Modal with topic, instructions, references, section, category pre-filled
+        const modal = $("modal-create-article-post");
+        if (modal) {
+          modal.classList.remove("hidden");
+          if ($("new-article-topic")) $("new-article-topic").value = idea.title || "";
+          if ($("new-article-instructions")) {
+            let instr = idea.angle || "";
+            if (idea.fit_reason) instr += `\n\nEditorial Context: ${idea.fit_reason}`;
+            $("new-article-instructions").value = instr;
+          }
+          if ($("new-article-references")) $("new-article-references").value = idea.source_url || "";
+          if ($("new-article-section") && idea.section) $("new-article-section").value = idea.section;
+          if ($("new-article-category") && idea.category) $("new-article-category").value = idea.category;
+          if ($("new-article-language")) $("new-article-language").value = "English";
+
+          // Reset photo
+          pendingCreatedPhoto = null;
+          if ($("create-photo-preview-wrap")) $("create-photo-preview-wrap").classList.add("hidden");
+          if ($("create-photo-preview-img")) $("create-photo-preview-img").src = "";
+          if ($("create-photo-filename")) $("create-photo-filename").textContent = "No photo selected (can be uploaded later)";
+          if ($("create-photo-status-badge")) {
+            $("create-photo-status-badge").textContent = "No Image Uploaded";
+            $("create-photo-status-badge").style.background = "#e2e8f0";
+            $("create-photo-status-badge").style.color = "#475569";
+          }
+          if ($("btn-remove-create-photo")) $("btn-remove-create-photo").classList.add("hidden");
         }
       });
     });
@@ -2555,125 +2570,212 @@
     return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  /* ---------- PROJECTS & STORIES HUB ---------- */
+  /* ---------- ARTICLES & POSTS (MAIN WORKSPACE) ---------- */
   let projectsData = [];
-  let currentProjFilter = "all";
-  let showArchivedProjects = false;
+  let pendingCreatedPhoto = null;
 
   async function loadProjects() {
     try {
-      const data = await api(showArchivedProjects ? "/api/projects?archived=1" : "/api/projects");
-      projectsData = data.projects;
+      const data = await api("/api/projects?archived=1");
+      projectsData = data.projects || [];
 
+      if ($("articles-count-total")) $("articles-count-total").textContent = projectsData.length;
       if ($("chip-count-total")) $("chip-count-total").textContent = data.counts.total;
       if ($("active-work-count")) $("active-work-count").textContent = data.counts.total;
-      if ($("chip-count-review")) $("chip-count-review").textContent = data.counts.in_review;
-      if ($("chip-count-progress")) $("chip-count-progress").textContent = data.counts.in_progress;
-      if ($("chip-count-approved")) $("chip-count-approved").textContent = data.counts.approved;
-      if ($("chip-count-archived")) $("chip-count-archived").textContent = data.counts.archived || 0;
 
       loadIdeasPool();
-      renderProjectsTable();
+      renderArticlesPostsList();
     } catch (err) {
       console.error("Failed to load projects:", err);
     }
   }
 
-  function renderProjectsTable() {
-    const tbody = $("projects-tbody");
-    if (!tbody) return;
+  function renderArticlesPostsList() {
+    const container = $("articles-posts-grid");
+    if (!container) return;
 
-    const query = ($("proj-search-input")?.value || "").toLowerCase().trim();
-    const fmt = $("proj-format-filter")?.value || "all";
+    const query = ($("articles-search-input")?.value || "").toLowerCase().trim();
+    const sectionFilter = $("articles-section-filter")?.value || "all";
+    const statusFilter = $("articles-status-filter")?.value || "all";
+    const langFilter = $("articles-lang-filter")?.value || "all";
+    const sortFilter = $("articles-sort-filter")?.value || "newest";
 
-    const filtered = projectsData.filter((p) => {
+    let filtered = projectsData.filter((p) => {
       const isArchived = Boolean(p.is_archived);
-      if (currentProjFilter === "archived" || fmt === "archived") {
+
+      // Status filter
+      if (statusFilter === "archived") {
         if (!isArchived) return false;
       } else {
-        if (isArchived) return false;
-        if (currentProjFilter === "in_review") {
+        if (isArchived && statusFilter !== "all") return false;
+        if (statusFilter === "draft") {
+          if (p.article_status === "approved" || p.ig_post_status === "approved") return false;
+        } else if (statusFilter === "in_review") {
           if (!p.pipeline_stage.includes("Review") && !p.pipeline_stage.includes("Partially")) return false;
-        } else if (currentProjFilter === "in_progress") {
-          if (!p.pipeline_stage.includes("Progress") && !p.pipeline_stage.includes("Working")) return false;
-        } else if (currentProjFilter === "approved") {
-          if (!p.pipeline_stage.includes("Approved") && !p.pipeline_stage.includes("Scheduled")) return false;
+        } else if (statusFilter === "approved") {
+          if (p.article_status !== "approved" && p.ig_post_status !== "approved") return false;
         }
       }
 
-      if (fmt !== "all" && fmt !== "archived") {
-        if (!p.scope_label.includes(fmt) && p.scope_label !== fmt) return false;
+      // Section filter
+      if (sectionFilter !== "all") {
+        if ((p.section || "").toLowerCase() !== sectionFilter.toLowerCase()) return false;
       }
 
+      // Language filter
+      if (langFilter !== "all") {
+        if ((p.language || "English").toLowerCase() !== langFilter.toLowerCase()) return false;
+      }
+
+      // Search query
       if (query) {
-        const hay = `${p.id} ${p.title} ${p.scope_label} ${p.pipeline_stage}`.toLowerCase();
+        const hay = `${p.id} ${p.title} ${p.section || ''} ${p.category || ''} ${p.language || ''}`.toLowerCase();
         if (!hay.includes(query)) return false;
       }
 
       return true;
     });
 
+    // Sorting
+    if (sortFilter === "oldest") {
+      filtered.sort((a, b) => (a.id || 0) - (b.id || 0));
+    } else if (sortFilter === "title_asc") {
+      filtered.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    } else {
+      // Default: newest first
+      filtered.sort((a, b) => (b.id || 0) - (a.id || 0));
+    }
+
+    if ($("articles-count-total")) $("articles-count-total").textContent = filtered.length;
+
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted);">${currentProjFilter === 'archived' ? 'No archived stories found.' : 'No projects found matching filter criteria.'}</td></tr>`;
+      container.innerHTML = `
+        <div style="text-align:center;padding:48px 20px;background:#fff;border-radius:12px;border:1px dashed #cbd5e1;">
+          <div style="font-size:2.2rem;margin-bottom:8px;">📰</div>
+          <h3 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:4px;">No Articles &amp; Posts Found</h3>
+          <p style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:0 auto 16px;">
+            ${query || sectionFilter !== 'all' || statusFilter !== 'all' ? 'No projects match your current filters. Try resetting search or filter dropdowns.' : 'Start your first article and social post project now.'}
+          </p>
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('btn-create-new-article-post').click()" style="background:var(--brand-blue);color:#fff;font-weight:700;">
+            + Create New Article &amp; Post
+          </button>
+        </div>
+      `;
       return;
     }
 
-    tbody.innerHTML = filtered.map((p) => {
-      let fmtBadges = "";
-      if (p.scope_label === "Both" || p.scope_label.includes("Reel")) {
-        fmtBadges += `<span class="badge badge-origin" style="margin-right:4px;">Reel (9:16)</span>`;
-      }
-      if (p.scope_label.includes("Instagram Post")) {
-        fmtBadges += `<span class="badge badge-ig" style="margin-right:4px;">IG Carousel (4:5)</span>`;
-      }
-      if (p.scope_label === "Both" || p.scope_label.includes("Article")) {
-        fmtBadges += `<span class="badge badge-check" style="margin-right:4px;">Article</span>`;
-      }
-
-      const dlFormatted = p.deadline_at ? p.deadline_at.replace("T", " ") : "Flexible";
+    container.innerHTML = filtered.map((p) => {
       const isArchived = Boolean(p.is_archived);
+      const hasThumb = Boolean(p.thumbnail_url && p.thumbnail_url.trim());
+      const thumbUrl = p.thumbnail_url || "";
+      const isWpPushed = Boolean(p.wordpress_post_id);
+      const wpBase = "https://ilovefinland.net";
+      const wpBadge = isWpPushed
+        ? `<a href="${wpBase}/wp-admin/post.php?post=${p.wordpress_post_id}&action=edit" target="_blank" rel="noopener" class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;" title="Open draft in WordPress Admin">
+            <span>✓ WP Draft #${p.wordpress_post_id}</span> <span style="font-size:0.65rem;">↗</span>
+           </a>`
+        : `<span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;">WP: Not Pushed</span>`;
+
+      const artApproved = p.article_status === "approved";
+      const igApproved = p.ig_post_status === "approved";
 
       return `
-        <tr data-id="${p.id}" style="${isArchived ? 'opacity:0.75;background:#f8fafc;' : ''}">
-          <td style="font-weight:700;color:var(--muted);">${p.id}</td>
-          <td>
-            <a class="proj-title-link" data-id="${p.id}">${escapeHtml(p.title)}</a>
-            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Created: ${p.created_at ? p.created_at.slice(0, 10) : "Recent"}${isArchived ? ' · <span class="badge" style="background:#e2e8f0;color:#475569;font-size:0.68rem;">Archived</span>' : ''}</div>
-          </td>
-          <td>${fmtBadges}</td>
-          <td><span class="pill ${p.stage_badge}">${p.pipeline_stage}</span></td>
-          <td><span class="badge badge-model">v${p.current_version}</span></td>
-          <td><span style="font-weight:600;color:#059669;">${p.sources_count || 1} verified</span></td>
-          <td style="font-family:monospace;font-size:0.8rem;color:var(--navy);">${dlFormatted}</td>
-          <td style="text-align:right;white-space:nowrap;">
-            <button type="button" class="btn btn-primary btn-sm btn-tbl-action btn-open-project" data-id="${p.id}" title="Open in Review">
-              <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-              <span>Open</span>
+        <div class="article-project-card" data-id="${p.id}" style="display:flex;align-items:center;gap:16px;background:#fff;border:1px solid ${isArchived ? '#e2e8f0' : '#cbd5e1'};border-radius:12px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.03);transition:all 0.15s ease;${isArchived ? 'opacity:0.75;background:#f8fafc;' : ''}">
+          <!-- 1. Thumbnail Photo -->
+          <div style="width:84px;height:84px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#0f172a;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #e2e8f0;">
+            ${
+              hasThumb
+                ? `<img src="${thumbUrl}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\'text-align:center;color:#94a3b8;\'><div style=\'font-size:1.6rem;\'>📷</div><div style=\'font-size:0.55rem;font-weight:600;\'>No Image</div></div>';">`
+                : `<div style="text-align:center;color:#94a3b8;">
+                    <div style="font-size:1.6rem;line-height:1;">📷</div>
+                    <div style="font-size:0.55rem;margin-top:2px;font-weight:600;">No Image</div>
+                   </div>`
+            }
+          </div>
+
+          <!-- 2. Middle Content Column -->
+          <div style="flex:1;min-width:0;">
+            <!-- Taxonomy and WP Badges -->
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+              <span class="badge" style="background:#003882;color:#fff;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
+                📂 ${escapeHtml(p.section || 'News')}
+              </span>
+              <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
+                🏷️ ${escapeHtml(p.category || 'Finland')}
+              </span>
+              <span class="badge" style="background:#f1f5f9;color:#475569;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;">
+                🌐 ${escapeHtml(p.language || 'English')}
+              </span>
+              ${wpBadge}
+              ${isArchived ? '<span class="badge" style="background:#fee2e2;color:#991b1b;font-size:0.68rem;font-weight:700;">📦 Archived</span>' : ''}
+            </div>
+
+            <!-- Headline (Clickable) -->
+            <a class="btn-open-project" data-id="${p.id}" style="font-size:1.05rem;font-weight:700;color:var(--navy);text-decoration:none;display:block;margin-bottom:6px;cursor:pointer;line-height:1.35;" title="${escapeHtml(p.title)}">
+              ${escapeHtml(p.title)}
+            </a>
+
+            <!-- Meta / Status row -->
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:0.78rem;color:#64748b;">
+              <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
+              <span>•</span>
+              <span>Article: <strong style="color:${artApproved ? '#166534' : '#b45309'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
+              <span>•</span>
+              <span>Social Post: <strong style="color:${igApproved ? '#166534' : '#b45309'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
+            </div>
+          </div>
+
+          <!-- 3. Actions Column -->
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+            <button type="button" class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}" style="padding:7px 14px;font-weight:700;background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;gap:4px;">
+              <span>✏️ Edit</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-tbl-action btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story to keep desk clean'}">
+            <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project" style="padding:7px 10px;">
+              <span>📋 Duplicate</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}" style="padding:7px 8px;color:#64748b;">
               <span>${isArchived ? '📂 Restore' : '📦 Archive'}</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-tbl-action btn-edit-project" data-id="${p.id}" title="Edit Project">
-              <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-              <span>Edit</span>
+            <button type="button" class="btn btn-ghost btn-sm btn-del-project" data-id="${p.id}" title="Delete permanently" style="padding:7px 8px;color:#ef4444;">
+              <span>🗑️</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-tbl-action btn-tbl-del btn-del-project" data-id="${p.id}" title="Delete Project">
-              <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
-          </td>
-        </tr>
+          </div>
+        </div>
       `;
     }).join("");
 
-    tbody.querySelectorAll(".proj-title-link, .btn-open-project").forEach((btn) => {
+    // Wire actions on cards
+    container.querySelectorAll(".btn-open-project").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = parseInt(btn.dataset.id, 10);
         openProjectInReview(id);
       });
     });
 
-    tbody.querySelectorAll(".btn-archive-project").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+    container.querySelectorAll(".btn-dup-project").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = parseInt(btn.dataset.id, 10);
+        btn.disabled = true;
+        btn.textContent = "⏳ Duplicating…";
+        try {
+          const res = await api("/api/package/duplicate", {
+            method: "POST",
+            body: JSON.stringify({ package_id: id }),
+          });
+          showToast("Project duplicated successfully!", "success");
+          await loadProjects();
+        } catch (err) {
+          alert(`Failed to duplicate: ${err.message}`);
+          btn.disabled = false;
+          btn.textContent = "📋 Duplicate";
+        }
+      });
+    });
+
+    container.querySelectorAll(".btn-archive-project").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
         const id = parseInt(btn.dataset.id, 10);
         const p = projectsData.find((item) => item.id === id);
         const willArchive = !Boolean(p && p.is_archived);
@@ -2682,6 +2784,7 @@
             method: "POST",
             body: JSON.stringify({ package_id: id, is_archived: willArchive }),
           });
+          showToast(willArchive ? "Project archived." : "Project restored.", "info");
           await loadProjects();
         } catch (err) {
           alert(`Archive failed: ${err.message}`);
@@ -2689,31 +2792,20 @@
       });
     });
 
-    tbody.querySelectorAll(".btn-edit-project").forEach((btn) => {
-      btn.addEventListener("click", () => {
+    container.querySelectorAll(".btn-del-project").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
         const id = parseInt(btn.dataset.id, 10);
-        openEditProjectModal(id);
-      });
-    });
-
-    tbody.querySelectorAll(".btn-del-project").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const id = parseInt(btn.dataset.id, 10);
-        const proj = projectsData.find((x) => x.id === id);
-        const title = proj ? proj.title : `#${id}`;
-        if (confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) {
-          const res = await api("/api/projects/delete", {
+        if (!confirm(`Are you sure you want to permanently delete project #${id}?`)) return;
+        try {
+          await api("/api/projects/delete", {
             method: "POST",
             body: JSON.stringify({ id }),
           });
-          if (res.deleted) {
-            await loadProjects();
-            const pkgsData = await api("/api/packages");
-            const sel = $("package-selector");
-            sel.innerHTML = pkgsData.packages
-              .map((p) => `<option value="${p.id}" ${p.id === currentPackageId ? "selected" : ""}>#${p.id} ${p.title}</option>`)
-              .join("");
-          }
+          showToast("Project deleted.", "info");
+          await loadProjects();
+        } catch (err) {
+          alert(`Failed to delete: ${err.message}`);
         }
       });
     });
@@ -5590,10 +5682,142 @@
       await loadProjects();
       const pkgsData = await api("/api/packages");
       const sel = $("package-selector");
-      sel.innerHTML = pkgsData.packages
-        .map((p) => `<option value="${p.id}" ${p.id === currentPackageId ? "selected" : ""}>#${p.id} ${p.title}</option>`)
-        .join("");
+      if (sel && pkgsData.packages) {
+        sel.innerHTML = pkgsData.packages
+          .map((p) => `<option value="${p.id}" ${p.id === currentPackageId ? "selected" : ""}>#${p.id} ${p.title}</option>`)
+          .join("");
+      }
     });
+
+    // Articles & Posts (Main Workspace) Wiring
+    $("btn-create-new-article-post")?.addEventListener("click", () => {
+      $("modal-create-article-post")?.classList.remove("hidden");
+      $("new-article-topic")?.focus();
+    });
+    $("btn-mobile-new-story")?.addEventListener("click", () => {
+      toggleSidebar(false);
+      $("modal-create-article-post")?.classList.remove("hidden");
+    });
+    $("btn-close-create-modal")?.addEventListener("click", () => {
+      $("modal-create-article-post")?.classList.add("hidden");
+    });
+    $("btn-cancel-create-article")?.addEventListener("click", () => {
+      $("modal-create-article-post")?.classList.add("hidden");
+    });
+
+    // Create Photo Input
+    $("input-create-photo")?.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Photo exceeds 5 MB maximum limit. Please select an image under 5 MB.");
+        e.target.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingCreatedPhoto = {
+          url: reader.result,
+          filename: file.name,
+          size_mb: round1(file.size / (1024 * 1024)),
+          alt_text: $("new-article-topic")?.value || file.name.replace(/\.[^.]+$/, ""),
+          caption: "Editorial photo",
+        };
+        const prevWrap = $("create-photo-preview-wrap");
+        const prevImg = $("create-photo-preview-img");
+        const fnSpan = $("create-photo-filename");
+        const badge = $("create-photo-status-badge");
+        if (prevImg) prevImg.src = reader.result;
+        if (prevWrap) prevWrap.classList.remove("hidden");
+        if (fnSpan) fnSpan.textContent = `${file.name} (${pendingCreatedPhoto.size_mb} MB)`;
+        if (badge) {
+          badge.textContent = "✓ Photo Attached";
+          badge.style.background = "#dcfce7";
+          badge.style.color = "#15803d";
+        }
+        $("btn-remove-create-photo")?.classList.remove("hidden");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    $("btn-remove-create-photo")?.addEventListener("click", () => {
+      pendingCreatedPhoto = null;
+      if ($("input-create-photo")) $("input-create-photo").value = "";
+      if ($("create-photo-preview-wrap")) $("create-photo-preview-wrap").classList.add("hidden");
+      if ($("create-photo-preview-img")) $("create-photo-preview-img").src = "";
+      if ($("create-photo-filename")) $("create-photo-filename").textContent = "No photo selected (can be uploaded later)";
+      if ($("create-photo-status-badge")) {
+        $("create-photo-status-badge").textContent = "No Image Uploaded";
+        $("create-photo-status-badge").style.background = "#e2e8f0";
+        $("create-photo-status-badge").style.color = "#475569";
+      }
+      $("btn-remove-create-photo")?.classList.add("hidden");
+    });
+
+    // Form Submit: Create Article & Social Post
+    $("form-create-article-post")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const topic = $("new-article-topic")?.value.trim();
+      if (!topic) {
+        alert("Please enter a Topic or Headline.");
+        return;
+      }
+      const instructions = $("new-article-instructions")?.value.trim() || "";
+      const references = $("new-article-references")?.value.trim() || "";
+      const section = $("new-article-section")?.value || "News";
+      const category = $("new-article-category")?.value || "Finland";
+      const language = $("new-article-language")?.value || "English";
+
+      const submitBtn = $("btn-submit-create-article");
+      const origText = submitBtn ? submitBtn.innerHTML : "";
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = "<span>⏳ Creating Article &amp; Social Post…</span>";
+      }
+
+      try {
+        const payload = {
+          topic,
+          instructions: instructions + (references ? `\n\nReferences & Notes:\n${references}` : ""),
+          links: references.match(/https?:\/\/[^\s]+/g) || [],
+          language,
+          section,
+          category,
+          scope: "Article + Static Post",
+          custom_photo: pendingCreatedPhoto,
+        };
+        const res = await api("/api/assignments", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        $("modal-create-article-post")?.classList.add("hidden");
+        pendingCreatedPhoto = null;
+        $("form-create-article-post")?.reset();
+
+        currentPackageId = res.package ? res.package.id : (res.bundle ? res.bundle.package.id : null);
+        await loadProjects();
+        if (currentPackageId) {
+          openProjectInReview(currentPackageId);
+          showToast("New Article & Social Post created successfully!", "success");
+        }
+      } catch (err) {
+        alert("Failed to create project: " + err.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origText;
+        }
+      }
+    });
+
+    // Search and filters for Articles & Posts
+    $("articles-search-input")?.addEventListener("input", renderArticlesPostsList);
+    $("articles-section-filter")?.addEventListener("change", renderArticlesPostsList);
+    $("articles-status-filter")?.addEventListener("change", renderArticlesPostsList);
+    $("articles-lang-filter")?.addEventListener("change", renderArticlesPostsList);
+    $("articles-sort-filter")?.addEventListener("change", renderArticlesPostsList);
+    $("btn-refresh-articles-posts")?.addEventListener("click", loadProjects);
 
     // Suggestions & Ideas Pool Wiring
     $("tab-btn-active-pipeline")?.addEventListener("click", () => switchView("projects"));
