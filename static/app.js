@@ -15,6 +15,60 @@
 
   const $ = (id) => document.getElementById(id);
 
+  /* ---------- MODERN IN-APP TOAST NOTIFICATION SYSTEM ---------- */
+  function showToast(message, type = "success", duration = 3500) {
+    if (!message) return;
+    let container = document.getElementById("studio-toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "studio-toast-container";
+      container.className = "studio-toast-container";
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    const strMsg = String(message);
+    if (strMsg.includes("Failed") || strMsg.includes("error") || strMsg.includes("Error") || strMsg.includes("❌")) {
+      type = "error";
+    } else if (strMsg.includes("⚠️") || strMsg.includes("Warning") || strMsg.includes("required") || strMsg.includes("limit")) {
+      type = "warning";
+    }
+
+    toast.className = `studio-toast toast-${type}`;
+    let icon = "✓";
+    if (type === "error") icon = "✕";
+    else if (type === "warning") icon = "⚠️";
+    else if (type === "info") icon = "ℹ️";
+
+    const cleanMsg = strMsg.replace(/^[✅❌⚠️ℹ️✓✕]\s*/, "");
+
+    toast.innerHTML = `
+      <div class="studio-toast-icon">${icon}</div>
+      <div class="studio-toast-msg">${cleanMsg}</div>
+      <button type="button" class="studio-toast-close" aria-label="Dismiss">&times;</button>
+    `;
+
+    toast.querySelector(".studio-toast-close")?.addEventListener("click", () => {
+      toast.classList.add("toast-fading");
+      setTimeout(() => toast.remove(), 200);
+    });
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("toast-visible"));
+
+    setTimeout(() => {
+      if (toast.isConnected) {
+        toast.classList.add("toast-fading");
+        setTimeout(() => toast.remove(), 250);
+      }
+    }, duration);
+  }
+
+  window.showToast = showToast;
+  window.alert = function (msg) {
+    showToast(msg);
+  };
+
   /* ---------- LUCIDE SVG GENERATOR ---------- */
   function getIcon(name, size = 16, className = "") {
     const cls = `lucide lucide-${name} ${className}`.trim();
@@ -376,7 +430,6 @@
       }
       if (currentPackageId && pkgs.some((p) => p.id === currentPackageId)) {
         await loadPackage(currentPackageId);
-        alert("✅ Replacement photo uploaded and set as featured image!");
       }
     } catch (e) { console.warn("Packages load:", e); }
     try {
@@ -2241,19 +2294,21 @@
         eventsMarkup = dayEvents
           .map((e) => {
             const pillClass = e.status === "published" ? "cal-pill-published" : e.format === "Article" ? "cal-pill-article" : e.format === "Reel" ? "cal-pill-reel" : "cal-pill-social";
-            return `<div class="cal-event-pill ${pillClass}" data-id="${e.package_id || ''}" title="${escapeHtml(e.title || e.format)}">${escapeHtml(e.format || e.title)}</div>`;
+            const fmtIcon = e.format === "Article" ? "📰" : e.format === "Reel" ? "🎬" : "📱";
+            const displayTitle = e.title ? `${fmtIcon} ${escapeHtml(e.title)}` : escapeHtml(e.format || "Item");
+            return `<div class="cal-event-pill ${pillClass}" data-id="${e.package_id || ''}" title="${escapeHtml(e.title || e.format)}">${displayTitle}</div>`;
           })
           .join("");
       } else if (calCurrentYear === 2026 && calCurrentMonth === 10) {
         // Illustrative items matching the user's reference screenshot
         if (d === 17) {
-          eventsMarkup = `<div class="cal-event-pill cal-pill-article">Article</div>`;
+          eventsMarkup = `<div class="cal-event-pill cal-pill-article" title="Article">Article</div>`;
         } else if (d === 18) {
-          eventsMarkup = `<div class="cal-event-pill cal-pill-social">Social</div>`;
+          eventsMarkup = `<div class="cal-event-pill cal-pill-social" title="Social Post">Social</div>`;
         } else if (d === 20) {
-          eventsMarkup = `<div class="cal-event-pill cal-pill-reel">Reel</div>`;
+          eventsMarkup = `<div class="cal-event-pill cal-pill-reel" title="Reel">Reel</div>`;
         } else if (d === 23) {
-          eventsMarkup = `<div class="cal-event-pill cal-pill-published">Published</div>`;
+          eventsMarkup = `<div class="cal-event-pill cal-pill-published" title="Published">Published</div>`;
         }
       }
 
@@ -2306,8 +2361,9 @@
   }
 
   function wireCalendarCards(container) {
-    container.querySelectorAll(".cal-event-card").forEach((card) => {
-      card.addEventListener("click", () => {
+    container.querySelectorAll(".cal-event-card, .cal-event-pill").forEach((card) => {
+      card.addEventListener("click", (e) => {
+        e.stopPropagation();
         const pkgId = parseInt(card.dataset.id, 10);
         if (pkgId) {
           loadPackage(pkgId);

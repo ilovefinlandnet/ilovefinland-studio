@@ -569,9 +569,23 @@ html, body {
 .workspace-wrap { flex: 1; min-width: 0; }
 
 .workspace {
-  max-width: 1280px;
+  max-width: 1560px;
   margin: 0 auto;
   padding: 24px 20px 84px;
+}
+
+.workspace:has(#view-reel-studio:not(.hidden)) {
+  max-width: 100% !important;
+  padding: 10px 14px 14px !important;
+  margin: 0 !important;
+  height: calc(100vh - 10px) !important;
+  box-sizing: border-box !important;
+}
+
+#view-reel-studio {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .view { display: flex; flex-direction: column; gap: 20px; }
@@ -3787,9 +3801,9 @@ textarea:focus-visible {
 
 /* Copy Buttons */
 .btn-copy-field {
-  background: #f8fafc !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #334155 !important;
+  background: #162235 !important;
+  border: 1px solid #303B4D !important;
+  color: #B8C4D4 !important;
   padding: 4px 10px !important;
   border-radius: 6px !important;
   font-size: 0.72rem !important;
@@ -3802,9 +3816,33 @@ textarea:focus-visible {
 }
 
 .btn-copy-field:hover {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
-  border-color: #94a3b8 !important;
+  background: #1C2B42 !important;
+  color: #FFFFFF !important;
+  border-color: #168BFF !important;
+}
+
+.btn-copy-field-mini {
+  padding: 2px 7px !important;
+  font-size: 0.68rem !important;
+  border: 1px solid #303B4D !important;
+  border-radius: 4px !important;
+  background: #162235 !important;
+  color: #B8C4D4 !important;
+  cursor: pointer !important;
+  margin-left: 6px !important;
+}
+
+.btn-copy-field-mini:hover {
+  background: #1C2B42 !important;
+  color: #FFFFFF !important;
+  border-color: #168BFF !important;
+}
+
+.btn-copy-field.copied,
+.btn-copy-field-mini.copied {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #10B981 !important;
+  color: #6EE7B7 !important;
 }
 
 /* Phone Frame Player (Titanium Bezel) */
@@ -3814,16 +3852,16 @@ textarea:focus-visible {
   border: 8px solid #0f172a !important;
   background: #000000 !important;
   overflow: hidden !important;
-  box-shadow: 0 24px 50px -10px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Collapsible Scenes Card */
 .collapsible-scenes-card {
-  background: #f8fafc !important;
-  border: 1px solid #cbd5e1 !important;
+  background: #162235 !important;
+  border: 1px solid #303B4D !important;
   border-radius: 14px !important;
   padding: 14px 18px !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
   transition: all 0.2s ease !important;
 }
 
@@ -3845,9 +3883,9 @@ textarea:focus-visible {
   width: 26px !important;
   height: 26px !important;
   border-radius: 7px !important;
-  background: #eff6ff !important;
-  border: 1px solid #bfdbfe !important;
-  color: #003580 !important;
+  background: #0B0F16 !important;
+  border: 1px solid #303B4D !important;
+  color: #168BFF !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -3856,8 +3894,146 @@ textarea:focus-visible {
   transition: transform 0.2s ease !important;
 }
 
+/* Dark Theme WordPress Article Workspace Overrides */
+.wp-section-block {
+  background: #0B0F16 !important;
+  border: 1px solid #303B4D !important;
+  border-radius: 10px !important;
+  padding: 14px !important;
+  margin-bottom: 14px !important;
+}
+
+.wp-section-title {
+  color: #FFFFFF !important;
+  border-bottom: 1px solid #303B4D !important;
+}
+
+.wp-recommendation-box {
+  background: #0B0F16 !important;
+  border: 1px solid #303B4D !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 14px !important;
+}
+
+.wp-rec-val {
+  color: #168BFF !important;
+}
+
+.wp-search-phrase {
+  background: #162235 !important;
+  border: 1px solid #303B4D !important;
+  color: #FFFFFF !important;
+}
+
+.label-xs {
+  color: #B8C4D4 !important;
+}
+
+.wp-tab-btn {
+  background: #162235 !important;
+  border: 1px solid #303B4D !important;
+  color: #B8C4D4 !important;
+}
+
+.wp-tab-btn.active {
+  background: #003580 !important;
+  border-color: #168BFF !important;
+  color: #FFFFFF !important;
+}
+
+.btn-download-img {
+  background: #162235 !important;
+  border: 1px solid #303B4D !important;
+  color: #B8C4D4 !important;
+}
+
+.btn-download-img:hover {
+  background: #1C2B42 !important;
+  border-color: #168BFF !important;
+  color: #FFFFFF !important;
+}
+
+.wp-credit-box,
+.wp-sources-list,
+.wp-private-notes-box {
+  background: #0B0F16 !important;
+  border: 1px solid #303B4D !important;
+}
+
+.meta-label {
+  color: #B8C4D4 !important;
+}
+
+.meta-val {
+  color: #FFFFFF !important;
+}
+
+.wp-credit-row,
+.wp-source-item {
+  border-bottom: 1px dashed #303B4D !important;
+}
+
+/* Dark Theme Social Post Workspace Overrides */
+.social-guidance-card {
+  background: #0B0F16 !important;
+  border: 1px solid #303B4D !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 14px !important;
+}
+
+.social-guide-item {
+  background: #162235 !important;
+  border: 1px solid #303B4D !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 0.8rem !important;
+  line-height: 1.4 !important;
+  transition: all 0.2s ease !important;
+}
+
+.social-guide-item.active-guide {
+  border-color: #168BFF !important;
+  background: #1A283E !important;
+  box-shadow: 0 0 0 1px #168BFF !important;
+}
+
+.guide-dim {
+  font-size: 0.75rem !important;
+  color: #168BFF !important;
+  font-weight: 700 !important;
+  margin-left: auto !important;
+}
+
+.guide-desc {
+  margin: 0 !important;
+  color: #B8C4D4 !important;
+  font-size: 0.76rem !important;
+}
+
+.reel-on-demand-card {
+  border: 2px dashed #303B4D !important;
+  border-radius: 12px !important;
+  background: #0B0F16 !important;
+  color: #FFFFFF !important;
+}
+
+.ethics-advisory-box {
+  background: #162235 !important;
+  border-left: 4px solid #168BFF !important;
+  border: 1px solid #303B4D !important;
+  color: #B8C4D4 !important;
+}
+
+.save-photos-instructions {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  color: #6EE7B7 !important;
+}
+
 /* ==========================================================================
-   Standardized High-Contrast Rounded Status Pills & Micro-Badges (SaaS Design)
+   Standardized High-Contrast Dark-Theme Status Pills & Micro-Badges
    ========================================================================== */
 .pill,
 .badge {
@@ -3878,84 +4054,84 @@ textarea:focus-visible {
   padding: 3px 10px !important;
   font-size: 0.74rem !important;
   gap: 5px !important;
-  background: #F1F5F9 !important;
-  color: #334155 !important;
-  border: 1px solid #CBD5E1 !important;
+  background: #162235 !important;
+  color: #E2E8F0 !important;
+  border: 1px solid #303B4D !important;
 }
 
 .badge {
   padding: 2.5px 8.5px !important;
   font-size: 0.71rem !important;
   gap: 4px !important;
-  background: #EFF6FF !important;
-  color: #0369A1 !important;
-  border: 1px solid #BFDBFE !important;
+  background: rgba(22, 139, 255, 0.12) !important;
+  color: #93C5FD !important;
+  border: 1px solid rgba(22, 139, 255, 0.3) !important;
 }
 
-/* 1. PASS / APPROVED / SCHEDULED / SUCCESS (Soft Emerald Wash) */
+/* 1. PASS / APPROVED / SCHEDULED / SUCCESS (Soft Emerald) */
 .check-status-pass,
 .pill-approved,
 .pill-scheduled,
 .badge-check,
 .badge-success {
-  background: #ECFDF5 !important;
-  color: #047857 !important;
-  border: 1px solid #A7F3D0 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #6EE7B7 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
 }
 
-/* 2. WARN / REVISION / IN REVIEW / OFFLINE (Soft Amber Wash) */
+/* 2. WARN / REVISION / IN REVIEW / OFFLINE (Soft Amber) */
 .check-status-warn,
 .pill-revision,
 .pill-offline,
 .badge-sim {
-  background: #FFFBEB !important;
-  color: #B45309 !important;
-  border: 1px solid #FDE68A !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #FCD34D !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
 }
 .pill-offline svg {
-  color: #D97706 !important;
+  color: #F59E0B !important;
 }
 
-/* 3. ALERT / FAILED / MISSED / DISCONNECTED (Soft Rose/Crimson Wash) */
+/* 3. ALERT / FAILED / MISSED / DISCONNECTED (Soft Crimson) */
 .check-status-alert,
 .pill-missed,
 .pill-disconnected {
-  background: #FFF1F2 !important;
-  color: #BE123C !important;
-  border: 1px solid #FECDD3 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #FCA5A5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
 }
 
-/* 4. NEUTRAL / IN PROGRESS / DEFAULT SLATE (Soft Slate Wash) */
+/* 4. NEUTRAL / IN PROGRESS / DEFAULT SLATE (Dark Slate) */
 .pill-neutral,
 .badge-sec,
 .badge-origin {
-  background: #F8FAFC !important;
-  color: #334155 !important;
-  border: 1px solid #CBD5E1 !important;
+  background: #162235 !important;
+  color: #B8C4D4 !important;
+  border: 1px solid #303B4D !important;
 }
 
-/* 5. INFO / SAMPLES / BLUE (Soft Sky Wash) */
+/* 5. INFO / SAMPLES / BLUE (Soft Sky) */
 .badge-sample,
 .badge-info,
 .pill-info {
-  background: #EFF6FF !important;
-  color: #0369A1 !important;
-  border: 1px solid #BFDBFE !important;
+  background: rgba(22, 139, 255, 0.15) !important;
+  color: #93C5FD !important;
+  border: 1px solid rgba(22, 139, 255, 0.35) !important;
 }
 
-/* 6. SPECIALTY: IG POST / SOCIAL CAROUSEL (Soft Pink Wash) */
+/* 6. SPECIALTY: IG POST / SOCIAL CAROUSEL (Soft Pink) */
 .pill-ig,
 .badge-ig {
-  background: #FDF2F8 !important;
-  color: #9D174D !important;
-  border: 1px solid #FBCFE8 !important;
+  background: rgba(236, 72, 153, 0.15) !important;
+  color: #F9A8D4 !important;
+  border: 1px solid rgba(236, 72, 153, 0.35) !important;
 }
 
-/* 7. SPECIALTY: MODEL / AI (Soft Violet Wash) */
+/* 7. SPECIALTY: MODEL / AI (Soft Violet) */
 .badge-model {
-  background: #F5F3FF !important;
-  color: #6D28D9 !important;
-  border: 1px solid #DDD6FE !important;
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #C4B5FD !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
 }
 
 /* 8. MOBILE TOUCH & TAP TARGET POLISH (< 768px) */
@@ -4266,5 +4442,98 @@ textarea:focus-visible {
   margin-top: 10px;
   font-size: 0.78rem;
   color: #B8C4D4;
+}
+
+/* STUDIO NON-BLOCKING TOAST NOTIFICATIONS */
+.studio-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 440px;
+  pointer-events: none;
+}
+
+.studio-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #162235;
+  border: 1px solid #303B4D;
+  color: #FFFFFF;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio-toast.toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.studio-toast.toast-fading {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.studio-toast.toast-success {
+  border-color: rgba(16, 185, 129, 0.5);
+  border-left: 4px solid #10B981;
+}
+
+.studio-toast.toast-success .studio-toast-icon {
+  color: #34D399;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.studio-toast.toast-error {
+  border-color: rgba(239, 68, 68, 0.5);
+  border-left: 4px solid #EF4444;
+}
+
+.studio-toast.toast-error .studio-toast-icon {
+  color: #F87171;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.studio-toast.toast-warning {
+  border-color: rgba(245, 158, 11, 0.5);
+  border-left: 4px solid #F59E0B;
+}
+
+.studio-toast.toast-warning .studio-toast-icon {
+  color: #FBBF24;
+}
+
+.studio-toast-msg {
+  flex: 1;
+  word-break: break-word;
+}
+
+.studio-toast-close {
+  background: transparent;
+  border: none;
+  color: #B8C4D4;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.studio-toast-close:hover {
+  color: #FFFFFF;
 }
 

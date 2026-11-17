@@ -194,8 +194,8 @@
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#0B0F16;padding:12px 14px;border:1px solid #303B4D;border-radius:10px;">
                 <!-- Search Input -->
                 <div style="position:relative;flex:1;min-width:220px;">
-                  <input type="text" id="articles-search-input" placeholder="Search by headline, keyword, or ID..." style="width:100%;box-sizing:border-box;padding:8px 12px 8px 34px;border:1px solid #303B4D;border-radius:8px;font-size:0.875rem;background:#162235;color:#FFFFFF;" />
-                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#B8C4D4;font-size:0.9rem;pointer-events:none;">🔍</span>
+                  <input type="text" id="articles-search-input" placeholder="Search by headline, keyword, or ID..." style="width:100%;box-sizing:border-box;padding:8px 14px 8px 40px !important;border:1px solid #303B4D;border-radius:8px;font-size:0.875rem;background:#162235;color:#FFFFFF;" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </div>
 
                 <!-- Section Filter -->
@@ -309,8 +309,8 @@
 
                 <!-- Search Input -->
                 <div style="position:relative;flex:1;max-width:320px;min-width:180px;">
-                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." style="width:100%;box-sizing:border-box;padding:7px 12px 7px 32px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;background:#162235;color:#FFFFFF;" />
-                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#B8C4D4;font-size:0.85rem;pointer-events:none;">🔍</span>
+                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." style="width:100%;box-sizing:border-box;padding:7px 14px 7px 38px !important;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;background:#162235;color:#FFFFFF;" />
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </div>
               </div>
             </div>
@@ -386,8 +386,8 @@
               <!-- Top Toolbar -->
               <div class="reel-topbar">
                 <div class="reel-topbar-left">
-                  <button type="button" id="btn-close-reel-editor" class="btn btn-sm btn-ghost" style="color:var(--reel-text-main);display:flex;align-items:center;gap:4px;" title="Back to Reel Projects">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                  <button type="button" id="btn-close-reel-editor" class="btn btn-sm" style="display:flex;align-items:center;gap:6px;" title="Back to Reel Projects">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     <span>Projects</span>
                   </button>
                   <input type="text" id="reel-title-input" class="reel-topbar-title-input" value="Untitled Reel" placeholder="Project Title" title="Click to rename project" />
@@ -397,19 +397,19 @@
                 </div>
 
                 <div class="reel-topbar-right">
-                  <button type="button" id="btn-reel-undo" class="btn btn-sm btn-ghost" style="color:var(--reel-text-muted);" title="Undo (Ctrl+Z)">
+                  <button type="button" id="btn-reel-undo" class="btn btn-sm" title="Undo (Ctrl+Z)">
                     <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
                   </button>
-                  <button type="button" id="btn-reel-redo" class="btn btn-sm btn-ghost" style="color:var(--reel-text-muted);" title="Redo (Ctrl+Y)">
+                  <button type="button" id="btn-reel-redo" class="btn btn-sm" title="Redo (Ctrl+Y)">
                     <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
                   </button>
-                  <button type="button" id="btn-save-reel-manual" class="btn btn-sm" style="background:#334155;color:#fff;border:none;">
+                  <button type="button" id="btn-save-reel-manual" class="btn btn-sm">
                     💾 Save
                   </button>
-                  <button type="button" id="btn-toggle-safe-area" class="btn btn-sm btn-ghost" style="color:var(--reel-accent-blue);" title="Toggle Instagram 4:5 Safe Area overlay">
+                  <button type="button" id="btn-toggle-safe-area" class="btn btn-sm" title="Toggle Instagram 4:5 Safe Area overlay">
                     📐 Safe Area
                   </button>
-                  <button type="button" id="btn-export-reel-trigger" class="btn btn-sm btn-primary" style="background:#003882;color:#fff;border:none;font-weight:700;display:flex;align-items:center;gap:6px;">
+                  <button type="button" id="btn-export-reel-trigger" class="btn btn-sm btn-primary" style="display:flex;align-items:center;gap:6px;">
                     <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     <span>Export 1080×1920 MP4</span>
                   </button>
@@ -434,6 +434,10 @@
                     <button type="button" class="reel-tab-btn" data-drawer="transitions" id="tab-drawer-transitions">
                       <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                       <span>Transitions</span>
+                    </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="effects" id="tab-drawer-effects">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      <span>Effects</span>
                     </button>
                     <button type="button" class="reel-tab-btn" data-drawer="text" id="tab-drawer-text">
                       <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
@@ -528,9 +532,42 @@
                         ⚡ Apply Transition to All Clips
                       </button>
                     </div>
-                      <div id="reel-media-pool-items" class="reel-media-pool-grid">
-                        <!-- Populated dynamically -->
+
+                    <!-- EFFECTS DRAWER -->
+                    <div id="drawer-panel-effects" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">Color Grading &amp; Visual Effects</div>
+                      <p style="font-size:0.75rem;color:var(--reel-text-muted);margin-bottom:12px;">
+                        Apply instant cinematic looks to your photo and video clips.
+                      </p>
+                      <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;margin-bottom:14px;">
+                        <button type="button" class="btn btn-outline btn-effect-preset active" data-effect="none" style="text-align:left;padding:8px;border-color:var(--brand-blue);background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">✨ Original (Normal)</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Natural colors</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-effect-preset" data-effect="nordic_warm" style="text-align:left;padding:8px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">🌅 Nordic Warmth</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Golden sauna glow</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-effect-preset" data-effect="arctic_vivid" style="text-align:left;padding:8px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">❄️ Arctic Vivid</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Crisp Nordic blue</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-effect-preset" data-effect="mono_bnw" style="text-align:left;padding:8px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">🎞️ B&amp;W Editorial</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Timeless monochrome</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-effect-preset" data-effect="vintage_film" style="text-align:left;padding:8px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">📷 Vintage 35mm</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Subtle matte grain</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-effect-preset" data-effect="high_contrast" style="text-align:left;padding:8px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">💥 High Contrast</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Punchy news tone</div>
+                        </button>
                       </div>
+                      <button type="button" id="btn-apply-effect-all" class="btn btn-primary" style="width:100%;background:#003580;color:#fff;font-weight:700;padding:8px;">
+                        🎨 Apply Effect to All Clips
+                      </button>
                     </div>
 
                     <!-- TEXT DRAWER -->
@@ -719,12 +756,11 @@
                   </div>
                 </div>
 
-                <!-- 3. RIGHT INSPECTOR PANEL -->
+                <!-- 3. RIGHT INSPECTOR PANEL (ALWAYS ON RIGHT ON DESKTOP) -->
                 <div class="reel-right-inspector" id="reel-inspector-panel">
                   <div class="reel-inspector-title">
                     <span id="inspector-icon">⚙️</span>
                     <span id="inspector-heading">Element Inspector</span>
-                    <button type="button" class="btn-close-mobile-sheet" id="btn-close-mobile-inspector" style="margin-left:auto;">✓ Done</button>
                   </div>
 
                   <!-- DYNAMIC INSPECTOR PROPERTIES -->
@@ -735,6 +771,9 @@
                   </div>
                 </div>
               </div>
+
+              <!-- TIMELINE DRAG RESIZER -->
+              <div id="reel-timeline-resizer" class="reel-timeline-resizer" title="Drag up or down to resize timeline"></div>
 
               <!-- 4. BOTTOM MULTI-TRACK TIMELINE -->
               <div class="reel-bottom-timeline">
@@ -986,7 +1025,7 @@
               </div>
 
               <!-- Recommendation & Search Phrase Summary Banner -->
-              <div id="wp-verification-banner" class="hidden" style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.82rem;"></div>
+              <div id="wp-verification-banner" class="hidden" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#FCD34D;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.82rem;"></div>
               <div class="wp-recommendation-box" id="wp-recommendation-box">
                 <div class="wp-rec-row">
                   <div class="wp-rec-col">
@@ -1004,7 +1043,7 @@
                   </div>
                 </div>
               </div>
-              <div id="wp-prior-coverage-detail" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:0.8rem;"></div>
+              <div id="wp-prior-coverage-detail" style="background:#162235;border:1px solid #303B4D;color:#B8C4D4;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:0.8rem;"></div>
 
               <!-- SECTION 1: ARTICLE DETAILS -->
               <div class="wp-section-block">
@@ -1307,12 +1346,12 @@
                 <!-- 11. Private editorial verification notes (Editor/Admin only) -->
                 <div class="wp-field-wrap wp-private-notes-box">
                   <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-private-notes" style="color:#b45309;">
-                      🔒 Private editorial verification notes <span class="hint-inline" style="color:#92400e;">(Editor/Admin only • Excluded from public copy)</span>
+                    <label class="label-sm" for="wp-field-private-notes" style="color:#FCD34D;">
+                      🔒 Private editorial verification notes <span class="hint-inline" style="color:#FBBF24;">(Editor/Admin only • Excluded from public copy)</span>
                     </label>
                     <button type="button" class="btn-copy-field" data-copy-target="wp-field-private-notes">📋 Copy</button>
                   </div>
-                  <textarea id="wp-field-private-notes" class="wp-textarea" rows="2" style="background:#fffbeb;border-color:#fde68a;font-size:0.8rem;"></textarea>
+                  <textarea id="wp-field-private-notes" class="wp-textarea" rows="2" style="background:#162235;border-color:#303B4D;color:#FFFFFF;font-size:0.8rem;"></textarea>
                 </div>
 
                 <!-- 12. Tags, separated by commas (optional) -->
@@ -1728,7 +1767,7 @@
                 </div>
 
                 <!-- Clean Single Featured Photo Dropzone -->
-                <div class="article-photo-upload-box" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:14px;background:#f8fafc;margin-bottom:14px;">
+                <div class="article-photo-upload-box" style="border:1.5px dashed #303B4D;border-radius:10px;padding:14px;background:#162235;margin-bottom:14px;">
                   <label class="label-sm" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                     <span>📸 Primary Featured Photo for Article &amp; Instagram Post</span>
                     <span class="hint-inline">JPG, PNG, WebP (Used for WordPress &amp; 1080×1350 card)</span>
@@ -1746,7 +1785,7 @@
                         <div id="article-photo-name" style="font-weight:700;font-size:0.88rem;color:#FFFFFF;"></div>
                         <div class="hint-text" style="font-size:0.75rem;color:#B8C4D4;">Set as primary WordPress image &amp; social graphic.</div>
                       </div>
-                      <button type="button" id="btn-remove-article-photo" class="btn btn-ghost btn-xs" style="color:#b91c1c;border:1px solid #fecaca;background:#fef2f2;">Remove</button>
+                      <button type="button" id="btn-remove-article-photo" class="btn btn-ghost btn-xs" style="color:#f87171;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.12);">Remove</button>
                     </div>
                   </div>
                 </div>
@@ -1811,8 +1850,7 @@
             <div class="calendar-actions-bar">
               <div class="cal-segmented-capsule">
                 <button type="button" class="cal-mode-capsule cal-mode active" data-cal="month">Month</button>
-                <button type="button" class="cal-mode-capsule cal-mode" data-cal="week">Week</button>
-                <button type="button" class="cal-mode-capsule cal-mode" data-cal="agenda">Agenda</button>
+                <button type="button" class="cal-mode-capsule cal-mode" data-cal="week">Week Agenda</button>
               </div>
               <button type="button" id="btn-cal-plan-toggle" class="cal-plan-week-btn">Plan My Week</button>
             </div>
@@ -2069,14 +2107,14 @@
               <div id="backups-list-table-wrap">
                 <table class="wp-table" style="width:100%;font-size:0.85rem;" id="backups-table">
                   <thead>
-                    <tr style="text-align:left;border-bottom:1px solid #cbd5e1;">
-                      <th style="padding:6px 8px;">Backup Snapshot</th>
-                      <th style="padding:6px 8px;">Database Size</th>
-                      <th style="padding:6px 8px;">Local Directory</th>
+                    <tr style="text-align:left;border-bottom:1px solid #303B4D;">
+                      <th style="padding:6px 8px;color:#FFFFFF;">Backup Snapshot</th>
+                      <th style="padding:6px 8px;color:#FFFFFF;">Database Size</th>
+                      <th style="padding:6px 8px;color:#FFFFFF;">Local Directory</th>
                     </tr>
                   </thead>
                   <tbody id="backups-tbody">
-                    <tr><td colspan="3" style="padding:10px;color:#64748b;text-align:center;">Loading backups...</td></tr>
+                    <tr><td colspan="3" style="padding:10px;color:#B8C4D4;text-align:center;">Loading backups...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -2538,21 +2576,21 @@
         </div>
 
         <!-- 5. Upload Photo (Optional during creation) -->
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">
+        <div style="background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <label class="label-sm" style="margin:0;">📸 Photo (Optional — JPEG, PNG, WebP up to 5 MB)</label>
-            <span id="create-photo-status-badge" class="badge" style="background:#e2e8f0;color:#475569;">No Image Uploaded</span>
+            <label class="label-sm" style="margin:0;color:#FFFFFF;">📸 Photo (Optional — JPEG, PNG, WebP up to 5 MB)</label>
+            <span id="create-photo-status-badge" class="badge" style="background:#162235;color:#B8C4D4;border:1px solid #303B4D;">No Image Uploaded</span>
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('input-create-photo').click()" style="background:#fff;border-color:#cbd5e1;font-weight:700;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('input-create-photo').click()" style="background:#162235;border-color:#303B4D;color:#FFFFFF;font-weight:700;">
               <span>📷 Select Photo</span>
             </button>
             <input type="file" id="input-create-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-            <span id="create-photo-filename" class="hint-text" style="margin:0;font-size:0.75rem;">No photo selected (can be uploaded later)</span>
+            <span id="create-photo-filename" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected (can be uploaded later)</span>
             <button type="button" id="btn-remove-create-photo" class="btn btn-ghost btn-sm hidden" style="color:#ef4444;padding:2px 6px;">✕ Remove</button>
           </div>
           <div id="create-photo-preview-wrap" class="hidden" style="margin-top:10px;">
-            <img id="create-photo-preview-img" src="" alt="Photo Preview" style="max-height:120px;border-radius:6px;object-fit:cover;border:1px solid #cbd5e1;" />
+            <img id="create-photo-preview-img" src="" alt="Photo Preview" style="max-height:120px;border-radius:6px;object-fit:cover;border:1px solid #303B4D;" />
           </div>
         </div>
 
@@ -2560,9 +2598,9 @@
         <div id="create-article-alert" class="alert-box hidden" style="margin-top:10px;"></div>
 
         <!-- Submit Buttons -->
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px;">
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;border-top:1px solid #303B4D;padding-top:14px;">
           <button type="button" id="btn-cancel-create-article" class="btn btn-ghost btn-sm">Cancel</button>
-          <button type="submit" id="btn-submit-create-article" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;padding:8px 18px;font-weight:700;">
+          <button type="submit" id="btn-submit-create-article" class="btn btn-primary" style="background:#003580;color:#fff;padding:8px 18px;font-weight:700;border:1px solid #168BFF;">
             <span>✨ Create Article &amp; Social Post</span>
           </button>
         </div>

@@ -123,6 +123,7 @@
       document.getElementById("btn-close-mobile-drawer")?.addEventListener("click", () => this.closeMobileSheets());
       document.getElementById("btn-close-mobile-inspector")?.addEventListener("click", () => this.closeMobileSheets());
       document.getElementById("reel-mobile-backdrop")?.addEventListener("click", () => this.closeMobileSheets());
+      this.bindTimelineResizer();
 
       // Media Uploads
       const dropzone = document.getElementById("reel-media-dropzone");
@@ -216,6 +217,38 @@
         this.renderTimeline();
         this.render();
         alert(`Applied '${currentSelectedTransition}' transition (${dur}s) across all clips!`);
+      });
+
+      // Visual Effects Wiring (Left Drawer)
+      let currentSelectedEffect = "none";
+      document.querySelectorAll(".btn-effect-preset").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".btn-effect-preset").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentSelectedEffect = btn.dataset.effect || "none";
+          if (this.currentProject) {
+            const mediaClips = this.currentProject.timeline.tracks.media || [];
+            const clip = (this.selectedTrack === "media" && this.selectedId)
+              ? mediaClips.find(c => c.id === this.selectedId)
+              : mediaClips[0];
+            if (clip) {
+              clip.filter = currentSelectedEffect;
+              this.renderInspector();
+              this.render();
+              this.scheduleAutosave();
+            }
+          }
+        });
+      });
+
+      document.getElementById("btn-apply-effect-all")?.addEventListener("click", () => {
+        if (!this.currentProject) return;
+        const mediaClips = this.currentProject.timeline.tracks.media || [];
+        mediaClips.forEach(c => { c.filter = currentSelectedEffect; });
+        this.pushState();
+        this.render();
+        this.scheduleAutosave();
+        alert(`Applied effect '${currentSelectedEffect}' across all clips!`);
       });
 
       // Microphone Voiceover Recording
@@ -625,6 +658,7 @@
 
       const totalToUpload = Math.min(files.length, 10 - pool.length);
       let uploadedCount = 0;
+      const newlyUploaded = [];
 
       for (let i = 0; i < files.length; i++) {
         if (pool.length >= 10) break;
@@ -654,13 +688,15 @@
           })).json();
 
           if (res.ok && res.url) {
-            pool.push({
+            const item = {
               id: `med_${pool.length + 1}_${Date.now().toString(36)}`,
               filename: file.name,
               url: res.url,
               type: isImg ? "image" : "video",
               duration: isImg ? 3.5 : (res.duration || 5.0),
-            });
+            };
+            pool.push(item);
+            newlyUploaded.push(item);
             uploadedCount++;
           }
         } catch (err) {
@@ -672,15 +708,14 @@
       if (progressBar) progressBar.style.width = "100%";
       setTimeout(() => {
         if (progressBox) progressBox.classList.add("hidden");
-      }, 900);
+      }, 700);
 
       this.currentProject.timeline.media_pool = pool;
       this.renderMediaPoolUI();
 
-      // If timeline is empty, auto-populate with uploaded media
-      const mediaClips = this.currentProject.timeline.tracks.media;
-      if (mediaClips.length === 0 && pool.length > 0) {
-        this.addAllMediaToTimeline();
+      // Auto-add newly uploaded photos/videos to the timeline sequence and jump to preview
+      if (newlyUploaded.length > 0) {
+        newlyUploaded.forEach((item) => this.addMediaItemToTimeline(item));
       } else {
         this.pushState();
       }
@@ -712,6 +747,15 @@
           </span>
         </div>
       `).join("");
+
+      // Click or tap media card to immediately add to timeline and display on preview
+      container.querySelectorAll(".reel-media-pool-card").forEach((card) => {
+        card.addEventListener("click", (e) => {
+          if (e.target.closest(".btn-del-pool-clip")) return;
+          const idx = parseInt(card.dataset.idx, 10);
+          if (pool[idx]) this.addMediaItemToTimeline(pool[idx]);
+        });
+      });
 
       // Drag and drop from media pool
       container.querySelectorAll(".reel-media-pool-card").forEach((card) => {
@@ -802,7 +846,7 @@
       const tCursor = mediaClips.length > 0 ? mediaClips[mediaClips.length - 1].end_sec : 0.0;
       const dur = m.duration || 3.5;
 
-      mediaClips.push({
+      const newClip = {
         id: `clip_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`,
         media_id: m.id,
         filename: m.filename,
@@ -819,12 +863,18 @@
         transition_in: mediaClips.length > 0 ? "dissolve" : "none",
         transition_duration: 0.4,
         rotation: 0,
-      });
+      };
+      mediaClips.push(newClip);
 
+      this.selectedTrack = "media";
+      this.selectedId = newClip.id;
       this.recalculateTotalDuration();
+      this.seekTo(round1(tCursor + 0.05));
       this.pushState();
       this.renderTimeline();
+      this.renderInspector();
       this.render();
+      this.scheduleAutosave();
     }
 
     // =========================================================================
@@ -1157,11 +1207,50 @@
     }
 
     openMobileInspector() {
-      if (window.innerWidth < 900) {
+      if (window.innerWidth <= 580) {
         document.getElementById("reel-left-drawer")?.classList.remove("mobile-sheet-open");
         document.getElementById("reel-inspector-panel")?.classList.add("mobile-sheet-open");
         document.getElementById("reel-mobile-backdrop")?.classList.add("active");
       }
+    }
+
+    bindTimelineResizer() {
+      const resizer = document.getElementById("reel-timeline-resizer");
+      const timeline = document.querySelector(".reel-bottom-timeline");
+      if (!resizer || !timeline) return;
+
+      let startY = 0;
+      let startH = 0;
+
+      const onMove = (e) => {
+        const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        if (!clientY) return;
+        const delta = startY - clientY;
+        const newH = Math.max(130, Math.min(420, startH + delta));
+        timeline.style.height = `${newH}px`;
+        this.render();
+      };
+
+      const onUp = () => {
+        resizer.classList.remove("is-resizing");
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onUp);
+      };
+
+      const onDown = (e) => {
+        startY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        startH = timeline.offsetHeight;
+        resizer.classList.add("is-resizing");
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("touchmove", onMove, { passive: false });
+        window.addEventListener("touchend", onUp);
+      };
+
+      resizer.addEventListener("pointerdown", onDown);
+      resizer.addEventListener("touchstart", onDown, { passive: false });
     }
 
     // =========================================================================
@@ -1413,8 +1502,8 @@
       window.addEventListener("touchcancel", onPointerUp);
     }
 
-    bindTrimHandle(handleEl, targetType, targetObj, isLeft) {
-      if (!handleEl) return;
+    bindTrimHandle(handleEl, targetType, targetObj, isLeft, blockEl) {
+      if (!handleEl || !blockEl) return;
 
       const onStart = (e) => {
         e.stopPropagation();
@@ -1423,22 +1512,11 @@
         const startX = clientX;
         const totalDur = this.getTotalDuration();
 
-        let origStart = 0;
-        let origEnd = 0;
-        let origDur = 0;
+        let origStart = targetObj.start_sec || 0;
+        let origEnd = targetObj.end_sec || (origStart + (targetObj.duration || 5));
+        let origDur = targetObj.duration || (origEnd - origStart);
 
-        if (targetType === "media") {
-          origStart = targetObj.start_sec || 0;
-          origEnd = targetObj.end_sec || (origStart + targetObj.duration);
-          origDur = targetObj.duration || (origEnd - origStart);
-        } else if (targetType === "text") {
-          origStart = targetObj.start_sec || 0;
-          origEnd = targetObj.end_sec || 5.0;
-        } else if (targetType === "audio") {
-          origStart = targetObj.start_sec || 0;
-          origDur = targetObj.duration || totalDur;
-          origEnd = origStart + origDur;
-        }
+        blockEl.classList.add("is-trimming");
 
         const onMove = (me) => {
           if (me.cancelable) me.preventDefault();
@@ -1450,52 +1528,64 @@
               const newDur = Math.max(0.5, Math.min(30.0, round2(origDur + deltaSec)));
               targetObj.duration = newDur;
               targetObj.end_sec = round2(targetObj.start_sec + newDur);
+              blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
+
+              // Shift subsequent clips visually without DOM re-creation
               const clips = this.currentProject.timeline.tracks.media || [];
               const idx = clips.indexOf(targetObj);
               const diff = newDur - origDur;
               for (let i = idx + 1; i < clips.length; i++) {
                 clips[i].start_sec = round2(clips[i].start_sec + diff);
                 clips[i].end_sec = round2(clips[i].end_sec + diff);
+                const nextBlock = this.laneMedia.querySelector(`.reel-clip-block[data-id="${clips[i].id}"]`);
+                if (nextBlock) nextBlock.style.left = `${clips[i].start_sec * this.zoomPxPerSec}px`;
               }
             } else {
-              const newStart = Math.max(0, origStart + deltaSec);
+              const newStart = Math.max(0, round2(origStart + deltaSec));
               const newDur = Math.max(0.5, round2(origEnd - newStart));
-              targetObj.start_sec = round2(newStart);
+              targetObj.start_sec = newStart;
               targetObj.duration = newDur;
+              blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
+              blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
             }
-            this.recalculateTotalDuration();
-          } else if (targetType === "text") {
+          } else if (targetType === "text" || targetType === "logo") {
+            if (targetType === "logo") targetObj.always_on = false;
             if (isLeft) {
               const newStart = Math.max(0, Math.min(origEnd - 0.5, round2(origStart + deltaSec)));
               targetObj.start_sec = newStart;
-              this.seekTo(newStart);
+              blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
+              blockEl.style.width = `${Math.max(10, (origEnd - newStart) * this.zoomPxPerSec)}px`;
             } else {
-              const newEnd = Math.max(origStart + 0.5, Math.min(totalDur, round2(origEnd + deltaSec)));
+              const newEnd = Math.max(origStart + 0.5, round2(origEnd + deltaSec));
               targetObj.end_sec = newEnd;
-              this.seekTo(newEnd);
+              blockEl.style.width = `${Math.max(10, (newEnd - origStart) * this.zoomPxPerSec)}px`;
             }
-          } else if (targetType === "audio") {
+          } else if (targetType === "audio" || targetType === "voiceover") {
             if (isLeft) {
-              targetObj.start_sec = Math.max(0, round2(origStart + deltaSec));
+              const newStart = Math.max(0, round2(origStart + deltaSec));
+              targetObj.start_sec = newStart;
+              blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
             } else {
-              targetObj.duration = Math.max(0.5, round2(origDur + deltaSec));
+              const newDur = Math.max(0.5, round2(origDur + deltaSec));
+              targetObj.duration = newDur;
+              blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
             }
           }
-
-          this.renderTimeline();
-          this.render();
         };
 
         const onEnd = () => {
+          blockEl.classList.remove("is-trimming");
           window.removeEventListener("mousemove", onMove);
           window.removeEventListener("mouseup", onEnd);
           window.removeEventListener("touchmove", onMove);
           window.removeEventListener("touchend", onEnd);
           window.removeEventListener("touchcancel", onEnd);
+          this.recalculateTotalDuration();
           this.pushState();
           this.renderTimeline();
           this.renderInspector();
           this.render();
+          this.scheduleAutosave();
         };
 
         window.addEventListener("mousemove", onMove);
@@ -1507,6 +1597,72 @@
 
       handleEl.addEventListener("mousedown", onStart);
       handleEl.addEventListener("touchstart", onStart, { passive: false });
+    }
+
+    bindClipMove(blockEl, targetType, targetObj) {
+      if (!blockEl) return;
+
+      let isDragging = false;
+      let startX = 0;
+      let origStart = 0;
+      let origEnd = 0;
+
+      const onMouseDown = (e) => {
+        if (e.target.classList.contains("reel-trim-handle-left") || e.target.classList.contains("reel-trim-handle-right")) {
+          return;
+        }
+        startX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        origStart = targetObj.start_sec || 0;
+        origEnd = targetObj.end_sec || (origStart + (targetObj.duration || 5));
+        isDragging = false;
+
+        const onMouseMove = (me) => {
+          const curX = me.clientX || (me.touches && me.touches[0] ? me.touches[0].clientX : 0);
+          const deltaPx = curX - startX;
+          if (Math.abs(deltaPx) > 4) {
+            isDragging = true;
+          }
+          if (!isDragging) return;
+
+          const deltaSec = deltaPx / this.zoomPxPerSec;
+          const dur = (targetObj.duration) || (origEnd - origStart);
+          const newStart = Math.max(0, round2(origStart + deltaSec));
+
+          targetObj.start_sec = newStart;
+          if (targetObj.end_sec) {
+            targetObj.end_sec = round2(newStart + dur);
+          }
+          if (targetType === "logo") {
+            targetObj.always_on = false;
+          }
+
+          blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
+        };
+
+        const onMouseUp = () => {
+          window.removeEventListener("mousemove", onMouseMove);
+          window.removeEventListener("mouseup", onMouseUp);
+          window.removeEventListener("touchmove", onMouseMove);
+          window.removeEventListener("touchend", onMouseUp);
+
+          if (isDragging) {
+            this.recalculateTotalDuration();
+            this.pushState();
+            this.renderTimeline();
+            this.renderInspector();
+            this.render();
+            this.scheduleAutosave();
+          }
+        };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onMouseUp);
+        window.addEventListener("touchmove", onMouseMove, { passive: false });
+        window.addEventListener("touchend", onMouseUp);
+      };
+
+      blockEl.addEventListener("mousedown", onMouseDown);
+      blockEl.addEventListener("touchstart", onMouseDown, { passive: false });
     }
 
     // =========================================================================
@@ -1565,13 +1721,32 @@
 
           const hLeft = block.querySelector(".reel-trim-handle-left");
           const hRight = block.querySelector(".reel-trim-handle-right");
-          this.bindTrimHandle(hLeft, "media", c, true);
-          this.bindTrimHandle(hRight, "media", c, false);
+          this.bindTrimHandle(hLeft, "media", c, true, block);
+          this.bindTrimHandle(hRight, "media", c, false, block);
+
+          if (idx > 0) {
+            const transBtn = document.createElement("button");
+            transBtn.type = "button";
+            transBtn.className = `reel-timeline-trans-btn ${this.selectedTrack === 'transition' && this.selectedId === c.id ? 'active' : ''}`;
+            transBtn.style.left = `${Math.max(0, leftPx - 11)}px`;
+            transBtn.title = `Transition: ${c.transition_in || 'cut'}`;
+            transBtn.innerHTML = `⚡`;
+            transBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              this.selectedTrack = "transition";
+              this.selectedId = c.id;
+              this.renderTimeline();
+              this.renderInspector();
+              this.openMobileInspector();
+            });
+            this.laneMedia.appendChild(transBtn);
+          }
 
           block.addEventListener("click", (e) => {
             e.stopPropagation();
             this.selectedTrack = "media";
             this.selectedId = c.id;
+            this.seekTo(c.start_sec);
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
@@ -1595,18 +1770,20 @@
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
             <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🔤 ${escapeHtml(txt.text)}</span>
-            <div class="reel-trim-handle-right" title="Trim end"></div>
+            <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
           `;
 
           const hLeft = block.querySelector(".reel-trim-handle-left");
           const hRight = block.querySelector(".reel-trim-handle-right");
-          this.bindTrimHandle(hLeft, "text", txt, true);
-          this.bindTrimHandle(hRight, "text", txt, false);
+          this.bindTrimHandle(hLeft, "text", txt, true, block);
+          this.bindTrimHandle(hRight, "text", txt, false, block);
+          this.bindClipMove(block, "text", txt);
 
           block.addEventListener("click", (e) => {
             e.stopPropagation();
             this.selectedTrack = "text";
             this.selectedId = txt.id;
+            this.seekTo(txt.start_sec);
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
@@ -1621,12 +1798,23 @@
         const logo = this.currentProject.timeline.tracks.logo;
         if (logo && logo.visible) {
           const leftPx = (logo.start_sec || 0) * this.zoomPxPerSec;
-          const widthPx = ((logo.always_on ? totalDur : logo.end_sec) - (logo.start_sec || 0)) * this.zoomPxPerSec;
+          const widthPx = ((logo.always_on ? totalDur : (logo.end_sec || totalDur)) - (logo.start_sec || 0)) * this.zoomPxPerSec;
           const block = document.createElement("div");
-          block.className = `reel-clip-block type-logo ${this.selectedId === "logo" ? "active" : ""}`;
+          block.className = `reel-clip-block type-logo ${this.selectedTrack === "logo" ? "active" : ""}`;
           block.style.left = `${leftPx}px`;
-          block.style.width = `${widthPx}px`;
-          block.innerHTML = `<span>💙 ILoveFinland Logo (${Math.round(logo.opacity * 100)}%)</span>`;
+          block.style.width = `${Math.max(24, widthPx)}px`;
+          block.innerHTML = `
+            <div class="reel-trim-handle-left" title="Trim start"></div>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">💙 ILoveFinland Logo (${Math.round((logo.opacity || 0.95) * 100)}%)</span>
+            <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
+          `;
+
+          const hLeft = block.querySelector(".reel-trim-handle-left");
+          const hRight = block.querySelector(".reel-trim-handle-right");
+          this.bindTrimHandle(hLeft, "logo", logo, true, block);
+          this.bindTrimHandle(hRight, "logo", logo, false, block);
+          this.bindClipMove(block, "logo", logo);
+
           block.addEventListener("click", (e) => {
             e.stopPropagation();
             this.selectedTrack = "logo";
@@ -1649,17 +1837,18 @@
           const block = document.createElement("div");
           block.className = `reel-clip-block type-audio ${this.selectedTrack === 'music' ? 'active' : ''}`;
           block.style.left = `${leftPx}px`;
-          block.style.width = `${widthPx}px`;
+          block.style.width = `${Math.max(24, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
             <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🎵 ${escapeHtml(music.filename || 'Background Music')} (Vol: ${Math.round((music.volume || 0.75) * 100)}%)</span>
-            <div class="reel-trim-handle-right" title="Trim end"></div>
+            <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
           `;
 
           const hLeft = block.querySelector(".reel-trim-handle-left");
           const hRight = block.querySelector(".reel-trim-handle-right");
-          this.bindTrimHandle(hLeft, "audio", music, true);
-          this.bindTrimHandle(hRight, "audio", music, false);
+          this.bindTrimHandle(hLeft, "audio", music, true, block);
+          this.bindTrimHandle(hRight, "audio", music, false, block);
+          this.bindClipMove(block, "audio", music);
 
           block.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -1683,17 +1872,18 @@
           const block = document.createElement("div");
           block.className = `reel-clip-block type-voiceover ${this.selectedTrack === 'voiceover' ? 'active' : ''}`;
           block.style.left = `${leftPx}px`;
-          block.style.width = `${widthPx}px`;
+          block.style.width = `${Math.max(24, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
             <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🎙️ ${escapeHtml(vo.filename || 'Voiceover')} (Vol: ${Math.round((vo.volume || 1.0) * 100)}%)</span>
-            <div class="reel-trim-handle-right" title="Trim end"></div>
+            <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
           `;
 
           const hLeft = block.querySelector(".reel-trim-handle-left");
           const hRight = block.querySelector(".reel-trim-handle-right");
-          this.bindTrimHandle(hLeft, "audio", vo, true);
-          this.bindTrimHandle(hRight, "audio", vo, false);
+          this.bindTrimHandle(hLeft, "voiceover", vo, true, block);
+          this.bindTrimHandle(hRight, "voiceover", vo, false, block);
+          this.bindClipMove(block, "voiceover", vo);
 
           block.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -1708,7 +1898,6 @@
       }
 
       this.updatePlayheadPosition();
-    }
     }
 
     bindTimelineInteraction() {
@@ -1913,6 +2102,17 @@
       }
     }
 
+    getFilterString(name) {
+      switch (name) {
+        case "nordic_warm": return "sepia(0.25) saturate(1.2) brightness(1.05)";
+        case "arctic_vivid": return "contrast(1.15) saturate(1.35) hue-rotate(-5deg)";
+        case "mono_bnw": return "grayscale(1) contrast(1.2)";
+        case "vintage_film": return "sepia(0.35) contrast(0.95) brightness(1.1)";
+        case "high_contrast": return "contrast(1.4) brightness(1.05)";
+        default: return "none";
+      }
+    }
+
     drawMediaClip(ctx, clip, t) {
       const isVideo = clip.type === "video" || /\.(mp4|mov|webm)$/i.test(clip.url);
       const transDur = clip.transition_duration || 0.5;
@@ -1936,6 +2136,8 @@
           }
         }
       };
+
+      const fitMode = clip.fit_mode || "cover";
 
       if (isVideo) {
         let vid = this.cachedImages[clip.url];
@@ -1963,9 +2165,12 @@
 
           ctx.save();
           applyTransition();
+          if (clip.filter && clip.filter !== "none") {
+            ctx.filter = this.getFilterString(clip.filter);
+          }
           const vW = vid.videoWidth || 1080;
           const vH = vid.videoHeight || 1920;
-          const scale = Math.max(CANVAS_W / vW, CANVAS_H / vH);
+          const scale = fitMode === "contain" ? Math.min(CANVAS_W / vW, CANVAS_H / vH) : Math.max(CANVAS_W / vW, CANVAS_H / vH);
           const dw = vW * scale;
           const dh = vH * scale;
           const dx = (CANVAS_W - dw) / 2.0;
@@ -1989,9 +2194,12 @@
 
       ctx.save();
       applyTransition();
+      if (clip.filter && clip.filter !== "none") {
+        ctx.filter = this.getFilterString(clip.filter);
+      }
       const imgW = img.naturalWidth;
       const imgH = img.naturalHeight;
-      const scale = Math.max(CANVAS_W / imgW, CANVAS_H / imgH);
+      const scale = fitMode === "contain" ? Math.min(CANVAS_W / imgW, CANVAS_H / imgH) : Math.max(CANVAS_W / imgW, CANVAS_H / imgH);
       const dw = imgW * scale;
       const dh = imgH * scale;
       const dx = (CANVAS_W - dw) / 2.0;
@@ -2420,23 +2628,68 @@
         const c = this.currentProject?.timeline?.tracks?.media?.find((x) => x.id === this.selectedId);
         if (!c) { this.renderEmptyInspector(); return; }
 
-        if (this.inspectorHeading) this.inspectorHeading.textContent = "Media Clip";
-        if (this.inspectorIcon) this.inspectorIcon.textContent = "📹";
+        const isVideo = c.type === "video" || /\.(mp4|mov|webm)$/i.test(c.url || c.filename);
+
+        if (this.inspectorHeading) this.inspectorHeading.textContent = isVideo ? "Video Clip" : "Photo Clip";
+        if (this.inspectorIcon) this.inspectorIcon.textContent = isVideo ? "🎬" : "📷";
+
+        const currentEffect = c.filter || "none";
+
+        let mediaSpecificControls = "";
+        if (isVideo) {
+          mediaSpecificControls = `
+            <div class="reel-prop-group">
+              <label class="reel-prop-label">Playback Speed</label>
+              <div style="display:flex;gap:4px;">
+                <button type="button" class="btn btn-sm btn-outline btn-vid-speed" data-speed="0.5" style="flex:1;font-size:0.72rem;color:#B8C4D4;border-color:#303B4D;${c.speed === 0.5 ? 'background:#003580;color:#fff;' : ''}">0.5x</button>
+                <button type="button" class="btn btn-sm btn-outline btn-vid-speed" data-speed="1.0" style="flex:1;font-size:0.72rem;color:#B8C4D4;border-color:#303B4D;${(!c.speed || c.speed === 1.0) ? 'background:#003580;color:#fff;' : ''}">1.0x</button>
+                <button type="button" class="btn btn-sm btn-outline btn-vid-speed" data-speed="1.25" style="flex:1;font-size:0.72rem;color:#B8C4D4;border-color:#303B4D;${c.speed === 1.25 ? 'background:#003580;color:#fff;' : ''}">1.25x</button>
+                <button type="button" class="btn btn-sm btn-outline btn-vid-speed" data-speed="1.5" style="flex:1;font-size:0.72rem;color:#B8C4D4;border-color:#303B4D;${c.speed === 1.5 ? 'background:#003580;color:#fff;' : ''}">1.5x</button>
+                <button type="button" class="btn btn-sm btn-outline btn-vid-speed" data-speed="2.0" style="flex:1;font-size:0.72rem;color:#B8C4D4;border-color:#303B4D;${c.speed === 2.0 ? 'background:#003580;color:#fff;' : ''}">2.0x</button>
+              </div>
+            </div>
+            <div class="reel-prop-group">
+              <label class="reel-prop-label">Clip Length: <span style="color:#38bdf8;font-family:monospace;">${c.duration.toFixed(1)}s</span></label>
+              <p style="font-size:0.72rem;color:#B8C4D4;margin:2px 0 0;">Drag the yellow handles on the timeline clip to trim start or end points.</p>
+            </div>
+          `;
+        } else {
+          mediaSpecificControls = `
+            <div class="reel-prop-group">
+              <label class="reel-prop-label">Photo Duration: <span id="prop-val-clipdur">${c.duration.toFixed(1)}s</span></label>
+              <input type="range" id="prop-slider-clipdur" min="1.0" max="15.0" step="0.5" value="${c.duration}" style="width:100%;" />
+              <div style="display:flex;gap:4px;margin-top:6px;">
+                <button type="button" class="btn btn-sm btn-outline btn-chip-clipdur" data-dur="2.0" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">2s</button>
+                <button type="button" class="btn btn-sm btn-outline btn-chip-clipdur" data-dur="3.0" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">3s</button>
+                <button type="button" class="btn btn-sm btn-outline btn-chip-clipdur" data-dur="4.0" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">4s</button>
+                <button type="button" class="btn btn-sm btn-outline btn-chip-clipdur" data-dur="5.0" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">5s</button>
+              </div>
+            </div>
+          `;
+        }
 
         this.inspectorContent.innerHTML = `
           <div class="reel-prop-group">
             <label class="reel-prop-label">File</label>
             <div style="font-size:0.82rem;font-weight:700;color:#fff;word-break:break-all;">${escapeHtml(c.filename)}</div>
           </div>
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Duration: <span id="prop-val-clipdur">${c.duration.toFixed(1)}s</span></label>
-            <input type="range" id="prop-slider-clipdur" min="1.0" max="15.0" step="0.5" value="${c.duration}" style="width:100%;" />
-          </div>
+          ${mediaSpecificControls}
           <div class="reel-prop-group">
             <label class="reel-prop-label">Fit Mode</label>
             <select id="prop-clip-fit" class="reel-prop-select">
               <option value="cover" ${c.fit_mode === 'cover' ? 'selected' : ''}>Cover (Fill 9:16 Frame)</option>
-              <option value="contain" ${c.fit_mode === 'contain' ? 'selected' : ''}>Contain (Fit with Background)</option>
+              <option value="contain" ${c.fit_mode === 'contain' ? 'selected' : ''}>Contain (Letterbox / Background)</option>
+            </select>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Visual Filter Effect</label>
+            <select id="prop-clip-effect" class="reel-prop-select">
+              <option value="none" ${currentEffect === 'none' ? 'selected' : ''}>Natural / None</option>
+              <option value="nordic_warm" ${currentEffect === 'nordic_warm' ? 'selected' : ''}>Nordic Warm</option>
+              <option value="arctic_vivid" ${currentEffect === 'arctic_vivid' ? 'selected' : ''}>Arctic Vivid</option>
+              <option value="mono_bnw" ${currentEffect === 'mono_bnw' ? 'selected' : ''}>Monochrome B&amp;W</option>
+              <option value="vintage_film" ${currentEffect === 'vintage_film' ? 'selected' : ''}>Vintage Film</option>
+              <option value="high_contrast" ${currentEffect === 'high_contrast' ? 'selected' : ''}>High Contrast</option>
             </select>
           </div>
           <div class="reel-prop-group">
@@ -2444,14 +2697,14 @@
             <select id="prop-clip-trans" class="reel-prop-select">
               <option value="none" ${c.transition_in === 'none' ? 'selected' : ''}>None (Cut)</option>
               <option value="dissolve" ${c.transition_in === 'dissolve' ? 'selected' : ''}>Dissolve / Crossfade</option>
-              <option value="fade" ${c.transition_in === 'fade' ? 'selected' : ''}>Fade from Black</option>
+              <option value="fade" ${c.transition_in === 'fade' || c.transition_in === 'fade_black' ? 'selected' : ''}>Fade from Black</option>
               <option value="slide_left" ${c.transition_in === 'slide_left' ? 'selected' : ''}>Slide Left</option>
               <option value="zoom" ${c.transition_in === 'zoom' ? 'selected' : ''}>Zoom In</option>
             </select>
           </div>
           <div class="reel-prop-group">
             <label class="reel-prop-label">Transition Duration: <span id="prop-val-transdur">${(c.transition_duration || 0.5).toFixed(1)}s</span></label>
-            <input type="range" id="prop-slider-transdur" min="0.2" max="2.0" step="0.1" value="${c.transition_duration || 0.5}" style="width:100%;" />
+            <input type="range" id="prop-slider-transdur" min="0.1" max="2.0" step="0.1" value="${c.transition_duration || 0.5}" style="width:100%;" />
           </div>
           <div style="display:flex;gap:6px;margin-top:14px;">
             <button type="button" id="btn-prop-split-clip" class="btn btn-sm btn-outline" style="flex:1;color:#fff;border-color:#475569;">
@@ -2466,24 +2719,48 @@
           </button>
         `;
 
-        document.getElementById("prop-slider-clipdur")?.addEventListener("input", (e) => {
-          const newDur = parseFloat(e.target.value);
-          const diff = newDur - c.duration;
-          c.duration = round1(newDur);
-          c.end_sec = round1(c.start_sec + newDur);
-          const clips = this.currentProject.timeline.tracks.media;
-          const idx = clips.indexOf(c);
-          for (let i = idx + 1; i < clips.length; i++) {
-            clips[i].start_sec = round1(clips[i].start_sec + diff);
-            clips[i].end_sec = round1(clips[i].end_sec + diff);
-          }
-          this.recalculateTotalDuration();
-          this.renderTimeline();
+        if (isVideo) {
+          this.inspectorContent.querySelectorAll(".btn-vid-speed").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              c.speed = parseFloat(btn.dataset.speed) || 1.0;
+              this.renderInspector();
+              this.render();
+              this.scheduleAutosave();
+            });
+          });
+        } else {
+          const setPhotoDur = (newDur) => {
+            const diff = newDur - c.duration;
+            c.duration = round1(newDur);
+            c.end_sec = round1(c.start_sec + newDur);
+            const clips = this.currentProject.timeline.tracks.media;
+            const idx = clips.indexOf(c);
+            for (let i = idx + 1; i < clips.length; i++) {
+              clips[i].start_sec = round1(clips[i].start_sec + diff);
+              clips[i].end_sec = round1(clips[i].end_sec + diff);
+            }
+            this.recalculateTotalDuration();
+            this.renderTimeline();
+            this.renderInspector();
+            this.render();
+            this.scheduleAutosave();
+          };
+
+          document.getElementById("prop-slider-clipdur")?.addEventListener("input", (e) => {
+            setPhotoDur(parseFloat(e.target.value));
+          });
+          this.inspectorContent.querySelectorAll(".btn-chip-clipdur").forEach((btn) => {
+            btn.addEventListener("click", () => setPhotoDur(parseFloat(btn.dataset.dur)));
+          });
+        }
+
+        document.getElementById("prop-clip-fit")?.addEventListener("change", (e) => {
+          c.fit_mode = e.target.value;
           this.render();
           this.scheduleAutosave();
         });
-        document.getElementById("prop-clip-fit")?.addEventListener("change", (e) => {
-          c.fit_mode = e.target.value;
+        document.getElementById("prop-clip-effect")?.addEventListener("change", (e) => {
+          c.filter = e.target.value;
           this.render();
           this.scheduleAutosave();
         });
@@ -2616,6 +2893,177 @@
           this.selectedTrack = null;
           this.selectedId = null;
           this.renderTimeline();
+          this.renderInspector();
+          this.render();
+          this.scheduleAutosave();
+        });
+      } else if (this.selectedTrack === "transition") {
+        const c = this.currentProject?.timeline?.tracks?.media?.find((x) => x.id === this.selectedId) || this.currentProject?.timeline?.tracks?.media?.[1];
+        if (!c) { this.renderEmptyInspector(); return; }
+
+        if (this.inspectorHeading) this.inspectorHeading.textContent = "Transition Editor";
+        if (this.inspectorIcon) this.inspectorIcon.textContent = "⚡";
+
+        const transType = c.transition_in || "dissolve";
+        const transDur = c.transition_duration || 0.5;
+
+        this.inspectorContent.innerHTML = `
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Transition Style</label>
+            <select id="prop-trans-type" class="reel-prop-select">
+              <option value="none" ${transType === 'none' ? 'selected' : ''}>None (Cut)</option>
+              <option value="dissolve" ${transType === 'dissolve' ? 'selected' : ''}>Dissolve / Crossfade</option>
+              <option value="fade" ${transType === 'fade' || transType === 'fade_black' ? 'selected' : ''}>Fade to Black</option>
+              <option value="slide_left" ${transType === 'slide_left' ? 'selected' : ''}>Slide Left</option>
+              <option value="zoom" ${transType === 'zoom' ? 'selected' : ''}>Zoom In</option>
+            </select>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Duration: <span id="prop-val-transdur-direct">${transDur.toFixed(1)}s</span></label>
+            <input type="range" id="prop-slider-transdur-direct" min="0.1" max="2.0" step="0.1" value="${transDur}" style="width:100%;" />
+            <div style="display:flex;gap:4px;margin-top:6px;">
+              <button type="button" class="btn btn-sm btn-outline btn-chip-transdur" data-dur="0.3" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">0.3s</button>
+              <button type="button" class="btn btn-sm btn-outline btn-chip-transdur" data-dur="0.5" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">0.5s</button>
+              <button type="button" class="btn btn-sm btn-outline btn-chip-transdur" data-dur="0.8" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">0.8s</button>
+              <button type="button" class="btn btn-sm btn-outline btn-chip-transdur" data-dur="1.0" style="flex:1;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;">1.0s</button>
+            </div>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Live Animated Preview</label>
+            <div class="reel-trans-preview-box">
+              <div class="reel-trans-preview-card ${transType}">
+                <span>SAMPLE FRAME</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+            <button type="button" id="btn-prop-apply-trans-all" class="btn btn-sm btn-primary" style="background:#003580;border:1px solid #168BFF;color:#fff;">
+              ⚡ Apply To All Clips
+            </button>
+            <button type="button" id="btn-prop-remove-trans" class="btn btn-sm btn-outline" style="color:#B8C4D4;border-color:#303B4D;">
+              🚫 Remove Transition (Cut)
+            </button>
+            <button type="button" id="btn-prop-reset-trans" class="btn btn-sm btn-ghost" style="color:#B8C4D4;font-size:0.75rem;">
+              ↺ Reset Default (0.5s Dissolve)
+            </button>
+          </div>
+        `;
+
+        const updatePreview = (t) => {
+          const card = this.inspectorContent.querySelector(".reel-trans-preview-card");
+          if (card) {
+            card.className = `reel-trans-preview-card ${t}`;
+          }
+        };
+
+        document.getElementById("prop-trans-type")?.addEventListener("change", (e) => {
+          c.transition_in = e.target.value;
+          updatePreview(c.transition_in);
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+        });
+
+        const setTransDur = (d) => {
+          c.transition_duration = d;
+          const valEl = document.getElementById("prop-val-transdur-direct");
+          if (valEl) valEl.textContent = `${d.toFixed(1)}s`;
+          const slider = document.getElementById("prop-slider-transdur-direct");
+          if (slider) slider.value = d;
+          this.render();
+          this.scheduleAutosave();
+        };
+
+        document.getElementById("prop-slider-transdur-direct")?.addEventListener("input", (e) => {
+          setTransDur(parseFloat(e.target.value) || 0.5);
+        });
+
+        this.inspectorContent.querySelectorAll(".btn-chip-transdur").forEach((btn) => {
+          btn.addEventListener("click", () => setTransDur(parseFloat(btn.dataset.dur)));
+        });
+
+        document.getElementById("btn-prop-apply-trans-all")?.addEventListener("click", () => {
+          const mediaClips = this.currentProject.timeline.tracks.media || [];
+          mediaClips.forEach((m, idx) => {
+            if (idx > 0) {
+              m.transition_in = c.transition_in;
+              m.transition_duration = c.transition_duration;
+            }
+          });
+          this.pushState();
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+          alert(`Applied '${c.transition_in}' (${c.transition_duration}s) across all clips!`);
+        });
+
+        document.getElementById("btn-prop-remove-trans")?.addEventListener("click", () => {
+          c.transition_in = "none";
+          this.renderInspector();
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+        });
+
+        document.getElementById("btn-prop-reset-trans")?.addEventListener("click", () => {
+          c.transition_in = "dissolve";
+          c.transition_duration = 0.5;
+          this.renderInspector();
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+        });
+      } else if (this.selectedTrack === "effect") {
+        const c = this.currentProject?.timeline?.tracks?.media?.find((x) => x.id === this.selectedId) || this.currentProject?.timeline?.tracks?.media?.[0];
+        if (!c) { this.renderEmptyInspector(); return; }
+
+        if (this.inspectorHeading) this.inspectorHeading.textContent = "Visual Effects";
+        if (this.inspectorIcon) this.inspectorIcon.textContent = "✨";
+
+        const currentEffect = c.filter || "none";
+
+        this.inspectorContent.innerHTML = `
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Visual Filter Preset</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+              <button type="button" class="btn btn-sm btn-outline btn-inspector-fx ${currentEffect === 'none' ? 'active' : ''}" data-fx="none" style="color:#fff;border-color:#303B4D;${currentEffect === 'none' ? 'background:#003580;' : ''}">None (Natural)</button>
+              <button type="button" class="btn btn-sm btn-outline btn-inspector-fx ${currentEffect === 'nordic_warm' ? 'active' : ''}" data-fx="nordic_warm" style="color:#fff;border-color:#303B4D;${currentEffect === 'nordic_warm' ? 'background:#003580;' : ''}">Nordic Warm</button>
+              <button type="button" class="btn btn-sm btn-outline btn-inspector-fx ${currentEffect === 'arctic_vivid' ? 'active' : ''}" data-fx="arctic_vivid" style="color:#fff;border-color:#303B4D;${currentEffect === 'arctic_vivid' ? 'background:#003580;' : ''}">Arctic Vivid</button>
+              <button type="button" class="btn btn-sm btn-outline btn-inspector-fx ${currentEffect === 'mono_bnw' ? 'active' : ''}" data-fx="mono_bnw" style="color:#fff;border-color:#303B4D;${currentEffect === 'mono_bnw' ? 'background:#003580;' : ''}">Monochrome</button>
+              <button type="button" class="btn btn-sm btn-outline btn-inspector-fx ${currentEffect === 'vintage_film' ? 'active' : ''}" data-fx="vintage_film" style="color:#fff;border-color:#303B4D;${currentEffect === 'vintage_film' ? 'background:#003580;' : ''}">Vintage Film</button>
+              <button type="button" class="btn btn-sm btn-outline btn-inspector-fx ${currentEffect === 'high_contrast' ? 'active' : ''}" data-fx="high_contrast" style="color:#fff;border-color:#303B4D;${currentEffect === 'high_contrast' ? 'background:#003580;' : ''}">High Contrast</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+            <button type="button" id="btn-prop-apply-fx-all" class="btn btn-sm btn-primary" style="background:#003580;border:1px solid #168BFF;color:#fff;">
+              ✨ Apply Effect To All Clips
+            </button>
+            <button type="button" id="btn-prop-reset-fx" class="btn btn-sm btn-outline" style="color:#B8C4D4;border-color:#303B4D;">
+              ↺ Reset to Normal
+            </button>
+          </div>
+        `;
+
+        this.inspectorContent.querySelectorAll(".btn-inspector-fx").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            c.filter = btn.dataset.fx;
+            this.renderInspector();
+            this.render();
+            this.scheduleAutosave();
+          });
+        });
+
+        document.getElementById("btn-prop-apply-fx-all")?.addEventListener("click", () => {
+          const mediaClips = this.currentProject.timeline.tracks.media || [];
+          mediaClips.forEach(m => { m.filter = c.filter; });
+          this.pushState();
+          this.render();
+          this.scheduleAutosave();
+          alert(`Applied effect '${c.filter}' across all clips!`);
+        });
+
+        document.getElementById("btn-prop-reset-fx")?.addEventListener("click", () => {
+          c.filter = "none";
           this.renderInspector();
           this.render();
           this.scheduleAutosave();
