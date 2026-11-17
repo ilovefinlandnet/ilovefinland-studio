@@ -491,165 +491,177 @@
 
   /* ---------- REVIEW RENDERER ---------- */
   function renderReview() {
-    if (!bundle) return;
-    switchReviewWorkspaceTab(currentReviewWorkspaceTab);
-    const pkg = bundle.package;
-    const curVerNum = selectedVersion || pkg.current_version;
-    const v = bundle.versions.find((item) => item.version === curVerNum) || bundle.versions[bundle.versions.length - 1];
+    if (!bundle || !bundle.package) return;
+    try {
+      switchReviewWorkspaceTab(currentReviewWorkspaceTab);
+      const pkg = bundle.package;
+      const curVerNum = selectedVersion || pkg.current_version;
+      const v = (bundle.versions && bundle.versions.find((item) => item.version === curVerNum)) || (bundle.versions && bundle.versions[bundle.versions.length - 1]) || {};
 
-    $("pkg-title").textContent = pkg.title;
-    $("pkg-origin-badge").textContent = pkg.origin;
-    $("pkg-model-badge").textContent = v.ai_model;
+      if ($("pkg-title")) $("pkg-title").textContent = pkg.title || "";
+      if ($("pkg-origin-badge")) $("pkg-origin-badge").textContent = pkg.origin || "Editorial";
+      if ($("pkg-model-badge")) $("pkg-model-badge").textContent = v.ai_model || "AI Editorial Engine";
 
-    const srcChk = typeof v.source_check === "string" ? JSON.parse(v.source_check) : v.source_check;
-    $("pkg-source-check").textContent = srcChk?.status || "Verified";
+      const srcChk = typeof v.source_check === "string" ? JSON.parse(v.source_check) : (v.source_check || {});
+      if ($("pkg-source-check")) $("pkg-source-check").textContent = srcChk?.status || "Verified";
 
-    // Pre-Approval Quality Checks
-    const checksList = $("pre-approval-checks-list");
-    if (bundle.pre_approval_checks && bundle.pre_approval_checks.length > 0) {
-      checksList.innerHTML = bundle.pre_approval_checks
-        .map((c) => {
-          const badgeClass = c.status === "PASS" ? "check-status-pass" : c.status === "WARN" ? "check-status-warn" : "check-status-alert";
-          const cleanDetail = String(c.detail || "").replace(/<br\s*\/?>/gi, " ");
-          return `
-            <div class="check-item">
-              <div class="check-item-head">
-                <strong class="check-item-label">${escapeHtml(c.label)}</strong>
-                <span class="${badgeClass}">${escapeHtml(c.status)}</span>
-              </div>
-              <div class="check-item-desc">${escapeHtml(cleanDetail)}</div>
-            </div>`;
-        })
-        .join("");
-    }
-
-    // Multi-Clip Strip
-    const clipsWrap = $("clips-summary-card");
-    const clipsList = $("clips-summary-list");
-    const reelData = v.reel;
-    if (reelData && reelData.video_clips && reelData.video_clips.length > 0) {
-      clipsWrap.classList.remove("hidden");
-      $("clips-count-badge").textContent = `${reelData.video_clips.length} Clips`;
-      clipsList.innerHTML = reelData.video_clips
-        .map((c, i) => `
-          <div class="clip-mini-card">
-            <img class="clip-mini-poster" src="${c.poster || '/assets/sample-clips/clip-1-tram-thumb.jpg'}" alt="${c.filename}" />
-            <div class="clip-mini-body">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <strong>Clip ${i + 1}</strong>
-                ${c.opening_shot ? '<span class="pill pill-approved" style="font-size:0.68rem;padding:2px 6px;">Opening Shot</span>' : ''}
-              </div>
-              <div>${c.filename} (${c.duration}s)</div>
-              <div class="hint-text" style="margin-top:2px;">Credit: ${c.credit}</div>
-              <div class="hint-text">Permission: ${c.permission}</div>
-            </div>
-          </div>
-        `)
-        .join("");
-    } else {
-      clipsWrap.classList.add("hidden");
-    }
-
-    const revBanner = $("revision-banner");
-    if (pkg.current_version > 1) {
-      revBanner.innerHTML = `
-        <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-        <span>Revision v${pkg.current_version} generated from feedback. Previous versions viewable above.</span>`;
-      revBanner.classList.remove("hidden");
-    } else {
-      revBanner.classList.add("hidden");
-    }
-
-    // Version switcher
-    const vTabs = $("version-tabs");
-    vTabs.innerHTML = bundle.versions
-      .map(
-        (ver) => `
-        <button class="ver-btn vtab ${ver.version === curVerNum ? "active" : ""}" data-ver="${ver.version}">
-          v${ver.version} ${ver.version === pkg.current_version ? "(Current)" : ""}
-        </button>`
-      )
-      .join("");
-    vTabs.querySelectorAll(".vtab").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        selectedVersion = parseInt(btn.dataset.ver, 10);
-        renderReview();
-      });
-    });
-
-    const isCurrent = curVerNum === pkg.current_version;
-    approvedNow.article = pkg.article_status === "approved" && (pkg.article_approved_version === curVerNum || isCurrent);
-    approvedNow.ig_post = pkg.ig_post_status === "approved" && (pkg.ig_post_approved_version === curVerNum || isCurrent);
-
-    const artPill = $("status-article-pill");
-    if (artPill) {
-      artPill.textContent = `Article: ${statusLabel(pkg.article_status, pkg.article_approved_version)}`;
-      artPill.className = `pill ${pkg.article_status === "approved" ? "pill-approved" : "pill-revision"}`;
-    }
-
-    const igPill = $("status-ig-pill");
-    if (igPill) {
-      igPill.textContent = `Social Post: ${statusLabel(pkg.ig_post_status || "pending", pkg.ig_post_approved_version)}`;
-      igPill.className = `pill ${pkg.ig_post_status === "approved" ? "pill-approved" : "pill-revision"}`;
-    }
-
-    for (const id of ["btn-approve-article", "btn-approve-article-m"]) {
-      const b = $(id);
-      if (b) {
-        b.classList.toggle("approved", approvedNow.article);
-        b.classList.toggle("is-approved", approvedNow.article);
-        b.innerHTML = approvedNow.article
-          ? `${getIcon("check", 16)} <span>Article Approved</span>`
-          : `${getIcon("check", 16)} <span>Approve Article</span>`;
+      // Pre-Approval Quality Checks
+      const checksList = $("pre-approval-checks-list");
+      if (checksList && bundle.pre_approval_checks && bundle.pre_approval_checks.length > 0) {
+        checksList.innerHTML = bundle.pre_approval_checks
+          .map((c) => {
+            const badgeClass = c.status === "PASS" ? "check-status-pass" : c.status === "WARN" ? "check-status-warn" : "check-status-alert";
+            const cleanDetail = String(c.detail || "").replace(/<br\s*\/?>/gi, " ");
+            return `
+              <div class="check-item">
+                <div class="check-item-head">
+                  <strong class="check-item-label">${escapeHtml(c.label)}</strong>
+                  <span class="${badgeClass}">${escapeHtml(c.status)}</span>
+                </div>
+                <div class="check-item-desc">${escapeHtml(cleanDetail)}</div>
+              </div>`;
+          })
+          .join("");
       }
-    }
 
-    for (const id of ["btn-approve-ig", "btn-approve-ig-m"]) {
-      const b = $(id);
-      if (b) {
-        b.classList.remove("hidden");
-        b.classList.toggle("approved", approvedNow.ig_post);
-        b.classList.toggle("is-approved", approvedNow.ig_post);
-        b.innerHTML = approvedNow.ig_post
-          ? `${getIcon("check", 16)} <span>Post Approved</span>`
-          : `${getIcon("check", 16)} <span>Approve Post</span>`;
+      // Multi-Clip Strip
+      const clipsWrap = $("clips-summary-card");
+      const clipsList = $("clips-summary-list");
+      const reelData = v.reel;
+      if (reelData && reelData.video_clips && reelData.video_clips.length > 0) {
+        if (clipsWrap) clipsWrap.classList.remove("hidden");
+        if ($("clips-count-badge")) $("clips-count-badge").textContent = `${reelData.video_clips.length} Clips`;
+        if (clipsList) {
+          clipsList.innerHTML = reelData.video_clips
+            .map((c, i) => `
+              <div class="clip-mini-card">
+                <img class="clip-mini-poster" src="${c.poster || '/assets/sample-clips/clip-1-tram-thumb.jpg'}" alt="${c.filename}" />
+                <div class="clip-mini-body">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <strong>Clip ${i + 1}</strong>
+                    ${c.opening_shot ? '<span class="pill pill-approved" style="font-size:0.68rem;padding:2px 6px;">Opening Shot</span>' : ''}
+                  </div>
+                  <div>${c.filename} (${c.duration}s)</div>
+                  <div class="hint-text" style="margin-top:2px;">Credit: ${c.credit}</div>
+                  <div class="hint-text">Permission: ${c.permission}</div>
+                </div>
+              </div>
+            `)
+            .join("");
+        }
+      } else {
+        if (clipsWrap) clipsWrap.classList.add("hidden");
       }
-    }
 
-    // 1. Render WordPress Article Form
-    if (v.article) {
-      renderWordPressArticle(v.article);
-    }
+      const revBanner = $("revision-banner");
+      if (revBanner) {
+        if (pkg.current_version > 1) {
+          revBanner.innerHTML = `
+            <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>Revision v${pkg.current_version} generated from feedback. Previous versions viewable above.</span>`;
+          revBanner.classList.remove("hidden");
+        } else {
+          revBanner.classList.add("hidden");
+        }
+      }
 
-    // 2. Render Static Social Post (1080×1350 & 3:4 Profile Crop)
-    if (v.ig_post) {
-      renderStaticPost(v.ig_post, v.article);
-    }
-
-    // 3. Render Reel (Only if legacy panel exists)
-    if ($("panel-reel")) renderReelWorkspace(v);
-
-    // Comment history
-    const ch = $("comment-history");
-    ch.innerHTML = bundle.comments.length
-      ? bundle.comments
+      // Version switcher
+      const vTabs = $("version-tabs");
+      if (vTabs && bundle.versions) {
+        vTabs.innerHTML = bundle.versions
           .map(
-            (c) => `
-          <div class="comment-item">
-            <div style="display:flex;justify-content:space-between;gap:8px;">
-              <strong>${c.author}</strong>
-              <span class="hint-text">${c.created_at.slice(0, 16).replace("T", " ")}</span>
-            </div>
-            <p style="margin:4px 0;">“${c.body}” ${c.has_voice_note ? `<span>${getIcon("mic", 12)} [Voice Note]</span>` : ""}</p>
-            <div class="hint-text">Resulting Version: v${c.resulting_version} • Target: ${c.target.toUpperCase()}</div>
-          </div>`
+            (ver) => `
+            <button class="ver-btn vtab ${ver.version === curVerNum ? "active" : ""}" data-ver="${ver.version}">
+              v${ver.version} ${ver.version === pkg.current_version ? "(Current)" : ""}
+            </button>`
           )
-          .join("")
-      : '<p class="hint-text">No revision comments yet.</p>';
+          .join("");
+        vTabs.querySelectorAll(".vtab").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            selectedVersion = parseInt(btn.dataset.ver, 10);
+            renderReview();
+          });
+        });
+      }
 
-    // Schedule form defaults
-    $("sched-article-dt").value = pkg.article_publish_at || "";
-    $("sched-reel-dt").value = pkg.reel_publish_at || "";
+      const isCurrent = curVerNum === pkg.current_version;
+      approvedNow.article = pkg.article_status === "approved" && (pkg.article_approved_version === curVerNum || isCurrent);
+      approvedNow.ig_post = pkg.ig_post_status === "approved" && (pkg.ig_post_approved_version === curVerNum || isCurrent);
+
+      const artPill = $("status-article-pill");
+      if (artPill) {
+        artPill.textContent = `Article: ${statusLabel(pkg.article_status, pkg.article_approved_version)}`;
+        artPill.className = `pill ${pkg.article_status === "approved" ? "pill-approved" : "pill-revision"}`;
+      }
+
+      const igPill = $("status-ig-pill");
+      if (igPill) {
+        igPill.textContent = `Social Post: ${statusLabel(pkg.ig_post_status || "pending", pkg.ig_post_approved_version)}`;
+        igPill.className = `pill ${pkg.ig_post_status === "approved" ? "pill-approved" : "pill-revision"}`;
+      }
+
+      for (const id of ["btn-approve-article", "btn-approve-article-m"]) {
+        const b = $(id);
+        if (b) {
+          b.classList.toggle("approved", approvedNow.article);
+          b.classList.toggle("is-approved", approvedNow.article);
+          b.innerHTML = approvedNow.article
+            ? `${getIcon("check", 16)} <span>Article Approved</span>`
+            : `${getIcon("check", 16)} <span>Approve Article</span>`;
+        }
+      }
+
+      for (const id of ["btn-approve-ig", "btn-approve-ig-m"]) {
+        const b = $(id);
+        if (b) {
+          b.classList.remove("hidden");
+          b.classList.toggle("approved", approvedNow.ig_post);
+          b.classList.toggle("is-approved", approvedNow.ig_post);
+          b.innerHTML = approvedNow.ig_post
+            ? `${getIcon("check", 16)} <span>Post Approved</span>`
+            : `${getIcon("check", 16)} <span>Approve Post</span>`;
+        }
+      }
+
+      // 1. Render WordPress Article Form
+      if (v.article) {
+        renderWordPressArticle(v.article);
+      }
+
+      // 2. Render Static Social Post (1080×1350 & 3:4 Profile Crop)
+      if (v.ig_post) {
+        renderStaticPost(v.ig_post, v.article);
+      }
+
+      // 3. Render Reel (Only if legacy panel exists)
+      if ($("panel-reel")) renderReelWorkspace(v);
+
+      // Comment history
+      const ch = $("comment-history");
+      if (ch) {
+        ch.innerHTML = bundle.comments && bundle.comments.length
+          ? bundle.comments
+              .map(
+                (c) => `
+              <div class="comment-item">
+                <div style="display:flex;justify-content:space-between;gap:8px;">
+                  <strong>${c.author}</strong>
+                  <span class="hint-text">${c.created_at.slice(0, 16).replace("T", " ")}</span>
+                </div>
+                <p style="margin:4px 0;">“${c.body}” ${c.has_voice_note ? `<span>${getIcon("mic", 12)} [Voice Note]</span>` : ""}</p>
+                <div class="hint-text">Resulting Version: v${c.resulting_version} • Target: ${c.target.toUpperCase()}</div>
+              </div>`
+              )
+              .join("")
+          : '<p class="hint-text">No revision comments yet.</p>';
+      }
+
+      // Schedule form defaults
+      if ($("sched-article-dt")) $("sched-article-dt").value = pkg.article_publish_at || "";
+      if ($("sched-reel-dt")) $("sched-reel-dt").value = pkg.reel_publish_at || "";
+    } catch (e) {
+      console.error("renderReview failed:", e);
+    }
   }
 
   /* ---------- WORDPRESS ARTICLE RENDERER (ilovefinland.net) ---------- */
@@ -663,225 +675,229 @@
 
   function renderWordPressArticle(art) {
     if (!art) return;
+    try {
+      // Badges & Source label
+      const srcLbl = $("article-source-label");
+      if (srcLbl) srcLbl.textContent = art.section ? `${art.section} Article Draft` : "WordPress Article Draft";
+      const langBadge = $("article-lang-badge");
+      if (langBadge) langBadge.textContent = `Language: ${art.language || "English"}`;
+      const taxBadge = $("article-taxonomy-badge");
+      if (taxBadge) taxBadge.textContent = `${art.section || "News"} → ${art.category || "Transport"}`;
 
-    // Badges & Source label
-    const srcLbl = $("article-source-label");
-    if (srcLbl) srcLbl.textContent = art.section ? `${art.section} Article Draft` : "WordPress Article Draft";
-    const langBadge = $("article-lang-badge");
-    if (langBadge) langBadge.textContent = `Language: ${art.language || "English"}`;
-    const taxBadge = $("article-taxonomy-badge");
-    if (taxBadge) taxBadge.textContent = `${art.section || "News"} → ${art.category || "Transport"}`;
+      // Recommendation & Search Phrase Banner
+      const recTax = $("wp-rec-taxonomy");
+      if (recTax) recTax.textContent = `${art.section || "News"} → ${art.category || "Transport"}`;
+      const recReason = $("wp-rec-reason");
+      if (recReason) {
+        let rText = art.section_reason || "";
+        if (art.prior_coverage_check) {
+          const pc = art.prior_coverage_check;
+          const actLabel = pc.action_recommended === "update_existing" ? "🔄 Update Existing Article" : (pc.action_recommended === "separate_followup" ? "📄 Separate Follow-Up" : "✨ Fresh Article");
+          rText = `[${actLabel}] ${pc.action_reason || ""} ${rText}`;
+        }
+        recReason.textContent = rText;
+      }
+      const searchPhraseEl = $("wp-search-phrase");
+      if (searchPhraseEl) searchPhraseEl.textContent = art.search_phrase || "is tesla assisted driving allowed in finland";
+      const searchIntEl = $("wp-search-integration");
+      if (searchIntEl) searchIntEl.textContent = art.search_phrase_integration || "";
 
-    // Recommendation & Search Phrase Banner
-    const recTax = $("wp-rec-taxonomy");
-    if (recTax) recTax.textContent = `${art.section || "News"} → ${art.category || "Transport"}`;
-    const recReason = $("wp-rec-reason");
-    if (recReason) {
-      let rText = art.section_reason || "";
-      if (art.prior_coverage_check) {
+      // Duplicate-check detail: every check labelled live / snapshot / studio / sample / not run
+      const esc = (t) => String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const pcBox = $("wp-prior-coverage-detail");
+      if (pcBox) {
         const pc = art.prior_coverage_check;
-        const actLabel = pc.action_recommended === "update_existing" ? "🔄 Update Existing Article" : (pc.action_recommended === "separate_followup" ? "📄 Separate Follow-Up" : "✨ Fresh Article");
-        rText = `[${actLabel}] ${pc.action_reason || ""} ${rText}`;
-      }
-      recReason.textContent = rText;
-    }
-    const searchPhraseEl = $("wp-search-phrase");
-    if (searchPhraseEl) searchPhraseEl.textContent = art.search_phrase || "is tesla assisted driving allowed in finland";
-    const searchIntEl = $("wp-search-integration");
-    if (searchIntEl) searchIntEl.textContent = art.search_phrase_integration || "";
-
-    // Duplicate-check detail: every check labelled live / snapshot / studio / sample / not run
-    const esc = (t) => String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const pcBox = $("wp-prior-coverage-detail");
-    if (pcBox) {
-      const pc = art.prior_coverage_check;
-      if (pc && pc.checks) {
-        const tagStyle = { live: "#15803d", snapshot: "#0369a1", studio: "#6d28d9", sample: "#b45309", not_run: "#b91c1c" };
-        const rows = pc.checks.map((c) => `<li><span style="font-weight:700;color:${tagStyle[c.source_type] || "#334155"};text-transform:uppercase;font-size:0.7rem;">${esc(c.source_type.replace("_", " "))}</span> ${c.status === "completed" ? "✅" : "⚠️"} <strong>${esc(c.name)}</strong><br><span class="hint-text">${esc(c.detail)}</span></li>`).join("");
-        const rel = (pc.related_mentions || []).map((m) => `<li><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.title)}</a>${m.snippet ? `<br><span class="hint-text">“${esc(m.snippet)}”</span>` : ""}</li>`).join("");
-        const top = pc.top_match ? `<p><strong>Matched article:</strong> <a href="${esc(pc.top_match.url)}" target="_blank" rel="noopener">${esc(pc.top_match.title)}</a></p>` : "";
-        pcBox.innerHTML = `<strong>Duplicate check</strong> <span class="hint-text">ran ${esc(pc.ran_at)} (${esc(pc.stage || "draft")}) · result: <b>${esc(pc.action_recommended)}</b></span>${top}<ul style="margin:6px 0 0 16px;padding:0;">${rows}</ul>${rel ? `<p style="margin:8px 0 2px;"><strong>Related mentions (not duplicates):</strong></p><ul style="margin:0 0 0 16px;">${rel}</ul>` : ""}`;
-        pcBox.classList.remove("hidden");
-      } else {
-        pcBox.classList.add("hidden");
-      }
-    }
-    const verBox = $("wp-verification-banner");
-    if (verBox) {
-      const v = art.verification;
-      if (v && v.status && v.status !== "verified") {
-        verBox.innerHTML = `<strong>⚠️ Not ready: ${esc(v.status.replace(/_/g, " "))}.</strong> ${esc(v.summary || "")}<ul style="margin:6px 0 0 16px;padding:0;">${(v.ready_blockers || []).map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
-        verBox.classList.remove("hidden");
-      } else {
-        verBox.classList.add("hidden");
-      }
-    }
-
-    // Section 1: Details
-    if ($("wp-field-headline")) $("wp-field-headline").value = art.headline || "";
-    if ($("wp-field-dek")) $("wp-field-dek").value = art.short_description || "";
-    if ($("wp-field-lang")) $("wp-field-lang").value = art.language || "English";
-
-    // Populate Section and Category selects
-    const secSelect = $("wp-field-section");
-    const catSelect = $("wp-field-category");
-    const tax = art.taxonomy_options || currentTaxonomy || {};
-    if (secSelect && Object.keys(tax).length > 0) {
-      secSelect.innerHTML = Object.keys(tax)
-        .map((sec) => `<option value="${sec}" ${sec === art.section ? "selected" : ""}>${sec}</option>`)
-        .join("");
-
-      const updateCategories = () => {
-        const selSec = secSelect.value;
-        const cats = tax[selSec] || [];
-        catSelect.innerHTML = cats
-          .map((cat) => `<option value="${cat}" ${cat === art.category ? "selected" : ""}>${cat}</option>`)
-          .join("");
-      };
-      updateCategories();
-      secSelect.onchange = updateCategories;
-    }
-
-    // Section 2: Visual and Code Views
-    const visualBody = $("article-body-visual");
-    const rawParas = art.body_paragraphs || art.body || [];
-    const parasList = Array.isArray(rawParas) ? rawParas : [rawParas];
-    const parasHtml = parasList.map((p) => `<p>${p}</p>`).join("");
-    const bodyContent = art.body_html || parasHtml;
-
-    if (visualBody) {
-      visualBody.innerHTML = bodyContent || "<p style='color:#CBD5E1;font-style:italic;'>No article text drafted yet.</p>";
-    }
-    const codeArea = $("wp-code-textarea");
-    if (codeArea) {
-      codeArea.value = art.body_html || parasHtml || "";
-    }
-
-    // Section 3: Featured Image (Clean Missing Image Handling)
-    const featImg = art.featured_image || {};
-    const hasImage = Boolean(featImg && featImg.url && featImg.url.trim() && featImg.status !== "missing");
-    const imgPrev = $("wp-feat-img-preview");
-    const imgWrap = $("wp-feat-img-wrap");
-    const emptyCard = $("wp-feat-img-empty");
-    const flagBanner = $("wp-photo-flag-banner");
-    const featBadge = $("feat-img-status-badge");
-
-    if (hasImage) {
-      if (imgWrap) imgWrap.classList.remove("hidden");
-      if (emptyCard) emptyCard.classList.add("hidden");
-      if (imgPrev) {
-        const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
-        const imgUrl = featImg.url;
-        imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
-      }
-      flagBanner?.classList.add("hidden");
-      if (featBadge) {
-        if (featImg.data_label === "sample") {
-          featBadge.className = "badge badge-alert";
-          featBadge.textContent = "SAMPLE placeholder: credit not verified";
+        if (pc && pc.checks) {
+          const tagStyle = { live: "#15803d", snapshot: "#0369a1", studio: "#6d28d9", sample: "#b45309", not_run: "#b91c1c" };
+          const rows = pc.checks.map((c) => `<li><span style="font-weight:700;color:${tagStyle[c.source_type] || "#334155"};text-transform:uppercase;font-size:0.7rem;">${esc(c.source_type ? c.source_type.replace("_", " ") : "check")}</span> ${c.status === "completed" ? "✅" : "⚠️"} <strong>${esc(c.name)}</strong><br><span class="hint-text">${esc(c.detail)}</span></li>`).join("");
+          const rel = (pc.related_mentions || []).map((m) => `<li><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.title)}</a>${m.snippet ? `<br><span class="hint-text">“${esc(m.snippet)}”</span>` : ""}</li>`).join("");
+          const top = pc.top_match ? `<p><strong>Matched article:</strong> <a href="${esc(pc.top_match.url)}" target="_blank" rel="noopener">${esc(pc.top_match.title)}</a></p>` : "";
+          pcBox.innerHTML = `<strong>Duplicate check</strong> <span class="hint-text">ran ${esc(pc.ran_at)} (${esc(pc.stage || "draft")}) · result: <b>${esc(pc.action_recommended)}</b></span>${top}<ul style="margin:6px 0 0 16px;padding:0;">${rows}</ul>${rel ? `<p style="margin:8px 0 2px;"><strong>Related mentions (not duplicates):</strong></p><ul style="margin:0 0 0 16px;">${rel}</ul>` : ""}`;
+          pcBox.classList.remove("hidden");
         } else {
-          featBadge.className = "badge badge-check";
-          featBadge.textContent = `Licence read from source metadata (${featImg.licence || "see credit"})`;
+          pcBox.classList.add("hidden");
         }
       }
-    } else {
-      if (imgWrap) imgWrap.classList.add("hidden");
-      if (emptyCard) emptyCard.classList.remove("hidden");
-      if (imgPrev) imgPrev.src = "";
-      flagBanner?.classList.add("hidden");
-      if (featBadge) {
-        featBadge.className = "badge badge-alert";
-        featBadge.textContent = "⚠️ No Image Uploaded — Image Required";
+      const verBox = $("wp-verification-banner");
+      if (verBox) {
+        const v = art.verification;
+        if (v && v.status && v.status !== "verified") {
+          verBox.innerHTML = `<strong>⚠️ Not ready: ${esc(v.status.replace(/_/g, " "))}.</strong> ${esc(v.summary || "")}<ul style="margin:6px 0 0 16px;padding:0;">${(v.ready_blockers || []).map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
+          verBox.classList.remove("hidden");
+        } else {
+          verBox.classList.add("hidden");
+        }
       }
-    }
 
-    const webpBtn = $("btn-dl-webp");
-    if (webpBtn) webpBtn.classList.toggle("hidden", !hasImage || !featImg.download_webp);
-    if ($("wp-field-img-alt")) $("wp-field-img-alt").value = hasImage ? (featImg.alt_text || art.image_alt_text || "") : "";
-    if ($("wp-field-img-caption")) $("wp-field-img-caption").value = hasImage ? (featImg.caption || art.image_caption || "") : "";
-    if ($("wp-field-img-credit")) $("wp-field-img-credit").value = hasImage ? (featImg.credit_string || art.image_credit || "") : "";
-    if ($("wp-photo-photographer")) $("wp-photo-photographer").textContent = hasImage ? (featImg.photographer ? `${featImg.photographer}${featImg.agency ? ` (${featImg.agency})` : ""}` : "Verified Contributor") : "No Image Uploaded";
-    if ($("wp-photo-source-link")) {
-      $("wp-photo-source-link").textContent = hasImage ? (featImg.source_url || featImg.original_source_url || "—") : "—";
-      $("wp-photo-source-link").href = hasImage ? (featImg.source_url || featImg.original_source_url || "#") : "#";
-    }
-    if ($("wp-photo-licence")) $("wp-photo-licence").textContent = hasImage ? (featImg.licence || "Editorial Rights Cleared") : "None";
+      // Section 1: Details
+      if ($("wp-field-headline")) $("wp-field-headline").value = art.headline || "";
+      if ($("wp-field-dek")) $("wp-field-dek").value = art.short_description || "";
+      if ($("wp-field-lang")) $("wp-field-lang").value = art.language || "English";
 
-    // Remaining fields in exact order
-    if ($("wp-field-region")) $("wp-field-region").value = art.region || "Finland";
-    if ($("wp-field-city")) $("wp-field-city").value = art.city_location || "";
-    if ($("wp-field-address")) $("wp-field-address").value = art.exact_address || "";
-    if ($("wp-field-place")) $("wp-field-place").value = art.exact_address || "";
-    if ($("wp-field-event")) $("wp-field-event").value = art.event_datetime_venue || "";
+      // Populate Section and Category selects
+      const secSelect = $("wp-field-section");
+      const catSelect = $("wp-field-category");
+      const tax = art.taxonomy_options || currentTaxonomy || {};
+      if (secSelect && Object.keys(tax).length > 0) {
+        secSelect.innerHTML = Object.keys(tax)
+          .map((sec) => `<option value="${sec}" ${sec === art.section ? "selected" : ""}>${sec}</option>`)
+          .join("");
 
-    // Additional Image
-    const addlImg = art.additional_image;
-    const addWrap = $("additional-image-preview-wrap");
-    const addPrev = $("wp-add-img-preview");
-    if (addlImg) {
-      addWrap?.classList.remove("hidden");
-      if (addPrev) addPrev.src = addlImg.url || "/assets/sample-clips/clip-1-tram-thumb.jpg";
-      if ($("wp-field-add-alt")) $("wp-field-add-alt").value = art.additional_image_alt_text || addlImg.alt_text || "";
-      if ($("wp-field-add-caption")) $("wp-field-add-caption").value = art.additional_image_caption || addlImg.caption || "";
-      if ($("wp-field-add-credit")) $("wp-field-add-credit").value = art.additional_image_credit_licence || addlImg.credit_string || "";
-      if ($("wp-field-addl-alt")) $("wp-field-addl-alt").value = art.additional_image_alt_text || addlImg.alt_text || "";
-      if ($("wp-field-addl-caption")) $("wp-field-addl-caption").value = art.additional_image_caption || addlImg.caption || "";
-      if ($("wp-field-addl-credit")) $("wp-field-addl-credit").value = art.additional_image_credit_licence || addlImg.credit_string || "";
-    } else {
-      addWrap?.classList.add("hidden");
-      if ($("wp-field-add-alt")) $("wp-field-add-alt").value = "";
-      if ($("wp-field-add-caption")) $("wp-field-add-caption").value = "";
-      if ($("wp-field-add-credit")) $("wp-field-add-credit").value = "";
-    }
+        const updateCategories = () => {
+          const selSec = secSelect.value;
+          const cats = tax[selSec] || [];
+          catSelect.innerHTML = cats
+            .map((cat) => `<option value="${cat}" ${cat === art.category ? "selected" : ""}>${cat}</option>`)
+            .join("");
+        };
+        updateCategories();
+        secSelect.onchange = updateCategories;
+      }
 
-    // Sources & Internal Links
-    const sourcesList = $("wp-source-links-list");
-    const sourcesArr = art.sources || [];
-    if (sourcesList) {
-      if (sourcesArr.length > 0) {
-        sourcesList.innerHTML = sourcesArr.map((s) => {
-          const u = typeof s === "string" ? s : (s.url || "");
-          const l = typeof s === "string" ? s : (s.label || s.title || u);
-          return `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:0.8rem;">
-              <a href="${escapeHtml(u)}" target="_blank" rel="noopener" style="color:var(--brand-blue);text-decoration:none;word-break:break-all;">🔗 ${escapeHtml(l)}</a>
-              <button type="button" class="btn-copy-field btn-copy-single" data-copy-val="${escapeHtml(u)}" style="padding:2px 8px;font-size:0.7rem;margin-left:8px;border-radius:4px;">Copy</button>
-            </div>`;
-        }).join("");
+      // Section 2: Visual and Code Views
+      const visualBody = $("article-body-visual");
+      const rawParas = art.body_paragraphs || art.body || [];
+      const parasList = Array.isArray(rawParas) ? rawParas : [rawParas];
+      const parasHtml = parasList.map((p) => `<p>${p}</p>`).join("");
+      const bodyContent = art.body_html || parasHtml;
+
+      if (visualBody) {
+        visualBody.innerHTML = bodyContent || "<p style='color:#CBD5E1;font-style:italic;'>No article text drafted yet.</p>";
+      }
+      const codeArea = $("wp-code-textarea");
+      if (codeArea) {
+        codeArea.value = art.body_html || parasHtml || "";
+      }
+
+      // Section 3: Featured Image (Clean Missing Image Handling)
+      const featImg = art.featured_image || {};
+      const hasImage = Boolean(featImg && featImg.url && featImg.url.trim() && featImg.status !== "missing");
+      const imgPrev = $("wp-feat-img-preview");
+      const imgWrap = $("wp-feat-img-wrap");
+      const emptyCard = $("wp-feat-img-empty");
+      const flagBanner = $("wp-photo-flag-banner");
+      const featBadge = $("feat-img-status-badge");
+
+      if (hasImage) {
+        if (imgWrap) imgWrap.classList.remove("hidden");
+        if (emptyCard) emptyCard.classList.add("hidden");
+        if (imgPrev) {
+          const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
+          const imgUrl = featImg.url;
+          imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
+        }
+        flagBanner?.classList.add("hidden");
+        if (featBadge) {
+          if (featImg.data_label === "sample") {
+            featBadge.className = "badge badge-alert";
+            featBadge.textContent = "SAMPLE placeholder: credit not verified";
+          } else {
+            featBadge.className = "badge badge-check";
+            featBadge.textContent = `Licence read from source metadata (${featImg.licence || "see credit"})`;
+          }
+        }
       } else {
-        sourcesList.innerHTML = `<span class="hint-text" style="font-size:0.78rem;">No external source links</span>`;
+        if (imgWrap) imgWrap.classList.add("hidden");
+        if (emptyCard) emptyCard.classList.remove("hidden");
+        if (imgPrev) imgPrev.src = "";
+        flagBanner?.classList.add("hidden");
+        if (featBadge) {
+          featBadge.className = "badge badge-alert";
+          featBadge.textContent = "⚠️ No Image Uploaded — Image Required";
+        }
       }
-    }
 
-    const internalList = $("wp-internal-links-list");
-    const internalArr = art.related_internal_links || [];
-    if (internalList) {
-      if (internalArr.length > 0) {
-        internalList.innerHTML = internalArr.map((l) => {
-          const u = typeof l === "string" ? l : (l.url || "");
-          const lbl = typeof l === "string" ? l : (l.label || l.title || u);
-          return `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:0.8rem;">
-              <a href="${escapeHtml(u)}" target="_blank" rel="noopener" style="color:var(--brand-blue);text-decoration:none;word-break:break-all;">🔗 ${escapeHtml(lbl)}</a>
-              <button type="button" class="btn-copy-field btn-copy-single" data-copy-val="${escapeHtml(u)}" style="padding:2px 8px;font-size:0.7rem;margin-left:8px;border-radius:4px;">Copy</button>
-            </div>`;
-        }).join("");
+      const webpBtn = $("btn-dl-webp");
+      if (webpBtn) webpBtn.classList.toggle("hidden", !hasImage || !featImg.download_webp);
+      if ($("wp-field-img-alt")) $("wp-field-img-alt").value = hasImage ? (featImg.alt_text || art.image_alt_text || "") : "";
+      if ($("wp-field-img-caption")) $("wp-field-img-caption").value = hasImage ? (featImg.caption || art.image_caption || "") : "";
+      if ($("wp-field-img-credit")) $("wp-field-img-credit").value = hasImage ? (featImg.credit_string || art.image_credit || "") : "";
+      if ($("wp-photo-photographer")) $("wp-photo-photographer").textContent = hasImage ? (featImg.photographer ? `${featImg.photographer}${featImg.agency ? ` (${featImg.agency})` : ""}` : "Verified Contributor") : "No Image Uploaded";
+      if ($("wp-photo-source-link")) {
+        $("wp-photo-source-link").textContent = hasImage ? (featImg.source_url || featImg.original_source_url || "—") : "—";
+        $("wp-photo-source-link").href = hasImage ? (featImg.source_url || featImg.original_source_url || "#") : "#";
+      }
+      if ($("wp-photo-licence")) $("wp-photo-licence").textContent = hasImage ? (featImg.licence || "Editorial Rights Cleared") : "None";
+
+      // Remaining fields in exact order
+      if ($("wp-field-region")) $("wp-field-region").value = art.region || "Finland";
+      if ($("wp-field-city")) $("wp-field-city").value = art.city_location || "";
+      if ($("wp-field-address")) $("wp-field-address").value = art.exact_address || "";
+      if ($("wp-field-place")) $("wp-field-place").value = art.exact_address || "";
+      if ($("wp-field-event")) $("wp-field-event").value = art.event_datetime_venue || "";
+
+      // Additional Image
+      const addlImg = art.additional_image;
+      const addWrap = $("additional-image-preview-wrap");
+      const addPrev = $("wp-add-img-preview");
+      if (addlImg) {
+        addWrap?.classList.remove("hidden");
+        if (addPrev) addPrev.src = addlImg.url || "/assets/sample-clips/clip-1-tram-thumb.jpg";
+        if ($("wp-field-add-alt")) $("wp-field-add-alt").value = art.additional_image_alt_text || addlImg.alt_text || "";
+        if ($("wp-field-add-caption")) $("wp-field-add-caption").value = art.additional_image_caption || addlImg.caption || "";
+        if ($("wp-field-add-credit")) $("wp-field-add-credit").value = art.additional_image_credit_licence || addlImg.credit_string || "";
+        if ($("wp-field-addl-alt")) $("wp-field-addl-alt").value = art.additional_image_alt_text || addlImg.alt_text || "";
+        if ($("wp-field-addl-caption")) $("wp-field-addl-caption").value = art.additional_image_caption || addlImg.caption || "";
+        if ($("wp-field-addl-credit")) $("wp-field-addl-credit").value = art.additional_image_credit_licence || addlImg.credit_string || "";
       } else {
-        internalList.innerHTML = `<span class="hint-text" style="font-size:0.78rem;">No internal related links</span>`;
+        addWrap?.classList.add("hidden");
+        if ($("wp-field-add-alt")) $("wp-field-add-alt").value = "";
+        if ($("wp-field-add-caption")) $("wp-field-add-caption").value = "";
+        if ($("wp-field-add-credit")) $("wp-field-add-credit").value = "";
       }
-    }
 
-    if ($("wp-field-private-notes")) $("wp-field-private-notes").value = art.private_editorial_notes || "";
-    if ($("wp-field-editorial-notes")) $("wp-field-editorial-notes").value = art.private_editorial_notes || "";
-    if ($("wp-field-tags")) $("wp-field-tags").value = art.tags || "";
-    if ($("wp-field-seo-title")) {
-      $("wp-field-seo-title").value = art.seo_title || "";
-      if ($("wp-seo-title-count")) $("wp-seo-title-count").textContent = `(${(art.seo_title || "").length}/60)`;
+      // Sources & Internal Links
+      const sourcesList = $("wp-source-links-list");
+      const sourcesArr = art.sources || [];
+      if (sourcesList) {
+        if (sourcesArr.length > 0) {
+          sourcesList.innerHTML = sourcesArr.map((s) => {
+            const u = typeof s === "string" ? s : (s.url || "");
+            const l = typeof s === "string" ? s : (s.label || s.title || u);
+            return `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:0.8rem;">
+                <a href="${escapeHtml(u)}" target="_blank" rel="noopener" style="color:var(--brand-blue);text-decoration:none;word-break:break-all;">🔗 ${escapeHtml(l)}</a>
+                <button type="button" class="btn-copy-field btn-copy-single" data-copy-val="${escapeHtml(u)}" style="padding:2px 8px;font-size:0.7rem;margin-left:8px;border-radius:4px;">Copy</button>
+              </div>`;
+          }).join("");
+        } else {
+          sourcesList.innerHTML = `<span class="hint-text" style="font-size:0.78rem;">No external source links</span>`;
+        }
+      }
+
+      const internalList = $("wp-internal-links-list");
+      const internalArr = art.related_internal_links || [];
+      if (internalList) {
+        if (internalArr.length > 0) {
+          internalList.innerHTML = internalArr.map((l) => {
+            const u = typeof l === "string" ? l : (l.url || "");
+            const lbl = typeof l === "string" ? l : (l.label || l.title || u);
+            return `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e2e8f0;font-size:0.8rem;">
+                <a href="${escapeHtml(u)}" target="_blank" rel="noopener" style="color:var(--brand-blue);text-decoration:none;word-break:break-all;">🔗 ${escapeHtml(lbl)}</a>
+                <button type="button" class="btn-copy-field btn-copy-single" data-copy-val="${escapeHtml(u)}" style="padding:2px 8px;font-size:0.7rem;margin-left:8px;border-radius:4px;">Copy</button>
+              </div>`;
+          }).join("");
+        } else {
+          internalList.innerHTML = `<span class="hint-text" style="font-size:0.78rem;">No internal related links</span>`;
+        }
+      }
+
+      if ($("wp-field-private-notes")) $("wp-field-private-notes").value = art.private_editorial_notes || "";
+      if ($("wp-field-editorial-notes")) $("wp-field-editorial-notes").value = art.private_editorial_notes || "";
+      if ($("wp-field-tags")) $("wp-field-tags").value = art.tags || "";
+      if ($("wp-field-seo-title")) {
+        $("wp-field-seo-title").value = art.seo_title || "";
+        if ($("wp-seo-title-count")) $("wp-seo-title-count").textContent = `(${(art.seo_title || "").length}/60)`;
+      }
+      if ($("wp-field-meta-desc")) {
+        $("wp-field-meta-desc").value = art.meta_description || "";
+        if ($("wp-meta-desc-count")) $("wp-meta-desc-count").textContent = `(${(art.meta_description || "").length}/155)`;
+      }
+    } catch (err) {
+      console.error("renderWordPressArticle failed:", err);
     }
-    if ($("wp-field-meta-desc")) {
-      $("wp-field-meta-desc").value = art.meta_description || "";
-      if ($("wp-meta-desc-count")) $("wp-meta-desc-count").textContent = `(${(art.meta_description || "").length}/155)`;
-    }
+  }
   }
 
   /* ---------- STATIC SOCIAL POST RENDERER & MULTI-FORMAT CANVASES ---------- */
@@ -3130,9 +3146,9 @@
     });
   }
 
-  function openProjectInReview(id) {
-    loadPackage(id);
+  async function openProjectInReview(id) {
     switchView("review");
+    await loadPackage(id);
   }
 
   function openEditProjectModal(id) {

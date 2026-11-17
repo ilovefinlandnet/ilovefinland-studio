@@ -839,16 +839,29 @@ html, body {
 }
 
 .ver-btn {
-  border: 1px solid var(--border);
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
+  border: 1px solid #303B4D !important;
+  background: #162235 !important;
+  color: #CBD5E1 !important;
+  border-radius: 8px !important;
+  padding: 5px 12px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
 }
 
-.ver-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.ver-btn:hover {
+  background: #1C2B42 !important;
+  color: #FFFFFF !important;
+  border-color: #168BFF !important;
+}
+
+.ver-btn.active {
+  background: #003580 !important;
+  color: #FFFFFF !important;
+  border-color: #168BFF !important;
+  box-shadow: 0 0 8px rgba(22, 139, 255, 0.4) !important;
+}
 
 /* Section Quick Jump Nav Bar */
 .mobile-tabs {
