@@ -190,16 +190,16 @@
                 </div>
               </div>
 
-              <!-- Search & Filters Row (Compact Dark Toolbar) -->
-              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#0B0F16;padding:12px 14px;border:1px solid #303B4D;border-radius:10px;">
+              <!-- Search & Filters Row (Compact Single-Row Dark Toolbar) -->
+              <div class="studio-compact-toolbar">
                 <!-- Search Input -->
-                <div style="position:relative;flex:1;min-width:220px;">
-                  <input type="text" id="articles-search-input" placeholder="Search by headline, keyword, or ID..." style="width:100%;box-sizing:border-box;padding:8px 14px 8px 40px !important;border:1px solid #303B4D;border-radius:8px;font-size:0.875rem;background:#162235;color:#FFFFFF;" />
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <div class="search-wrap">
+                  <input type="text" id="articles-search-input" placeholder="Search by headline, keyword, or ID..." />
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </div>
 
                 <!-- Section Filter -->
-                <select id="articles-section-filter" class="form-select-sm" style="min-width:140px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
+                <select id="articles-section-filter">
                   <option value="all">All Sections</option>
                   <option value="News">News</option>
                   <option value="Finland Guide">Finland Guide</option>
@@ -211,7 +211,7 @@
                 </select>
 
                 <!-- Status Filter -->
-                <select id="articles-status-filter" class="form-select-sm" style="min-width:140px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
+                <select id="articles-status-filter">
                   <option value="all">All Statuses</option>
                   <option value="draft">Draft</option>
                   <option value="in_review">Ready for Review</option>
@@ -220,21 +220,21 @@
                 </select>
 
                 <!-- Language Filter -->
-                <select id="articles-lang-filter" class="form-select-sm" style="min-width:120px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
+                <select id="articles-lang-filter">
                   <option value="all">All Languages</option>
                   <option value="English">English</option>
                   <option value="Finnish">Finnish</option>
                 </select>
 
                 <!-- Sort Filter -->
-                <select id="articles-sort-filter" class="form-select-sm" style="min-width:130px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
+                <select id="articles-sort-filter">
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
                   <option value="title_asc">Title (A–Z)</option>
                 </select>
 
                 <!-- Refresh Button -->
-                <button type="button" id="btn-refresh-articles-posts" class="btn btn-ghost btn-sm" title="Refresh projects list" style="color:#B8C4D4;border:1px solid #303B4D;background:#162235;padding:8px 12px;border-radius:8px;">🔄</button>
+                <button type="button" id="btn-refresh-articles-posts" class="btn-toolbar-refresh" title="Refresh projects list">🔄</button>
               </div>
             </div>
 
@@ -266,52 +266,43 @@
               </div>
             </div>
 
-            <!-- 2. Compact Filters Toolbar -->
-            <div style="background:#0B0F16;padding:12px 14px;border-radius:10px;border:1px solid #303B4D;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-              <!-- Left: Scope Pills & Section Dropdown & Status Filter -->
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <!-- Scope Segmented Control: All | Finland | International -->
-                <div style="display:inline-flex;background:#162235;border:1px solid #303B4D;padding:3px;border-radius:8px;gap:2px;">
-                  <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:#003580;color:#fff;">All</button>
-                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">Finland</button>
-                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">International</button>
-                </div>
-
-                <!-- Website Section Dropdown -->
-                <select id="ideas-section-select" style="padding:7px 12px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;font-weight:600;color:#FFFFFF;background:#162235;cursor:pointer;min-width:140px;">
-                  <option value="all">All Sections</option>
-                  <option value="News">News</option>
-                  <option value="Finland Guide">Finland Guide</option>
-                  <option value="Things to Do">Things to Do</option>
-                  <option value="Travel">Travel</option>
-                  <option value="Food & Restaurants">Food &amp; Restaurants</option>
-                  <option value="Events">Events</option>
-                </select>
-
-                <!-- Status View Selector (Active Suggestions | Saved Stories | Dismissed) -->
-                <select id="ideas-status-select" style="padding:7px 12px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;font-weight:600;color:#FFFFFF;background:#162235;cursor:pointer;">
-                  <option value="suggested">Active Suggestions</option>
-                  <option value="saved">Saved Stories</option>
-                  <option value="dismissed">Dismissed (Archive)</option>
-                </select>
+            <!-- 2. Compact Single-Row Filters Toolbar -->
+            <div class="studio-compact-toolbar" style="margin-bottom:18px;">
+              <!-- Scope Segmented Control: All | Finland | International -->
+              <div style="display:inline-flex;background:#162235;border:1px solid #303B4D;padding:2px;border-radius:8px;gap:2px;flex:0 0 auto;">
+                <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all" style="padding:4px 10px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:#003580;color:#fff;">All</button>
+                <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland" style="padding:4px 10px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">Finland</button>
+                <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international" style="padding:4px 10px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">International</button>
               </div>
 
-              <!-- Right: Sort & Search -->
-              <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;min-width:280px;">
-                <!-- Sort Dropdown: Latest | Most Relevant -->
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <label for="ideas-sort-select" style="font-size:0.78rem;font-weight:600;color:#B8C4D4;">Sort:</label>
-                  <select id="ideas-sort-select" style="padding:7px 10px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;font-weight:600;color:#FFFFFF;background:#162235;cursor:pointer;">
-                    <option value="relevant">Most Relevant</option>
-                    <option value="latest">Latest</option>
-                  </select>
-                </div>
+              <!-- Website Section Dropdown -->
+              <select id="ideas-section-select">
+                <option value="all">All Sections</option>
+                <option value="News">News</option>
+                <option value="Finland Guide">Finland Guide</option>
+                <option value="Things to Do">Things to Do</option>
+                <option value="Travel">Travel</option>
+                <option value="Food & Restaurants">Food &amp; Restaurants</option>
+                <option value="Events">Events</option>
+              </select>
 
-                <!-- Search Input -->
-                <div style="position:relative;flex:1;max-width:320px;min-width:180px;">
-                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." style="width:100%;box-sizing:border-box;padding:7px 14px 7px 38px !important;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;background:#162235;color:#FFFFFF;" />
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
+              <!-- Status View Selector (Active Suggestions | Saved Stories | Dismissed) -->
+              <select id="ideas-status-select">
+                <option value="suggested">Active Suggestions</option>
+                <option value="saved">Saved Stories</option>
+                <option value="dismissed">Dismissed (Archive)</option>
+              </select>
+
+              <!-- Sort Dropdown -->
+              <select id="ideas-sort-select">
+                <option value="relevant">Most Relevant</option>
+                <option value="latest">Latest</option>
+              </select>
+
+              <!-- Search Input -->
+              <div class="search-wrap">
+                <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." />
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </div>
             </div>
 

@@ -125,19 +125,44 @@
       document.getElementById("reel-mobile-backdrop")?.addEventListener("click", () => this.closeMobileSheets());
       this.bindTimelineResizer();
 
-      // Media Uploads
+      // Media Uploads & Universal Drop Handling
       const dropzone = document.getElementById("reel-media-dropzone");
       const fileInput = document.getElementById("reel-media-file-input");
       dropzone?.addEventListener("click", () => fileInput?.click());
-      dropzone?.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.style.borderColor = "#38bdf8"; });
-      dropzone?.addEventListener("dragleave", (e) => { e.preventDefault(); dropzone.style.borderColor = "#475569"; });
-      dropzone?.addEventListener("drop", async (e) => {
-        e.preventDefault();
-        dropzone.style.borderColor = "#475569";
-        if (e.dataTransfer && e.dataTransfer.files) {
-          await this.handleMediaFilesUpload(Array.from(e.dataTransfer.files));
-        }
+
+      // Universal drag & drop upload: allow dropping photos/videos anywhere in the Reel Editor (dropzone, preview, timeline, drawer)
+      const uploadTargets = [
+        dropzone,
+        document.getElementById("drawer-panel-media"),
+        document.getElementById("reel-media-pool-items"),
+        document.getElementById("reel-preview-canvas"),
+        document.querySelector(".reel-center-preview"),
+        document.getElementById("reel-tracks-viewport"),
+        document.getElementById("lane-media"),
+        document.querySelector(".reel-bottom-timeline"),
+      ].filter(Boolean);
+
+      uploadTargets.forEach((el) => {
+        el.addEventListener("dragover", (e) => {
+          if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes("Files")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+            if (dropzone) dropzone.style.borderColor = "#38bdf8";
+          }
+        });
+        el.addEventListener("dragleave", (e) => {
+          if (dropzone) dropzone.style.borderColor = "#475569";
+        });
+        el.addEventListener("drop", async (e) => {
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (dropzone) dropzone.style.borderColor = "#475569";
+            await this.handleMediaFilesUpload(Array.from(e.dataTransfer.files));
+          }
+        });
       });
+
       fileInput?.addEventListener("change", async (e) => {
         if (e.target.files) {
           await this.handleMediaFilesUpload(Array.from(e.target.files));
@@ -695,6 +720,12 @@
               type: isImg ? "image" : "video",
               duration: isImg ? 3.5 : (res.duration || 5.0),
             };
+            if (isImg) {
+              const img = new Image();
+              img.src = item.url;
+              img.onload = () => this.render();
+              this.cachedImages[item.url] = img;
+            }
             pool.push(item);
             newlyUploaded.push(item);
             uploadedCount++;
@@ -869,7 +900,9 @@
       this.selectedTrack = "media";
       this.selectedId = newClip.id;
       this.recalculateTotalDuration();
-      this.seekTo(round1(tCursor + 0.05));
+      // Seek past any transition so the photo is 100% visible immediately on the preview canvas
+      const targetSeek = round2(tCursor + Math.min(0.5, dur / 2));
+      this.seekTo(targetSeek);
       this.pushState();
       this.renderTimeline();
       this.renderInspector();
@@ -1505,16 +1538,29 @@
     bindTrimHandle(handleEl, targetType, targetObj, isLeft, blockEl) {
       if (!handleEl || !blockEl) return;
 
+      handleEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+
       const onStart = (e) => {
         e.stopPropagation();
         if (e.cancelable) e.preventDefault();
         const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
         const startX = clientX;
-        const totalDur = this.getTotalDuration();
 
-        let origStart = targetObj.start_sec || 0;
-        let origEnd = targetObj.end_sec || (origStart + (targetObj.duration || 5));
-        let origDur = targetObj.duration || (origEnd - origStart);
+        const origStart = targetObj.start_sec || 0;
+        const origEnd = targetObj.end_sec || (origStart + (targetObj.duration || 5));
+        const origDur = targetObj.duration || (origEnd - origStart);
+
+        // Snapshot subsequent clips for media right-edge trim to avoid cumulative drift
+        const clips = (targetType === "media" && !isLeft) ? (this.currentProject.timeline.tracks.media || []) : [];
+        const idx = clips.indexOf(targetObj);
+        const subSnapshots = [];
+        if (idx !== -1) {
+          for (let i = idx + 1; i < clips.length; i++) {
+            subSnapshots.push({ clip: clips[i], origStart: clips[i].start_sec, origEnd: clips[i].end_sec });
+          }
+        }
 
         blockEl.classList.add("is-trimming");
 
@@ -1528,18 +1574,23 @@
               const newDur = Math.max(0.5, Math.min(30.0, round2(origDur + deltaSec)));
               targetObj.duration = newDur;
               targetObj.end_sec = round2(targetObj.start_sec + newDur);
+              targetObj.src_out = round2((targetObj.src_in || 0) + newDur);
               blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
 
-              // Shift subsequent clips visually without DOM re-creation
-              const clips = this.currentProject.timeline.tracks.media || [];
-              const idx = clips.indexOf(targetObj);
+              // Shift subsequent clips visually using fixed snapshot deltas
               const diff = newDur - origDur;
-              for (let i = idx + 1; i < clips.length; i++) {
-                clips[i].start_sec = round2(clips[i].start_sec + diff);
-                clips[i].end_sec = round2(clips[i].end_sec + diff);
-                const nextBlock = this.laneMedia.querySelector(`.reel-clip-block[data-id="${clips[i].id}"]`);
-                if (nextBlock) nextBlock.style.left = `${clips[i].start_sec * this.zoomPxPerSec}px`;
+              for (const sub of subSnapshots) {
+                sub.clip.start_sec = round2(sub.origStart + diff);
+                sub.clip.end_sec = round2(sub.origEnd + diff);
+                const nextBlock = this.laneMedia.querySelector(`.reel-clip-block[data-id="${sub.clip.id}"]`);
+                if (nextBlock) nextBlock.style.left = `${sub.clip.start_sec * this.zoomPxPerSec}px`;
               }
+
+              // Live update inspector inputs if currently visible
+              const durSlider = document.getElementById("prop-slider-photodur");
+              if (durSlider) durSlider.value = newDur;
+              const durText = document.getElementById("prop-val-photodur");
+              if (durText) durText.textContent = `${newDur}s`;
             } else {
               const newStart = Math.max(0, round2(origStart + deltaSec));
               const newDur = Math.max(0.5, round2(origEnd - newStart));
@@ -1568,6 +1619,7 @@
             } else {
               const newDur = Math.max(0.5, round2(origDur + deltaSec));
               targetObj.duration = newDur;
+              targetObj.end_sec = round2((targetObj.start_sec || 0) + newDur);
               blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
             }
           }
@@ -2046,9 +2098,20 @@
         this.renderOutroCard(ctx, outro);
       } else {
         // 1. Render Current Media Clip
-        const currentClip = mediaClips.find((c) => t >= c.start_sec && t <= c.end_sec) || mediaClips[0];
+        const currentClipIndex = mediaClips.findIndex((c) => t >= c.start_sec && t <= c.end_sec);
+        const currentClip = currentClipIndex >= 0 ? mediaClips[currentClipIndex] : mediaClips[0];
         if (currentClip && currentClip.url) {
-          this.drawMediaClip(ctx, currentClip, t);
+          // If in transition during active playback, draw outgoing clip underneath so dissolve blends seamlessly
+          if (this.isPlaying && currentClipIndex > 0 && currentClip.transition_in && currentClip.transition_in !== "none") {
+            const transDur = currentClip.transition_duration || 0.5;
+            if (t < currentClip.start_sec + transDur) {
+              const prevClip = mediaClips[currentClipIndex - 1];
+              if (prevClip && prevClip.url) {
+                this.drawMediaClip(ctx, prevClip, t, false);
+              }
+            }
+          }
+          this.drawMediaClip(ctx, currentClip, t, true);
         }
 
         // 2. Render Text Overlays
@@ -2113,16 +2176,16 @@
       }
     }
 
-    drawMediaClip(ctx, clip, t) {
+    drawMediaClip(ctx, clip, t, applyTrans = true) {
       const isVideo = clip.type === "video" || /\.(mp4|mov|webm)$/i.test(clip.url);
       const transDur = clip.transition_duration || 0.5;
 
       const applyTransition = () => {
-        if (clip.transition_in && clip.transition_in !== "none" && t < clip.start_sec + transDur) {
+        // Crucial fix: Only apply transition transparency during active playback!
+        // When paused / scrubbing / editing a frame, always display the photo at full visibility!
+        if (applyTrans && this.isPlaying && clip.transition_in && clip.transition_in !== "none" && t < clip.start_sec + transDur) {
           const p = Math.min(1.0, Math.max(0.0, (t - clip.start_sec) / transDur));
-          if (clip.transition_in === "fade" || clip.transition_in === "fade_black") {
-            ctx.globalAlpha = p;
-          } else if (clip.transition_in === "dissolve") {
+          if (clip.transition_in === "fade" || clip.transition_in === "fade_black" || clip.transition_in === "dissolve") {
             ctx.globalAlpha = p;
           } else if (clip.transition_in === "slide_left") {
             const slideOffset = (1.0 - p) * CANVAS_W;
@@ -2186,6 +2249,12 @@
         img = new Image();
         img.src = clip.url;
         img.onload = () => this.render();
+        img.onerror = () => {
+          console.warn("Failed to load image, using fallback:", clip.url);
+          if (clip.url !== "/assets/sample-clips/tesla-clean-bg.jpg") {
+            img.src = "/assets/sample-clips/tesla-clean-bg.jpg";
+          }
+        };
         this.cachedImages[clip.url] = img;
         return;
       }
@@ -3251,7 +3320,10 @@
 
   // Helpers
   function round1(num) {
-    return Math.round(num * 10.0) / 10.0;
+    return Math.round(Number(num) * 10.0) / 10.0;
+  }
+  function round2(num) {
+    return Math.round((Number(num) + Number.EPSILON) * 100.0) / 100.0;
   }
   function formatSec(sec) {
     const s = Math.floor(sec || 0);

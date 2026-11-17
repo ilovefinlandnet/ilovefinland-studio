@@ -38,14 +38,18 @@ class TestTimelineStretchingAndIcons(unittest.TestCase):
         js = REEL_JS.read_text(encoding="utf-8")
         # Auto-add newly uploaded media items
         self.assertIn("newlyUploaded.forEach((item) => this.addMediaItemToTimeline(item))", js)
-        # Seeks playhead directly to newly added clip so preview renders it immediately
-        self.assertIn("this.seekTo(round1(tCursor + 0.05))", js)
+        # Seeks playhead directly into newly added clip so preview renders it immediately past any transition
+        self.assertIn("this.seekTo(targetSeek)", js)
+        # Preloads uploaded image directly
+        self.assertIn("this.cachedImages[item.url] = img", js)
         # Clicking media pool card adds to timeline
         self.assertIn("container.querySelectorAll(\".reel-media-pool-card\").forEach((card) => {", js)
         self.assertIn("if (pool[idx]) this.addMediaItemToTimeline(pool[idx]);", js)
 
     def test_timeline_stretching_and_clip_moving_all_tracks(self):
         js = REEL_JS.read_text(encoding="utf-8")
+        # round2 helper function defined to prevent runtime ReferenceErrors during dragging
+        self.assertIn("function round2(num)", js)
         # Non-destructive trim handle update
         self.assertIn("blockEl.classList.add(\"is-trimming\")", js)
         self.assertIn("blockEl.style.width =", js)
@@ -64,10 +68,19 @@ class TestTimelineStretchingAndIcons(unittest.TestCase):
 
     def test_trim_handles_css(self):
         css = REEL_CSS.read_text(encoding="utf-8")
-        self.assertIn("cursor: col-resize", css)
-        self.assertIn("width: 14px", css)
-        self.assertIn("z-index: 25", css)
-        self.assertIn("touch-action: none", css)
+        self.assertIn("cursor: ew-resize !important", css)
+        self.assertIn("width: 16px", css)
+        self.assertIn("z-index: 50", css)
+        self.assertIn("touch-action: none !important", css)
+
+    def test_compact_toolbars_across_pages(self):
+        html = INDEX_HTML.read_text(encoding="utf-8")
+        # Compact toolbar in Articles & Posts
+        self.assertIn('class="studio-compact-toolbar"', html)
+        self.assertIn('id="articles-search-input"', html)
+        # Compact toolbar in Article Suggestions
+        self.assertIn('id="ideas-search-input"', html)
+        self.assertIn('filter-idea-scope', html)
 
 
 if __name__ == "__main__":
