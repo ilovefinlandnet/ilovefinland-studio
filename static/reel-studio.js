@@ -41,6 +41,7 @@
     init() {
       this.bindElements();
       this.bindEvents();
+      this.loadHubProjects();
     }
 
     bindElements() {
@@ -358,25 +359,39 @@
     }
 
     async createNewProject(title = "New Blank Reel") {
+      const btn = document.getElementById("btn-reel-hub-new");
+      const origHtml = btn ? btn.innerHTML : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">⏳ <span>Creating Blank Reel…</span></span>`;
+      }
       try {
-        const res = await (await fetch("/api/reel/project/new", {
+        const response = await fetch("/api/reel/project/new", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title }),
-        })).json();
-        if (res.project) {
-          await this.openProject(res.project.id);
+        });
+        const res = await response.json();
+        if (!response.ok || !res.project) {
+          throw new Error(res.error || `Server error (status ${response.status})`);
         }
+        await this.openProject(res.project.id);
       } catch (err) {
         alert(`Failed to create project: ${err.message}`);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
       }
     }
 
     async openProject(id) {
-      if (!this.editorScreen || !this.canvas) this.bindElements();
+      this.bindElements();
       try {
-        const res = await (await fetch(`/api/reel/project?id=${id}`)).json();
-        if (!res.project) throw new Error("Project not found");
+        const response = await fetch(`/api/reel/project?id=${id}`);
+        const res = await response.json();
+        if (!response.ok || !res.project) throw new Error(res.error || `Project #${id} not found`);
         this.currentProject = res.project;
         this.undoStack = [];
         this.redoStack = [];

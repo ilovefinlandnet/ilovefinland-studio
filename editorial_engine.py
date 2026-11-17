@@ -3099,7 +3099,32 @@ def build_wordpress_article(
     if custom_photo and custom_photo.get("url"):
         featured_photo = copy.deepcopy(custom_photo)
     else:
-        featured_photo = search_editorial_photos(topic, instructions, category, section=section)
+        # User has not uploaded or selected a picture:
+        # Display "No Image Uploaded" with a clean placeholder.
+        # Do not automatically insert random, old, demo, or unrelated images.
+        featured_photo = {
+            "id": "",
+            "title": "No Image Uploaded",
+            "url": "",
+            "download_jpeg": "",
+            "download_png": "",
+            "download_webp": "",
+            "file_size_mb": 0.0,
+            "resolution": "Not set",
+            "quality_score": 0,
+            "crop_suitability": "No image uploaded yet",
+            "photographer": "",
+            "agency": "",
+            "source_url": "",
+            "original_source_url": "",
+            "licence": "",
+            "licence_url": "",
+            "credit_string": "No Image Uploaded",
+            "alt_text": "No image uploaded",
+            "caption": "",
+            "status": "missing",
+            "data_label": "none",
+        }
     seo_data = generate_search_phrase_and_seo(topic, section, category, language=language)
     prior_coverage = check_prior_coverage(topic, instructions, studio_titles=studio_titles)
     internal_links = get_internal_links_for_story(topic, section, category)
@@ -3564,7 +3589,7 @@ def build_static_social_post(
         if tags_str and tags_str not in caption:
             caption = f"{caption.strip()}\n\n{tags_str}"
 
-    photo_url = featured_image.get("url") or "/assets/ai-generated/ilf_ai_nano-banana-pro_4x5_208ae1cccd4f.jpg"
+    photo_url = featured_image.get("url") or ""
 
     return {
         "post_type": "static_graphic",
@@ -3573,8 +3598,8 @@ def build_static_social_post(
         "height": 1350,
         "template_style": "ilf_approved_news",
         "photo_url": photo_url,
-        "photo_credit": featured_image.get("credit_string") or featured_image.get("photographer") or "Editorial Rights Cleared",
-        "photo_licence": featured_image.get("licence") or "Verified Reuse Rights",
+        "photo_credit": (featured_image.get("credit_string") or featured_image.get("photographer") or "Editorial Rights Cleared") if photo_url else "",
+        "photo_licence": (featured_image.get("licence") or "Verified Reuse Rights") if photo_url else "",
         # Exact original heart logo with fully restored opaque white river, mountain, dot & transparent outside
         "logo_url": "/assets/ilf-heart-exact.png",
         "logo_outlined_url": "/assets/ilf-heart-outlined.png",

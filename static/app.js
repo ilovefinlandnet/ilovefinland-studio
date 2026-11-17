@@ -404,9 +404,39 @@
     return "Ready for Review";
   }
 
+  /* ---------- WORKSPACE TAB SWITCHER (ARTICLE vs SOCIAL POST) ---------- */
+  let currentReviewWorkspaceTab = "article";
+
+  function switchReviewWorkspaceTab(tabName) {
+    if (!tabName) tabName = "article";
+    currentReviewWorkspaceTab = tabName;
+
+    const tabArt = $("tab-btn-article");
+    const tabIg = $("tab-btn-ig");
+    const panelArt = $("panel-article");
+    const panelIg = $("panel-ig");
+
+    if (tabArt) tabArt.classList.toggle("active", tabName === "article");
+    if (tabIg) tabIg.classList.toggle("active", tabName === "ig");
+
+    if (panelArt) {
+      panelArt.classList.toggle("active-tab-panel", tabName === "article");
+      panelArt.classList.toggle("hidden", tabName !== "article");
+    }
+    if (panelIg) {
+      panelIg.classList.toggle("active-tab-panel", tabName === "ig");
+      panelIg.classList.toggle("hidden", tabName !== "ig");
+    }
+
+    if (tabName === "ig" && currentStaticPost) {
+      drawStaticPostCanvases(currentStaticPost);
+    }
+  }
+
   /* ---------- REVIEW RENDERER ---------- */
   function renderReview() {
     if (!bundle) return;
+    switchReviewWorkspaceTab(currentReviewWorkspaceTab);
     const pkg = bundle.package;
     const curVerNum = selectedVersion || pkg.current_version;
     const v = bundle.versions.find((item) => item.version === curVerNum) || bundle.versions[bundle.versions.length - 1];
@@ -666,24 +696,23 @@
       codeArea.value = art.body_html || "";
     }
 
-    // Section 3: Featured Image
+    // Section 3: Featured Image (Clean Missing Image Handling)
     const featImg = art.featured_image || {};
+    const hasImage = Boolean(featImg && featImg.url && featImg.url.trim() && featImg.status !== "missing");
     const imgPrev = $("wp-feat-img-preview");
-    if (imgPrev) {
-      const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
-      const imgUrl = featImg.url || "/assets/helsinki-sample.jpg";
-      imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
-    }
-
+    const imgWrap = $("wp-feat-img-wrap");
+    const emptyCard = $("wp-feat-img-empty");
     const flagBanner = $("wp-photo-flag-banner");
     const featBadge = $("feat-img-status-badge");
-    if (featImg.status === "flagged_no_license") {
-      flagBanner?.classList.remove("hidden");
-      if (featBadge) {
-        featBadge.className = "badge badge-alert";
-        featBadge.textContent = "Missing Cleared Photo — Upload Needed";
+
+    if (hasImage) {
+      if (imgWrap) imgWrap.classList.remove("hidden");
+      if (emptyCard) emptyCard.classList.add("hidden");
+      if (imgPrev) {
+        const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
+        const imgUrl = featImg.url;
+        imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
       }
-    } else {
       flagBanner?.classList.add("hidden");
       if (featBadge) {
         if (featImg.data_label === "sample") {
@@ -694,19 +723,28 @@
           featBadge.textContent = `Licence read from source metadata (${featImg.licence || "see credit"})`;
         }
       }
+    } else {
+      if (imgWrap) imgWrap.classList.add("hidden");
+      if (emptyCard) emptyCard.classList.remove("hidden");
+      if (imgPrev) imgPrev.src = "";
+      flagBanner?.classList.add("hidden");
+      if (featBadge) {
+        featBadge.className = "badge badge-alert";
+        featBadge.textContent = "⚠️ No Image Uploaded — Image Required";
+      }
     }
 
     const webpBtn = $("btn-dl-webp");
-    if (webpBtn) webpBtn.classList.toggle("hidden", !featImg.download_webp);
-    if ($("wp-field-img-alt")) $("wp-field-img-alt").value = featImg.alt_text || art.image_alt_text || "";
-    if ($("wp-field-img-caption")) $("wp-field-img-caption").value = featImg.caption || art.image_caption || "";
-    if ($("wp-field-img-credit")) $("wp-field-img-credit").value = featImg.credit_string || art.image_credit || "";
-    if ($("wp-photo-photographer")) $("wp-photo-photographer").textContent = featImg.photographer ? `${featImg.photographer}${featImg.agency ? ` (${featImg.agency})` : ""}` : "Verified Contributor";
+    if (webpBtn) webpBtn.classList.toggle("hidden", !hasImage || !featImg.download_webp);
+    if ($("wp-field-img-alt")) $("wp-field-img-alt").value = hasImage ? (featImg.alt_text || art.image_alt_text || "") : "";
+    if ($("wp-field-img-caption")) $("wp-field-img-caption").value = hasImage ? (featImg.caption || art.image_caption || "") : "";
+    if ($("wp-field-img-credit")) $("wp-field-img-credit").value = hasImage ? (featImg.credit_string || art.image_credit || "") : "";
+    if ($("wp-photo-photographer")) $("wp-photo-photographer").textContent = hasImage ? (featImg.photographer ? `${featImg.photographer}${featImg.agency ? ` (${featImg.agency})` : ""}` : "Verified Contributor") : "No Image Uploaded";
     if ($("wp-photo-source-link")) {
-      $("wp-photo-source-link").textContent = featImg.source_url || featImg.original_source_url || "—";
-      $("wp-photo-source-link").href = featImg.source_url || featImg.original_source_url || "#";
+      $("wp-photo-source-link").textContent = hasImage ? (featImg.source_url || featImg.original_source_url || "—") : "—";
+      $("wp-photo-source-link").href = hasImage ? (featImg.source_url || featImg.original_source_url || "#") : "#";
     }
-    if ($("wp-photo-licence")) $("wp-photo-licence").textContent = featImg.licence || "Editorial Rights Cleared";
+    if ($("wp-photo-licence")) $("wp-photo-licence").textContent = hasImage ? (featImg.licence || "Editorial Rights Cleared") : "None";
 
     // Remaining fields in exact order
     if ($("wp-field-region")) $("wp-field-region").value = art.region || "Finland";
@@ -792,12 +830,35 @@
     currentStaticPost = ig;
 
     // Strict Image Synchronisation:
-    // When the article has a featured image, ensure the static post graphic uses that exact photo
+    // When the article has an authentic featured image, sync it with the static post.
     const featUrl = article?.featured_image?.url || (currentPackageBundle?.versions?.find(v => v.version === (selectedVersion || currentPackageBundle.package.current_version))?.article?.featured_image?.url);
-    if (featUrl && (!ig.photo_url || ig.photo_url.includes("tesla") || ig.photo_url.includes("sample-clips") || !ig.photo_url.trim())) {
-      ig.photo_url = featUrl;
-      ig.photo_credit = article?.featured_image?.credit_string || article?.image_credit || ig.photo_credit;
-      ig.photo_licence = article?.featured_image?.licence || ig.photo_licence;
+    const hasFeat = Boolean(featUrl && featUrl.trim() && article?.featured_image?.status !== "missing");
+    if (hasFeat) {
+      if (!ig.photo_url || ig.photo_url.includes("tesla") || ig.photo_url.includes("sample-clips") || ig.photo_url.includes("helsinki-sample") || !ig.photo_url.trim()) {
+        ig.photo_url = featUrl;
+        ig.photo_credit = article?.featured_image?.credit_string || article?.image_credit || ig.photo_credit;
+        ig.photo_licence = article?.featured_image?.licence || ig.photo_licence;
+      }
+    } else {
+      // If no authentic image was uploaded, do not insert demo or unrelated photos
+      if (ig.photo_url && (ig.photo_url.includes("tesla") || ig.photo_url.includes("sample-clips") || ig.photo_url.includes("helsinki-sample"))) {
+        ig.photo_url = "";
+      }
+    }
+
+    const hasPhoto = Boolean(ig.photo_url && ig.photo_url.trim());
+    const noImgBanner = $("static-no-image-banner");
+    if (noImgBanner) noImgBanner.classList.toggle("hidden", hasPhoto);
+
+    const photoBadge = $("static-photo-status-badge");
+    if (photoBadge) {
+      photoBadge.className = hasPhoto ? "badge badge-check" : "badge badge-alert";
+      photoBadge.textContent = hasPhoto ? "Photo Attached" : "No Photo";
+    }
+
+    const photoNameEl = $("static-post-photo-name");
+    if (photoNameEl) {
+      photoNameEl.textContent = hasPhoto ? (ig.photo_url.split("/").pop() || "Photo Attached") : "No photo uploaded";
     }
 
     // Always include hashtags at the end of caption so 1 click copies everything
@@ -854,52 +915,94 @@
     const safeLeft = w * 0.085; // 92px
     const maxTextWidth = 860;   // Leaves >= 60px breathing room inside 3:4 crop
 
-    // 1. Load background photo
-    const photoImg = new Image();
-    photoImg.crossOrigin = "anonymous";
-    photoImg.src = ig.photo_url || "/assets/helsinki-sample.jpg";
-    photoImg.onload = () => {
-      // Draw photo cover
+    const renderCanvases = (photoImg, hasPhoto) => {
       ctx45.clearRect(0, 0, w, h);
-      const imgAspect = photoImg.width / photoImg.height;
-      const canvasAspect = w / h;
-      let drawW, drawH, drawX, drawY;
-      if (imgAspect > canvasAspect) {
-        drawH = h;
-        drawW = h * imgAspect;
-        drawX = (w - drawW) / 2;
-        drawY = 0;
+
+      let imgAspect = 1.0;
+      if (hasPhoto && photoImg) {
+        imgAspect = photoImg.width / photoImg.height;
+        const canvasAspect = w / h;
+        let drawW, drawH, drawX, drawY;
+        if (imgAspect > canvasAspect) {
+          drawH = h;
+          drawW = h * imgAspect;
+          drawX = (w - drawW) / 2;
+          drawY = 0;
+        } else {
+          drawW = w;
+          drawH = w / imgAspect;
+          drawX = 0;
+          drawY = (h - drawH) / 2;
+        }
+        ctx45.drawImage(photoImg, drawX, drawY, drawW, drawH);
+
+        // Dark navy bottom gradient scrim
+        const grad = ctx45.createLinearGradient(0, h * 0.44, 0, h);
+        grad.addColorStop(0, "rgba(11, 26, 44, 0)");
+        grad.addColorStop(0.30, "rgba(11, 26, 44, 0.60)");
+        grad.addColorStop(0.65, "rgba(11, 26, 44, 0.90)");
+        grad.addColorStop(1.0, "rgba(11, 26, 44, 0.98)");
+        ctx45.fillStyle = grad;
+        ctx45.fillRect(0, 0, w, h);
       } else {
-        drawW = w;
-        drawH = w / imgAspect;
-        drawX = 0;
-        drawY = (h - drawH) / 2;
+        // --- CLEAN PLACEHOLDER FOR NO IMAGE UPLOADED ---
+        const bgGrad = ctx45.createLinearGradient(0, 0, 0, h);
+        bgGrad.addColorStop(0, "#0a192f");
+        bgGrad.addColorStop(1, "#1e293b");
+        ctx45.fillStyle = bgGrad;
+        ctx45.fillRect(0, 0, w, h);
+
+        // Dashed center frame indicating image slot
+        ctx45.save();
+        ctx45.strokeStyle = "rgba(148, 163, 184, 0.45)";
+        ctx45.lineWidth = 3;
+        ctx45.setLineDash([12, 10]);
+        if (typeof ctx45.roundRect === "function") {
+          ctx45.beginPath();
+          ctx45.roundRect(140, 260, 800, 360, 20);
+          ctx45.stroke();
+        } else {
+          ctx45.strokeRect(140, 260, 800, 360);
+        }
+        ctx45.restore();
+
+        // Icon & text
+        ctx45.save();
+        ctx45.textAlign = "center";
+        ctx45.font = "64px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx45.fillText("📷", 540, 390);
+
+        ctx45.font = "bold 38px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx45.fillStyle = "#ffffff";
+        ctx45.fillText("No Image Uploaded", 540, 460);
+
+        ctx45.font = "24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx45.fillStyle = "#94a3b8";
+        ctx45.fillText("Upload a photo to complete your post", 540, 510);
+        ctx45.restore();
+
+        // Bottom gradient for typography contrast
+        const grad = ctx45.createLinearGradient(0, h * 0.46, 0, h);
+        grad.addColorStop(0, "rgba(10, 25, 47, 0)");
+        grad.addColorStop(0.35, "rgba(10, 25, 47, 0.7)");
+        grad.addColorStop(1.0, "rgba(10, 25, 47, 0.98)");
+        ctx45.fillStyle = grad;
+        ctx45.fillRect(0, 0, w, h);
       }
-      ctx45.drawImage(photoImg, drawX, drawY, drawW, drawH);
 
-      // 2. Draw dark navy bottom gradient scrim (covers text area richly)
-      const grad = ctx45.createLinearGradient(0, h * 0.44, 0, h);
-      grad.addColorStop(0, "rgba(11, 26, 44, 0)");
-      grad.addColorStop(0.30, "rgba(11, 26, 44, 0.60)");
-      grad.addColorStop(0.65, "rgba(11, 26, 44, 0.90)");
-      grad.addColorStop(1.0, "rgba(11, 26, 44, 0.98)");
-      ctx45.fillStyle = grad;
-      ctx45.fillRect(0, 0, w, h);
-
-      // 3. Draw Heart Logo (Original transparent asset with opaque white river & elements)
-      const logoImg = new Image();
-      logoImg.crossOrigin = "anonymous";
-      logoImg.src = ig.logo_url || "/assets/ilf-heart-exact.png";
-      logoImg.onload = () => {
+      // Draw Logo, Badges, Headlines, CTA
+      const drawOverlay = (logoImg) => {
         const logoSize = 130;
         const logoX = safeLeft;
         const logoY = h * 0.075;
 
-        ctx45.save();
-        ctx45.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-        ctx45.restore();
+        if (logoImg) {
+          ctx45.save();
+          ctx45.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+          ctx45.restore();
+        }
 
-        // 4. Headline Lines (supports 2 to 3 lines) + Optional Website CTA Line
+        // Headline Lines (supports 2 to 3 lines) + Optional Website CTA Line
         const line1 = (ig.headline_line1 || "").trim();
         const line2 = (ig.headline_line2 || "").trim();
         const line3 = (ig.headline_line3 || "").trim();
@@ -914,7 +1017,7 @@
         const scaleVal = parseInt(ig.line2_font_size || ig.line1_font_size || 32, 10);
         const fontScale = Math.max(0.6, Math.min(1.6, scaleVal / 32.0));
 
-        // 5. Draw Category Badge (#003882) positioned above headlines - SCALES ALL PROPORTIONALLY
+        // Category Badge (#003882) positioned above headlines
         const badgeText = (ig.badge_text || "NEWS").toUpperCase();
         const badgeFontSize = Math.round(28 * fontScale);
         ctx45.font = `bold ${badgeFontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
@@ -927,22 +1030,24 @@
 
         // Base headline font sizes scaled proportionally for all lines
         const baseLineSize = Math.round(48 * fontScale);
-        const baseEmphasisSize = Math.round(52 * fontScale);
         const lineGap = Math.round(12 * fontScale);
 
-        // Keep all headlines and badge comfortably at the exact original vertical baseline
         const estimatedHeadlinesHeight = (has3Lines ? 3 : 2) * (baseLineSize + lineGap) + bH + Math.round(40 * fontScale);
         const badgeY = Math.min(h * 0.94 - estimatedHeadlinesHeight, has3Lines ? h * 0.63 : h * 0.69);
 
         ctx45.fillStyle = ig.badge_color || "#003882";
         ctx45.beginPath();
-        ctx45.roundRect(badgeX, badgeY, bW, bH, Math.max(6, Math.round(10 * fontScale)));
+        if (typeof ctx45.roundRect === "function") {
+          ctx45.roundRect(badgeX, badgeY, bW, bH, Math.max(6, Math.round(10 * fontScale)));
+        } else {
+          ctx45.rect(badgeX, badgeY, bW, bH);
+        }
         ctx45.fill();
 
         ctx45.fillStyle = "#ffffff";
         ctx45.fillText(badgeText, badgeX + bPadH, badgeY + bH - bPadV - Math.round(4 * fontScale));
 
-        // 6. Draw Headline Lines within Safety Zone - UNIFIED FONT SIZE ACROSS LINES 1, 2, 3
+        // Headline Lines within Safety Zone - UNIFIED FONT SIZE
         let currentY = badgeY + bH + Math.round(44 * fontScale);
 
         ctx45.save();
@@ -950,26 +1055,21 @@
         ctx45.shadowBlur = Math.round(8 * fontScale);
         ctx45.shadowOffsetY = 2;
 
-        // Unified font size: All lines 1, 2, and 3 have the EXACT same font size!
         const fit1 = fitHeadlineFontSize(ctx45, line1, baseLineSize, maxTextWidth);
         const fit2 = fitHeadlineFontSize(ctx45, line2, baseLineSize, maxTextWidth);
         const fit3 = has3Lines ? fitHeadlineFontSize(ctx45, line3, baseLineSize, maxTextWidth) : fit2;
         const unifiedSize = has3Lines ? Math.min(fit1, fit2, fit3) : Math.min(fit1, fit2);
 
         if (has3Lines) {
-          // --- 3-LINE LAYOUT (All 3 lines share the exact same font size!) ---
-          // Line 1: White Bold
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx45.fillStyle = "#ffffff";
           ctx45.fillText(line1, badgeX, currentY);
 
-          // Line 2: White Bold
           currentY += unifiedSize + lineGap;
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx45.fillStyle = "#ffffff";
           ctx45.fillText(line2, badgeX, currentY);
 
-          // Line 3: Electric Blue Emphasis (Exact same size as 1 & 2!)
           currentY += unifiedSize + lineGap;
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx45.fillStyle = "#00A3FF";
@@ -977,13 +1077,10 @@
           ctx45.shadowBlur = Math.round(10 * fontScale);
           ctx45.fillText(line3, badgeX, currentY);
         } else {
-          // --- 2-LINE LAYOUT (Both lines share the exact same font size!) ---
-          // Line 1: White Bold
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx45.fillStyle = "#ffffff";
           ctx45.fillText(line1, badgeX, currentY);
 
-          // Line 2: Electric Blue Emphasis
           currentY += unifiedSize + lineGap + 4;
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx45.fillStyle = "#00A3FF";
@@ -992,7 +1089,6 @@
           ctx45.fillText(line2, badgeX, currentY);
         }
 
-        // 7. Optional Website CTA / Footer Line (White by Default, or Electric Blue)
         if (hasCta) {
           currentY += unifiedSize + Math.round(20 * fontScale);
           const ctaSize = Math.max(16, Math.round(unifiedSize * 0.50));
@@ -1019,36 +1115,54 @@
           const fbH = 630;
           ctxFb.clearRect(0, 0, fbW, fbH);
 
-          // Draw cover photo
-          const fbAspect = fbW / fbH;
-          let fbDrawW, fbDrawH, fbDrawX, fbDrawY;
-          if (imgAspect > fbAspect) {
-            fbDrawH = fbH;
-            fbDrawW = fbH * imgAspect;
-            fbDrawX = (fbW - fbDrawW) / 2;
-            fbDrawY = 0;
+          if (hasPhoto && photoImg) {
+            const fbAspect = fbW / fbH;
+            let fbDrawW, fbDrawH, fbDrawX, fbDrawY;
+            if (imgAspect > fbAspect) {
+              fbDrawH = fbH;
+              fbDrawW = fbH * imgAspect;
+              fbDrawX = (fbW - fbDrawW) / 2;
+              fbDrawY = 0;
+            } else {
+              fbDrawW = fbW;
+              fbDrawH = fbW / imgAspect;
+              fbDrawX = 0;
+              fbDrawY = (fbH - fbDrawH) / 2;
+            }
+            ctxFb.drawImage(photoImg, fbDrawX, fbDrawY, fbDrawW, fbDrawH);
+
+            const fbGrad = ctxFb.createLinearGradient(0, fbH * 0.35, 0, fbH);
+            fbGrad.addColorStop(0, "rgba(11, 26, 44, 0)");
+            fbGrad.addColorStop(0.35, "rgba(11, 26, 44, 0.65)");
+            fbGrad.addColorStop(0.70, "rgba(11, 26, 44, 0.90)");
+            fbGrad.addColorStop(1.0, "rgba(11, 26, 44, 0.98)");
+            ctxFb.fillStyle = fbGrad;
+            ctxFb.fillRect(0, 0, fbW, fbH);
           } else {
-            fbDrawW = fbW;
-            fbDrawH = fbW / imgAspect;
-            fbDrawX = 0;
-            fbDrawY = (fbH - fbDrawH) / 2;
+            const fbBgGrad = ctxFb.createLinearGradient(0, 0, 0, fbH);
+            fbBgGrad.addColorStop(0, "#0a192f");
+            fbBgGrad.addColorStop(1, "#1e293b");
+            ctxFb.fillStyle = fbBgGrad;
+            ctxFb.fillRect(0, 0, fbW, fbH);
+
+            ctxFb.save();
+            ctxFb.strokeStyle = "rgba(148, 163, 184, 0.3)";
+            ctxFb.lineWidth = 2;
+            ctxFb.setLineDash([8, 8]);
+            ctxFb.strokeRect(280, 40, 640, 180);
+            ctxFb.restore();
+
+            ctxFb.font = "bold 24px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            ctxFb.fillStyle = "#F8FAFC";
+            ctxFb.textAlign = "center";
+            ctxFb.fillText("📷 No Image Uploaded", 600, 135);
+            ctxFb.textAlign = "start";
           }
-          ctxFb.drawImage(photoImg, fbDrawX, fbDrawY, fbDrawW, fbDrawH);
 
-          // Navy gradient scrim (protects text contrast)
-          const fbGrad = ctxFb.createLinearGradient(0, fbH * 0.35, 0, fbH);
-          fbGrad.addColorStop(0, "rgba(11, 26, 44, 0)");
-          fbGrad.addColorStop(0.35, "rgba(11, 26, 44, 0.65)");
-          fbGrad.addColorStop(0.70, "rgba(11, 26, 44, 0.90)");
-          fbGrad.addColorStop(1.0, "rgba(11, 26, 44, 0.98)");
-          ctxFb.fillStyle = fbGrad;
-          ctxFb.fillRect(0, 0, fbW, fbH);
+          if (logoImg) {
+            ctxFb.drawImage(logoImg, 60, 36, 80, 80);
+          }
 
-          // Heart logo top left
-          const fbLogoSize = 80;
-          ctxFb.drawImage(logoImg, 60, 36, fbLogoSize, fbLogoSize);
-
-          // Category Badge scaled
           const fbBadgeFontSize = Math.round(22 * fontScale);
           const fbBH = Math.round(36 * fontScale);
           ctxFb.font = `bold ${fbBadgeFontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
@@ -1058,12 +1172,15 @@
 
           ctxFb.fillStyle = ig.badge_color || "#003882";
           ctxFb.beginPath();
-          ctxFb.roundRect(60, fbBadgeY, fbBW, fbBH, Math.max(4, Math.round(8 * fontScale)));
+          if (typeof ctxFb.roundRect === "function") {
+            ctxFb.roundRect(60, fbBadgeY, fbBW, fbBH, Math.max(4, Math.round(8 * fontScale)));
+          } else {
+            ctxFb.rect(60, fbBadgeY, fbBW, fbBH);
+          }
           ctxFb.fill();
           ctxFb.fillStyle = "#ffffff";
           ctxFb.fillText(badgeText, 60 + Math.round(18 * fontScale), fbBadgeY + fbBH - Math.round(11 * fontScale));
 
-          // Headlines scaled proportionally
           ctxFb.save();
           ctxFb.shadowColor = "rgba(0,0,0,0.85)";
           ctxFb.shadowBlur = 8;
@@ -1087,7 +1204,6 @@
           ctxFb.shadowColor = "rgba(0, 56, 130, 0.85)";
           ctxFb.fillText(fbLine2, 60, fbY);
 
-          // Website CTA Line on Facebook
           if (hasCta) {
             fbY += fbUnifiedSize + Math.round(14 * fontScale);
             const fbCtaSize = Math.round(18 * fontScale);
@@ -1100,7 +1216,28 @@
           ctxFb.restore();
         }
       };
+
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      logoImg.src = ig.logo_url || "/assets/ilf-heart-exact.png";
+      if (logoImg.complete && logoImg.naturalWidth > 0) {
+        drawOverlay(logoImg);
+      } else {
+        logoImg.onload = () => drawOverlay(logoImg);
+        logoImg.onerror = () => drawOverlay(null);
+      }
     };
+
+    const hasPhoto = Boolean(ig.photo_url && ig.photo_url.trim());
+    if (hasPhoto) {
+      const photoImg = new Image();
+      photoImg.crossOrigin = "anonymous";
+      photoImg.src = ig.photo_url;
+      photoImg.onload = () => renderCanvases(photoImg, true);
+      photoImg.onerror = () => renderCanvases(null, false);
+    } else {
+      renderCanvases(null, false);
+    }
   }
 
   /* ---------- REEL WORKSPACE RENDERER (On-Demand or Active Player) ---------- */
@@ -4101,22 +4238,40 @@
       });
     });
 
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const t = btn.dataset.tab;
-        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
-        const target = $("panel-" + t);
-        if (target) {
-          target.classList.remove("hidden");
-          target.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      });
+    // Review Workspace Tabs (Article vs Social Post - Clean In-Place Tab Switch)
+    $("tab-btn-article")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchReviewWorkspaceTab("article");
+    });
+    $("tab-btn-ig")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchReviewWorkspaceTab("ig");
     });
 
     $("package-selector")?.addEventListener("change", (e) => loadPackage(parseInt(e.target.value, 10)));
 
     const toggleApproval = async (component) => {
+      const curVerNum = selectedVersion || (bundle ? bundle.package.current_version : 1);
+      const curVerObj = bundle?.versions?.find((v) => v.version === curVerNum);
+
+      if (component === "ig_post") {
+        const hasPhoto = Boolean(curVerObj?.ig_post?.photo_url || curVerObj?.article?.featured_image?.url);
+        if (!hasPhoto && !approvedNow.ig_post) {
+          alert("⚠️ Image required:\n\nA photo is required before this Social Post can be approved for publishing. Please upload a photo first.");
+          return;
+        }
+      }
+
+      if (component === "article") {
+        const hasPhoto = Boolean(curVerObj?.article?.featured_image?.url);
+        if (!hasPhoto && !approvedNow.article) {
+          const proceed = confirm(
+            "⚠️ Note: This article has no featured image uploaded.\n\nDo you want to mark it approved without a featured photo?"
+          );
+          if (!proceed) return;
+        }
+      }
+
       const decision = approvedNow[component] ? "pending" : "approved";
       bundle = await api("/api/package/approve", {
         method: "POST",
@@ -4982,7 +5137,11 @@
     // Mobile "Save to Photos" direct buttons for Featured Image and Additional Image
     $("btn-save-photos-featured")?.addEventListener("click", () => {
       const imgPrev = $("wp-feat-img-preview");
-      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "/assets/helsinki-sample.jpg";
+      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "";
+      if (!srcUrl || srcUrl.includes("sample")) {
+        alert("⚠️ No image uploaded:\n\nPlease upload a featured photo before saving to mobile photos.");
+        return;
+      }
       saveImageDirectlyToMobilePhotos(srcUrl, "ilovefinland-featured-photo.jpg", "image/jpeg", "Featured Article Photo");
     });
 
@@ -4996,14 +5155,26 @@
 
     // Mobile "Save to Photos" direct buttons for Social Formats
     $("btn-save-photos-45")?.addEventListener("click", () => {
+      if (!currentStaticPost || !currentStaticPost.photo_url || !currentStaticPost.photo_url.trim()) {
+        alert("⚠️ Image required:\n\nPlease upload a photo before exporting or saving your social post.");
+        return;
+      }
       saveImageDirectlyToMobilePhotos($("static-post-canvas"), "ilovefinland-feed-post-1080x1350.jpg", "image/jpeg", "Instagram & Facebook Feed Post");
     });
 
     $("btn-save-photos-fb")?.addEventListener("click", () => {
+      if (!currentStaticPost || !currentStaticPost.photo_url || !currentStaticPost.photo_url.trim()) {
+        alert("⚠️ Image required:\n\nPlease upload a photo before exporting or saving your social post.");
+        return;
+      }
       saveImageDirectlyToMobilePhotos($("static-fb-canvas"), "ilovefinland-facebook-landscape-1200x630.jpg", "image/jpeg", "Facebook Landscape Post");
     });
 
     $("btn-save-photos-crop")?.addEventListener("click", () => {
+      if (!currentStaticPost || !currentStaticPost.photo_url || !currentStaticPost.photo_url.trim()) {
+        alert("⚠️ Image required:\n\nPlease upload a photo before exporting or saving your social post.");
+        return;
+      }
       saveImageDirectlyToMobilePhotos($("static-crop-canvas"), "ilovefinland-profile-grid-crop.jpg", "image/jpeg", "Instagram Profile Grid Crop");
     });
 
@@ -5033,7 +5204,11 @@
       const fmt = dlBtn.dataset.format || "jpeg";
       const isAddl = dlBtn.id.includes("addl") || dlBtn.id.includes("add-");
       const imgPrev = isAddl ? $("wp-add-img-preview") : $("wp-feat-img-preview");
-      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "/assets/helsinki-sample.jpg";
+      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "";
+      if (!srcUrl || srcUrl.includes("sample")) {
+        alert("⚠️ No image uploaded:\n\nPlease upload a photo before downloading.");
+        return;
+      }
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       // If tapped on mobile phone, divert to Save to Photos helper so it goes directly to Gallery/Photos!
@@ -5055,6 +5230,10 @@
     const downloadCanvas = (canvasId, filename, mime) => {
       const canvas = $(canvasId);
       if (!canvas) return;
+      if (!currentStaticPost || !currentStaticPost.photo_url || !currentStaticPost.photo_url.trim()) {
+        alert("⚠️ Image required:\n\nPlease upload a photo before exporting or downloading this social post.");
+        return;
+      }
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
         saveImageDirectlyToMobilePhotos(canvas, filename, mime, "ILoveFinland Post");
@@ -5182,13 +5361,21 @@
     // Push Draft directly to WordPress
     $("btn-push-wordpress-draft")?.addEventListener("click", async () => {
       if (!currentPackageId) return;
+      const curVerNum = selectedVersion || (bundle ? bundle.package.current_version : 7);
+      const curVerObj = bundle?.versions?.find((v) => v.version === curVerNum);
+      const hasPhoto = Boolean(curVerObj?.article?.featured_image?.url);
+      if (!hasPhoto) {
+        const proceed = confirm(
+          "⚠️ Note: This article has no featured image uploaded.\n\nDo you want to push this draft to WordPress without a featured photo?"
+        );
+        if (!proceed) return;
+      }
       const btn = $("btn-push-wordpress-draft");
       const banner = $("wp-verification-banner");
       const orig = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = "<span>⏳ Pushing to WordPress...</span>";
       try {
-        const curVerNum = selectedVersion || (bundle ? bundle.package.current_version : 7);
         const res = await api("/api/package/publish-wordpress-draft", {
           method: "POST",
           body: JSON.stringify({ package_id: currentPackageId, version: curVerNum }),
@@ -5240,7 +5427,7 @@
       }
     });
 
-    // Replacement photo upload
+    // Replacement photo upload for Article
     $("input-upload-featured")?.addEventListener("change", async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file || !currentPackageId) return;
@@ -5269,11 +5456,51 @@
           }),
         });
         await loadPackage(currentPackageId);
+        switchReviewWorkspaceTab("article");
         alert("✅ Replacement photo uploaded and set as featured image!");
       } catch (err) {
         alert(`Failed to upload replacement photo: ${err.message}`);
       } finally {
         if (labelSpan) labelSpan.innerHTML = origText || "📷 Upload Replacement Photo (Max 5 MB)";
+        e.target.value = "";
+      }
+    });
+
+    // Direct photo upload for Social Post
+    $("input-upload-post-photo")?.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file || !currentPackageId) return;
+      const statusBadge = $("static-photo-status-badge");
+      const nameSpan = $("static-post-photo-name");
+      if (statusBadge) statusBadge.textContent = "Uploading…";
+      if (nameSpan) nameSpan.textContent = "⏳ Uploading " + file.name + "…";
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await api("/api/package/upload-featured-image", {
+          method: "POST",
+          body: JSON.stringify({
+            package_id: currentPackageId,
+            image_data: {
+              data_url: base64,
+              filename: file.name,
+              photographer: "ILF",
+              source_url: "https://ilovefinland.net",
+              licence: "Editorial Rights (ILF)",
+              alt_text: $("static-edit-badge")?.value || file.name.replace(/\.[^.]+$/, ""),
+            },
+          }),
+        });
+        await loadPackage(currentPackageId);
+        switchReviewWorkspaceTab("ig");
+        alert("✅ Photo uploaded successfully for your Social Post!");
+      } catch (err) {
+        alert(`Failed to upload photo: ${err.message}`);
+      } finally {
         e.target.value = "";
       }
     });

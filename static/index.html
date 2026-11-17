@@ -873,7 +873,7 @@
 
           <div class="workspace-grid">
             <!-- Article Preview Card: WordPress Article Form (ilovefinland.net) -->
-            <section id="panel-article" class="card panel active-mobile" data-panel="article">
+            <section id="panel-article" class="card panel active-tab-panel active-mobile" data-panel="article">
               <div class="panel-header">
                 <div class="card-header-left">
                   <div class="card-header-icon bg-blue">
@@ -1032,15 +1032,28 @@
                 <!-- Featured Image Card & Downloads -->
                 <div class="wp-image-card">
                   <div class="wp-image-preview-col">
-                    <img id="wp-feat-img-preview" src="/assets/sample-clips/tesla-clean-bg.jpg" alt="Featured Photo" class="wp-feat-img" />
-                    <div class="wp-image-downloads-row">
-                      <button type="button" class="btn-save-photos-direct" id="btn-save-photos-featured" title="Save directly to iPhone Photos / Android Gallery without iCloud or Google Drive">
-                        📲 Save to Photos
+                    <!-- Clean No Image Placeholder State -->
+                    <div id="wp-feat-img-empty" class="wp-empty-photo-card hidden">
+                      <div class="empty-photo-icon">📷</div>
+                      <div class="empty-photo-title">No Image Uploaded</div>
+                      <div class="empty-photo-desc">Upload an authentic photo to complete your article and social post.</div>
+                      <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-featured').click()">
+                        📸 Upload Photo
                       </button>
-                      <button type="button" class="btn-download-img" data-format="jpeg" id="btn-dl-jpeg">📥 JPEG</button>
-                      <button type="button" class="btn-download-img" data-format="png" id="btn-dl-png">📥 PNG</button>
-                      <button type="button" class="btn-download-img" data-format="webp" id="btn-dl-webp">📥 WebP</button>
-                      <span class="hint-text" id="wp-img-size" style="font-size:0.7rem;margin-left:auto;">Max 5 MB</span>
+                    </div>
+
+                    <!-- Uploaded Image Preview State -->
+                    <div id="wp-feat-img-wrap">
+                      <img id="wp-feat-img-preview" src="" alt="Featured Photo" class="wp-feat-img" />
+                      <div class="wp-image-downloads-row">
+                        <button type="button" class="btn-save-photos-direct" id="btn-save-photos-featured" title="Save directly to iPhone Photos / Android Gallery without iCloud or Google Drive">
+                          📲 Save to Photos
+                        </button>
+                        <button type="button" class="btn-download-img" data-format="jpeg" id="btn-dl-jpeg">📥 JPEG</button>
+                        <button type="button" class="btn-download-img" data-format="png" id="btn-dl-png">📥 PNG</button>
+                        <button type="button" class="btn-download-img" data-format="webp" id="btn-dl-webp">📥 WebP</button>
+                        <span class="hint-text" id="wp-img-size" style="font-size:0.7rem;margin-left:auto;">Max 5 MB</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1319,6 +1332,20 @@
               <div class="static-post-workspace">
                 <!-- Visual Cards Preview Container -->
                 <div class="static-canvas-card">
+                  <!-- No Image Uploaded Warning Banner -->
+                  <div id="static-no-image-banner" class="alert-box hidden" style="background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;padding:12px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <span style="font-size:1.4rem;">⚠️</span>
+                      <div>
+                        <strong style="color:#9f1239;font-size:0.92rem;">No Image Uploaded for Social Post</strong>
+                        <p style="margin:2px 0 0;font-size:0.78rem;color:#b91c1c;">An authentic photo is required before exporting or publishing to Instagram and Facebook.</p>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#e11d48;border:none;">
+                      📸 Upload Photo
+                    </button>
+                  </div>
+
                   <div class="static-canvas-views">
                     <!-- Format 1: Instagram & Facebook Vertical Feed (1080x1350) -->
                     <div class="static-canvas-col format-col active-format" id="format-view-feed">
@@ -1388,6 +1415,21 @@
 
                 <!-- Direct Editor Controls & Caption -->
                 <div class="static-controls-col">
+                  <!-- Photo Upload / Replacement Box -->
+                  <div class="wp-field-wrap" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                      <label class="label-sm" style="margin:0;">📸 Social Post Background Photo</label>
+                      <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                      <button type="button" id="btn-upload-post-photo" class="btn btn-outline btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border-color:#cbd5e1;font-weight:700;">
+                        <span>📷 Upload / Replace Photo</span>
+                      </button>
+                      <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                      <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;">No photo selected</span>
+                    </div>
+                  </div>
+
                   <!-- Category Badge & Headlines -->
                   <div class="wp-field-wrap">
                     <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>

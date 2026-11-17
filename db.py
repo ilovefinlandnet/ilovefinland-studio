@@ -2451,17 +2451,22 @@ def get_package_bundle(package_id: int = 1, db_path: str = DB_PATH) -> Optional[
                     "detail": f"Logo at {logo_y}% Y, text at {text_y}% Y. Kept within safe bounds.",
                 })
             else:
+                has_image = bool(feat_img.get("url"))
                 is_sample_img = feat_img.get("data_label") == "sample"
-                credits_ok = (img_status == "cleared") and bool(img_cred) and not is_sample_img
+                credits_ok = has_image and (img_status == "cleared") and bool(img_cred) and not is_sample_img
                 pre_approval_checks.append({
                     "id": "credits",
-                    "label": "Media Credits & Reuse Rights",
+                    "label": "Featured Media & Reuse Rights",
                     "passed": credits_ok,
-                    "status": "PASS" if credits_ok else ("WARN" if (img_status == "flagged_no_license" or is_sample_img) else "PASS"),
+                    "status": "PASS" if credits_ok else ("WARN" if not has_image else ("WARN" if (img_status == "flagged_no_license" or is_sample_img) else "PASS")),
                     "detail": (
-                        "Featured visual credit is SAMPLE placeholder text and is not verified. Replace the photo or confirm the rights before publishing."
-                        if is_sample_img
-                        else f"Featured Visual: {img_cred or 'Attributed'}. Licence read from the source's metadata; original heart logo preserved."
+                        "No featured photo uploaded yet. Add an authentic photo before publishing or downloading."
+                        if not has_image
+                        else (
+                            "Featured visual credit is SAMPLE placeholder text and is not verified. Replace the photo or confirm the rights before publishing."
+                            if is_sample_img
+                            else f"Featured Visual: {img_cred or 'Attributed'}. Licence read from the source's metadata; original heart logo preserved."
+                        )
                     ),
                 })
                 pre_approval_checks.append({
