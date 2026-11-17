@@ -5300,30 +5300,7 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
     clean_title = (title or "DISCOVER FINLAND").strip().upper()
     if clean_title:
         title_end = min(total_duration, 4.0)
-        text_layers.append({
-            "id": f"txt_title_{secrets.token_hex(3)}",
-            "type": "title",
-            "text": clean_title[:45],
-            "start_sec": 0.0,
-            "end_sec": round(title_end, 2),
-            "x_pct": 50.0,
-            "y_pct": 70.0,
-            "font_family": "Inter",
-            "font_size": 42,
-            "font_weight": "800",
-            "font_style": "normal",
-            "text_align": "center",
-            "color": "#FFFFFF",
-            "outline_color": "#0A192F",
-            "outline_width": 4,
-            "bg_color": "rgba(10, 25, 47, 0.85)",
-            "bg_padding": 12,
-            "bg_radius": 8,
-            "shadow": True,
-            "animation": "pop",
-            "opacity": 1.0,
-            "rotation": 0,
-        })
+        # Kicker / Badge text placed cleanly above the headline
         text_layers.append({
             "id": f"txt_sub_{secrets.token_hex(3)}",
             "type": "subtitle",
@@ -5331,7 +5308,7 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
             "start_sec": 0.0,
             "end_sec": round(title_end, 2),
             "x_pct": 50.0,
-            "y_pct": 62.0,
+            "y_pct": 36.0,
             "font_family": "Inter",
             "font_size": 18,
             "font_weight": "700",
@@ -5345,6 +5322,31 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
             "bg_radius": 4,
             "shadow": True,
             "animation": "fade",
+            "opacity": 1.0,
+            "rotation": 0,
+        })
+        # Main headline centered with ample separation
+        text_layers.append({
+            "id": f"txt_title_{secrets.token_hex(3)}",
+            "type": "title",
+            "text": clean_title[:45],
+            "start_sec": 0.0,
+            "end_sec": round(title_end, 2),
+            "x_pct": 50.0,
+            "y_pct": 50.0,
+            "font_family": "Inter",
+            "font_size": 40,
+            "font_weight": "800",
+            "font_style": "normal",
+            "text_align": "center",
+            "color": "#FFFFFF",
+            "outline_color": "#0A192F",
+            "outline_width": 4,
+            "bg_color": "rgba(10, 25, 47, 0.85)",
+            "bg_padding": 12,
+            "bg_radius": 8,
+            "shadow": True,
+            "animation": "pop",
             "opacity": 1.0,
             "rotation": 0,
         })

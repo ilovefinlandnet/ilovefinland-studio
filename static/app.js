@@ -744,12 +744,17 @@
 
     // Section 2: Visual and Code Views
     const visualBody = $("article-body-visual");
+    const rawParas = art.body_paragraphs || art.body || [];
+    const parasList = Array.isArray(rawParas) ? rawParas : [rawParas];
+    const parasHtml = parasList.map((p) => `<p>${p}</p>`).join("");
+    const bodyContent = art.body_html || parasHtml;
+
     if (visualBody) {
-      visualBody.innerHTML = art.body_html || (art.body_paragraphs || []).map((p) => `<p>${p}</p>`).join("");
+      visualBody.innerHTML = bodyContent || "<p style='color:#CBD5E1;font-style:italic;'>No article text drafted yet.</p>";
     }
     const codeArea = $("wp-code-textarea");
     if (codeArea) {
-      codeArea.value = art.body_html || "";
+      codeArea.value = art.body_html || parasHtml || "";
     }
 
     // Section 3: Featured Image (Clean Missing Image Handling)

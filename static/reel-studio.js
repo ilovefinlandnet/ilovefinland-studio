@@ -710,27 +710,39 @@
           const isImg = file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name);
           const localBlobUrl = URL.createObjectURL(file);
 
-          // Fast direct binary streaming upload (supports files up to 200MB without base64 overhead)
-          const uploadEndpoint = `/api/reel/upload-raw?filename=${encodeURIComponent(file.name)}&type=${isImg ? "image" : "video"}`;
-          const res = await (await fetch(uploadEndpoint, {
-            method: "POST",
-            headers: { "Content-Type": file.type || "application/octet-stream" },
-            body: file,
-          })).json();
+          let finalUrl = localBlobUrl;
+          let remoteDuration = null;
+          try {
+            // Fast direct binary streaming upload (supports files up to 200MB without base64 overhead)
+            const uploadEndpoint = `/api/reel/upload-raw?filename=${encodeURIComponent(file.name)}&type=${isImg ? "image" : "video"}`;
+            const resp = await fetch(uploadEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": file.type || "application/octet-stream" },
+              body: file,
+            });
+            if (resp.ok) {
+              const res = await resp.json();
+              if (res.ok && res.url) {
+                finalUrl = res.url;
+                if (res.duration) remoteDuration = res.duration;
+              }
+            }
+          } catch (netErr) {
+            console.warn("Upload streaming failed, falling back to instant local preview:", netErr);
+          }
 
-          const finalUrl = (res.ok && res.url) ? res.url : localBlobUrl;
           const item = {
             id: `med_${pool.length + 1}_${Date.now().toString(36)}`,
             filename: file.name,
             url: finalUrl,
             type: isImg ? "image" : "video",
-            duration: isImg ? 3.5 : (res.duration || 5.0),
+            duration: isImg ? 3.5 : (remoteDuration || 5.0),
           };
 
           if (isImg) {
             const img = new Image();
-            img.src = finalUrl;
             img.onload = () => this.render();
+            img.src = finalUrl;
             this.cachedImages[finalUrl] = img;
             this.cachedImages[localBlobUrl] = img;
           }
@@ -922,12 +934,20 @@
     // TEXT OVERLAYS & PRESETS
     // =========================================================================
 
-    addTextBox(text = "NEW TEXT OVERLAY", type = "custom", yPct = 50.0) {
+    addTextBox(text = "NEW TEXT OVERLAY", type = "custom", yPct = null) {
       if (!this.currentProject) return;
       const textLayers = this.currentProject.timeline.tracks.text;
-      const dur = Math.min(4.0, this.getTotalDuration() - this.currentTime);
+      const dur = Math.min(4.0, Math.max(2.0, this.getTotalDuration() - this.currentTime));
       const st = round1(this.currentTime);
       const en = round1(st + Math.max(2.0, dur));
+
+      if (yPct == null) {
+        // Choose intelligent non-colliding vertical position relative to active layers
+        const activeLayers = textLayers.filter((t) => st < t.end_sec && en > t.start_sec);
+        const usedY = activeLayers.map((l) => l.y_pct ?? 50.0);
+        const candidates = [50.0, 68.0, 32.0, 80.0, 22.0];
+        yPct = candidates.find((c) => !usedY.some((y) => Math.abs(y - c) < 9)) || (50.0 + (activeLayers.length * 10) % 35);
+      }
 
       const newText = {
         id: `txt_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`,
@@ -966,12 +986,12 @@
     addTextPreset(preset) {
       if (!this.currentProject) return;
       if (preset === "headline_sub") {
-        this.addTextBox("DISCOVER FINLAND'S MAGIC", "title", 68.0);
-        this.addTextBox("EXPERIENCE AUTHENTIC NORDIC LIFE", "subtitle", 60.0);
+        this.addTextBox("DISCOVER FINLAND'S MAGIC", "title", 48.0);
+        this.addTextBox("EXPERIENCE AUTHENTIC NORDIC LIFE", "subtitle", 68.0);
       } else if (preset === "scenic_callout") {
         this.addTextBox("📍 ROVANIEMI, LAPLAND", "callout", 25.0);
       } else if (preset === "breaking_news") {
-        this.addTextBox("🚨 BREAKING UPDATE", "title", 50.0);
+        this.addTextBox("🚨 BREAKING UPDATE", "title", 36.0);
       }
     }
 
@@ -1579,7 +1599,7 @@
 
           if (targetType === "media") {
             if (!isLeft) {
-              const newDur = Math.max(0.5, Math.min(30.0, round2(origDur + deltaSec)));
+              const newDur = Math.max(0.5, Math.min(60.0, round2(origDur + deltaSec)));
               targetObj.duration = newDur;
               targetObj.end_sec = round2(targetObj.start_sec + newDur);
               targetObj.src_out = round2((targetObj.src_in || 0) + newDur);
@@ -1599,6 +1619,8 @@
               if (durSlider) durSlider.value = newDur;
               const durText = document.getElementById("prop-val-photodur");
               if (durText) durText.textContent = `${newDur}s`;
+
+              this.seekTo(targetObj.end_sec);
             } else {
               const newStart = Math.max(0, round2(origStart + deltaSec));
               const newDur = Math.max(0.5, round2(origEnd - newStart));
@@ -1606,6 +1628,7 @@
               targetObj.duration = newDur;
               blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
               blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
+              this.seekTo(newStart);
             }
           } else if (targetType === "text" || targetType === "logo") {
             if (targetType === "logo") targetObj.always_on = false;
@@ -1614,26 +1637,31 @@
               targetObj.start_sec = newStart;
               blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
               blockEl.style.width = `${Math.max(10, (origEnd - newStart) * this.zoomPxPerSec)}px`;
+              this.seekTo(newStart);
             } else {
               const newEnd = Math.max(origStart + 0.5, round2(origEnd + deltaSec));
               targetObj.end_sec = newEnd;
               blockEl.style.width = `${Math.max(10, (newEnd - origStart) * this.zoomPxPerSec)}px`;
+              this.seekTo(newEnd);
             }
           } else if (targetType === "audio" || targetType === "voiceover") {
             if (isLeft) {
               const newStart = Math.max(0, round2(origStart + deltaSec));
               targetObj.start_sec = newStart;
               blockEl.style.left = `${newStart * this.zoomPxPerSec}px`;
+              this.seekTo(newStart);
             } else {
               const newDur = Math.max(0.5, round2(origDur + deltaSec));
               targetObj.duration = newDur;
               targetObj.end_sec = round2((targetObj.start_sec || 0) + newDur);
               blockEl.style.width = `${newDur * this.zoomPxPerSec}px`;
+              this.seekTo(targetObj.end_sec);
             }
           }
         };
 
         const onEnd = () => {
+          this._lastDragEndTime = Date.now();
           blockEl.classList.remove("is-trimming");
           window.removeEventListener("mousemove", onMove);
           window.removeEventListener("mouseup", onEnd);
@@ -1700,6 +1728,7 @@
         };
 
         const onMouseUp = () => {
+          this._lastDragEndTime = Date.now();
           window.removeEventListener("mousemove", onMouseMove);
           window.removeEventListener("mouseup", onMouseUp);
           window.removeEventListener("touchmove", onMouseMove);
@@ -1803,6 +1832,7 @@
           }
 
           block.addEventListener("click", (e) => {
+            if (Date.now() - (this._lastDragEndTime || 0) < 250) return;
             e.stopPropagation();
             this.selectedTrack = "media";
             this.selectedId = c.id;
@@ -1815,17 +1845,48 @@
         });
       }
 
-      // 3. Render Text Layers
+      // 3. Render Text Layers (Multi-row dynamic stacking for overlapping text clips)
       if (this.laneText) {
         this.laneText.innerHTML = "";
         const textLayers = this.currentProject.timeline.tracks.text || [];
+
+        // Compute sub-row per clip so overlapping text clips stack cleanly without obscuring each other
+        const rowEndTimes = [];
+        const clipRows = [];
         textLayers.forEach((txt) => {
-          const leftPx = txt.start_sec * this.zoomPxPerSec;
-          const widthPx = (txt.end_sec - txt.start_sec) * this.zoomPxPerSec;
+          let assignedRow = -1;
+          for (let r = 0; r < rowEndTimes.length; r++) {
+            if (rowEndTimes[r] <= (txt.start_sec || 0) + 0.05) {
+              assignedRow = r;
+              rowEndTimes[r] = txt.end_sec || 5.0;
+              break;
+            }
+          }
+          if (assignedRow === -1) {
+            assignedRow = rowEndTimes.length;
+            rowEndTimes.push(txt.end_sec || 5.0);
+          }
+          clipRows.push(assignedRow);
+        });
+
+        const totalRows = Math.max(1, rowEndTimes.length);
+        const rowH = 32;
+        const totalLaneH = totalRows * rowH + 4;
+        this.laneText.style.height = `${totalLaneH}px`;
+        const textHeader = document.getElementById("header-text");
+        if (textHeader) textHeader.style.height = `${totalLaneH}px`;
+
+        textLayers.forEach((txt, idx) => {
+          const rowIdx = clipRows[idx];
+          const leftPx = (txt.start_sec || 0) * this.zoomPxPerSec;
+          const widthPx = Math.max(28, ((txt.end_sec || 5.0) - (txt.start_sec || 0)) * this.zoomPxPerSec);
           const block = document.createElement("div");
           block.className = `reel-clip-block type-text ${this.selectedId === txt.id ? "active" : ""}`;
           block.style.left = `${leftPx}px`;
           block.style.width = `${widthPx}px`;
+          block.style.top = `${rowIdx * rowH + 2}px`;
+          block.style.bottom = "auto";
+          block.style.height = `${rowH - 4}px`;
           block.dataset.id = txt.id;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
@@ -1840,10 +1901,11 @@
           this.bindClipMove(block, "text", txt);
 
           block.addEventListener("click", (e) => {
+            if (Date.now() - (this._lastDragEndTime || 0) < 250) return;
             e.stopPropagation();
             this.selectedTrack = "text";
             this.selectedId = txt.id;
-            this.seekTo(txt.start_sec);
+            this.seekTo(txt.start_sec || 0);
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
@@ -1876,6 +1938,7 @@
           this.bindClipMove(block, "logo", logo);
 
           block.addEventListener("click", (e) => {
+            if (Date.now() - (this._lastDragEndTime || 0) < 250) return;
             e.stopPropagation();
             this.selectedTrack = "logo";
             this.selectedId = "logo";
@@ -1911,6 +1974,7 @@
           this.bindClipMove(block, "audio", music);
 
           block.addEventListener("click", (e) => {
+            if (Date.now() - (this._lastDragEndTime || 0) < 250) return;
             e.stopPropagation();
             this.selectedTrack = "music";
             this.selectedId = music.id;
@@ -1946,6 +2010,7 @@
           this.bindClipMove(block, "voiceover", vo);
 
           block.addEventListener("click", (e) => {
+            if (Date.now() - (this._lastDragEndTime || 0) < 250) return;
             e.stopPropagation();
             this.selectedTrack = "voiceover";
             this.selectedId = vo.id;

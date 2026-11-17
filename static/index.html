@@ -793,11 +793,11 @@
                   <!-- Track Headers -->
                   <div class="reel-track-headers">
                     <div class="reel-track-header-item" style="height:24px;">⏱️ Ruler</div>
-                    <div class="reel-track-header-item">📹 Media</div>
-                    <div class="reel-track-header-item">🔤 Text</div>
-                    <div class="reel-track-header-item">💙 Logo</div>
-                    <div class="reel-track-header-item">🎵 Music</div>
-                    <div class="reel-track-header-item">🎙️ Voice</div>
+                    <div class="reel-track-header-item" id="header-media">📹 Media</div>
+                    <div class="reel-track-header-item" id="header-text">🔤 Text</div>
+                    <div class="reel-track-header-item" id="header-logo">💙 Logo</div>
+                    <div class="reel-track-header-item" id="header-audio">🎵 Music</div>
+                    <div class="reel-track-header-item" id="header-voiceover">🎙️ Voice</div>
                   </div>
 
                   <!-- Timeline Tracks Viewport -->
@@ -1901,13 +1901,16 @@
               <span class="pill pill-approved">Official Finnish Feeds</span>
             </div>
             
-            <div class="search-box-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-              <input type="text" id="source-search-input" placeholder="Search official sources (e.g. FMI, Traficom, Migri, THL, Vero, Poliisi)…" style="flex:1;min-width:240px;" />
-              <button id="btn-search-sources" class="btn btn-secondary">
+            <div class="search-box-row studio-compact-toolbar" style="margin-top:12px;margin-bottom:16px;">
+              <div class="search-wrap" style="flex:1;">
+                <input type="text" id="source-search-input" placeholder="Search official sources (e.g. FMI, Traficom, Migri, THL, Vero, Poliisi)…" />
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+              <button type="button" id="btn-search-sources" class="btn btn-secondary" style="height:36px;padding:6px 16px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
                 <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <span>Search</span>
               </button>
-              <button id="btn-toggle-add-source" class="btn btn-primary" style="font-size:0.8rem;padding:6px 12px;white-space:nowrap;">
+              <button type="button" id="btn-toggle-add-source" class="btn btn-primary" style="height:36px;font-size:0.8rem;padding:6px 14px;white-space:nowrap;background:#003580;border:1px solid #168BFF;color:#fff;border-radius:8px;cursor:pointer;">
                 <span>➕ Add Source</span>
               </button>
             </div>
