@@ -3904,3 +3904,17 @@ textarea:focus-visible {
   border: 1px solid #DDD6FE !important;
 }
 
+/* 8. MOBILE TOUCH & TAP TARGET POLISH (< 768px) */
+@media (max-width: 767px) {
+  .btn, .nav-item, .bnav-item, .prod-mode-tab {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .table-scroll-wrap, .plan-grid, #reel-clips-grid {
+    -webkit-overflow-scrolling: touch;
+  }
+  .card {
+    padding: 14px;
+  }
+}
+

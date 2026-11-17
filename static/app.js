@@ -174,7 +174,12 @@
     const safeToggle = $("toggle-safe-area");
     const phoneFrame = $("phone-frame");
 
-    player = new ReelPlayer(canvas, coverCanvas, audio, (t, dur) => {
+    const PlayerClass = window.ReelPlayer || (typeof ReelPlayer !== 'undefined' ? ReelPlayer : null);
+    if (!PlayerClass) {
+      console.warn("ReelPlayer not available");
+      return;
+    }
+    player = new PlayerClass(canvas, coverCanvas, audio, (t, dur) => {
       scrubber.value = t;
       scrubber.max = dur;
       timeDisp.textContent = `${t.toFixed(1)}s / ${dur.toFixed(1)}s`;
@@ -239,6 +244,7 @@
 
   /* ---------- VOICE NOTES ---------- */
   function initVoiceBar(barEl) {
+    if (!barEl) return;
     const targetId = barEl.dataset.voiceFor;
     const targetTa = $(targetId);
     const recBtn = barEl.querySelector(".btn-rec");
@@ -254,59 +260,61 @@
 
     function setRecorded(url, transcript) {
       audioUrl = url;
-      audioEl.src = url;
-      replayBtn.classList.remove("hidden");
-      discardBtn.classList.remove("hidden");
+      if (audioEl) audioEl.src = url;
+      replayBtn?.classList.remove("hidden");
+      discardBtn?.classList.remove("hidden");
       barEl.dataset.hasVoice = "1";
       if (transcript && targetTa) {
         targetTa.value = transcript;
       }
     }
 
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      recBtn.addEventListener("click", async () => {
-        if (mediaRecorder && mediaRecorder.state === "recording") {
-          mediaRecorder.stop();
-          recBtn.innerHTML = `${getIcon("mic", 14)} <span>Record Voice Note</span>`;
-          recBtn.classList.remove("btn-recording");
-          statusSpan.textContent = "Transcribing with Whisper…";
-          return;
-        }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
-          chunks = [];
-          mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-          mediaRecorder.onstop = async () => {
-            const blob = new Blob(chunks, { type: "audio/webm" });
-            const url = URL.createObjectURL(blob);
-            try {
-              const res = await api("/api/voice/transcribe", {
-                method: "POST",
-                body: JSON.stringify({ transcript: "Move the logo lower and make the second line bigger" }),
-              });
-              setRecorded(url, res.transcript);
-              statusSpan.textContent = `Transcribed (${res.model}) • Editable below`;
-            } catch (err) {
-              setRecorded(url, "Move the logo lower and make the second line bigger");
-              statusSpan.textContent = "Voice note ready (Simulated fallback).";
-            }
-          };
-          mediaRecorder.start();
-          recBtn.innerHTML = `${getIcon("pause", 14)} <span>Stop Recording</span>`;
-          recBtn.classList.add("btn-recording");
-          statusSpan.textContent = "Recording in progress… tap to finish";
-        } catch (err) {
-          statusSpan.textContent = "Mic permission not granted. Use Demo Voice Note.";
-        }
-      });
-    } else {
-      recBtn.disabled = true;
-      recBtn.title = "Audio recording unavailable";
+    if (recBtn) {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        recBtn.addEventListener("click", async () => {
+          if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+            recBtn.innerHTML = `${getIcon("mic", 14)} <span>Record Voice Note</span>`;
+            recBtn.classList.remove("btn-recording");
+            if (statusSpan) statusSpan.textContent = "Transcribing with Whisper…";
+            return;
+          }
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            chunks = [];
+            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+            mediaRecorder.onstop = async () => {
+              const blob = new Blob(chunks, { type: "audio/webm" });
+              const url = URL.createObjectURL(blob);
+              try {
+                const res = await api("/api/voice/transcribe", {
+                  method: "POST",
+                  body: JSON.stringify({ transcript: "Move the logo lower and make the second line bigger" }),
+                });
+                setRecorded(url, res.transcript);
+                if (statusSpan) statusSpan.textContent = `Transcribed (${res.model}) • Editable below`;
+              } catch (err) {
+                setRecorded(url, "Move the logo lower and make the second line bigger");
+                if (statusSpan) statusSpan.textContent = "Voice note ready (Simulated fallback).";
+              }
+            };
+            mediaRecorder.start();
+            recBtn.innerHTML = `${getIcon("pause", 14)} <span>Stop Recording</span>`;
+            recBtn.classList.add("btn-recording");
+            if (statusSpan) statusSpan.textContent = "Recording in progress… tap to finish";
+          } catch (err) {
+            if (statusSpan) statusSpan.textContent = "Mic permission not granted. Use Demo Voice Note.";
+          }
+        });
+      } else {
+        recBtn.disabled = true;
+        recBtn.title = "Audio recording unavailable";
+      }
     }
 
-    simBtn.addEventListener("click", async () => {
-      statusSpan.textContent = "Generating demo voice note…";
+    simBtn?.addEventListener("click", async () => {
+      if (statusSpan) statusSpan.textContent = "Generating demo voice note…";
       const demoWav = "/assets/nordic-pulse.wav";
       const demoTranscript =
         targetId === "comment-input"
@@ -317,22 +325,24 @@
         body: JSON.stringify({ transcript: demoTranscript }),
       });
       setRecorded(demoWav, res.transcript);
-      statusSpan.textContent = `Demo note loaded (${res.model}) • Editable below`;
+      if (statusSpan) statusSpan.textContent = `Demo note loaded (${res.model}) • Editable below`;
     });
 
-    replayBtn.addEventListener("click", () => {
-      audioEl.play().catch(() => {});
+    replayBtn?.addEventListener("click", () => {
+      if (audioEl) audioEl.play().catch(() => {});
     });
 
-    discardBtn.addEventListener("click", () => {
-      audioEl.pause();
-      audioEl.src = "";
+    discardBtn?.addEventListener("click", () => {
+      if (audioEl) {
+        audioEl.pause();
+        audioEl.src = "";
+      }
       if (audioUrl && audioUrl.startsWith("blob:")) URL.revokeObjectURL(audioUrl);
       audioUrl = null;
-      replayBtn.classList.add("hidden");
-      discardBtn.classList.add("hidden");
+      replayBtn?.classList.add("hidden");
+      discardBtn?.classList.add("hidden");
       barEl.dataset.hasVoice = "0";
-      statusSpan.textContent = "Voice note discarded.";
+      if (statusSpan) statusSpan.textContent = "Voice note discarded.";
       if (targetTa) targetTa.value = "";
     });
   }
@@ -2458,10 +2468,11 @@
   /* ---------- PROJECTS & STORIES HUB ---------- */
   let projectsData = [];
   let currentProjFilter = "all";
+  let showArchivedProjects = false;
 
   async function loadProjects() {
     try {
-      const data = await api("/api/projects");
+      const data = await api(showArchivedProjects ? "/api/projects?archived=1" : "/api/projects");
       projectsData = data.projects;
 
       if ($("chip-count-total")) $("chip-count-total").textContent = data.counts.total;
@@ -2469,6 +2480,7 @@
       if ($("chip-count-review")) $("chip-count-review").textContent = data.counts.in_review;
       if ($("chip-count-progress")) $("chip-count-progress").textContent = data.counts.in_progress;
       if ($("chip-count-approved")) $("chip-count-approved").textContent = data.counts.approved;
+      if ($("chip-count-archived")) $("chip-count-archived").textContent = data.counts.archived || 0;
 
       loadIdeasPool();
       renderProjectsTable();
@@ -2485,15 +2497,21 @@
     const fmt = $("proj-format-filter")?.value || "all";
 
     const filtered = projectsData.filter((p) => {
-      if (currentProjFilter === "in_review") {
-        if (!p.pipeline_stage.includes("Review") && !p.pipeline_stage.includes("Partially")) return false;
-      } else if (currentProjFilter === "in_progress") {
-        if (!p.pipeline_stage.includes("Progress") && !p.pipeline_stage.includes("Working")) return false;
-      } else if (currentProjFilter === "approved") {
-        if (!p.pipeline_stage.includes("Approved") && !p.pipeline_stage.includes("Scheduled")) return false;
+      const isArchived = Boolean(p.is_archived);
+      if (currentProjFilter === "archived" || fmt === "archived") {
+        if (!isArchived) return false;
+      } else {
+        if (isArchived) return false;
+        if (currentProjFilter === "in_review") {
+          if (!p.pipeline_stage.includes("Review") && !p.pipeline_stage.includes("Partially")) return false;
+        } else if (currentProjFilter === "in_progress") {
+          if (!p.pipeline_stage.includes("Progress") && !p.pipeline_stage.includes("Working")) return false;
+        } else if (currentProjFilter === "approved") {
+          if (!p.pipeline_stage.includes("Approved") && !p.pipeline_stage.includes("Scheduled")) return false;
+        }
       }
 
-      if (fmt !== "all") {
+      if (fmt !== "all" && fmt !== "archived") {
         if (!p.scope_label.includes(fmt) && p.scope_label !== fmt) return false;
       }
 
@@ -2506,7 +2524,7 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted);">No projects found matching filter criteria.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--muted);">${currentProjFilter === 'archived' ? 'No archived stories found.' : 'No projects found matching filter criteria.'}</td></tr>`;
       return;
     }
 
@@ -2523,13 +2541,14 @@
       }
 
       const dlFormatted = p.deadline_at ? p.deadline_at.replace("T", " ") : "Flexible";
+      const isArchived = Boolean(p.is_archived);
 
       return `
-        <tr data-id="${p.id}">
+        <tr data-id="${p.id}" style="${isArchived ? 'opacity:0.75;background:#f8fafc;' : ''}">
           <td style="font-weight:700;color:var(--muted);">${p.id}</td>
           <td>
             <a class="proj-title-link" data-id="${p.id}">${escapeHtml(p.title)}</a>
-            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Created: ${p.created_at ? p.created_at.slice(0, 10) : "Recent"}</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Created: ${p.created_at ? p.created_at.slice(0, 10) : "Recent"}${isArchived ? ' · <span class="badge" style="background:#e2e8f0;color:#475569;font-size:0.68rem;">Archived</span>' : ''}</div>
           </td>
           <td>${fmtBadges}</td>
           <td><span class="pill ${p.stage_badge}">${p.pipeline_stage}</span></td>
@@ -2540,6 +2559,9 @@
             <button type="button" class="btn btn-primary btn-sm btn-tbl-action btn-open-project" data-id="${p.id}" title="Open in Review">
               <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
               <span>Open</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm btn-tbl-action btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story to keep desk clean'}">
+              <span>${isArchived ? '📂 Restore' : '📦 Archive'}</span>
             </button>
             <button type="button" class="btn btn-ghost btn-sm btn-tbl-action btn-edit-project" data-id="${p.id}" title="Edit Project">
               <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
@@ -2557,6 +2579,23 @@
       btn.addEventListener("click", () => {
         const id = parseInt(btn.dataset.id, 10);
         openProjectInReview(id);
+      });
+    });
+
+    tbody.querySelectorAll(".btn-archive-project").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = parseInt(btn.dataset.id, 10);
+        const p = projectsData.find((item) => item.id === id);
+        const willArchive = !Boolean(p && p.is_archived);
+        try {
+          await api("/api/package/archive", {
+            method: "POST",
+            body: JSON.stringify({ package_id: id, is_archived: willArchive }),
+          });
+          await loadProjects();
+        } catch (err) {
+          alert(`Archive failed: ${err.message}`);
+        }
       });
     });
 
@@ -4059,7 +4098,7 @@
       const chk = $(id);
       if (chk) {
         const updatePill = () => {
-          const parent = chk.closest(".rev-target-pill");
+          const parent = chk.closest ? chk.closest(".rev-target-pill") : null;
           if (!parent) return;
           if (chk.checked) {
             parent.style.borderColor = "#3b82f6";
@@ -4076,9 +4115,9 @@
       }
     });
 
-    $("btn-google-signin").addEventListener("click", signIn);
-    $("btn-key-signin").addEventListener("click", signInWithKey);
-    $("btn-logout").addEventListener("click", signOut);
+    $("btn-google-signin")?.addEventListener("click", signIn);
+    $("btn-key-signin")?.addEventListener("click", signInWithKey);
+    $("btn-logout")?.addEventListener("click", signOut);
 
     // Mobile Drawer Hamburger Toggle & Backdrop
     const toggleSidebar = (force) => {
@@ -4122,7 +4161,7 @@
       });
     });
 
-    $("package-selector").addEventListener("change", (e) => loadPackage(parseInt(e.target.value, 10)));
+    $("package-selector")?.addEventListener("change", (e) => loadPackage(parseInt(e.target.value, 10)));
 
     const toggleApproval = async (component) => {
       const decision = approvedNow[component] ? "pending" : "approved";
@@ -4133,10 +4172,10 @@
       renderReview();
     };
     for (const id of ["btn-approve-article", "btn-approve-article-m"]) {
-      $(id).addEventListener("click", () => toggleApproval("article"));
+      $(id)?.addEventListener("click", () => toggleApproval("article"));
     }
     for (const id of ["btn-approve-reel", "btn-approve-reel-m"]) {
-      $(id).addEventListener("click", () => toggleApproval("reel"));
+      $(id)?.addEventListener("click", () => toggleApproval("reel"));
     }
     for (const id of ["btn-approve-ig", "btn-approve-ig-m"]) {
       $(id)?.addEventListener("click", () => toggleApproval("ig_post"));
@@ -4179,50 +4218,6 @@
     $("btn-demo-csv")?.addEventListener("click", () => {
       $("csv-import-input").value = "Finland Winter Tire Rules,Instagram Carousel (4:5),48,,108,235,41,88";
     });
-
-    $("btn-load-demo-ig")?.addEventListener("click", () => {
-      $("assign-topic").value = "Finland Winter Tire Rules: Mandatory Starting November";
-      $("assign-scope").value = "Both (Article + Instagram Post)";
-      $("assign-scope").dispatchEvent(new Event("change"));
-      $("assign-instructions").value = "Key angle: Legal requirement starting November, €100+ fine enforcement by police, studded vs friction tire tread depth (3.0mm min).";
-      $("assign-links").value = "https://www.traficom.fi/en\nhttps://poliisi.fi/en";
-      $("ig-slide-count").value = "3";
-      $("ig-theme-select").value = "navy_frost";
-    });
-
-    const updateScopeUploadUI = () => {
-      const scopeSelect = $("assign-scope");
-      if (!scopeSelect) return;
-      const val = scopeSelect.value;
-      const hasReel = val === "Both" || val === "Reel" || val.includes("Reel");
-      const hasIg = val === "Instagram Post" || val.includes("Instagram Post");
-      const reelOptions = document.querySelector(".clips-editorial-box");
-      if (reelOptions) {
-        reelOptions.classList.toggle("hidden", !hasReel);
-      }
-      $("ig-post-section")?.classList.toggle("hidden", !hasIg);
-
-      const titleEl = $("clips-section-title");
-      const hintEl = $("clips-section-hint");
-      const dropText = document.querySelector("#clip-dropzone .dropzone-text");
-      if (!hasReel) {
-        if (titleEl) titleEl.innerHTML = `<svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Primary Featured Photo for Article &amp; Post (JPG, PNG, WebP)`;
-        if (hintEl) hintEl.innerHTML = `Attach your authentic primary photo. It is automatically set as the featured image for WordPress and your Instagram post card.`;
-        if (dropText && uploadedClips.length === 0) {
-          dropText.innerHTML = `<strong>Choose Primary Featured Photo</strong> from phone photo library or computer <span class="hint-inline">(drag &amp; drop or tap to browse JPG, PNG, WebP)</span>`;
-        }
-      } else {
-        if (titleEl) titleEl.innerHTML = `<svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Upload Photos or Video Clips (JPG, PNG, WebP, MP4, MOV)`;
-        if (hintEl) hintEl.innerHTML = `Upload your own authentic photos (used as featured image and reel stills) or video clips (used for Reels). Drag &amp; drop or tap to browse.`;
-        if (dropText && uploadedClips.length === 0) {
-          dropText.innerHTML = `<strong>Choose Photos or Video Clips</strong> from phone photo library or computer <span class="hint-inline">(drag &amp; drop or tap to browse JPG, PNG, MP4, MOV)</span>`;
-        }
-      }
-    };
-
-    $("assign-scope")?.addEventListener("change", updateScopeUploadUI);
-    // Initialize scope UI state
-    setTimeout(updateScopeUploadUI, 50);
 
     $("btn-claude-article")?.addEventListener("click", async () => {
       if (!currentPackageId) return;
@@ -4415,7 +4410,7 @@
       reader.readAsDataURL(file);
     });
 
-    $("comment-form").addEventListener("submit", async (e) => {
+    $("comment-form")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const text = $("comment-input").value.trim();
       if (!text && !attachedFeedbackClip) {
@@ -4459,7 +4454,7 @@
       renderReview();
     });
 
-    $("btn-save-schedule").addEventListener("click", async () => {
+    $("btn-save-schedule")?.addEventListener("click", async () => {
       $("schedule-msg").textContent = "";
       try {
         bundle = await api("/api/package/schedule", {
@@ -4620,6 +4615,77 @@
       }
     }
 
+    /* ---------- DRAFT AUTOSAVE & RESTORE ---------- */
+    function initDraftAutosave() {
+      try {
+        const savedArt = localStorage.getItem("ilf_draft_article");
+        if (savedArt) {
+          const parsed = JSON.parse(savedArt);
+          if ($("assign-topic") && !$("assign-topic").value && parsed.topic) {
+            $("assign-topic").value = parsed.topic;
+          }
+          if ($("assign-instructions") && !$("assign-instructions").value && parsed.instructions) {
+            $("assign-instructions").value = parsed.instructions;
+          }
+          if ($("assign-links") && !$("assign-links").value && parsed.links) {
+            $("assign-links").value = parsed.links;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to restore article draft:", e);
+      }
+
+      try {
+        const savedReel = localStorage.getItem("ilf_draft_reel");
+        if (savedReel) {
+          const parsed = JSON.parse(savedReel);
+          if ($("reel-topic") && !$("reel-topic").value && parsed.topic) {
+            $("reel-topic").value = parsed.topic;
+          }
+          if ($("reel-script") && !$("reel-script").value && parsed.script) {
+            $("reel-script").value = parsed.script;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to restore reel draft:", e);
+      }
+
+      const saveArticleDraft = () => {
+        try {
+          const draft = {
+            topic: $("assign-topic")?.value || "",
+            instructions: $("assign-instructions")?.value || "",
+            links: $("assign-links")?.value || "",
+          };
+          if (draft.topic || draft.instructions || draft.links) {
+            localStorage.setItem("ilf_draft_article", JSON.stringify(draft));
+          } else {
+            localStorage.removeItem("ilf_draft_article");
+          }
+        } catch (_) {}
+      };
+      $("assign-topic")?.addEventListener("input", saveArticleDraft);
+      $("assign-instructions")?.addEventListener("input", saveArticleDraft);
+      $("assign-links")?.addEventListener("input", saveArticleDraft);
+
+      const saveReelDraft = () => {
+        try {
+          const draft = {
+            topic: $("reel-topic")?.value || "",
+            script: $("reel-script")?.value || "",
+          };
+          if (draft.topic || draft.script) {
+            localStorage.setItem("ilf_draft_reel", JSON.stringify(draft));
+          } else {
+            localStorage.removeItem("ilf_draft_reel");
+          }
+        } catch (_) {}
+      };
+      $("reel-topic")?.addEventListener("input", saveReelDraft);
+      $("reel-script")?.addEventListener("input", saveReelDraft);
+    }
+    initDraftAutosave();
+
     // Article Form Submit (Mode 1: Strictly Article + Static Post, ZERO reel)
     $("assignment-article-form")?.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -4655,6 +4721,7 @@
         });
 
         currentPackageId = created.package.id;
+        try { localStorage.removeItem("ilf_draft_article"); } catch (_) {}
         setArticlePhoto(null);
         $("assign-topic").value = "";
         if ($("assign-instructions")) $("assign-instructions").value = "";
@@ -4798,6 +4865,7 @@
         });
 
         currentPackageId = created.package.id;
+        try { localStorage.removeItem("ilf_draft_reel"); } catch (_) {}
         reelUploadedClips = [];
         renderReelClipsGrid();
         $("reel-topic").value = "";
@@ -5447,17 +5515,38 @@
 
     // Filter chips
     document.querySelectorAll(".proj-chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
+      chip.addEventListener("click", async () => {
         document.querySelectorAll(".proj-chip").forEach((c) => c.classList.remove("active"));
         chip.classList.add("active");
         currentProjFilter = chip.dataset.filter;
-        renderProjectsTable();
+        if (currentProjFilter === "archived") {
+          showArchivedProjects = true;
+          await loadProjects();
+        } else {
+          if (showArchivedProjects) {
+            showArchivedProjects = false;
+            await loadProjects();
+          } else {
+            renderProjectsTable();
+          }
+        }
       });
     });
 
     // Search input & format filter
     $("proj-search-input")?.addEventListener("input", renderProjectsTable);
-    $("proj-format-filter")?.addEventListener("change", renderProjectsTable);
+    $("proj-format-filter")?.addEventListener("change", async () => {
+      const fmt = $("proj-format-filter")?.value;
+      if (fmt === "archived") {
+        showArchivedProjects = true;
+        await loadProjects();
+      } else if (showArchivedProjects) {
+        showArchivedProjects = false;
+        await loadProjects();
+      } else {
+        renderProjectsTable();
+      }
+    });
 
     // Edit Project Modal
     $("btn-close-edit-modal")?.addEventListener("click", () => {

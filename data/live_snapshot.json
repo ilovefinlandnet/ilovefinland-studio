@@ -1,7 +1,49 @@
 {
- "fetched_at": "2026-11-15T22:28:42+00:00",
+ "fetched_at": "2026-11-17T10:38:47+00:00",
  "site": "https://ilovefinland.net",
  "posts": [
+  {
+   "id": 29247,
+   "url": "https://ilovefinland.net/f-secure-to-reduce-workforce-by-108-positions-globally-including-42-in-finland-as-it-embraces-ai/",
+   "slug": "f-secure-to-reduce-workforce-by-108-positions-globally-including-42-in-finland-as-it-embraces-ai",
+   "title": "F-Secure to Reduce Workforce by 108 Positions Globally, Including 42 in Finland, as It Embraces AI",
+   "date": "2026-11-16T21:50:43",
+   "modified": "2026-11-16T21:50:43",
+   "category_ids": [
+    9
+   ],
+   "section_ids": [
+    2
+   ]
+  },
+  {
+   "id": 29245,
+   "url": "https://ilovefinland.net/russia-reportedly-seeks-finlands-nato-withdrawal-in-ukraine-talks/",
+   "slug": "russia-reportedly-seeks-finlands-nato-withdrawal-in-ukraine-talks",
+   "title": "Russia reportedly seeks Finland’s NATO withdrawal in Ukraine talks",
+   "date": "2026-11-16T21:50:21",
+   "modified": "2026-11-16T21:50:21",
+   "category_ids": [
+    9
+   ],
+   "section_ids": [
+    2
+   ]
+  },
+  {
+   "id": 29240,
+   "url": "https://ilovefinland.net/finland-applauds-estonias-border-closure-decision/",
+   "slug": "finland-applauds-estonias-border-closure-decision",
+   "title": "Finland Applauds Estonia’s Border Closure Decision",
+   "date": "2026-11-15T22:50:45",
+   "modified": "2026-11-15T22:50:45",
+   "category_ids": [
+    9
+   ],
+   "section_ids": [
+    2
+   ]
+  },
   {
    "id": 29237,
    "url": "https://ilovefinland.net/traditional-finnish-salmon-soup-lohikeitto-top-spots-and-recipe-in-helsinki/",
@@ -1471,7 +1513,10 @@
   "https://ilovefinland.net/migri-introduces-fast-track-digital-residence-permits-for-tech-specialists/",
   "https://ilovefinland.net/finland-dismisses-russian-proposal-to-withdraw-from-nato/",
   "https://ilovefinland.net/one-killed-and-another-injured-in-helsinki-knife-incident/",
-  "https://ilovefinland.net/traditional-finnish-salmon-soup-lohikeitto-top-spots-and-recipe-in-helsinki/"
+  "https://ilovefinland.net/traditional-finnish-salmon-soup-lohikeitto-top-spots-and-recipe-in-helsinki/",
+  "https://ilovefinland.net/finland-applauds-estonias-border-closure-decision/",
+  "https://ilovefinland.net/russia-reportedly-seeks-finlands-nato-withdrawal-in-ukraine-talks/",
+  "https://ilovefinland.net/f-secure-to-reduce-workforce-by-108-positions-globally-including-42-in-finland-as-it-embraces-ai/"
  ],
  "sections": [
   {
@@ -1496,7 +1541,7 @@
    "id": 2,
    "name": "News",
    "slug": "news",
-   "count": 30
+   "count": 33
   },
   {
    "id": 8,
@@ -1594,7 +1639,7 @@
    "id": 9,
    "name": "Finland",
    "slug": "finland",
-   "count": 14
+   "count": 17
   },
   {
    "id": 42,
@@ -1790,7 +1835,7 @@
   }
  ],
  "last_refresh_attempt": {
-  "at": "2026-11-15T22:28:42+00:00",
+  "at": "2026-11-17T10:38:47+00:00",
   "ok": true,
   "log": [
    {
@@ -1798,28 +1843,35 @@
     "url": "https://ilovefinland.net/wp-json/wp/v2/posts?per_page=100&page=1&_fields=id,date,modified,link,slug,title,categories,ilf_section",
     "ok": true,
     "http_status": 200,
-    "ms": 698
+    "ms": 997
+   },
+   {
+    "check": "WordPress REST: published posts page 2",
+    "url": "https://ilovefinland.net/wp-json/wp/v2/posts?per_page=100&page=2&_fields=id,date,modified,link,slug,title,categories,ilf_section",
+    "ok": true,
+    "http_status": 200,
+    "ms": 508
    },
    {
     "check": "Public sitemap: wp-sitemap-posts-post-1.xml",
     "url": "https://ilovefinland.net/wp-sitemap-posts-post-1.xml",
     "ok": true,
     "http_status": 200,
-    "ms": 562
+    "ms": 384
    },
    {
     "check": "WordPress REST: Website sections (ilf_section)",
     "url": "https://ilovefinland.net/wp-json/wp/v2/ilf_section?per_page=100&_fields=id,name,slug,count",
     "ok": true,
     "http_status": 200,
-    "ms": 515
+    "ms": 406
    },
    {
     "check": "WordPress REST: Categories",
     "url": "https://ilovefinland.net/wp-json/wp/v2/categories?per_page=100&_fields=id,name,slug,count",
     "ok": true,
     "http_status": 200,
-    "ms": 468
+    "ms": 493
    }
   ]
  }

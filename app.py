@@ -500,7 +500,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
 
             if path == "/api/projects":
-                self._send_json(get_projects_dashboard(db_path=db_path))
+                include_archived = qs.get("archived", ["0"])[0] in ("1", "true", "yes")
+                self._send_json(get_projects_dashboard(db_path=db_path, include_archived=include_archived))
                 return
 
             if path == "/api/packages":
@@ -857,6 +858,25 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 bundle["integrations"] = INTEGRATIONS_STATUS
                 self._send_json(bundle)
             except ValueError as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/package/archive":
+            pkg_id = int(body.get("package_id", 0))
+            is_archived = bool(body.get("is_archived", True))
+            from db import archive_package
+            try:
+                bundle = archive_package(pkg_id, is_archived=is_archived, db_path=db_path)
+                projects_data = get_projects_dashboard(db_path=db_path)
+                self._send_json({
+                    "ok": True,
+                    "bundle": bundle,
+                    "package_id": pkg_id,
+                    "is_archived": is_archived,
+                    "projects": projects_data["projects"],
+                    "counts": projects_data["counts"],
+                })
+            except Exception as exc:
                 self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
             return
 

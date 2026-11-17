@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=6.0" />
+  <link rel="stylesheet" href="/styles.css?v=7.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -214,6 +214,10 @@
                 <span class="proj-chip-label">Approved &amp; Scheduled</span>
                 <span id="chip-count-approved" class="proj-chip-count badge-count-green">1</span>
               </div>
+              <div class="proj-chip" data-filter="archived">
+                <span class="proj-chip-label">📦 Archived</span>
+                <span id="chip-count-archived" class="proj-chip-count" style="background:#e2e8f0;color:#475569;">0</span>
+              </div>
             </div>
 
             <!-- Search & Format Filter Bar -->
@@ -229,6 +233,7 @@
                   <option value="Reel">Reel (9:16)</option>
                   <option value="Instagram Post">Instagram Carousel (4:5)</option>
                   <option value="Both">Both (Article + Reel)</option>
+                  <option value="archived">📦 Archived Stories</option>
                 </select>
               </div>
             </div>
@@ -2353,6 +2358,6 @@
   </div>
 
   <script src="/reel-player.js?v=23.0"></script>
-  <script src="/app.js?v=23.0"></script>
+  <script src="/app.js?v=26.0"></script>
 </body>
 </html>

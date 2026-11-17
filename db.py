@@ -64,9 +64,12 @@ def helsinki_date_str(days_offset: int = 0, time_str: str = "09:00") -> str:
 
 
 def get_connection(db_path: str = DB_PATH) -> sqlite3.Connection:
-    """Open a SQLite connection with row factory enabled."""
-    conn = sqlite3.connect(db_path)
+    """Open a SQLite connection with row factory and WAL mode enabled for high concurrency."""
+    conn = sqlite3.connect(db_path, timeout=15.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL;")
+    conn.execute("PRAGMA synchronous = NORMAL;")
+    conn.execute("PRAGMA busy_timeout = 15000;")
     return conn
 
 
@@ -277,6 +280,17 @@ def init_db(db_path: str = DB_PATH) -> None:
             conn.execute("ALTER TABLE package_versions ADD COLUMN ig_post_json TEXT")
         except sqlite3.OperationalError:
             pass
+
+        # Ensure package schema migrations (archiving and WordPress direct link)
+        for col_name, col_sql in (
+            ("is_archived", "INTEGER NOT NULL DEFAULT 0"),
+            ("wordpress_post_url", "TEXT"),
+            ("wordpress_post_id", "INTEGER"),
+        ):
+            try:
+                conn.execute(f"ALTER TABLE packages ADD COLUMN {col_name} {col_sql}")
+            except sqlite3.OperationalError:
+                pass
 
         _ensure_extra_seeds(conn)
         conn.commit()
@@ -1593,18 +1607,28 @@ def list_packages(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
         conn.close()
 
 
-def get_projects_dashboard(db_path: str = DB_PATH) -> Dict[str, Any]:
+def get_projects_dashboard(db_path: str = DB_PATH, include_archived: bool = False) -> Dict[str, Any]:
     """Return an enriched list of all projects/packages with pipeline stage and counters."""
     conn = get_connection(db_path)
     try:
-        rows = conn.execute("SELECT * FROM packages ORDER BY id DESC").fetchall()
+        if include_archived:
+            rows = conn.execute("SELECT * FROM packages ORDER BY id DESC").fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM packages WHERE COALESCE(is_archived, 0) = 0 ORDER BY id DESC").fetchall()
         projects = []
         counts = {
             "total": 0,
             "in_review": 0,
             "in_progress": 0,
             "approved": 0,
+            "archived": 0,
         }
+
+        try:
+            archived_cnt = conn.execute("SELECT count(*) FROM packages WHERE COALESCE(is_archived, 0) = 1").fetchone()[0]
+            counts["archived"] = archived_cnt
+        except Exception:
+            pass
 
         for r in rows:
             pkg = dict(r)
@@ -1725,6 +1749,25 @@ def delete_project(package_id: int, db_path: str = DB_PATH) -> bool:
         cur = conn.execute("DELETE FROM packages WHERE id = ?", (package_id,))
         conn.commit()
         return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def archive_package(
+    package_id: int,
+    is_archived: bool = True,
+    db_path: str = DB_PATH,
+) -> Dict[str, Any]:
+    """Toggle archive status of a package."""
+    conn = get_connection(db_path)
+    try:
+        val = 1 if is_archived else 0
+        conn.execute(
+            "UPDATE packages SET is_archived = ?, updated_at = ? WHERE id = ?",
+            (val, utc_now_iso(), package_id),
+        )
+        conn.commit()
+        return get_package_bundle(package_id, db_path=db_path)
     finally:
         conn.close()
 
