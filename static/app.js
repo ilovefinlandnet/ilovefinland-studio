@@ -898,7 +898,6 @@
       console.error("renderWordPressArticle failed:", err);
     }
   }
-  }
 
   /* ---------- STATIC SOCIAL POST RENDERER & MULTI-FORMAT CANVASES ---------- */
   let currentStaticPost = null;
