@@ -164,6 +164,7 @@
   function initPlayer() {
     const canvas = $("reel-canvas");
     const coverCanvas = $("cover-canvas");
+    if (!canvas || !coverCanvas) return;
     const audio = $("reel-audio");
     const playBtn = $("btn-play");
     const playBtnText = $("btn-play-text");
@@ -492,71 +493,18 @@
 
     const isCurrent = curVerNum === pkg.current_version;
     approvedNow.article = pkg.article_status === "approved" && (pkg.article_approved_version === curVerNum || isCurrent);
-    approvedNow.reel = pkg.reel_status === "approved" && (pkg.reel_approved_version === curVerNum || isCurrent);
+    approvedNow.ig_post = pkg.ig_post_status === "approved" && (pkg.ig_post_approved_version === curVerNum || isCurrent);
 
     const artPill = $("status-article-pill");
-    artPill.textContent = `Article: ${statusLabel(pkg.article_status, pkg.article_approved_version)}`;
-    artPill.className = `pill ${pkg.article_status === "approved" ? "pill-approved" : "pill-revision"}`;
+    if (artPill) {
+      artPill.textContent = `Article: ${statusLabel(pkg.article_status, pkg.article_approved_version)}`;
+      artPill.className = `pill ${pkg.article_status === "approved" ? "pill-approved" : "pill-revision"}`;
+    }
 
-    const reelPill = $("status-reel-pill");
-    reelPill.textContent = `Reel: ${statusLabel(pkg.reel_status, pkg.reel_approved_version)}`;
-    reelPill.className = `pill ${pkg.reel_status === "approved" ? "pill-approved" : "pill-revision"}`;
-
-    approvedNow.ig_post = pkg.ig_post_status === "approved" && (pkg.ig_post_approved_version === curVerNum || isCurrent);
     const igPill = $("status-ig-pill");
-    const tabIg = $("tab-btn-ig");
-    const panelIg = $("panel-ig");
-    const panelReel = $("panel-reel");
-
-    // Instagram & Facebook Static Post
-    if (v.ig_post) {
-      if (igPill) {
-        igPill.classList.remove("hidden");
-        igPill.textContent = `IG Post: ${statusLabel(pkg.ig_post_status || "pending", pkg.ig_post_approved_version)}`;
-        igPill.className = `pill ${pkg.ig_post_status === "approved" ? "pill-approved" : "pill-revision"}`;
-      }
-      if (tabIg) tabIg.classList.remove("hidden");
-      if (panelIg) panelIg.classList.remove("hidden");
-
-      for (const id of ["btn-approve-ig", "btn-approve-ig-m"]) {
-        const b = $(id);
-        if (b) {
-          b.classList.remove("hidden");
-          b.classList.toggle("approved", approvedNow.ig_post);
-          b.classList.toggle("is-approved", approvedNow.ig_post);
-          b.innerHTML = approvedNow.ig_post
-            ? `${getIcon("check", 16)} <span>IG Post Approved</span>`
-            : `${getIcon("check", 16)} <span>Approve IG Post</span>`;
-        }
-      }
-    } else {
-      if (igPill) igPill.classList.add("hidden");
-      if (tabIg) tabIg.classList.add("hidden");
-      if (panelIg) panelIg.classList.add("hidden");
-      $("btn-approve-ig")?.classList.add("hidden");
-      $("btn-approve-ig-m")?.classList.add("hidden");
-    }
-
-    // Vertical Reel
-    const hasReelContent = v.reel && v.reel.scenes && v.reel.scenes.length > 0;
-    if (panelReel) {
-      if (hasReelContent || pkg.reel_status !== "none") {
-        panelReel.classList.remove("hidden");
-        $("tab-btn-reel")?.classList.remove("hidden");
-      } else {
-        panelReel.classList.add("hidden");
-        $("tab-btn-reel")?.classList.add("hidden");
-      }
-    }
-
-    // Auto-focus Reel tab if package scope is dedicated Reel
-    if (pkg.assignment_scope === "Reel" && hasReelContent) {
-      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === "reel"));
-      panelReel?.classList.remove("hidden");
-      $("panel-article")?.classList.add("hidden");
-      $("tab-btn-article")?.classList.add("hidden");
-    } else {
-      $("tab-btn-article")?.classList.remove("hidden");
+    if (igPill) {
+      igPill.textContent = `Social Post: ${statusLabel(pkg.ig_post_status || "pending", pkg.ig_post_approved_version)}`;
+      igPill.className = `pill ${pkg.ig_post_status === "approved" ? "pill-approved" : "pill-revision"}`;
     }
 
     for (const id of ["btn-approve-article", "btn-approve-article-m"]) {
@@ -569,14 +517,16 @@
           : `${getIcon("check", 16)} <span>Approve Article</span>`;
       }
     }
-    for (const id of ["btn-approve-reel", "btn-approve-reel-m"]) {
+
+    for (const id of ["btn-approve-ig", "btn-approve-ig-m"]) {
       const b = $(id);
       if (b) {
-        b.classList.toggle("approved", approvedNow.reel);
-        b.classList.toggle("is-approved", approvedNow.reel);
-        b.innerHTML = approvedNow.reel
-          ? `${getIcon("check", 16)} <span>Reel Approved</span>`
-          : `${getIcon("check", 16)} <span>Approve Reel</span>`;
+        b.classList.remove("hidden");
+        b.classList.toggle("approved", approvedNow.ig_post);
+        b.classList.toggle("is-approved", approvedNow.ig_post);
+        b.innerHTML = approvedNow.ig_post
+          ? `${getIcon("check", 16)} <span>Post Approved</span>`
+          : `${getIcon("check", 16)} <span>Approve Post</span>`;
       }
     }
 
@@ -590,8 +540,8 @@
       renderStaticPost(v.ig_post, v.article);
     }
 
-    // 3. Render Reel (On Demand or Active Player)
-    renderReelWorkspace(v);
+    // 3. Render Reel (Only if legacy panel exists)
+    if ($("panel-reel")) renderReelWorkspace(v);
 
     // Comment history
     const ch = $("comment-history");
@@ -4474,51 +4424,8 @@
       }
     });
 
-    /* ---------- PRODUCTION DESK (ARTICLE & REEL SEPARATION) ---------- */
+    /* ---------- PRODUCTION DESK (ARTICLE & SOCIAL POST WORKSPACE) ---------- */
     let articleFeaturedPhoto = null;
-    let reelUploadedClips = [];
-
-    const tabArticle = $("tab-btn-mode-article");
-    const tabReel = $("tab-btn-mode-reel");
-    const panelArticle = $("mode-panel-article");
-    const panelReel = $("mode-panel-reel");
-
-    function switchProdMode(mode) {
-      if (mode === "article") {
-        tabArticle?.classList.add("active");
-        if (tabArticle) {
-          tabArticle.style.background = "var(--brand-blue)";
-          tabArticle.style.color = "#fff";
-          tabArticle.style.border = "none";
-        }
-        tabReel?.classList.remove("active");
-        if (tabReel) {
-          tabReel.style.background = "#f8fafc";
-          tabReel.style.color = "#475569";
-          tabReel.style.border = "1px solid #cbd5e1";
-        }
-        panelArticle?.classList.remove("hidden");
-        panelReel?.classList.add("hidden");
-      } else {
-        tabReel?.classList.add("active");
-        if (tabReel) {
-          tabReel.style.background = "var(--brand-blue)";
-          tabReel.style.color = "#fff";
-          tabReel.style.border = "none";
-        }
-        tabArticle?.classList.remove("active");
-        if (tabArticle) {
-          tabArticle.style.background = "#f8fafc";
-          tabArticle.style.color = "#475569";
-          tabArticle.style.border = "1px solid #cbd5e1";
-        }
-        panelArticle?.classList.add("hidden");
-        panelReel?.classList.remove("hidden");
-      }
-    }
-
-    tabArticle?.addEventListener("click", () => switchProdMode("article"));
-    tabReel?.addEventListener("click", () => switchView("reel-studio"));
 
     // Mode 1: Article Single Featured Photo Dropzone
     const photoDropzone = $("article-photo-dropzone");
@@ -4638,21 +4545,6 @@
         console.warn("Failed to restore article draft:", e);
       }
 
-      try {
-        const savedReel = localStorage.getItem("ilf_draft_reel");
-        if (savedReel) {
-          const parsed = JSON.parse(savedReel);
-          if ($("reel-topic") && !$("reel-topic").value && parsed.topic) {
-            $("reel-topic").value = parsed.topic;
-          }
-          if ($("reel-script") && !$("reel-script").value && parsed.script) {
-            $("reel-script").value = parsed.script;
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to restore reel draft:", e);
-      }
-
       const saveArticleDraft = () => {
         try {
           const draft = {
@@ -4670,22 +4562,6 @@
       $("assign-topic")?.addEventListener("input", saveArticleDraft);
       $("assign-instructions")?.addEventListener("input", saveArticleDraft);
       $("assign-links")?.addEventListener("input", saveArticleDraft);
-
-      const saveReelDraft = () => {
-        try {
-          const draft = {
-            topic: $("reel-topic")?.value || "",
-            script: $("reel-script")?.value || "",
-          };
-          if (draft.topic || draft.script) {
-            localStorage.setItem("ilf_draft_reel", JSON.stringify(draft));
-          } else {
-            localStorage.removeItem("ilf_draft_reel");
-          }
-        } catch (_) {}
-      };
-      $("reel-topic")?.addEventListener("input", saveReelDraft);
-      $("reel-script")?.addEventListener("input", saveReelDraft);
     }
     initDraftAutosave();
 
@@ -4784,150 +4660,6 @@
         switchView("review");
       } catch (err) {
         alert(`Failed to create assignment: ${err.message}`);
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = origHtml;
-        }
-      }
-    });
-
-    // Mode 2: Reel Multi-Clip Dropzone & Grid
-    const reelDropzone = $("reel-dropzone");
-    const reelFilesInput = $("reel-files-input");
-    const reelGrid = $("reel-clips-grid");
-
-    function renderReelClipsGrid() {
-      if (!reelGrid) return;
-      reelGrid.innerHTML = "";
-      reelUploadedClips.forEach((clip, idx) => {
-        const item = document.createElement("div");
-        item.style.cssText = "background:#fff;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;position:relative;display:flex;flex-direction:column;";
-        item.innerHTML = `
-          <div style="aspect-ratio:9/16;position:relative;background:#000;">
-            <img src="${clip.url}" alt="${escapeHtml(clip.filename)}" style="width:100%;height:100%;object-fit:cover;" />
-            <span style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);color:#fff;font-size:0.65rem;padding:2px 5px;border-radius:4px;font-weight:700;">Clip ${idx + 1}</span>
-            <button type="button" class="btn-del-reel-clip" data-idx="${idx}" style="position:absolute;top:4px;right:4px;background:rgba(239,68,68,0.9);color:#fff;border:none;border-radius:4px;width:20px;height:20px;cursor:pointer;font-size:0.7rem;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
-          </div>
-          <div style="padding:4px 6px;font-size:0.7rem;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(clip.filename)}">
-            ${escapeHtml(clip.filename)}
-          </div>
-        `;
-        item.querySelector(".btn-del-reel-clip")?.addEventListener("click", (e) => {
-          e.stopPropagation();
-          reelUploadedClips.splice(idx, 1);
-          renderReelClipsGrid();
-        });
-        reelGrid.appendChild(item);
-      });
-    }
-
-    if (reelDropzone && reelFilesInput) {
-      reelDropzone.addEventListener("click", () => reelFilesInput.click());
-      reelDropzone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        reelDropzone.style.borderColor = "var(--brand-blue)";
-      });
-      reelDropzone.addEventListener("dragleave", (e) => {
-        e.preventDefault();
-        reelDropzone.style.borderColor = "#cbd5e1";
-      });
-      reelDropzone.addEventListener("drop", async (e) => {
-        e.preventDefault();
-        reelDropzone.style.borderColor = "#cbd5e1";
-        if (e.dataTransfer && e.dataTransfer.files) {
-          await handleReelFilesUpload(Array.from(e.dataTransfer.files));
-        }
-      });
-      reelFilesInput.addEventListener("change", async (e) => {
-        if (e.target.files) {
-          await handleReelFilesUpload(Array.from(e.target.files));
-        }
-      });
-    }
-
-    async function handleReelFilesUpload(files) {
-      for (const file of files) {
-        if (reelUploadedClips.length >= 8) {
-          alert("Maximum 8 clips allowed per reel.");
-          break;
-        }
-        try {
-          const isImg = file.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|gif)$/i.test(file.name);
-          const base64Data = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          const res = await api("/api/upload/media-clip", {
-            method: "POST",
-            body: JSON.stringify({
-              data_base64: base64Data,
-              filename: file.name,
-              media_type: isImg ? "image" : "video",
-              credit: `Footage/Photo: ILF (${file.name})`,
-            }),
-          });
-          reelUploadedClips.push({
-            id: reelUploadedClips.length + 1,
-            filename: file.name,
-            url: res.url,
-            poster: res.url,
-            duration: 3.5,
-            media_type: isImg ? "image" : "video",
-            source: "ILF",
-            credit: `ILF (${file.name})`,
-          });
-        } catch (err) {
-          alert(`Error uploading clip "${file.name}": ${err.message}`);
-        }
-      }
-      renderReelClipsGrid();
-    }
-
-    // Reel Form Submit (Mode 2: Dedicated Video Reel)
-    $("assignment-reel-form")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const submitBtn = $("btn-submit-reel");
-      const origHtml = submitBtn ? submitBtn.innerHTML : "";
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>⏳ Composing Reel Storyboard...</span>`;
-      }
-
-      try {
-        const topic = $("reel-topic").value.trim();
-        const script = $("reel-script") ? $("reel-script").value.trim() : "";
-        const targetLength = $("reel-target-length") ? parseInt($("reel-target-length").value, 10) : 28;
-        const audioMode = $("reel-audio-mode") ? $("reel-audio-mode").value : "authentic_source_and_music";
-        const openingShot = $("reel-opening-shot") ? $("reel-opening-shot").value : "Clip 1";
-
-        const payload = {
-          topic,
-          scope: "Reel",
-          instructions: script,
-          clips: reelUploadedClips,
-          target_length_sec: targetLength,
-          audio_mode: audioMode,
-          opening_shot_note: openingShot,
-        };
-
-        const created = await api("/api/assignments", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-
-        currentPackageId = created.package.id;
-        try { localStorage.removeItem("ilf_draft_reel"); } catch (_) {}
-        reelUploadedClips = [];
-        renderReelClipsGrid();
-        $("reel-topic").value = "";
-        if ($("reel-script")) $("reel-script").value = "";
-        await loadAll();
-        switchView("review");
-      } catch (err) {
-        alert(`Failed to compose reel: ${err.message}`);
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -5498,6 +5230,13 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = orig;
+      }
+    });
+
+    // Bridge: Open current article in dedicated Reel Editor
+    $("btn-open-reel-from-review")?.addEventListener("click", () => {
+      if (window.ReelStudio && currentPackageId) {
+        window.ReelStudio.importArticleAndOpen(currentPackageId);
       }
     });
 

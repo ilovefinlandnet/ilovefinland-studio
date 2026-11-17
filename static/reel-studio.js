@@ -1783,6 +1783,26 @@
       }
     }
 
+    async importArticleAndOpen(pkgId) {
+      if (!pkgId) return;
+      try {
+        const res = await (await fetch("/api/reel/project/import-article", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ package_id: pkgId }),
+        })).json();
+
+        if (res.project) {
+          if (window.switchView) window.switchView("reel-studio");
+          await this.openProject(res.project.id);
+        } else {
+          throw new Error(res.error || "Import failed.");
+        }
+      } catch (err) {
+        alert(`Failed to import article into Reel Editor: ${err.message}`);
+      }
+    }
+
     // =========================================================================
     // AI ASSIST (OPTIONAL)
     // =========================================================================
