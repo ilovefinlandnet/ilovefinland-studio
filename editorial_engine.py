@@ -3750,7 +3750,12 @@ def build_static_social_post(
         line1 = "MIGRI FAST-TRACK:"
         line2 = "DIGITAL PERMITS FOR"
         line3 = "TECH SPECIALISTS!"
-    elif "SAUNA" in t_upper or "ICE" in t_upper:
+    elif re.search(r'\b(stubb|president)\b', t_upper, re.IGNORECASE) and re.search(r'\b(putin|talks|ukraine|russia)\b', t_upper, re.IGNORECASE):
+        badge_text = "NEWS"
+        line1 = "PRESIDENT STUBB:"
+        line2 = "DIRECT TALKS WITH PUTIN"
+        line3 = "URGED OVER UKRAINE WAR"
+    elif re.search(r'\b(sauna|avantouinti|ice\s*swimming|avanto)\b', t_upper, re.IGNORECASE):
         line1 = "HELSINKI WINTER SAUNA:"
         line2 = "FIRST-TIMER RULES &"
         line3 = "ICE SWIMMING TIPS!"
@@ -3783,11 +3788,11 @@ def build_static_social_post(
         line1 = "OLD MARKET HALL:"
         line2 = "WHAT TO EAT & LOCAL"
         line3 = "FOOD ORDER TIPS!"
-    elif "TAX" in t_upper or "VERO" in t_upper or "HOUSEHOLD" in t_upper:
+    elif re.search(r'\b(tax|taxes|taxation|verohallinto|vero)\b', t_upper, re.IGNORECASE):
         line1 = "FINLAND TAX UPDATE:"
         line2 = "NEW ANNUAL RULES FOR"
         line3 = "HOUSEHOLDS & EXPATS!"
-    elif "NVIDIA" in t_upper or "AI" in t_upper or "COMPUTE" in t_upper:
+    elif re.search(r'\b(nvidia|blackwell)\b', t_upper, re.IGNORECASE) or (re.search(r'\b(ai|artificial\s*intelligence)\b', t_upper, re.IGNORECASE) and not re.search(r'\b(ukraine|war|russia|stubb|putin|president|nato)\b', t_upper, re.IGNORECASE)):
         line1 = "NVIDIA UNVEILS:"
         line2 = "NEXT-GEN BLACKWELL"
         line3 = "AI ARCHITECTURE!"

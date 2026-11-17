@@ -4520,6 +4520,8 @@
         const audioMode = $("clip-audio-mode") ? $("clip-audio-mode").value : "authentic_source_and_music";
         const openingShot = $("clip-opening-select") ? $("clip-opening-select").value : "Clip 1";
 
+        const isReelRequested = scope === "Reel" || scope === "Both" || /(?:IMAGE|SCENE|CLIP|SLIDE)\s+\d+/i.test($("assign-instructions").value);
+
         const payload = {
           topic: $("assign-topic").value.trim(),
           scope,
@@ -4529,7 +4531,7 @@
           has_voice_note: voiceBar ? voiceBar.dataset.hasVoice === "1" : false,
           custom_photo: customPhoto,
           custom_additional_photo: customAdditionalPhoto,
-          clips: uploadedClips.length > 0 ? uploadedClips : undefined,
+          clips: isReelRequested && uploadedClips.length > 0 ? uploadedClips : undefined,
           target_length_sec: targetLength,
           audio_mode: audioMode,
           opening_shot_note: openingShot,

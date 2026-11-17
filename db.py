@@ -3066,9 +3066,9 @@ def create_assignment(
         featured_image=article["featured_image"],
     )
 
-    # 3. Decouple Reels: Reel is generated if explicitly requested in scope or if video clips are provided
+    # 3. Decouple Reels: Reel is generated ONLY if explicitly requested in scope or if instructions have explicit scene blocks
     has_script_in_instructions = bool(re.search(r'(?:IMAGE|SCENE|CLIP|SLIDE)\s+\d+', instructions, re.IGNORECASE))
-    is_reel_requested = scope in ("Reel", "Both") or (clips and len(clips) > 0) or has_script_in_instructions
+    is_reel_requested = scope in ("Reel", "Both") or has_script_in_instructions
     reel = None
     reel_status = "none"
     if is_reel_requested:
