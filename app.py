@@ -790,8 +790,48 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")
 
     def do_POST(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        parsed_url = urlparse(self.path)
+        path = parsed_url.path
         db_path = getattr(self.server, "db_path", DB_PATH)
+
+        # High-performance raw binary streaming upload for Reel photos and videos (supports files up to 200MB)
+        if path == "/api/reel/upload-raw":
+            qs = parse_qs(parsed_url.query)
+            fname = qs.get("filename", ["upload.jpg"])[0]
+            mtype = qs.get("type", ["image"])[0]
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0:
+                self._send_json({"error": "No file content received"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            if length > 200 * 1024 * 1024:
+                self._send_json({"error": "File size exceeds 200MB limit"}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            clean_name = re.sub(r'[^A-Za-z0-9_.-]', '_', fname)
+            save_name = f"reel_{secrets.token_hex(4)}_{clean_name}"
+            uploads_dir = os.path.join(STATIC_DIR, "assets", "uploads")
+            os.makedirs(uploads_dir, exist_ok=True)
+            save_path = os.path.join(uploads_dir, save_name)
+
+            remaining = length
+            with open(save_path, "wb") as f:
+                while remaining > 0:
+                    chunk = self.rfile.read(min(remaining, 65536))
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    remaining -= len(chunk)
+
+            url = f"/assets/uploads/{save_name}"
+            self._send_json({
+                "ok": True,
+                "url": url,
+                "filename": fname,
+                "media_type": mtype,
+                "size_bytes": length,
+                "duration": 3.5 if mtype == "image" else 5.0,
+            })
+            return
 
         try:
             body = self._read_json_body()

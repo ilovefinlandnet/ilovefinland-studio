@@ -688,48 +688,56 @@
       for (let i = 0; i < files.length; i++) {
         if (pool.length >= 10) break;
         const file = files[i];
+
+        // Format validation
+        if (/\.heic$/i.test(file.name)) {
+          alert(`"${file.name}" is an Apple HEIC file, which is not supported in web browsers. Please export as JPG or PNG and re-upload.`);
+          continue;
+        }
+
+        // File size check: up to 200MB
+        if (file.size > 200 * 1024 * 1024) {
+          alert(`"${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum file size is 200MB.`);
+          continue;
+        }
+
         try {
           if (statusText) statusText.textContent = `Uploading ${i + 1} of ${totalToUpload}: ${file.name}...`;
           const pct = Math.round(((i) / totalToUpload) * 100);
           if (statusPct) statusPct.textContent = `${pct}%`;
           if (progressBar) progressBar.style.width = `${pct}%`;
 
-          const isImg = file.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|gif)$/i.test(file.name);
-          const base64Data = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
+          const isImg = file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name);
+          const localBlobUrl = URL.createObjectURL(file);
 
-          const res = await (await fetch("/api/reel/upload-media", {
+          // Fast direct binary streaming upload (supports files up to 200MB without base64 overhead)
+          const uploadEndpoint = `/api/reel/upload-raw?filename=${encodeURIComponent(file.name)}&type=${isImg ? "image" : "video"}`;
+          const res = await (await fetch(uploadEndpoint, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              data_base64: base64Data,
-              filename: file.name,
-              media_type: isImg ? "image" : "video",
-            }),
+            headers: { "Content-Type": file.type || "application/octet-stream" },
+            body: file,
           })).json();
 
-          if (res.ok && res.url) {
-            const item = {
-              id: `med_${pool.length + 1}_${Date.now().toString(36)}`,
-              filename: file.name,
-              url: res.url,
-              type: isImg ? "image" : "video",
-              duration: isImg ? 3.5 : (res.duration || 5.0),
-            };
-            if (isImg) {
-              const img = new Image();
-              img.src = item.url;
-              img.onload = () => this.render();
-              this.cachedImages[item.url] = img;
-            }
-            pool.push(item);
-            newlyUploaded.push(item);
-            uploadedCount++;
+          const finalUrl = (res.ok && res.url) ? res.url : localBlobUrl;
+          const item = {
+            id: `med_${pool.length + 1}_${Date.now().toString(36)}`,
+            filename: file.name,
+            url: finalUrl,
+            type: isImg ? "image" : "video",
+            duration: isImg ? 3.5 : (res.duration || 5.0),
+          };
+
+          if (isImg) {
+            const img = new Image();
+            img.src = finalUrl;
+            img.onload = () => this.render();
+            this.cachedImages[finalUrl] = img;
+            this.cachedImages[localBlobUrl] = img;
           }
+
+          pool.push(item);
+          newlyUploaded.push(item);
+          uploadedCount++;
         } catch (err) {
           alert(`Failed to upload ${file.name}: ${err.message}`);
         }

@@ -41,7 +41,7 @@ class TestTimelineStretchingAndIcons(unittest.TestCase):
         # Seeks playhead directly into newly added clip so preview renders it immediately past any transition
         self.assertIn("this.seekTo(targetSeek)", js)
         # Preloads uploaded image directly
-        self.assertIn("this.cachedImages[item.url] = img", js)
+        self.assertIn("this.cachedImages[finalUrl] = img", js)
         # Clicking media pool card adds to timeline
         self.assertIn("container.querySelectorAll(\".reel-media-pool-card\").forEach((card) => {", js)
         self.assertIn("if (pool[idx]) this.addMediaItemToTimeline(pool[idx]);", js)

@@ -12,8 +12,8 @@
   --electric-blue: #168BFF;
   
   --text-primary: #FFFFFF;
-  --text-secondary: #B8C4D4;
-  --text-muted: #8F9CAE;
+  --text-secondary: #E2E8F0;
+  --text-muted: #CBD5E1;
   --border-subtle: #303B4D;
   --border-color: #303B4D;
 
@@ -25,8 +25,8 @@
   --card: #162235;
   --card-hover: #1C2B42;
   --ink: #FFFFFF;
-  --ink-secondary: #B8C4D4;
-  --muted: #8F9CAE;
+  --ink-secondary: #E2E8F0;
+  --muted: #CBD5E1;
   --border: #303B4D;
   --border-focus: #168BFF;
 
@@ -384,7 +384,7 @@ html, body {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #64748B;
+  color: #94A3B8;
   padding: 12px 12px 4px;
 }
 
@@ -971,11 +971,11 @@ html, body {
 /* Article */
 .rule-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .rule-chip { font-size: 0.72rem; background: var(--green-bg); color: var(--green); padding: 3px 10px; border-radius: var(--radius-pill); font-weight: 600; border: 1px solid var(--green-border); }
-.article-headline { margin: 0 0 10px; font-size: 1.35rem; font-weight: 700; color: var(--navy); letter-spacing: -0.025em; line-height: 1.3; }
-.article-dek { margin: 0 0 12px; padding-left: 12px; border-left: 3px solid var(--brand-blue); font-weight: 500; font-size: 0.98rem; color: #334155; line-height: 1.5; }
+.article-headline { margin: 0 0 10px; font-size: 1.35rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.025em; line-height: 1.3; }
+.article-dek { margin: 0 0 12px; padding-left: 12px; border-left: 3px solid var(--bright-blue); font-weight: 500; font-size: 0.98rem; color: #E2E8F0; line-height: 1.5; }
 .image-credit { font-size: 0.76rem; color: var(--muted); margin-bottom: 12px; font-style: italic; }
-.article-body p { margin: 0 0 12px; font-size: 0.94rem; line-height: 1.6; color: #1E293B; }
-.sources-box { padding: 14px 16px; background: #F8FAFC; border-radius: 12px; border: 1px solid var(--border); }
+.article-body p { margin: 0 0 12px; font-size: 0.94rem; line-height: 1.6; color: #E2E8F0; }
+.sources-box { padding: 14px 16px; background: #162235; border-radius: 12px; border: 1px solid var(--border); color: #E2E8F0; }
 .sources-list { margin: 6px 0 0; padding-left: 18px; font-size: 0.84rem; line-height: 1.5; }
 
 /* Reel */
@@ -1470,7 +1470,7 @@ textarea:focus-visible {
 .check-item .hint-text {
   font-size: 0.81rem;
   line-height: 1.55;
-  color: #475569;
+  color: #CBD5E1;
   white-space: normal;
   word-break: normal;
   overflow-wrap: break-word;
@@ -2879,16 +2879,16 @@ textarea:focus-visible {
   padding: 8px 10px;
   font-family: inherit;
   font-size: 0.86rem;
-  color: #1e293b;
-  background: #ffffff;
+  color: #FFFFFF;
+  background: #162235;
   box-sizing: border-box;
   transition: border-color 0.15s ease;
 }
 
 .wp-input:focus, .wp-textarea:focus, .wp-select:focus {
   outline: none;
-  border-color: var(--brand-blue);
-  box-shadow: 0 0 0 2px rgba(0, 56, 130, 0.12);
+  border-color: var(--bright-blue);
+  box-shadow: 0 0 0 2px rgba(22, 139, 255, 0.2);
 }
 
 .wp-textarea {
@@ -2900,10 +2900,10 @@ textarea:focus-visible {
   padding: 2px 8px;
   font-size: 0.72rem;
   font-weight: 600;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #303B4D;
   border-radius: 5px;
-  background: #f8fafc;
-  color: #334155;
+  background: #162235;
+  color: #CBD5E1;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -2912,7 +2912,9 @@ textarea:focus-visible {
 }
 
 .btn-copy-field:hover {
-  background: #e2e8f0;
+  background: #1C2B42;
+  color: #FFFFFF;
+}
   color: #0f172a;
 }
 
@@ -3112,11 +3114,11 @@ textarea:focus-visible {
   width: 120px;
   flex-shrink: 0;
   font-weight: 600;
-  color: #64748b;
+  color: #CBD5E1;
 }
 
 .meta-val {
-  color: #1e293b;
+  color: #FFFFFF;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3245,7 +3247,7 @@ textarea:focus-visible {
 }
 .guide-desc {
   margin: 0;
-  color: #334155;
+  color: #CBD5E1;
   font-size: 0.76rem;
 }
 
