@@ -155,6 +155,9 @@
     if (viewName === "performance") loadPerformance();
     if (viewName === "connections") loadConnections();
     if (viewName === "ai-media") initAiMediaStudio();
+    if (viewName === "reel-studio" && window.ReelStudio) {
+      window.ReelStudio.loadHubProjects();
+    }
   }
 
   /* ---------- PLAYER WIRING ---------- */
@@ -4515,7 +4518,7 @@
     }
 
     tabArticle?.addEventListener("click", () => switchProdMode("article"));
-    tabReel?.addEventListener("click", () => switchProdMode("reel"));
+    tabReel?.addEventListener("click", () => switchView("reel-studio"));
 
     // Mode 1: Article Single Featured Photo Dropzone
     const photoDropzone = $("article-photo-dropzone");

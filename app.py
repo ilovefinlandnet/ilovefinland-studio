@@ -518,6 +518,24 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(bundle)
                 return
 
+            # Modern Reel Studio Endpoints
+            if path == "/api/reel/projects":
+                include_archived = qs.get("archived", ["0"])[0] in ("1", "true", "yes")
+                from db import list_reel_projects
+                projects = list_reel_projects(include_archived=include_archived, db_path=db_path)
+                self._send_json({"projects": projects, "count": len(projects)})
+                return
+
+            if path == "/api/reel/project":
+                proj_id = int(qs.get("id", ["0"])[0])
+                from db import get_reel_project
+                proj = get_reel_project(proj_id, db_path=db_path)
+                if not proj:
+                    self._send_json({"error": "Reel project not found"}, status=HTTPStatus.NOT_FOUND)
+                    return
+                self._send_json({"project": proj})
+                return
+
             if path == "/api/calendar":
                 self._send_json(get_calendar_data(db_path=db_path))
                 return
@@ -878,6 +896,164 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 })
             except Exception as exc:
                 self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        # Modern Reel Studio REST API
+        if path == "/api/reel/project/new":
+            title = (body.get("title") or "Untitled Reel").strip()
+            pkg_id = body.get("package_id")
+            from db import create_reel_project
+            proj = create_reel_project(title=title, package_id=int(pkg_id) if pkg_id else None, db_path=db_path)
+            self._send_json({"project": proj, "status": "created"})
+            return
+
+        if path == "/api/reel/project/import-article":
+            pkg_id = int(body.get("package_id", 0))
+            from db import import_article_to_reel_project
+            try:
+                proj = import_article_to_reel_project(pkg_id, db_path=db_path)
+                self._send_json({"project": proj, "status": "imported"})
+            except Exception as ex:
+                self._send_json({"error": str(ex)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/reel/project/save":
+            proj_id = int(body.get("id", 0))
+            title = body.get("title")
+            timeline = body.get("timeline")
+            status = body.get("status")
+            from db import update_reel_project
+            try:
+                proj = update_reel_project(
+                    project_id=proj_id,
+                    title=title,
+                    timeline=timeline,
+                    status=status,
+                    db_path=db_path,
+                )
+                self._send_json({"project": proj, "status": "saved"})
+            except Exception as ex:
+                self._send_json({"error": str(ex)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/reel/project/duplicate":
+            proj_id = int(body.get("id", 0))
+            from db import duplicate_reel_project
+            try:
+                proj = duplicate_reel_project(proj_id, db_path=db_path)
+                self._send_json({"project": proj, "status": "duplicated"})
+            except Exception as ex:
+                self._send_json({"error": str(ex)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/reel/project/delete":
+            proj_id = int(body.get("id", 0))
+            from db import delete_reel_project
+            delete_reel_project(proj_id, db_path=db_path)
+            self._send_json({"ok": True, "id": proj_id})
+            return
+
+        if path == "/api/reel/project/archive":
+            proj_id = int(body.get("id", 0))
+            is_archived = bool(body.get("is_archived", True))
+            from db import archive_reel_project
+            res = archive_reel_project(proj_id, is_archived=is_archived, db_path=db_path)
+            self._send_json({"ok": True, "project": res})
+            return
+
+        if path == "/api/reel/upload-media":
+            data_b64 = body.get("data_base64", "")
+            fname = body.get("filename", "upload.jpg")
+            mtype = body.get("media_type", "image")
+            if not data_b64:
+                self._send_json({"error": "No media data provided"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            if "," in data_b64:
+                data_b64 = data_b64.split(",", 1)[1]
+            try:
+                raw_bytes = base64.b64decode(data_b64)
+            except Exception as ex:
+                self._send_json({"error": f"Invalid base64: {ex}"}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            ext = os.path.splitext(fname)[1].lower() or (".mp4" if mtype == "video" else ".jpg")
+            clean_name = re.sub(r'[^A-Za-z0-9_.-]', '_', fname)
+            save_name = f"reel_{secrets.token_hex(4)}_{clean_name}"
+            uploads_dir = os.path.join(STATIC_DIR, "assets", "uploads")
+            os.makedirs(uploads_dir, exist_ok=True)
+            save_path = os.path.join(uploads_dir, save_name)
+            with open(save_path, "wb") as f:
+                f.write(raw_bytes)
+
+            url = f"/assets/uploads/{save_name}"
+            self._send_json({
+                "ok": True,
+                "url": url,
+                "filename": fname,
+                "media_type": mtype,
+                "size_bytes": len(raw_bytes),
+                "duration": 3.5 if mtype == "image" else 5.0,
+            })
+            return
+
+        if path == "/api/reel/export":
+            proj_id = int(body.get("project_id", 0))
+            from db import get_reel_project, update_reel_project
+            import media_gen
+            proj = get_reel_project(proj_id, db_path=db_path)
+            if not proj:
+                self._send_json({"error": "Project not found"}, status=HTTPStatus.NOT_FOUND)
+                return
+            timeline = body.get("timeline") or proj.get("timeline", {})
+            out_filename = f"rendered_reel_proj_{proj_id}_{secrets.token_hex(3)}.mp4"
+            out_path = os.path.join(STATIC_DIR, "assets", out_filename)
+            try:
+                media_gen.export_reel_project_timeline_mp4(
+                    timeline=timeline,
+                    output_path=out_path,
+                    project_title=proj.get("title", "ILoveFinland Reel"),
+                )
+                export_url = f"/assets/{out_filename}"
+                update_reel_project(
+                    project_id=proj_id,
+                    timeline=timeline,
+                    status="exported",
+                    exported_video_url=export_url,
+                    thumbnail_url=export_url,
+                    db_path=db_path,
+                )
+                self._send_json({
+                    "success": True,
+                    "download_url": export_url,
+                    "project_id": proj_id,
+                    "filename": out_filename,
+                })
+            except Exception as ex:
+                self._send_json({"error": f"Render failed: {ex}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return
+
+        if path == "/api/reel/ai-assist":
+            prompt_type = body.get("type", "hooks")
+            topic = (body.get("topic") or "Finland").strip()
+            clean_topic = topic.upper()
+            if prompt_type == "hooks":
+                suggestions = [
+                    f"5 THINGS YOU DIDN'T KNOW ABOUT {clean_topic}",
+                    f"WHY FINNS LOVE {clean_topic}",
+                    f"THE SECRET TO {clean_topic} IN FINLAND",
+                    f"INSIDE {clean_topic}: A LOCAL FINNISH GUIDE",
+                ]
+            elif prompt_type == "subtitles":
+                suggestions = [
+                    f"Experience the quiet magic and seasonal beauty across Finland.",
+                    f"Essential guide for residents and travelers in Finland.",
+                    f"Authentic local insights verified by ILoveFinland Studio.",
+                ]
+            else:
+                suggestions = [
+                    f"#Finland #DiscoverFinland #NordicLife #VisitFinland #{topic.replace(' ', '')}",
+                ]
+            self._send_json({"ok": True, "type": prompt_type, "suggestions": suggestions})
             return
 
         if path == "/api/package/publish-wordpress-draft":

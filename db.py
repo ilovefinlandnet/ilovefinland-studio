@@ -292,6 +292,28 @@ def init_db(db_path: str = DB_PATH) -> None:
             except sqlite3.OperationalError:
                 pass
 
+        # Create Modern Reel Projects Table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS reel_projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                package_id INTEGER,
+                title TEXT NOT NULL,
+                aspect_ratio TEXT NOT NULL DEFAULT '9:16',
+                width INTEGER NOT NULL DEFAULT 1080,
+                height INTEGER NOT NULL DEFAULT 1920,
+                duration_sec REAL NOT NULL DEFAULT 0.0,
+                timeline_json TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'draft',
+                exported_video_url TEXT,
+                thumbnail_url TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                is_archived INTEGER NOT NULL DEFAULT 0
+            );
+            """
+        )
+
         _ensure_extra_seeds(conn)
         conn.commit()
     finally:
@@ -4917,3 +4939,427 @@ def list_studio_titles(db_path: str = DB_PATH) -> List[str]:
         return [r["title"] for r in conn.execute("SELECT title FROM packages").fetchall()]
     finally:
         conn.close()
+
+
+# ==============================================================================
+# MODERN REEL STUDIO DATABASE LAYER & TIMELINE SCHEMA
+# ==============================================================================
+
+def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """Build a comprehensive, modern multi-track timeline structure."""
+    media_items = media_items or []
+    clips = []
+    t_cursor = 0.0
+    default_clip_dur = 3.5
+    for i, m in enumerate(media_items[:10]):
+        dur = float(m.get("duration") or default_clip_dur)
+        clips.append({
+            "id": f"clip_{i+1}_{secrets.token_hex(3)}",
+            "media_id": m.get("id") or f"m_{i+1}",
+            "filename": m.get("filename") or f"Media {i+1}",
+            "url": m.get("url") or "",
+            "type": m.get("media_type") or m.get("type") or "image",
+            "start_sec": round(t_cursor, 2),
+            "end_sec": round(t_cursor + dur, 2),
+            "duration": round(dur, 2),
+            "src_in": 0.0,
+            "src_out": round(dur, 2),
+            "fit_mode": "cover",
+            "speed": 1.0,
+            "volume": 1.0,
+            "transition_in": "dissolve" if i > 0 else "none",
+            "transition_duration": 0.4,
+            "rotation": 0,
+            "brightness": 1.0,
+            "contrast": 1.0,
+            "saturation": 1.0,
+        })
+        t_cursor += dur
+
+    total_duration = max(t_cursor, 5.0) if clips else 10.0
+
+    text_layers = []
+    clean_title = (title or "DISCOVER FINLAND").strip().upper()
+    if clean_title:
+        title_end = min(total_duration, 4.0)
+        text_layers.append({
+            "id": f"txt_title_{secrets.token_hex(3)}",
+            "type": "title",
+            "text": clean_title[:45],
+            "start_sec": 0.0,
+            "end_sec": round(title_end, 2),
+            "x_pct": 50.0,
+            "y_pct": 70.0,
+            "font_family": "Inter",
+            "font_size": 42,
+            "font_weight": "800",
+            "font_style": "normal",
+            "text_align": "center",
+            "color": "#FFFFFF",
+            "outline_color": "#0A192F",
+            "outline_width": 4,
+            "bg_color": "rgba(10, 25, 47, 0.85)",
+            "bg_padding": 12,
+            "bg_radius": 8,
+            "shadow": True,
+            "animation": "pop",
+            "opacity": 1.0,
+            "rotation": 0,
+        })
+        text_layers.append({
+            "id": f"txt_sub_{secrets.token_hex(3)}",
+            "type": "subtitle",
+            "text": "ILOVEFINLAND SPECIAL REPORT",
+            "start_sec": 0.0,
+            "end_sec": round(title_end, 2),
+            "x_pct": 50.0,
+            "y_pct": 62.0,
+            "font_family": "Inter",
+            "font_size": 18,
+            "font_weight": "700",
+            "font_style": "normal",
+            "text_align": "center",
+            "color": "#38BDF8",
+            "outline_color": "#0A192F",
+            "outline_width": 2,
+            "bg_color": "transparent",
+            "bg_padding": 4,
+            "bg_radius": 4,
+            "shadow": True,
+            "animation": "fade",
+            "opacity": 1.0,
+            "rotation": 0,
+        })
+
+    return {
+        "version": 2,
+        "duration_sec": round(total_duration, 2),
+        "fps": 30,
+        "canvas": {
+            "width": 1080,
+            "height": 1920,
+            "background_color": "#000000"
+        },
+        "media_pool": media_items[:10],
+        "tracks": {
+            "media": clips,
+            "text": text_layers,
+            "audio": [
+                {
+                    "id": "aud_music_1",
+                    "type": "music",
+                    "filename": "Nordic Pulse Ambient",
+                    "url": "/assets/nordic-pulse.wav",
+                    "start_sec": 0.0,
+                    "duration": round(total_duration, 2),
+                    "src_in": 0.0,
+                    "volume": 0.75,
+                    "fade_in": 0.5,
+                    "fade_out": 1.0,
+                }
+            ],
+            "logo": {
+                "visible": True,
+                "url": "/assets/ilf-heart.png",
+                "x_pct": 50.0,
+                "y_pct": 18.0,
+                "size_px": 76,
+                "opacity": 0.95,
+                "always_on": True,
+                "start_sec": 0.0,
+                "end_sec": round(total_duration, 2),
+            },
+            "outro": {
+                "enabled": True,
+                "duration": 2.8,
+                "title": "DISCOVER MORE",
+                "subtitle": "FALL IN LOVE WITH FINLAND",
+                "website": "ilovefinland.net",
+                "bg_color": "#0A192F",
+            }
+        }
+    }
+
+
+def create_reel_project(
+    title: str = "Untitled Reel",
+    package_id: Optional[int] = None,
+    timeline: Optional[Dict[str, Any]] = None,
+    db_path: str = DB_PATH,
+) -> Dict[str, Any]:
+    """Create a new Reel editing project."""
+    now = utc_now_iso()
+    tline = timeline or make_default_reel_timeline(title=title)
+    dur = float(tline.get("duration_sec", 10.0))
+    tline_json = json.dumps(tline)
+
+    conn = get_connection(db_path)
+    try:
+        cur = conn.execute(
+            """
+            INSERT INTO reel_projects (
+                package_id, title, aspect_ratio, width, height, duration_sec,
+                timeline_json, status, created_at, updated_at, is_archived
+            ) VALUES (?, ?, '9:16', 1080, 1920, ?, ?, 'draft', ?, ?, 0)
+            """,
+            (package_id, title.strip() or "Untitled Reel", dur, tline_json, now, now),
+        )
+        conn.commit()
+        proj_id = cur.lastrowid
+        row = conn.execute("SELECT * FROM reel_projects WHERE id = ?", (proj_id,)).fetchone()
+        res = dict(row)
+        res["timeline"] = tline
+        return res
+    finally:
+        conn.close()
+
+
+def get_reel_project(project_id: int, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
+    """Retrieve a single Reel editing project by ID."""
+    conn = get_connection(db_path)
+    try:
+        row = conn.execute("SELECT * FROM reel_projects WHERE id = ?", (project_id,)).fetchone()
+        if not row:
+            return None
+        res = dict(row)
+        try:
+            res["timeline"] = json.loads(res.get("timeline_json") or "{}")
+        except Exception:
+            res["timeline"] = make_default_reel_timeline(res.get("title") or "Reel")
+        return res
+    finally:
+        conn.close()
+
+
+def update_reel_project(
+    project_id: int,
+    title: Optional[str] = None,
+    timeline: Optional[Dict[str, Any]] = None,
+    status: Optional[str] = None,
+    exported_video_url: Optional[str] = None,
+    thumbnail_url: Optional[str] = None,
+    db_path: str = DB_PATH,
+) -> Dict[str, Any]:
+    """Update a Reel project's title, timeline, status, or rendered media."""
+    now = utc_now_iso()
+    conn = get_connection(db_path)
+    try:
+        cur_row = conn.execute("SELECT * FROM reel_projects WHERE id = ?", (project_id,)).fetchone()
+        if not cur_row:
+            raise ValueError(f"Reel project {project_id} not found.")
+
+        new_title = title.strip() if title is not None else cur_row["title"]
+        new_status = status.strip() if status is not None else cur_row["status"]
+        new_export = exported_video_url if exported_video_url is not None else cur_row["exported_video_url"]
+        new_thumb = thumbnail_url if thumbnail_url is not None else cur_row["thumbnail_url"]
+        
+        if timeline is not None:
+            new_timeline_json = json.dumps(timeline)
+            new_dur = float(timeline.get("duration_sec", cur_row["duration_sec"]))
+        else:
+            new_timeline_json = cur_row["timeline_json"]
+            new_dur = cur_row["duration_sec"]
+
+        conn.execute(
+            """
+            UPDATE reel_projects
+            SET title = ?, duration_sec = ?, timeline_json = ?, status = ?,
+                exported_video_url = ?, thumbnail_url = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (new_title, new_dur, new_timeline_json, new_status, new_export, new_thumb, now, project_id),
+        )
+        conn.commit()
+
+        # If linked to a package, update package reel_status
+        pkg_id = cur_row["package_id"]
+        if pkg_id and timeline is not None:
+            try:
+                conn.execute(
+                    "UPDATE packages SET reel_status = 'pending', updated_at = ? WHERE id = ?",
+                    (now, pkg_id),
+                )
+                conn.commit()
+            except Exception:
+                pass
+
+        row = conn.execute("SELECT * FROM reel_projects WHERE id = ?", (project_id,)).fetchone()
+        res = dict(row)
+        try:
+            res["timeline"] = json.loads(res.get("timeline_json") or "{}")
+        except Exception:
+            res["timeline"] = {}
+        return res
+    finally:
+        conn.close()
+
+
+def list_reel_projects(include_archived: bool = False, db_path: str = DB_PATH) -> List[Dict[str, Any]]:
+    """List all Reel projects with metadata and thumbnails."""
+    conn = get_connection(db_path)
+    try:
+        if include_archived:
+            rows = conn.execute("SELECT * FROM reel_projects ORDER BY updated_at DESC").fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM reel_projects WHERE is_archived = 0 ORDER BY updated_at DESC").fetchall()
+        
+        projects = []
+        for r in rows:
+            d = dict(r)
+            try:
+                d["timeline"] = json.loads(d.get("timeline_json") or "{}")
+            except Exception:
+                d["timeline"] = {}
+            media_tracks = d["timeline"].get("tracks", {}).get("media", [])
+            d["clip_count"] = len(media_tracks)
+            if not d.get("thumbnail_url") and media_tracks:
+                d["thumbnail_url"] = media_tracks[0].get("url")
+            projects.append(d)
+        return projects
+    finally:
+        conn.close()
+
+
+def duplicate_reel_project(project_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
+    """Duplicate an existing Reel project."""
+    conn = get_connection(db_path)
+    try:
+        orig = conn.execute("SELECT * FROM reel_projects WHERE id = ?", (project_id,)).fetchone()
+        if not orig:
+            raise ValueError(f"Project {project_id} not found.")
+        now = utc_now_iso()
+        new_title = f"{orig['title']} (Copy)"
+        cur = conn.execute(
+            """
+            INSERT INTO reel_projects (
+                package_id, title, aspect_ratio, width, height, duration_sec,
+                timeline_json, status, thumbnail_url, created_at, updated_at, is_archived
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, 0)
+            """,
+            (
+                orig["package_id"],
+                new_title,
+                orig["aspect_ratio"],
+                orig["width"],
+                orig["height"],
+                orig["duration_sec"],
+                orig["timeline_json"],
+                orig["thumbnail_url"],
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM reel_projects WHERE id = ?", (cur.lastrowid,)).fetchone()
+        res = dict(row)
+        res["timeline"] = json.loads(res["timeline_json"] or "{}")
+        return res
+    finally:
+        conn.close()
+
+
+def delete_reel_project(project_id: int, db_path: str = DB_PATH) -> bool:
+    """Delete a Reel project."""
+    conn = get_connection(db_path)
+    try:
+        conn.execute("DELETE FROM reel_projects WHERE id = ?", (project_id,))
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+def archive_reel_project(project_id: int, is_archived: bool = True, db_path: str = DB_PATH) -> Dict[str, Any]:
+    """Toggle archived status of a Reel project."""
+    now = utc_now_iso()
+    conn = get_connection(db_path)
+    try:
+        conn.execute(
+            "UPDATE reel_projects SET is_archived = ?, updated_at = ? WHERE id = ?",
+            (1 if is_archived else 0, now, project_id),
+        )
+        conn.commit()
+        return get_reel_project(project_id, db_path=db_path) or {}
+    finally:
+        conn.close()
+
+
+def import_article_to_reel_project(package_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
+    """Import media, headline, and deck from an editorial article package into a brand new Reel project."""
+    bundle = get_package_bundle(package_id, db_path=db_path)
+    if not bundle:
+        raise ValueError(f"Editorial package {package_id} not found.")
+
+    pkg = bundle["package"]
+    latest_ver = bundle.get("versions", [{}])[-1]
+    art = latest_ver.get("article", {})
+    headline = art.get("headline") or pkg.get("title") or "Editorial Reel"
+    deck = art.get("short_description") or ""
+
+    media_items = []
+    feat_img = art.get("featured_image") or {}
+    if feat_img.get("url"):
+        media_items.append({
+            "id": "med_feat",
+            "filename": feat_img.get("title") or "Featured Photo",
+            "url": feat_img["url"],
+            "type": "image",
+            "duration": 3.5,
+        })
+    add_img = art.get("additional_image") or {}
+    if add_img.get("url"):
+        media_items.append({
+            "id": "med_add",
+            "filename": add_img.get("title") or "Additional Photo",
+            "url": add_img["url"],
+            "type": "image",
+            "duration": 3.5,
+        })
+
+    for v in bundle.get("versions", []):
+        r = v.get("reel") or {}
+        clips = r.get("video_clips") or []
+        for c in clips:
+            if c.get("url") and not any(m["url"] == c["url"] for m in media_items):
+                media_items.append({
+                    "id": f"med_{len(media_items)+1}",
+                    "filename": c.get("filename") or f"Clip {len(media_items)+1}",
+                    "url": c["url"],
+                    "type": c.get("media_type") or "image",
+                    "duration": float(c.get("duration") or 3.5),
+                })
+
+    timeline = make_default_reel_timeline(title=headline, media_items=media_items)
+    
+    if deck:
+        timeline["tracks"]["text"].append({
+            "id": f"txt_deck_{secrets.token_hex(3)}",
+            "type": "supporting",
+            "text": deck[:80],
+            "start_sec": 3.5,
+            "end_sec": min(timeline["duration_sec"], 8.0),
+            "x_pct": 50.0,
+            "y_pct": 72.0,
+            "font_family": "Inter",
+            "font_size": 24,
+            "font_weight": "600",
+            "font_style": "normal",
+            "text_align": "center",
+            "color": "#FFFFFF",
+            "outline_color": "#0A192F",
+            "outline_width": 2,
+            "bg_color": "rgba(10, 25, 47, 0.88)",
+            "bg_padding": 10,
+            "bg_radius": 6,
+            "shadow": True,
+            "animation": "slide_up",
+            "opacity": 1.0,
+            "rotation": 0,
+        })
+
+    return create_reel_project(
+        title=f"Reel: {headline}",
+        package_id=package_id,
+        timeline=timeline,
+        db_path=db_path,
+    )

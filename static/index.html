@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=7.0" />
+  <link rel="stylesheet" href="/reel-studio.css?v=1.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -84,8 +85,13 @@
           <span>Workbench (Article, Reel, IG)</span>
         </button>
         <button class="nav-item" data-view="assignments">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-          <span>New Story &amp; Upload Clips</span>
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          <span>Write Article &amp; Post</span>
+        </button>
+        <button class="nav-item" data-view="reel-studio" id="nav-item-reel-studio">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+          <span>🎬 Reel Editor</span>
+          <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:#38bdf8;color:#0f172a;border-radius:6px;font-weight:700;">CapCut</span>
         </button>
 
         <div class="nav-section-label" style="margin-top:10px;">CREATIVE &amp; SOURCES</div>
@@ -320,6 +326,437 @@
         </section>
 
 
+
+        <!-- VIEW: MODERN CAPCUT-STYLE REEL STUDIO & VIDEO EDITOR -->
+        <section id="view-reel-studio" class="view hidden">
+          <!-- SCREEN 1: REEL PROJECT HUB -->
+          <div id="reel-hub-screen">
+            <div class="card">
+              <div class="reel-hub-header">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span class="badge" style="background:#003882;color:#fff;font-weight:700;">CapCut-Style Editor</span>
+                    <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">9:16 Vertical Video</span>
+                  </div>
+                  <h1 class="panel-title" style="font-size:1.6rem;margin-top:2px;">ILoveFinland Reel Studio</h1>
+                  <p class="hint-text" style="font-size:0.88rem;margin-top:4px;">
+                    Create professional Instagram &amp; Facebook Reels directly inside Studio. Multi-track timeline, freeform text, audio sync, and 1080×1920 MP4 export.
+                  </p>
+                </div>
+                <div class="reel-hub-actions">
+                  <button type="button" id="btn-reel-hub-new" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-weight:700;">
+                    <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>✨ Start New Blank Reel</span>
+                  </button>
+                  <button type="button" id="btn-reel-hub-import" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <span>📰 Import from Article Draft</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Projects Grid Section -->
+              <div style="border-top:1px solid #e2e8f0;padding-top:18px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <h3 style="font-size:1rem;font-weight:700;color:var(--navy);">Your Reel Projects</h3>
+                  <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-sm btn-ghost" id="btn-refresh-reel-projects">🔄 Refresh</button>
+                  </div>
+                </div>
+                <div id="reel-projects-cards-container" class="reel-cards-grid">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCREEN 2: MODERN FULLSCREEN VIDEO EDITOR -->
+          <div id="reel-editor-screen" class="hidden">
+            <div class="reel-editor-container">
+              <!-- Top Toolbar -->
+              <div class="reel-topbar">
+                <div class="reel-topbar-left">
+                  <button type="button" id="btn-close-reel-editor" class="btn btn-sm btn-ghost" style="color:var(--reel-text-main);display:flex;align-items:center;gap:4px;" title="Back to Reel Projects">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <span>Projects</span>
+                  </button>
+                  <input type="text" id="reel-title-input" class="reel-topbar-title-input" value="Untitled Reel" placeholder="Project Title" title="Click to rename project" />
+                  <div id="reel-autosave-status" class="reel-autosave-badge">
+                    <span>✓</span> <span>Saved</span>
+                  </div>
+                </div>
+
+                <div class="reel-topbar-right">
+                  <button type="button" id="btn-reel-undo" class="btn btn-sm btn-ghost" style="color:var(--reel-text-muted);" title="Undo (Ctrl+Z)">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                  </button>
+                  <button type="button" id="btn-reel-redo" class="btn btn-sm btn-ghost" style="color:var(--reel-text-muted);" title="Redo (Ctrl+Y)">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+                  </button>
+                  <button type="button" id="btn-save-reel-manual" class="btn btn-sm" style="background:#334155;color:#fff;border:none;">
+                    💾 Save
+                  </button>
+                  <button type="button" id="btn-toggle-safe-area" class="btn btn-sm btn-ghost" style="color:var(--reel-accent-blue);" title="Toggle Instagram 4:5 Safe Area overlay">
+                    📐 Safe Area
+                  </button>
+                  <button type="button" id="btn-export-reel-trigger" class="btn btn-sm btn-primary" style="background:#003882;color:#fff;border:none;font-weight:700;display:flex;align-items:center;gap:6px;">
+                    <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Export 1080×1920 MP4</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Main 3-Column Workspace -->
+              <div class="reel-workspace-body">
+                <!-- 1. LEFT TOOL DRAWER -->
+                <div class="reel-left-drawer">
+                  <div class="reel-tool-tabs">
+                    <button type="button" class="reel-tab-btn active" data-drawer="media" id="tab-drawer-media">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                      <span>Media</span>
+                    </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="text" id="tab-drawer-text">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                      <span>Text</span>
+                    </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="audio" id="tab-drawer-audio">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                      <span>Audio</span>
+                    </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="logo" id="tab-drawer-logo">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                      <span>Logo</span>
+                    </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="outro" id="tab-drawer-outro">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span>Outro</span>
+                    </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="ai" id="tab-drawer-ai">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+                      <span>AI</span>
+                    </button>
+                  </div>
+
+                  <div class="reel-drawer-content">
+                    <!-- MEDIA DRAWER -->
+                    <div id="drawer-panel-media" class="drawer-panel">
+                      <div class="reel-drawer-section-title">Import Photos &amp; Video Clips</div>
+                      <div id="reel-media-dropzone" class="reel-upload-box">
+                        <svg class="lucide" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" style="margin-bottom:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <div style="font-size:0.82rem;font-weight:700;">Drag &amp; Drop or Tap to Upload</div>
+                        <div style="font-size:0.72rem;color:var(--reel-text-muted);margin-top:2px;">Up to 10 photos or short videos (JPG, PNG, MP4, MOV)</div>
+                        <input type="file" id="reel-media-file-input" multiple accept="image/*,video/*" style="display:none;" />
+                      </div>
+
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span class="reel-drawer-section-title" style="margin:0;">Media Pool (<span id="reel-media-pool-count">0</span>/10)</span>
+                        <button type="button" id="btn-add-all-media-timeline" class="btn btn-sm btn-ghost" style="font-size:0.72rem;color:var(--reel-accent-blue);">+ Add All to Timeline</button>
+                      </div>
+                      <div id="reel-media-pool-items" class="reel-media-pool-grid">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+
+                    <!-- TEXT DRAWER -->
+                    <div id="drawer-panel-text" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">Add Text Overlays</div>
+                      <button type="button" id="btn-add-custom-text" class="btn btn-primary" style="width:100%;margin-bottom:14px;background:var(--brand-blue);color:#fff;font-weight:700;">
+                        ➕ Add Custom Text Box
+                      </button>
+
+                      <div class="reel-drawer-section-title">1-Click Editorial Presets</div>
+                      <div style="display:flex;flex-direction:column;gap:8px;">
+                        <button type="button" class="btn btn-outline btn-preset-text" data-preset="headline_sub" style="text-align:left;color:#fff;border-color:#475569;padding:10px;">
+                          <div style="font-weight:800;font-size:0.85rem;color:#fff;">📰 Headline + Subtitle</div>
+                          <div style="font-size:0.72rem;color:var(--reel-text-muted);">Navy background banner + Ice Blue accent</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-preset-text" data-preset="scenic_callout" style="text-align:left;color:#fff;border-color:#475569;padding:10px;">
+                          <div style="font-weight:800;font-size:0.85rem;color:#38bdf8;">🏔️ Scenic Location Tag</div>
+                          <div style="font-size:0.72rem;color:var(--reel-text-muted);">Minimalist place badge with contrast halo</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-preset-text" data-preset="breaking_news" style="text-align:left;color:#fff;border-color:#475569;padding:10px;">
+                          <div style="font-weight:800;font-size:0.85rem;color:#ef4444;">🚨 Breaking News Hook</div>
+                          <div style="font-size:0.72rem;color:var(--reel-text-muted);">High-impact red/white opening card</div>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- AUDIO DRAWER -->
+                    <div id="drawer-panel-audio" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">Background Music &amp; Voiceover</div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Music Track</label>
+                        <select id="reel-music-select" class="reel-prop-select">
+                          <option value="/assets/nordic-pulse.wav">Nordic Pulse Ambient (Standard)</option>
+                          <option value="custom">Upload Custom Music...</option>
+                          <option value="none">No Background Music (Mute)</option>
+                        </select>
+                        <input type="file" id="reel-custom-audio-input" accept="audio/*" style="display:none;" />
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Music Volume: <span id="val-music-vol">75%</span></label>
+                        <input type="range" id="slider-music-vol" min="0" max="100" value="75" style="width:100%;" />
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Fade In / Fade Out</label>
+                        <div style="display:flex;gap:10px;">
+                          <div style="flex:1;">
+                            <span style="font-size:0.7rem;color:var(--reel-text-muted);">Fade In (s)</span>
+                            <input type="number" id="input-music-fadein" class="reel-prop-input" value="0.5" step="0.1" min="0" />
+                          </div>
+                          <div style="flex:1;">
+                            <span style="font-size:0.7rem;color:var(--reel-text-muted);">Fade Out (s)</span>
+                            <input type="number" id="input-music-fadeout" class="reel-prop-input" value="1.0" step="0.1" min="0" />
+                          </div>
+                        </div>
+                      </div>
+                      <div class="reel-prop-group" style="margin-top:14px;border-top:1px solid var(--reel-panel-border);padding-top:12px;">
+                        <label class="reel-prop-label">Voiceover Track (Optional)</label>
+                        <button type="button" id="btn-upload-voiceover" class="btn btn-sm btn-outline" style="width:100%;color:#fff;border-color:#475569;">
+                          🎙️ Upload Voiceover Audio (MP3/WAV)
+                        </button>
+                        <input type="file" id="reel-voice-file-input" accept="audio/*" style="display:none;" />
+                      </div>
+                    </div>
+
+                    <!-- LOGO DRAWER -->
+                    <div id="drawer-panel-logo" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">ILoveFinland Logo &amp; Watermark</div>
+                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                        <img src="/assets/ilf-heart.png" alt="Logo" style="width:38px;height:38px;object-fit:contain;" />
+                        <div>
+                          <div style="font-weight:700;font-size:0.85rem;">ILoveFinland Brand Heart</div>
+                          <div style="font-size:0.72rem;color:var(--reel-text-muted);">Original White River-Heart Asset</div>
+                        </div>
+                      </div>
+                      <div class="reel-prop-group">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#fff;cursor:pointer;">
+                          <input type="checkbox" id="chk-logo-visible" checked />
+                          <span>Show ILoveFinland Logo on Reel</span>
+                        </label>
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Position Presets</label>
+                        <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:6px;">
+                          <button type="button" class="btn btn-sm btn-outline btn-logo-pos" data-pos="top_center" style="color:#fff;border-color:#475569;">Top Center</button>
+                          <button type="button" class="btn btn-sm btn-outline btn-logo-pos" data-pos="top_left" style="color:#fff;border-color:#475569;">Top Left</button>
+                          <button type="button" class="btn btn-sm btn-outline btn-logo-pos" data-pos="bottom_center" style="color:#fff;border-color:#475569;">Bottom Center</button>
+                          <button type="button" class="btn btn-sm btn-outline btn-logo-pos" data-pos="safe_header" style="color:#fff;border-color:#475569;">Safe Header</button>
+                        </div>
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Logo Size: <span id="val-logo-size">76px</span></label>
+                        <input type="range" id="slider-logo-size" min="40" max="130" value="76" style="width:100%;" />
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Opacity: <span id="val-logo-opacity">95%</span></label>
+                        <input type="range" id="slider-logo-opacity" min="20" max="100" value="95" style="width:100%;" />
+                      </div>
+                    </div>
+
+                    <!-- OUTRO DRAWER -->
+                    <div id="drawer-panel-outro" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">Closing Branded Card</div>
+                      <div class="reel-prop-group">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#fff;cursor:pointer;">
+                          <input type="checkbox" id="chk-outro-enabled" checked />
+                          <span>Include Branded Outro Card</span>
+                        </label>
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Outro Duration: <span id="val-outro-dur">2.8s</span></label>
+                        <input type="range" id="slider-outro-dur" min="1.5" max="5.0" step="0.1" value="2.8" style="width:100%;" />
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Headline</label>
+                        <input type="text" id="input-outro-title" class="reel-prop-input" value="DISCOVER MORE" />
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Subtitle</label>
+                        <input type="text" id="input-outro-sub" class="reel-prop-input" value="FALL IN LOVE WITH FINLAND" />
+                      </div>
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Website Call-to-Action</label>
+                        <input type="text" id="input-outro-web" class="reel-prop-input" value="ilovefinland.net" />
+                      </div>
+                    </div>
+
+                    <!-- AI ASSIST DRAWER -->
+                    <div id="drawer-panel-ai" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">Help Me With AI (Optional)</div>
+                      <p style="font-size:0.75rem;color:var(--reel-text-muted);margin-bottom:12px;">
+                        Get AI suggestions for catchy titles, voiceover angles, or hashtags without auto-generating images or incurring unnecessary costs.
+                      </p>
+                      <button type="button" class="btn btn-outline btn-ai-suggest" data-type="hooks" style="width:100%;margin-bottom:8px;color:#fff;border-color:#475569;text-align:left;">
+                        💡 Suggest 5 Catchy Title Hooks
+                      </button>
+                      <button type="button" class="btn btn-outline btn-ai-suggest" data-type="subtitles" style="width:100%;margin-bottom:8px;color:#fff;border-color:#475569;text-align:left;">
+                        ✍️ Polish Subtitle Narration
+                      </button>
+                      <button type="button" class="btn btn-outline btn-ai-suggest" data-type="hashtags" style="width:100%;margin-bottom:12px;color:#fff;border-color:#475569;text-align:left;">
+                        #️⃣ Generate Instagram Hashtags
+                      </button>
+                      <div id="reel-ai-results" style="display:flex;flex-direction:column;gap:6px;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. CENTER STAGE / 9:16 INTERACTIVE PREVIEW -->
+                <div class="reel-center-stage">
+                  <div class="reel-canvas-viewport" id="reel-canvas-viewport">
+                    <canvas id="reel-canvas" width="1080" height="1920"></canvas>
+                    <!-- Safe Area Guides -->
+                    <div id="reel-safe-area-overlay" class="reel-safe-area-overlay">
+                      <span class="reel-safe-tag">Instagram Reels Safe Area</span>
+                      <div class="reel-safe-profile-grid"></div>
+                    </div>
+                  </div>
+
+                  <!-- Floating Transport Bar -->
+                  <div class="reel-transport-bar">
+                    <button type="button" id="btn-transport-rewind" class="reel-transport-btn" title="Rewind to start (Home)">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                    </button>
+                    <button type="button" id="btn-transport-step-back" class="reel-transport-btn" title="Back 1 sec">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 19 2 12 11 5 11 19"></polygon><polygon points="22 19 13 12 22 5 22 19"></polygon></svg>
+                    </button>
+                    <button type="button" id="btn-transport-play" class="reel-transport-btn btn-play" title="Play / Pause (Space)">
+                      <svg id="icon-play" class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <svg id="icon-pause" class="lucide hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    </button>
+                    <button type="button" id="btn-transport-step-fwd" class="reel-transport-btn" title="Forward 1 sec">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
+                    </button>
+                    <div class="reel-timecode">
+                      <span id="reel-timecode-cur">00:00.0</span> / <span id="reel-timecode-total">00:10.0</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. RIGHT INSPECTOR PANEL -->
+                <div class="reel-right-inspector" id="reel-inspector-panel">
+                  <div class="reel-inspector-title">
+                    <span id="inspector-icon">⚙️</span>
+                    <span id="inspector-heading">Element Inspector</span>
+                  </div>
+
+                  <!-- DYNAMIC INSPECTOR PROPERTIES -->
+                  <div id="inspector-content">
+                    <p style="font-size:0.75rem;color:var(--reel-text-muted);text-align:center;padding:30px 10px;">
+                      Select a clip or text box on the canvas or timeline to customize its properties.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. BOTTOM MULTI-TRACK TIMELINE -->
+              <div class="reel-bottom-timeline">
+                <div class="reel-timeline-header">
+                  <div class="reel-timeline-tools">
+                    <button type="button" id="btn-timeline-split" class="reel-tool-btn" title="Split clip at playhead (S)">
+                      ✂️ Split (S)
+                    </button>
+                    <button type="button" id="btn-timeline-duplicate" class="reel-tool-btn" title="Duplicate selected clip (D)">
+                      📋 Duplicate (D)
+                    </button>
+                    <button type="button" id="btn-timeline-delete" class="reel-tool-btn" title="Delete selected clip (Del)">
+                      🗑️ Delete (Del)
+                    </button>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="font-size:0.72rem;color:var(--reel-text-muted);">Zoom:</span>
+                      <button type="button" id="btn-timeline-zoom-out" class="reel-tool-btn" style="padding:2px 7px;">−</button>
+                      <button type="button" id="btn-timeline-zoom-in" class="reel-tool-btn" style="padding:2px 7px;">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="reel-timeline-body" id="reel-timeline-scroll-body">
+                  <!-- Track Headers -->
+                  <div class="reel-track-headers">
+                    <div class="reel-track-header-item" style="height:24px;">⏱️ Ruler</div>
+                    <div class="reel-track-header-item">📹 Media</div>
+                    <div class="reel-track-header-item">🔤 Text</div>
+                    <div class="reel-track-header-item">💙 Logo</div>
+                    <div class="reel-track-header-item">🎵 Music</div>
+                  </div>
+
+                  <!-- Timeline Tracks Viewport -->
+                  <div class="reel-timeline-tracks-wrap" id="reel-tracks-viewport">
+                    <!-- Playhead -->
+                    <div id="reel-playhead" class="reel-playhead" style="left:0px;">
+                      <div class="reel-playhead-handle"></div>
+                    </div>
+
+                    <!-- Time Ruler -->
+                    <div id="reel-time-ruler" class="reel-time-ruler"></div>
+
+                    <!-- Lanes -->
+                    <div id="lane-media" class="reel-track-lane"></div>
+                    <div id="lane-text" class="reel-track-lane"></div>
+                    <div id="lane-logo" class="reel-track-lane"></div>
+                    <div id="lane-audio" class="reel-track-lane"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EXPORT PROGRESS & DOWNLOAD MODAL -->
+          <div id="reel-export-modal" class="reel-modal-overlay hidden">
+            <div class="reel-modal-card">
+              <div id="export-modal-state-rendering">
+                <div style="font-size:2rem;margin-bottom:12px;animation:spin 2s linear infinite;">⏳</div>
+                <h3 style="font-size:1.15rem;margin-bottom:6px;">Rendering 1080×1920 MP4</h3>
+                <p style="font-size:0.82rem;color:var(--reel-text-muted);margin-bottom:16px;">
+                  Compositing high-res media clips, crisp typography, and audio synchronization...
+                </p>
+                <div style="height:6px;background:#334155;border-radius:3px;overflow:hidden;margin-bottom:8px;">
+                  <div style="height:100%;width:70%;background:#38bdf8;animation:pulse 1.5s infinite;"></div>
+                </div>
+              </div>
+
+              <div id="export-modal-state-success" class="hidden">
+                <div style="font-size:2.5rem;margin-bottom:10px;">🎉</div>
+                <h3 style="font-size:1.2rem;margin-bottom:6px;color:#38bdf8;">Reel Exported Successfully!</h3>
+                <p style="font-size:0.85rem;color:var(--reel-text-muted);margin-bottom:18px;">
+                  1080 × 1920 vertical video is ready for Instagram &amp; Facebook.
+                </p>
+                <div style="display:flex;gap:10px;justify-content:center;">
+                  <a id="btn-download-exported-reel" href="#" download class="btn btn-primary" style="background:var(--brand-blue);color:#fff;padding:10px 20px;font-weight:700;text-decoration:none;">
+                    📥 Download MP4
+                  </a>
+                  <button type="button" id="btn-close-export-modal" class="btn btn-secondary" style="padding:10px 16px;">
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ARTICLE IMPORT MODAL -->
+          <div id="reel-import-article-modal" class="reel-modal-overlay hidden">
+            <div class="reel-modal-card" style="text-align:left;max-width:520px;">
+              <h3 style="font-size:1.15rem;margin-bottom:4px;color:#fff;">Import from Article Project</h3>
+              <p style="font-size:0.8rem;color:var(--reel-text-muted);margin-bottom:16px;">
+                Choose an existing editorial article to automatically bring its headline, deck, and featured photo into a new Reel.
+              </p>
+              <div class="reel-prop-group">
+                <label class="reel-prop-label">Select Article</label>
+                <select id="select-import-article-pkg" class="reel-prop-select" style="font-size:0.85rem;padding:10px;">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button type="button" id="btn-cancel-import-article" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="btn-confirm-import-article" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;font-weight:700;">
+                  Import &amp; Open in Editor
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- VIEW 1: REVIEW QUEUE -->
         <section id="view-review" class="view hidden">
@@ -2276,6 +2713,10 @@
         <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
         <span>Review</span>
       </button>
+      <button class="bnav-item" data-view="reel-studio">
+        <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+        <span>Reel</span>
+      </button>
       <button class="bnav-item" data-view="assignments">
         <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
         <span>Assign</span>
@@ -2358,6 +2799,7 @@
   </div>
 
   <script src="/reel-player.js?v=23.0"></script>
+  <script src="/reel-studio.js?v=1.0"></script>
   <script src="/app.js?v=26.0"></script>
 </body>
 </html>
