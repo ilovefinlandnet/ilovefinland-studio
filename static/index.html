@@ -409,7 +409,13 @@
               <!-- Main 3-Column Workspace -->
               <div class="reel-workspace-body">
                 <!-- 1. LEFT TOOL DRAWER -->
-                <div class="reel-left-drawer">
+                <div class="reel-left-drawer" id="reel-left-drawer">
+                  <div class="reel-mobile-sheet-header">
+                    <div class="reel-mobile-sheet-title">
+                      <span>📁</span> <span id="mobile-drawer-title">Media &amp; Tools</span>
+                    </div>
+                    <button type="button" class="btn-close-mobile-sheet" id="btn-close-mobile-drawer">✕ Done</button>
+                  </div>
                   <div class="reel-tool-tabs">
                     <button type="button" class="reel-tab-btn active" data-drawer="media" id="tab-drawer-media">
                       <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -638,6 +644,7 @@
                   <div class="reel-inspector-title">
                     <span id="inspector-icon">⚙️</span>
                     <span id="inspector-heading">Element Inspector</span>
+                    <button type="button" class="btn-close-mobile-sheet" id="btn-close-mobile-inspector" style="margin-left:auto;">✓ Done</button>
                   </div>
 
                   <!-- DYNAMIC INSPECTOR PROPERTIES -->
@@ -700,6 +707,37 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 5. MOBILE QUICK DOCK TABS (< 900px) -->
+              <div class="reel-mobile-dock-tabs" id="reel-mobile-dock">
+                <button type="button" class="reel-mobile-dock-btn" data-dock="media">
+                  <span style="font-size:1.1rem;">📁</span>
+                  <span>Media</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="text">
+                  <span style="font-size:1.1rem;">🔤</span>
+                  <span>Text</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="audio">
+                  <span style="font-size:1.1rem;">🎵</span>
+                  <span>Audio</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="logo">
+                  <span style="font-size:1.1rem;">❤️</span>
+                  <span>Logo</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="outro">
+                  <span style="font-size:1.1rem;">🎬</span>
+                  <span>Outro</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="ai">
+                  <span style="font-size:1.1rem;">✨</span>
+                  <span>AI</span>
+                </button>
+              </div>
+
+              <!-- BACKDROP FOR MOBILE BOTTOM SHEETS -->
+              <div id="reel-mobile-backdrop" class="reel-mobile-backdrop"></div>
             </div>
           </div>
 

@@ -108,6 +108,19 @@
         });
       });
 
+      // Mobile Bottom Sheet Dock Triggers (< 900px)
+      document.querySelectorAll(".reel-mobile-dock-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".reel-mobile-dock-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          this.openMobileDrawer(btn.dataset.dock);
+        });
+      });
+
+      document.getElementById("btn-close-mobile-drawer")?.addEventListener("click", () => this.closeMobileSheets());
+      document.getElementById("btn-close-mobile-inspector")?.addEventListener("click", () => this.closeMobileSheets());
+      document.getElementById("reel-mobile-backdrop")?.addEventListener("click", () => this.closeMobileSheets());
+
       // Media Uploads
       const dropzone = document.getElementById("reel-media-dropzone");
       const fileInput = document.getElementById("reel-media-file-input");
@@ -884,6 +897,55 @@
     }
 
     // =========================================================================
+    // MOBILE BOTTOM SHEET DRAWER & INSPECTOR (< 900px)
+    // =========================================================================
+
+    openMobileDrawer(drawerName) {
+      const leftDrawer = document.getElementById("reel-left-drawer");
+      const backdrop = document.getElementById("reel-mobile-backdrop");
+      const titleEl = document.getElementById("mobile-drawer-title");
+
+      const titles = {
+        media: "📁 Media Pool (Photos & Videos)",
+        text: "🔤 Add Text Overlays",
+        audio: "🎵 Background Music & Audio",
+        logo: "❤️ ILoveFinland Logo",
+        outro: "🎬 Closing Outro Card",
+        ai: "✨ AI Hooks & Captions",
+      };
+
+      if (titleEl && titles[drawerName]) titleEl.textContent = titles[drawerName];
+
+      // Switch active tab
+      document.querySelectorAll(".reel-tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.drawer === drawerName));
+      document.querySelectorAll(".drawer-panel").forEach((p) => p.classList.add("hidden"));
+      const panel = document.getElementById(`drawer-panel-${drawerName}`);
+      if (panel) panel.classList.remove("hidden");
+
+      // Slide up sheet
+      leftDrawer?.classList.add("mobile-sheet-open");
+      backdrop?.classList.add("active");
+
+      // Close inspector if open
+      document.getElementById("reel-inspector-panel")?.classList.remove("mobile-sheet-open");
+    }
+
+    closeMobileSheets() {
+      document.getElementById("reel-left-drawer")?.classList.remove("mobile-sheet-open");
+      document.getElementById("reel-inspector-panel")?.classList.remove("mobile-sheet-open");
+      document.getElementById("reel-mobile-backdrop")?.classList.remove("active");
+      document.querySelectorAll(".reel-mobile-dock-btn").forEach((b) => b.classList.remove("active"));
+    }
+
+    openMobileInspector() {
+      if (window.innerWidth < 900) {
+        document.getElementById("reel-left-drawer")?.classList.remove("mobile-sheet-open");
+        document.getElementById("reel-inspector-panel")?.classList.add("mobile-sheet-open");
+        document.getElementById("reel-mobile-backdrop")?.classList.add("active");
+      }
+    }
+
+    // =========================================================================
     // DIRECT CANVAS INTERACTION (DRAG & RESIZE TEXT / LOGO)
     // =========================================================================
 
@@ -892,8 +954,8 @@
 
       const getCanvasPoint = (e) => {
         const rect = this.canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+        const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : e.clientY);
         const xPct = ((clientX - rect.left) / rect.width) * 100.0;
         const yPct = ((clientY - rect.top) / rect.height) * 100.0;
         return { xPct, yPct };
@@ -913,6 +975,7 @@
             this.selectedId = "logo";
             this.canvasDrag = { origXPct: logo.x_pct, origYPct: logo.y_pct, startXPct: xPct, startYPct: yPct, target: logo };
             this.renderInspector();
+            this.openMobileInspector();
             this.render();
             return;
           }
@@ -925,12 +988,13 @@
         for (let i = textLayers.length - 1; i >= 0; i--) {
           const txt = textLayers[i];
           const dist = Math.hypot(xPct - txt.x_pct, yPct - txt.y_pct);
-          if (dist < 12.0) {
+          if (dist < 14.0) {
             this.selectedTrack = "text";
             this.selectedId = txt.id;
             this.canvasDrag = { origXPct: txt.x_pct, origYPct: txt.y_pct, startXPct: xPct, startYPct: yPct, target: txt };
             this.renderTimeline();
             this.renderInspector();
+            this.openMobileInspector();
             this.render();
             return;
           }
@@ -946,6 +1010,7 @@
 
       const onPointerMove = (e) => {
         if (!this.canvasDrag) return;
+        if (e.cancelable) e.preventDefault();
         const { xPct, yPct } = getCanvasPoint(e);
         const dx = xPct - this.canvasDrag.startXPct;
         const dy = yPct - this.canvasDrag.startYPct;
@@ -975,9 +1040,20 @@
       window.addEventListener("mousemove", onPointerMove);
       window.addEventListener("mouseup", onPointerUp);
 
-      this.canvas.addEventListener("touchstart", onPointerDown, { passive: true });
-      window.addEventListener("touchmove", onPointerMove, { passive: true });
+      // Mobile Touch Interaction with preventDefault to stop scroll while dragging
+      this.canvas.addEventListener("touchstart", (e) => {
+        onPointerDown(e);
+      }, { passive: false });
+
+      window.addEventListener("touchmove", (e) => {
+        if (this.canvasDrag) {
+          if (e.cancelable) e.preventDefault();
+          onPointerMove(e);
+        }
+      }, { passive: false });
+
       window.addEventListener("touchend", onPointerUp);
+      window.addEventListener("touchcancel", onPointerUp);
     }
 
     // =========================================================================
@@ -1031,6 +1107,7 @@
             this.selectedId = c.id;
             this.renderTimeline();
             this.renderInspector();
+            this.openMobileInspector();
           });
           this.laneMedia.appendChild(block);
         });
@@ -1059,6 +1136,7 @@
             this.selectedId = txt.id;
             this.renderTimeline();
             this.renderInspector();
+            this.openMobileInspector();
           });
           this.laneText.appendChild(block);
         });
@@ -1082,6 +1160,7 @@
             this.selectedId = "logo";
             this.renderTimeline();
             this.renderInspector();
+            this.openMobileInspector();
           });
           this.laneLogo.appendChild(block);
         }
@@ -1111,26 +1190,45 @@
 
       const getTimeFromEvent = (e) => {
         const rect = this.tracksViewport.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
         const scrollLeft = this.tracksViewport.scrollLeft;
         const xPx = clientX - rect.left + scrollLeft;
         return Math.max(0, Math.min(this.getTotalDuration(), xPx / this.zoomPxPerSec));
       };
 
-      this.timeRuler?.addEventListener("mousedown", (e) => {
+      const startScrub = (e) => {
         this.isScrubbing = true;
         this.seekTo(getTimeFromEvent(e));
-      });
+      };
 
-      window.addEventListener("mousemove", (e) => {
+      const moveScrub = (e) => {
         if (this.isScrubbing) {
+          if (e.cancelable) e.preventDefault();
           this.seekTo(getTimeFromEvent(e));
         }
-      });
+      };
 
-      window.addEventListener("mouseup", () => {
+      const endScrub = () => {
         this.isScrubbing = false;
-      });
+      };
+
+      this.timeRuler?.addEventListener("mousedown", startScrub);
+      this.playhead?.addEventListener("mousedown", startScrub);
+      window.addEventListener("mousemove", moveScrub);
+      window.addEventListener("mouseup", endScrub);
+
+      // Mobile Touch Scrubbing
+      this.timeRuler?.addEventListener("touchstart", (e) => {
+        if (e.cancelable) e.preventDefault();
+        startScrub(e);
+      }, { passive: false });
+      this.playhead?.addEventListener("touchstart", (e) => {
+        if (e.cancelable) e.preventDefault();
+        startScrub(e);
+      }, { passive: false });
+      window.addEventListener("touchmove", moveScrub, { passive: false });
+      window.addEventListener("touchend", endScrub);
+      window.addEventListener("touchcancel", endScrub);
     }
 
     updatePlayheadPosition() {
@@ -1413,6 +1511,10 @@
 
     renderInspector() {
       if (!this.inspectorContent) return;
+
+      if (this.selectedTrack) {
+        this.openMobileInspector();
+      }
 
       if (this.selectedTrack === "text" && this.selectedId) {
         const txt = this.currentProject?.timeline?.tracks?.text?.find((x) => x.id === this.selectedId);

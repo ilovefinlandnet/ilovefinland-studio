@@ -4741,6 +4741,57 @@
       }
     });
 
+    // Fallback/Legacy Assignment Form Submit
+    $("assignment-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const origHtml = submitBtn ? submitBtn.innerHTML : "";
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>⏳ Drafting Article &amp; Social Post...</span>`;
+      }
+
+      try {
+        const topic = ($("assign-topic")?.value || "").trim();
+        const deadline = $("assign-deadline") ? $("assign-deadline").value : "";
+        const instructions = $("assign-instructions") ? $("assign-instructions").value.trim() : "";
+        const links = $("assign-links") ? $("assign-links").value.split("\n").map((s) => s.trim()).filter(Boolean) : [];
+        const scopeSelect = $("assign-scope");
+        const scopeVal = scopeSelect ? scopeSelect.value : "Article + Static Post";
+        const voiceBar = document.querySelector('[data-voice-for="assign-instructions"]');
+
+        const payload = {
+          topic,
+          scope: scopeVal.includes("Reel") && !scopeVal.includes("Article") ? "Reel" : "Article + Static Post",
+          deadline_at: deadline,
+          instructions,
+          links,
+          has_voice_note: voiceBar ? voiceBar.dataset.hasVoice === "1" : false,
+          custom_photo: articleFeaturedPhoto,
+          custom_additional_photo: null,
+          clips: undefined,
+        };
+
+        const created = await api("/api/assignments", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        currentPackageId = created.package.id;
+        try { localStorage.removeItem("ilf_draft_article"); } catch (_) {}
+        setArticlePhoto(null);
+        await loadAll();
+        switchView("review");
+      } catch (err) {
+        alert(`Failed to create assignment: ${err.message}`);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origHtml;
+        }
+      }
+    });
+
     // Mode 2: Reel Multi-Clip Dropzone & Grid
     const reelDropzone = $("reel-dropzone");
     const reelFilesInput = $("reel-files-input");

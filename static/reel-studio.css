@@ -358,12 +358,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
 }
 
 #reel-canvas {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: none;
 }
 
 /* SAFE AREA OVERLAY */
@@ -652,12 +654,23 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 12px;
-  height: 14px;
+  width: 18px;
+  height: 20px;
   background: var(--reel-playhead-color);
-  border-radius: 2px 2px 6px 6px;
+  border-radius: 3px 3px 6px 6px;
   pointer-events: auto;
   cursor: ew-resize;
+  touch-action: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.reel-playhead-handle::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -14px;
+  right: -14px;
 }
 
 /* TRACK LANES & BLOCKS */
@@ -752,33 +765,268 @@
 
 /* RESPONSIVE MOBILE & TABLET RULES (< 900px) */
 @media (max-width: 899px) {
+  #reel-editor-screen {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background: #0b1120;
+  }
+
+  .reel-editor-topbar {
+    height: 54px;
+    padding: 6px 12px;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  .reel-topbar-left {
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .reel-topbar-title-input {
+    max-width: 140px;
+    font-size: 0.82rem;
+    padding: 6px 8px;
+  }
+
+  .reel-topbar-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  #btn-save-reel-manual {
+    display: none; /* Auto-save handles online sync on mobile */
+  }
+
+  #btn-toggle-safe-area {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+
+  #btn-export-reel-trigger {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    min-height: 38px;
+  }
+
   .reel-workspace-body {
     flex-direction: column;
-    overflow-y: auto;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: #090d16;
   }
-  .reel-left-drawer {
-    width: 100%;
-    max-height: 200px;
-    border-right: none;
-    border-bottom: 1px solid var(--reel-panel-border);
-  }
+
+  /* Center Stage: Large Vertical 9:16 Preview on Mobile */
   .reel-center-stage {
-    padding: 10px;
-    min-height: 380px;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
+
   .reel-canvas-viewport {
-    max-height: 340px;
+    height: 100%;
+    max-height: calc(100% - 46px);
+    aspect-ratio: 9 / 16;
+    border-radius: 6px;
+    touch-action: none;
   }
-  .reel-right-inspector {
-    width: 100%;
-    max-height: 220px;
-    border-left: none;
-    border-top: 1px solid var(--reel-panel-border);
+
+  .reel-transport-bar {
+    margin-top: 6px;
+    padding: 4px 10px;
+    gap: 12px;
+    background: rgba(30, 41, 59, 0.95);
+    border-radius: 20px;
   }
+
+  .reel-transport-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .reel-transport-btn.btn-play-pause {
+    width: 44px;
+    height: 44px;
+  }
+
+  .reel-timecode {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+
+  /* Bottom Timeline: Touch-Friendly Multi-Track */
   .reel-bottom-timeline {
-    height: 180px;
+    height: 150px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--reel-panel-border);
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
   }
+
+  .reel-timeline-tools-bar {
+    height: 36px;
+    padding: 2px 8px;
+    gap: 4px;
+  }
+
+  .reel-tool-btn {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    min-height: 30px;
+  }
+
+  .reel-tracks-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
   .reel-track-headers {
-    width: 80px;
+    width: 70px;
+  }
+
+  .reel-track-header {
+    height: 32px;
+    font-size: 0.65rem;
+    padding: 0 4px;
+  }
+
+  .reel-track-lane {
+    height: 32px;
+  }
+
+  .reel-clip-block {
+    min-width: 28px;
+    font-size: 0.65rem;
+  }
+
+  /* Mobile Bottom Sheet for Left Drawer & Right Inspector */
+  .reel-left-drawer,
+  .reel-right-inspector {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 72vh;
+    background: #1e293b;
+    border: none;
+    border-top: 2px solid var(--reel-accent-blue);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.75);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(105%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+
+  .reel-left-drawer.mobile-sheet-open,
+  .reel-right-inspector.mobile-sheet-open {
+    transform: translateY(0);
+  }
+
+  /* Mobile Sheet Drag Handle & Close Header */
+  .reel-mobile-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--reel-panel-border);
+    background: #0f172a;
+    flex-shrink: 0;
+  }
+
+  .reel-mobile-sheet-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-close-mobile-sheet {
+    background: #334155;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 36px;
+  }
+
+  .reel-drawer-content,
+  #inspector-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile Toolbar at Bottom of Timeline */
+  .reel-mobile-dock-tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: #090d16;
+    border-top: 1px solid var(--reel-panel-border);
+    padding: 4px 6px;
+    flex-shrink: 0;
+    z-index: 50;
+  }
+
+  .reel-mobile-dock-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.68rem;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 48px;
+    min-height: 44px;
+    gap: 2px;
+  }
+
+  .reel-mobile-dock-btn.active,
+  .reel-mobile-dock-btn:active {
+    color: var(--reel-accent-blue);
+    background: rgba(56, 189, 248, 0.12);
+  }
+
+  /* Backdrop overlay for mobile sheets */
+  .reel-mobile-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 150;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .reel-mobile-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
