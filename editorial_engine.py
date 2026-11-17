@@ -3433,217 +3433,7 @@ def build_concise_social_caption_and_hashtags(
     except Exception:
         pass
 
-    # Priority 2: Curated, topic-specific editorial fallbacks with strict whole-word boundaries
-    if re.search(r"\b(nato|russia|ukraine|defence|defense|military|valtonen|häkkänen|hakkanen|abu dhabi)\b", t_lower):
-        lead_summary = article.get("short_description") or "Reports from Abu Dhabi peace talks suggest Russian negotiators proposed demands regarding Finland's NATO status, met with swift rejection from Finnish leaders."
-        caption = (
-            f"🇫🇮🛡️ {headline}\n\n"
-            f"{lead_summary}\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Finnish Defence Minister Antti Häkkänen confirms Finland's NATO membership is not open for negotiation\n"
-            "✅ Foreign Minister Elina Valtonen affirms security decisions belong strictly to Finland and NATO allies\n"
-            "📌 German newspaper Bild reported Russian demands during peace discussions in Abu Dhabi\n"
-            "🛡️ Finland joined NATO in April 2023 with full parliamentary and democratic consensus\n\n"
-            "What are your thoughts on Finland's response to this proposal? Share your view below 👇\n\n"
-            "📲 Read the full verified report at ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#FinlandNATO", "#FinlandNews", "#NordicSecurity", "#NATO", "#LivingInFinland"]
-    elif is_tyre_topic(topic):
-        caption = (
-            "🚗 Have you changed to winter tyres in Finland yet? 🇫🇮❄️\n\n"
-            "Under the Finnish Road Traffic Act, winter tyres are required whenever winter weather conditions demand them.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Rule period active 1 Nov–31 Mar whenever roads are slippery\n"
-            "✅ 3 mm legal minimum tread depth (4+ mm strongly recommended)\n"
-            "✅ Both studded tyres (nastarenkaat) & friction tyres with 3PMSF snowflake permitted\n"
-            "⚠️ Police conduct random spot checks across commuter routes\n\n"
-            "Studded or friction tyres for your car? Vote in the comments 👇\n\n"
-            "📲 Want to know more? Read the full guide on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#WinterTyres", "#FinnishWinter", "#DrivingInFinland", "#Traficom", "#FinlandGuide"]
-    elif "tesla" in t_lower:
-        caption = (
-            "Finland says \"Kyllä\" to Tesla's Assisted Driving! 🇫🇮❄️\n\n"
-            "Traficom has approved the system for Finnish roads, starting today. In Finland it goes by the name Tesla Avustettu ajo (Tesla Assisted Driving).\n\n"
-            "Here's what you should know 👇\n"
-            "✅ References to \"self-driving\" are gone from the name\n"
-            "✅ The driver stays fully responsible, speeding fines included\n"
-            "✅ Speed settings are tighter than before\n"
-            "⚠️ Snow, slush or dirt on the cameras can limit how well it works\n"
-            "🗳️ The final EU-level decision is expected during the winter\n\n"
-            "Finland is moving a little ahead of the EU, so owners can try the system before deep winter. Around 6,500 Teslas in Finland have the hardware.\n\n"
-            "Would you use it on Finnish roads? Tell us in the comments 👇\n\n"
-            "📲 Want to know more? Read the full article on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#TeslaSuomi", "#Traficom", "#TeslaAssistedDriving", "#WinterDriving", "#ILoveFinland"]
-    elif "heating" in t_lower or "taloyhtiö" in t_lower or "taloyhtio" in t_lower:
-        caption = (
-            "🏢 Living in Finland? Here’s how apartment heating actually works! 🇫🇮❄️\n\n"
-            "As winter temperatures plunge, heating in apartment buildings (taloyhtiöt) is governed by strict municipal health guidelines.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Standard target temperature is 20°C–22°C under THL health standards\n"
-            "✅ Radiators automatically regulate based on outdoor weather sensors\n"
-            "💡 If your radiator feels cool at the bottom while the room is 21°C, it's working normally\n"
-            "⚠️ If your room drops below 18°C or exceeds 26°C, report to huoltoyhtiö immediately\n\n"
-            "Is your apartment warm enough this winter? Tell us in the comments 👇\n\n"
-            "📲 Want to know more? Read the full guide on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#Taloyhtio", "#LivingInFinland", "#FinnishWinter", "#HelsinkiLiving", "#FinlandGuide"]
-    elif "migri" in t_lower or "residence" in t_lower or "permit" in t_lower:
-        caption = (
-            "🛂 Finland launches fast-track digital permits for tech specialists! 🇫🇮💻\n\n"
-            "Migri has activated an expedited 14-day processing pipeline for qualifying international tech specialists and startup teams.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ 14-day digital decision track for specialists earning €3,638+/month\n"
-            "✅ Long-term D-visa issued immediately with digital residence permit\n"
-            "✅ Fast-track pledge covers spouse and children on same application\n"
-            "📌 Biometrics verified digitally via streamlined partner missions\n\n"
-            "Are you working or moving to Finland? Share your experience below 👇\n\n"
-            "📲 Want to know more? Read the full breakdown on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#Migri", "#WorkInFinland", "#FinlandJobs", "#TechInFinland", "#LivingInFinland"]
-    elif "posti" in t_lower or "parcel" in t_lower:
-        caption = (
-            "📦 Posti expands smart parcel lockers ahead of holiday rush! 🇫🇮🎁\n\n"
-            "Posti has activated hundreds of automated lockers across grocery chains to handle record seasonal package deliveries.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Over 3,000 automated pickup points operational in S-Market and K-Citymarket\n"
-            "✅ 7-day pickup window before parcels return to regional distribution hubs\n"
-            "📌 Domestic Christmas mailing deadline is 19 December\n"
-            "💡 Use OmaPosti app for real-time locker routing & instant door opening\n\n"
-            "Locker pickup or home delivery: which do you prefer? Tell us below 👇\n\n"
-            "📲 Want to know more? Read the full schedule on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#Posti", "#OmaPosti", "#SmartLockers", "#LivingInFinland", "#HelsinkiLife"]
-    elif re.search(r"\b(storm|gale warnings?|wind gusts?|myrsky)\b", t_lower):
-        caption = (
-            "🌊 Severe gale warnings issued for Baltic Sea & Gulf of Finland! 🇫🇮⚠️\n\n"
-            "The Finnish Meteorological Institute warns of gale-force gusts exceeding 21 m/s and dangerous winter maritime conditions.\n\n"
-            "Here's what you should know 👇\n"
-            "⚠️ Significant wave heights forecast between 3.5 and 4.2 metres\n"
-            "⚠️ Passenger ferry departures between Helsinki, Tallinn & Stockholm facing delays\n"
-            "💡 Coastal residents advised to secure outdoor items and avoid icy breakwaters\n"
-            "📌 Freezing spray creating rapid glazed ice along shoreline footpaths\n\n"
-            "How's the weather where you are in Finland today? Let us know below 👇\n\n"
-            "📲 Want to know more? Live weather updates on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#BalticSea", "#FinnishWeather", "#Ilmatieteenlaitos", "#HelsinkiWeather", "#FinlandNews"]
-    elif re.search(r"\b(sauna|saunas|ice swimming|avantouinti)\b", t_lower):
-        caption = (
-            "🧖 From 90°C steam to ice-cold Baltic waters: Finnish sauna guide! 🇫🇮❄️\n\n"
-            "Winter sauna and ice swimming (avantouinti) are essential Finnish rituals for health, resilience, and winter wellbeing.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Always rinse before entering and hydrate generously between sessions\n"
-            "✅ Submerge steadily into ice hole (avantouinti) without jumping or holding breath\n"
-            "💡 Woollen beanie and swimming slippers strongly recommended on icy docks\n"
-            "📌 Iconic public saunas in Helsinki: Löyly, Allas Sea Pool, and Sompasauna\n\n"
-            "Have you dared to try ice swimming yet? Tell us in the comments 👇\n\n"
-            "📲 Want to know more? Top sauna locations & etiquette at ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#SaunaCulture", "#IceSwimming", "#Avantouinti", "#HelsinkiSauna", "#VisitFinland"]
-    elif re.search(r"\b(tax cards?|verokortti|verohallinto)\b", t_lower):
-        caption = (
-            "💶 New Finnish tax cards: what every worker needs to check! 🇫🇮📊\n\n"
-            "Verohallinto reminds all residents that updated tax cards take effect from February, with new annual income calculation rules.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Annual income ceiling applies across all employment income from 1 Feb\n"
-            "⚠️ Exceeding your ceiling triggers additional flat withholding up to 40%–50%\n"
-            "💡 Kotitalousvähennys (household deduction) rules updated for home services\n"
-            "📌 Check and adjust your withholding rate anytime in OmaVero\n\n"
-            "Have you checked your tax card estimates for this year? Let us know below 👇\n\n"
-            "📲 Want to know more? Step-by-step tax guide on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#Vero", "#FinnishTax", "#OmaVero", "#LivingInFinland", "#WorkInFinland"]
-    elif re.search(r"\b(nvidia|blackwell|compute cluster|data centre|supercomputer)\b", t_lower):
-        caption = (
-            "💻 Next-gen AI compute architecture arrives in the Nordics! 🇫🇮⚡\n\n"
-            "New ultra-dense Blackwell AI computing systems are transforming Nordic data centre infrastructure and sovereign AI workloads.\n\n"
-            "Here's what you should know 👇\n"
-            "✅ Up to 4x training acceleration and 30x inference speedup for frontier models\n"
-            "✅ Finnish data centres leverage renewable hydro & district heat reuse\n"
-            "📌 Enterprise deployment rolling out across regional research clusters\n\n"
-            "What's your take on AI infrastructure growing in Finland? Tell us below 👇\n\n"
-            "📲 Want to know more? Read the full tech report on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#AI", "#NvidiaAI", "#FinlandTech", "#NordicTech", "#DatacenterFinland"]
-    elif any(k in t_lower for k in ["christmas food", "what do finns eat", "joulupöytä", "joulukinkku", "traditional finnish food", "traditional foods"]):
-        caption = (
-            "🎄 What do Finns actually eat at Christmas? 🇫🇮🍽️\n\n"
-            "From slow-baked joulukinkku and oven casseroles to rosolli and star pastries, the Finnish joulupöytä is a feast of comforting traditions!\n\n"
-            "Here are the holiday classics you should try 👇\n"
-            "🥩 Joulukinkku: Slow-baked ham with a spicy mustard crust\n"
-            "🥘 Laatikot: Traditional spiced rutabaga, carrot & sweetened potato casseroles\n"
-            "🥗 Rosolli: Vibrant beetroot, potato & pickle salad with pink cream\n"
-            "🐟 Graavilohi & Silli: Delicate cured salmon and spiced Baltic herring\n"
-            "⭐ Joulutortut & Piparkakut: Flaky plum star pastries and gingerbread with blue cheese\n"
-            "🥣 Riisipuuro: Warm festive rice porridge with the lucky hidden almond\n\n"
-            "Which Finnish Christmas food is your favorite? Tell us in the comments! 👇\n\n"
-            "📲 Full 10-dish guide and visiting tips on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#FinnishFood", "#Joulupöytä", "#ChristmasInFinland", "#VisitFinland", "#FinnishTraditions"]
-    elif any(k in t_lower for k in ["ylläs", "yllas", "levi", "ski trail", "illuminated ski", "cross-country skiing", "arctic tracks", "kaamos skiing"]):
-        caption = (
-            "⛷️ Explore Ylläs & Levi: Miles of illuminated arctic ski trails await! 🇫🇮❄️\n\n"
-            "Finnish Lapland offers Europe's finest cross-country skiing, with hundreds of kilometres of groomed tracks through snow-laden forests and arctic fells.\n\n"
-            "Here's what makes it so special 👇\n"
-            "📍 Ylläs features 330+ km of trails with 38 km illuminated for kaamos twilight\n"
-            "📍 Levi provides 230 km of groomed tracks with 28 km illuminated daily until 11 PM\n"
-            "🍩 Cozy latukahvila cafes along the trails serving hot berry juice and fresh munkki\n"
-            "📲 Real-time GPS latupalvelu tracking for live grooming and weather updates\n\n"
-            "Have you experienced skiing under Lapland's arctic twilight? Tell us below! 👇\n\n"
-            "📲 Full trail guide and rental tips on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#Ylläs", "#LeviLapland", "#CrossCountrySkiing", "#LaplandWinter", "#VisitFinland"]
-    elif any(k in t_lower for k in ["porvoo", "vanhakaupunki", "old town porvoo"]):
-        caption = (
-            "🏘️ Winter magic in Old Town Porvoo! 🇫🇮❄️\n\n"
-            "Cobblestone alleys, pastel wooden merchant houses, and iconic red-ochre riverfront warehouses make Porvoo an unforgettable winter day trip.\n\n"
-            "Top highlights to explore 👇\n"
-            "🚶 Walk the scenic snow-covered banks of the Porvoonjoki river\n"
-            "🍫 Taste handmade chocolates and local sweets at Brunberg\n"
-            "☕ Warm up with Runeberg torttu and artisan coffee in historic timber cafes\n"
-            "🚌 Direct coaches from Helsinki Kamppi reach Porvoo in under 50 minutes\n\n"
-            "Who would you visit this magical town with? Tag them below! 👇\n\n"
-            "📲 Read our full Porvoo winter guide on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#Porvoo", "#OldTownPorvoo", "#VisitPorvoo", "#DayTripHelsinki", "#TravelFinland"]
-    elif any(k in t_lower for k in ["nato", "alliance", "russian proposal", "russian bid", "withdraw from nato"]):
-        caption = (
-            "🇫🇮 Finland reaffirms sovereign NATO alliance commitments! 🛡️🇪🇺\n\n"
-            "Helsinki leadership has firmly rejected external bids to reverse its NATO membership, underscoring that sovereign defense decisions remain non-negotiable.\n\n"
-            "Key facts 👇\n"
-            "✅ Finland's accession to NATO was sealed by constitutional parliamentary consensus\n"
-            "✅ Integrated Baltic deterrence and Nordic joint defense readiness active\n"
-            "✅ Close bilateral coordination with Sweden, Norway, and NATO allies in Brussels\n\n"
-            "What's your perspective on Nordic defense stability? Share your thoughts below 👇\n\n"
-            "📲 Read the full foreign policy report on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#FinlandNATO", "#NordicSecurity", "#HelsinkiNews", "#DefencePolicy", "#Finland"]
-    elif any(k in t_lower for k in ["1.5°c", "1.5c", "climate", "global warming", "energy transition"]):
-        caption = (
-            "🌍 Scientists assess 1.5°C threshold and clean energy transition! ☀️💨\n\n"
-            "Global climate researchers urge accelerated clean energy adoption as temperature models highlight the urgent necessity of structural emissions cuts.\n\n"
-            "Key points 👇\n"
-            "📊 Limiting warming requires deep reductions in global emissions by 2030\n"
-            "⚡ Renewable solar and wind installations scaling up across European grids\n"
-            "🇫🇮 Nordic green data centres and clean tech driving sustainable innovation\n\n"
-            "How do you view the clean energy transition? Tell us below 👇\n\n"
-            "📲 Read the full analysis on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#ClimateAction", "#CleanEnergy", "#RenewableEnergy", "#IPCC", "#Environment"]
-    elif "protest" in t_lower or "demonstrat" in t_lower or "gen z" in t_lower or "spending cuts" in t_lower:
-        caption = (
-            "📢 Gen Z demonstrators take to the streets in Helsinki! 🇫🇮✊\n\n"
-            "Around 200 protesters marched through central Helsinki on Saturday, speaking out against government spending cuts and rising living costs for young people.\n\n"
-            "Here's what happened 👇\n"
-            "📍 Demonstration marched from Railway Square (Rautatientori) to Old Church Park\n"
-            "💰 Organizers highlighted the impact of student housing cuts and everyday living expenses\n"
-            "👮 Police monitored the peaceful procession along Mannerheimintie\n\n"
-            "What's your view on the youth protest in Helsinki? Share your thoughts below 👇\n\n"
-            "📲 Full news report available on ilovefinland.net (link in bio)"
-        )
-        hashtags = ["#HelsinkiProtest", "#GenZFinland", "#FinlandNews", "#YouthToTheStreets", "#Helsinki"]
-    else:
+    # Priority 2: Dynamic editorial caption and hashtags generated directly from article
         # Dynamic fallback: high-engagement, concise, topic-specific
         short_desc = article.get("short_description") or headline
         lead_sentence = short_desc.split(".")[0].strip()
@@ -3694,6 +3484,51 @@ def build_concise_social_caption_and_hashtags(
     return caption, hashtags
 
 
+
+def split_headline_into_card_lines(topic: str, article: Optional[Dict[str, Any]] = None) -> Tuple[str, str, str]:
+    """Dynamically formats any headline into 2 or 3 balanced, punchy uppercase card lines.
+    Preserves user story without ever substituting mock demo stories.
+    """
+    raw_title = (article.get("headline") if article else None) or topic or ""
+    clean = raw_title.replace('"', '').replace("'", '').replace("“", "").replace("”", "").strip().upper()
+    clean = re.sub(r'^(?:WRITE ARTICLE ON THIS TOPIC[:\s]*|WRITE NEWS ARTICLE ON THIS SUBJECT[:\s]*|ON THIS TOPIC WRITE ARTICLE[:\s]*)', '', clean, flags=re.IGNORECASE).strip()
+    words = clean.split()
+    if not words:
+        return "FINLAND", "DISCOVERED", ""
+    if len(words) <= 3:
+        return words[0], " ".join(words[1:]), ""
+
+    for sep in [":", " — ", " - "]:
+        if sep in clean:
+            parts = clean.split(sep, 1)
+            p1 = parts[0].strip() + (":" if sep == ":" else "")
+            p2_words = parts[1].strip().split()
+            if len(p2_words) <= 4:
+                return p1, " ".join(p2_words), ""
+            mid = len(p2_words) // 2
+            return p1, " ".join(p2_words[:mid]), " ".join(p2_words[mid:])
+
+    total_len = len(clean)
+    target_per_line = max(16, total_len / 3.0)
+    lines: List[str] = []
+    cur_line: List[str] = []
+    cur_len = 0
+    for w in words:
+        if cur_len + len(w) > target_per_line and len(lines) < 2 and cur_line:
+            lines.append(" ".join(cur_line))
+            cur_line = [w]
+            cur_len = len(w)
+        else:
+            cur_line.append(w)
+            cur_len += len(w) + 1
+    if cur_line:
+        lines.append(" ".join(cur_line))
+
+    l1 = lines[0] if len(lines) > 0 else clean
+    l2 = lines[1] if len(lines) > 1 else ""
+    l3 = lines[2] if len(lines) > 2 else ""
+    return l1, l2, l3
+
 def build_static_social_post(
     topic: str,
     article: Dict[str, Any],
@@ -3716,103 +3551,7 @@ def build_static_social_post(
         if len(badge_text) > 16:
             badge_text = "NEWS"
 
-    line1 = ""
-    line2 = ""
-    line3 = ""
-
-    if "PROTEST" in t_upper or "DEMONSTRAT" in t_upper or "GEN Z" in t_upper:
-        badge_text = "NEWS"
-        line1 = "GEN Z PROTESTERS"
-        line2 = "MARCH IN HELSINKI OVER"
-        line3 = "CUTS & LIVING COSTS"
-    elif is_tyre_topic(topic):
-        badge_text = "FINLAND GUIDE"
-        line1 = "DID YOU CHANGE"
-        line2 = "YOUR WINTER TYRES"
-        line3 = "IN FINLAND YET?"
-    elif "TESLA" in t_upper:
-        line1 = "FINLAND SAYS"
-        line2 = "“KYLLÄ” TO TESLA’S"
-        line3 = "ASSISTED DRIVING!"
-    elif "HEATING" in t_upper or "TALOYHTIÖ" in t_upper:
-        line1 = "TALOYHTIÖ HEATING:"
-        line2 = "HOW INDOOR RULES WORK"
-        line3 = "IN FINNISH WINTER!"
-    elif "POSTI" in t_upper or "PARCEL" in t_upper:
-        line1 = "POSTI HOLIDAY SHIPPING:"
-        line2 = "SMART LOCKER RULES &"
-        line3 = "CHRISTMAS DEADLINES!"
-    elif "STORM" in t_upper or "WIND" in t_upper or "GALE" in t_upper:
-        line1 = "BALTIC SEA WEATHER:"
-        line2 = "SEVERE GALE & WIND"
-        line3 = "WARNING IN FINLAND!"
-    elif "MIGRI" in t_upper or "RESIDENCE" in t_upper or "PERMIT" in t_upper:
-        line1 = "MIGRI FAST-TRACK:"
-        line2 = "DIGITAL PERMITS FOR"
-        line3 = "TECH SPECIALISTS!"
-    elif re.search(r'\b(stubb|president)\b', t_upper, re.IGNORECASE) and re.search(r'\b(putin|talks|ukraine|russia)\b', t_upper, re.IGNORECASE):
-        badge_text = "NEWS"
-        line1 = "PRESIDENT STUBB:"
-        line2 = "DIRECT TALKS WITH PUTIN"
-        line3 = "URGED OVER UKRAINE WAR"
-    elif re.search(r'\b(sauna|avantouinti|ice\s*swimming|avanto)\b', t_upper, re.IGNORECASE):
-        line1 = "HELSINKI WINTER SAUNA:"
-        line2 = "FIRST-TIMER RULES &"
-        line3 = "ICE SWIMMING TIPS!"
-    elif any(k in t_upper for k in ["CHRISTMAS FOOD", "WHAT DO FINNS EAT", "JOULUPÖYTÄ", "JOULUKINKKU", "TRADITIONAL FINNISH FOOD", "TRADITIONAL FOODS"]):
-        badge_text = "FOOD & RESTAURANTS"
-        line1 = "WHAT DO FINNS EAT"
-        line2 = "AT CHRISTMAS?"
-        line3 = "10 TRADITIONAL FOODS!"
-    elif any(k in t_upper for k in ["YLLÄS", "YLLAS", "LEVI", "SKI TRAIL", "ILLUMINATED SKI", "CROSS-COUNTRY SKIING", "ARCTIC TRACKS"]):
-        badge_text = "TRAVEL"
-        line1 = "EXPLORE YLLÄS & LEVI:"
-        line2 = "MILES OF ILLUMINATED"
-        line3 = "ARCTIC SKI TRAILS!"
-    elif any(k in t_upper for k in ["PORVOO", "OLD TOWN PORVOO", "VANHAKAUPUNKI"]):
-        badge_text = "TRAVEL"
-        line1 = "OLD TOWN PORVOO:"
-        line2 = "HISTORIC WOODEN QUARTERS"
-        line3 = "AND WINTER WALKS!"
-    elif any(k in t_upper for k in ["NATO", "RUSSIAN BID", "RUSSIAN PROPOSAL", "WITHDRAW FROM NATO"]):
-        badge_text = "NEWS"
-        line1 = "FINLAND REJECTS"
-        line2 = "REPORTED RUSSIAN BID"
-        line3 = "TO REVERSE NATO STATUS"
-    elif any(k in t_upper for k in ["1.5°C", "1.5C", "CLIMATE", "GLOBAL WARMING"]):
-        badge_text = "NEWS"
-        line1 = "SCIENTISTS WARN:"
-        line2 = "1.5°C CLIMATE THRESHOLD"
-        line3 = "COULD ARRIVE BY 2029"
-    elif "MARKET" in t_upper:
-        line1 = "OLD MARKET HALL:"
-        line2 = "WHAT TO EAT & LOCAL"
-        line3 = "FOOD ORDER TIPS!"
-    elif re.search(r'\b(tax|taxes|taxation|verohallinto|vero)\b', t_upper, re.IGNORECASE):
-        line1 = "FINLAND TAX UPDATE:"
-        line2 = "NEW ANNUAL RULES FOR"
-        line3 = "HOUSEHOLDS & EXPATS!"
-    elif re.search(r'\b(nvidia|blackwell)\b', t_upper, re.IGNORECASE) or (re.search(r'\b(ai|artificial\s*intelligence)\b', t_upper, re.IGNORECASE) and not re.search(r'\b(ukraine|war|russia|stubb|putin|president|nato)\b', t_upper, re.IGNORECASE)):
-        line1 = "NVIDIA UNVEILS:"
-        line2 = "NEXT-GEN BLACKWELL"
-        line3 = "AI ARCHITECTURE!"
-    else:
-        words = t_upper.replace(":", " ").replace("—", " ").split()
-        if len(words) <= 4:
-            mid = len(words) // 2
-            line1 = " ".join(words[:mid])
-            line2 = " ".join(words[mid:])
-            line3 = ""
-        elif len(words) <= 7:
-            p1 = len(words) // 3
-            p2 = 2 * len(words) // 3
-            line1 = " ".join(words[:p1])
-            line2 = " ".join(words[p1:p2])
-            line3 = " ".join(words[p2:])
-        else:
-            line1 = " ".join(words[:3])
-            line2 = " ".join(words[3:6])
-            line3 = " ".join(words[6:9])
+    line1, line2, line3 = split_headline_into_card_lines(topic, article)
 
     caption, hashtags = build_concise_social_caption_and_hashtags(topic, article)
     if featured_image.get("data_label") == "live" and featured_image.get("photographer"):
@@ -3825,7 +3564,7 @@ def build_static_social_post(
         if tags_str and tags_str not in caption:
             caption = f"{caption.strip()}\n\n{tags_str}"
 
-    photo_url = featured_image.get("url") or "/assets/sample-clips/tesla-clean-bg.jpg"
+    photo_url = featured_image.get("url") or "/assets/ai-generated/ilf_ai_nano-banana-pro_4x5_208ae1cccd4f.jpg"
 
     return {
         "post_type": "static_graphic",

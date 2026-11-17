@@ -708,7 +708,7 @@
     const imgPrev = $("wp-feat-img-preview");
     if (imgPrev) {
       const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
-      const imgUrl = featImg.url || "/assets/sample-clips/tesla-clean-bg.jpg";
+      const imgUrl = featImg.url || "/assets/helsinki-sample.jpg";
       imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
     }
 
@@ -894,7 +894,7 @@
     // 1. Load background photo
     const photoImg = new Image();
     photoImg.crossOrigin = "anonymous";
-    photoImg.src = ig.photo_url || "/assets/sample-clips/tesla-clean-bg.jpg";
+    photoImg.src = ig.photo_url || "/assets/helsinki-sample.jpg";
     photoImg.onload = () => {
       // Draw photo cover
       ctx45.clearRect(0, 0, w, h);
@@ -1144,17 +1144,22 @@
   function renderReelWorkspace(v) {
     const noticeEl = $("reel-on-demand-notice");
     const workspaceEl = $("reel-player-workspace");
+    const scenesOverviewEl = $("block-reel-scenes-overview");
     const reelData = v.reel;
 
     const hasReel = reelData && reelData.scenes && reelData.scenes.length > 0;
     if (!hasReel) {
       noticeEl?.classList.remove("hidden");
       workspaceEl?.classList.add("hidden");
+      scenesOverviewEl?.classList.add("hidden");
+      const tableWrap = $("reel-scenes-table-wrap");
+      if (tableWrap) tableWrap.innerHTML = "";
       return;
     }
 
     noticeEl?.classList.add("hidden");
     workspaceEl?.classList.remove("hidden");
+    scenesOverviewEl?.classList.remove("hidden");
 
     player.load(reelData);
     updateLayoutReadout();
@@ -3024,7 +3029,10 @@
     if (!wrap || !bundle) return;
     const curVerNum = selectedVersion || bundle.package.current_version;
     const v = bundle.versions.find((ver) => ver.version === curVerNum) || bundle.versions[bundle.versions.length - 1];
-    if (!v || !v.reel || !v.reel.scenes) return;
+    if (!v || !v.reel || !v.reel.scenes || v.reel.scenes.length === 0) {
+      wrap.innerHTML = "";
+      return;
+    }
     const scenes = (player && player.reel && player.reel.scenes) ? player.reel.scenes : v.reel.scenes;
 
     const contentScenes = scenes.filter((s) => !s.is_outro);
@@ -4468,70 +4476,317 @@
       }
     });
 
-    // Assignments form submit
-    $("assignment-form").addEventListener("submit", async (e) => {
+    /* ---------- PRODUCTION DESK (ARTICLE & REEL SEPARATION) ---------- */
+    let articleFeaturedPhoto = null;
+    let reelUploadedClips = [];
+
+    const tabArticle = $("tab-btn-mode-article");
+    const tabReel = $("tab-btn-mode-reel");
+    const panelArticle = $("mode-panel-article");
+    const panelReel = $("mode-panel-reel");
+
+    function switchProdMode(mode) {
+      if (mode === "article") {
+        tabArticle?.classList.add("active");
+        if (tabArticle) {
+          tabArticle.style.background = "var(--brand-blue)";
+          tabArticle.style.color = "#fff";
+          tabArticle.style.border = "none";
+        }
+        tabReel?.classList.remove("active");
+        if (tabReel) {
+          tabReel.style.background = "#f8fafc";
+          tabReel.style.color = "#475569";
+          tabReel.style.border = "1px solid #cbd5e1";
+        }
+        panelArticle?.classList.remove("hidden");
+        panelReel?.classList.add("hidden");
+      } else {
+        tabReel?.classList.add("active");
+        if (tabReel) {
+          tabReel.style.background = "var(--brand-blue)";
+          tabReel.style.color = "#fff";
+          tabReel.style.border = "none";
+        }
+        tabArticle?.classList.remove("active");
+        if (tabArticle) {
+          tabArticle.style.background = "#f8fafc";
+          tabArticle.style.color = "#475569";
+          tabArticle.style.border = "1px solid #cbd5e1";
+        }
+        panelArticle?.classList.add("hidden");
+        panelReel?.classList.remove("hidden");
+      }
+    }
+
+    tabArticle?.addEventListener("click", () => switchProdMode("article"));
+    tabReel?.addEventListener("click", () => switchProdMode("reel"));
+
+    // Mode 1: Article Single Featured Photo Dropzone
+    const photoDropzone = $("article-photo-dropzone");
+    const photoInput = $("article-photo-input");
+    const emptyState = $("article-photo-empty-state");
+    const previewState = $("article-photo-preview-state");
+    const photoImg = $("article-photo-img");
+    const photoName = $("article-photo-name");
+    const btnRemovePhoto = $("btn-remove-article-photo");
+
+    function setArticlePhoto(photo) {
+      articleFeaturedPhoto = photo;
+      if (photo) {
+        if (photoImg) photoImg.src = photo.url;
+        if (photoName) photoName.textContent = photo.filename || "Uploaded Photo";
+        emptyState?.classList.add("hidden");
+        previewState?.classList.remove("hidden");
+      } else {
+        if (photoInput) photoInput.value = "";
+        emptyState?.classList.remove("hidden");
+        previewState?.classList.add("hidden");
+      }
+    }
+
+    if (photoDropzone && photoInput) {
+      photoDropzone.addEventListener("click", (e) => {
+        if (e.target !== btnRemovePhoto && !btnRemovePhoto?.contains(e.target)) {
+          photoInput.click();
+        }
+      });
+
+      photoDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        photoDropzone.style.borderColor = "var(--brand-blue)";
+        photoDropzone.style.background = "#eff6ff";
+      });
+
+      photoDropzone.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        photoDropzone.style.borderColor = "#cbd5e1";
+        photoDropzone.style.background = "#fff";
+      });
+
+      photoDropzone.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        photoDropzone.style.borderColor = "#cbd5e1";
+        photoDropzone.style.background = "#fff";
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          await handleArticlePhotoUpload(e.dataTransfer.files[0]);
+        }
+      });
+
+      photoInput.addEventListener("change", async (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          await handleArticlePhotoUpload(e.target.files[0]);
+        }
+      });
+    }
+
+    btnRemovePhoto?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setArticlePhoto(null);
+    });
+
+    async function handleArticlePhotoUpload(file) {
+      if (!file) return;
+      try {
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const res = await api("/api/upload/media-clip", {
+          method: "POST",
+          body: JSON.stringify({
+            data_base64: base64Data,
+            filename: file.name,
+            media_type: "image",
+            credit: "Photo: ILF",
+          }),
+        });
+
+        setArticlePhoto({
+          url: res.url,
+          filename: file.name,
+          photographer: "ILF",
+          credit_string: "Photo: ILF",
+          source_url: "https://ilovefinland.net",
+          licence: "Editorial Rights (ILF)",
+          alt_text: file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
+          caption: `Photo for ${$("assign-topic") ? $("assign-topic").value.trim() : "article"}`,
+        });
+      } catch (err) {
+        alert(`Failed to upload photo: ${err.message}`);
+      }
+    }
+
+    // Article Form Submit (Mode 1: Strictly Article + Static Post, ZERO reel)
+    $("assignment-article-form")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const submitBtn = $("assignment-form").querySelector("button[type='submit']");
-      const origBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+      const submitBtn = $("btn-submit-article");
+      const origHtml = submitBtn ? submitBtn.innerHTML : "";
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>⏳ Drafting Story with AI...</span>`;
+        submitBtn.innerHTML = `<span>⏳ Drafting Article &amp; Social Post...</span>`;
       }
 
       try {
-        const scope = $("assign-scope").value;
-        const links = $("assign-links").value.split("\n").map((s) => s.trim()).filter(Boolean);
+        const topic = $("assign-topic").value.trim();
+        const deadline = $("assign-deadline") ? $("assign-deadline").value : "";
+        const instructions = $("assign-instructions") ? $("assign-instructions").value.trim() : "";
+        const links = $("assign-links") ? $("assign-links").value.split("\n").map((s) => s.trim()).filter(Boolean) : [];
         const voiceBar = document.querySelector('[data-voice-for="assign-instructions"]');
 
-        const photos = uploadedClips.filter((c) => c.media_type === "image" || /\.(jpe?g|png|webp|heic|gif)$/i.test(c.filename));
-        const videoClips = uploadedClips.filter((c) => c.media_type !== "image" && !/\.(jpe?g|png|webp|heic|gif)$/i.test(c.filename));
+        const payload = {
+          topic,
+          scope: "Article + Static Post",
+          deadline_at: deadline,
+          instructions,
+          links,
+          has_voice_note: voiceBar ? voiceBar.dataset.hasVoice === "1" : false,
+          custom_photo: articleFeaturedPhoto,
+          custom_additional_photo: null,
+          clips: undefined,
+        };
 
-        let customPhoto = null;
-        if (photos.length > 0) {
-          const p = photos[0];
-          customPhoto = {
-            url: p.url,
-            filename: p.filename,
-            photographer: "ILF",
-            credit_string: "Photo: ILF",
-            source_url: "https://ilovefinland.net",
-            licence: "Editorial Rights (ILF)",
-            alt_text: p.alt_text || $("assign-topic").value.trim() || p.filename.replace(/\.[^.]+$/, ""),
-            caption: `Photo for ${$("assign-topic").value.trim()}`,
-          };
+        const created = await api("/api/assignments", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        currentPackageId = created.package.id;
+        setArticlePhoto(null);
+        $("assign-topic").value = "";
+        if ($("assign-instructions")) $("assign-instructions").value = "";
+        if ($("assign-links")) $("assign-links").value = "";
+        await loadAll();
+        switchView("review");
+      } catch (err) {
+        alert(`Failed to draft article: ${err.message}`);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origHtml;
         }
+      }
+    });
 
-        let customAdditionalPhoto = null;
-        if (photos.length > 1) {
-          const p2 = photos[1];
-          customAdditionalPhoto = {
-            url: p2.url,
-            filename: p2.filename,
-            photographer: "ILF",
-            credit_string: "Photo: ILF",
-            source_url: "https://ilovefinland.net",
-            licence: "Editorial Rights (ILF)",
-            alt_text: p2.alt_text || $("assign-topic").value.trim() || p2.filename.replace(/\.[^.]+$/, ""),
-            caption: `Additional photo for ${$("assign-topic").value.trim()}`,
-          };
+    // Mode 2: Reel Multi-Clip Dropzone & Grid
+    const reelDropzone = $("reel-dropzone");
+    const reelFilesInput = $("reel-files-input");
+    const reelGrid = $("reel-clips-grid");
+
+    function renderReelClipsGrid() {
+      if (!reelGrid) return;
+      reelGrid.innerHTML = "";
+      reelUploadedClips.forEach((clip, idx) => {
+        const item = document.createElement("div");
+        item.style.cssText = "background:#fff;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;position:relative;display:flex;flex-direction:column;";
+        item.innerHTML = `
+          <div style="aspect-ratio:9/16;position:relative;background:#000;">
+            <img src="${clip.url}" alt="${escapeHtml(clip.filename)}" style="width:100%;height:100%;object-fit:cover;" />
+            <span style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);color:#fff;font-size:0.65rem;padding:2px 5px;border-radius:4px;font-weight:700;">Clip ${idx + 1}</span>
+            <button type="button" class="btn-del-reel-clip" data-idx="${idx}" style="position:absolute;top:4px;right:4px;background:rgba(239,68,68,0.9);color:#fff;border:none;border-radius:4px;width:20px;height:20px;cursor:pointer;font-size:0.7rem;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
+          </div>
+          <div style="padding:4px 6px;font-size:0.7rem;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(clip.filename)}">
+            ${escapeHtml(clip.filename)}
+          </div>
+        `;
+        item.querySelector(".btn-del-reel-clip")?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          reelUploadedClips.splice(idx, 1);
+          renderReelClipsGrid();
+        });
+        reelGrid.appendChild(item);
+      });
+    }
+
+    if (reelDropzone && reelFilesInput) {
+      reelDropzone.addEventListener("click", () => reelFilesInput.click());
+      reelDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        reelDropzone.style.borderColor = "var(--brand-blue)";
+      });
+      reelDropzone.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        reelDropzone.style.borderColor = "#cbd5e1";
+      });
+      reelDropzone.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        reelDropzone.style.borderColor = "#cbd5e1";
+        if (e.dataTransfer && e.dataTransfer.files) {
+          await handleReelFilesUpload(Array.from(e.dataTransfer.files));
         }
+      });
+      reelFilesInput.addEventListener("change", async (e) => {
+        if (e.target.files) {
+          await handleReelFilesUpload(Array.from(e.target.files));
+        }
+      });
+    }
 
-        const targetLength = $("clip-target-length") ? parseInt($("clip-target-length").value, 10) : 15;
-        const audioMode = $("clip-audio-mode") ? $("clip-audio-mode").value : "authentic_source_and_music";
-        const openingShot = $("clip-opening-select") ? $("clip-opening-select").value : "Clip 1";
+    async function handleReelFilesUpload(files) {
+      for (const file of files) {
+        if (reelUploadedClips.length >= 8) {
+          alert("Maximum 8 clips allowed per reel.");
+          break;
+        }
+        try {
+          const isImg = file.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|gif)$/i.test(file.name);
+          const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const res = await api("/api/upload/media-clip", {
+            method: "POST",
+            body: JSON.stringify({
+              data_base64: base64Data,
+              filename: file.name,
+              media_type: isImg ? "image" : "video",
+              credit: `Footage/Photo: ILF (${file.name})`,
+            }),
+          });
+          reelUploadedClips.push({
+            id: reelUploadedClips.length + 1,
+            filename: file.name,
+            url: res.url,
+            poster: res.url,
+            duration: 3.5,
+            media_type: isImg ? "image" : "video",
+            source: "ILF",
+            credit: `ILF (${file.name})`,
+          });
+        } catch (err) {
+          alert(`Error uploading clip "${file.name}": ${err.message}`);
+        }
+      }
+      renderReelClipsGrid();
+    }
 
-        const isReelRequested = scope === "Reel" || scope === "Both" || /(?:IMAGE|SCENE|CLIP|SLIDE)\s+\d+/i.test($("assign-instructions").value);
+    // Reel Form Submit (Mode 2: Dedicated Video Reel)
+    $("assignment-reel-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitBtn = $("btn-submit-reel");
+      const origHtml = submitBtn ? submitBtn.innerHTML : "";
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>⏳ Composing Reel Storyboard...</span>`;
+      }
+
+      try {
+        const topic = $("reel-topic").value.trim();
+        const script = $("reel-script") ? $("reel-script").value.trim() : "";
+        const targetLength = $("reel-target-length") ? parseInt($("reel-target-length").value, 10) : 28;
+        const audioMode = $("reel-audio-mode") ? $("reel-audio-mode").value : "authentic_source_and_music";
+        const openingShot = $("reel-opening-shot") ? $("reel-opening-shot").value : "Clip 1";
 
         const payload = {
-          topic: $("assign-topic").value.trim(),
-          scope,
-          instructions: $("assign-instructions").value.trim(),
-          links,
-          deadline_at: $("assign-deadline").value,
-          has_voice_note: voiceBar ? voiceBar.dataset.hasVoice === "1" : false,
-          custom_photo: customPhoto,
-          custom_additional_photo: customAdditionalPhoto,
-          clips: isReelRequested && uploadedClips.length > 0 ? uploadedClips : undefined,
+          topic,
+          scope: "Reel",
+          instructions: script,
+          clips: reelUploadedClips,
           target_length_sec: targetLength,
           audio_mode: audioMode,
           opening_shot_note: openingShot,
@@ -4541,17 +4796,20 @@
           method: "POST",
           body: JSON.stringify(payload),
         });
+
         currentPackageId = created.package.id;
-        uploadedClips = [];
-        renderUploadedClips();
+        reelUploadedClips = [];
+        renderReelClipsGrid();
+        $("reel-topic").value = "";
+        if ($("reel-script")) $("reel-script").value = "";
         await loadAll();
         switchView("review");
       } catch (err) {
-        alert(`Failed to draft assignment: ${err.message}`);
+        alert(`Failed to compose reel: ${err.message}`);
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = origBtnHtml;
+          submitBtn.innerHTML = origHtml;
         }
       }
     });
@@ -4870,7 +5128,7 @@
     // Mobile "Save to Photos" direct buttons for Featured Image and Additional Image
     $("btn-save-photos-featured")?.addEventListener("click", () => {
       const imgPrev = $("wp-feat-img-preview");
-      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "/assets/sample-clips/tesla-clean-bg.jpg";
+      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "/assets/helsinki-sample.jpg";
       saveImageDirectlyToMobilePhotos(srcUrl, "ilovefinland-featured-photo.jpg", "image/jpeg", "Featured Article Photo");
     });
 
@@ -4921,7 +5179,7 @@
       const fmt = dlBtn.dataset.format || "jpeg";
       const isAddl = dlBtn.id.includes("addl") || dlBtn.id.includes("add-");
       const imgPrev = isAddl ? $("wp-add-img-preview") : $("wp-feat-img-preview");
-      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "/assets/sample-clips/tesla-clean-bg.jpg";
+      const srcUrl = imgPrev ? imgPrev.getAttribute("src") : "/assets/helsinki-sample.jpg";
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       // If tapped on mobile phone, divert to Save to Photos helper so it goes directly to Gallery/Photos!

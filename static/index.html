@@ -1126,7 +1126,6 @@
                     <p id="reel-canva-info" class="hint-text" style="margin-top:6px;font-size:0.72rem;"></p>
                   </div>
                 </div>
-              </div>
 
               <!-- Visual Storyboard Deck & Scenes Overview (Up to 8 clips + Dedicated Branded Outro) -->
               <div class="collapsible-scenes-card" id="block-reel-scenes-overview" style="margin-top:16px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
@@ -1179,7 +1178,8 @@
                   <div id="reel-scenes-table-wrap" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;"></div>
                 </div>
               </div>
-            </section>
+            </div><!-- /#reel-player-workspace -->
+          </section>
 
             <!-- Interactive Static Social Post (1080×1350) & 3:4 Profile Crop Card -->
             <section id="panel-ig" class="card panel" data-panel="ig">
@@ -1543,171 +1543,167 @@
           </section>
         </section>
 
-        <!-- VIEW 2: ASSIGNMENTS & UPLOAD CLIPS -->
+        <!-- VIEW 2: ASSIGNMENTS & PRODUCTION DESK (Separated into Article vs Reel) -->
         <section id="view-assignments" class="view hidden">
           <div class="card">
-            <h2 class="panel-title">Assign Story or Upload Reel Clips</h2>
-            <p class="hint-text">AI drafts straight-news copy, verifies sources, and composes a 9:16 Reel inside the 4:5 safe area.</p>
-            
-            <form id="assignment-form" class="stack-form">
-              <div class="form-row assign-top-row">
-                <div class="form-field-group">
-                  <label class="label-sm" for="assign-topic">Topic / Story Title</label>
-                  <input id="assign-topic" type="text" placeholder="e.g., Winter Transit in Finland: Green Trams to Lapland Snow" required />
-                </div>
-                <div class="form-field-group">
-                  <label class="label-sm" for="assign-scope">Scope</label>
-                  <select id="assign-scope">
-                    <option value="Article + Static Post" selected>Article + Static Social Post (Recommended)</option>
-                    <option value="Article">Article Only</option>
-                    <option value="Reel">Reel Only (Upload Clips)</option>
-                    <option value="Both">Both (Article + Reel)</option>
-                  </select>
-                </div>
-                <div class="form-field-group">
-                  <label class="label-sm" for="assign-deadline">Production Deadline (Europe/Helsinki)</label>
-                  <input id="assign-deadline" type="datetime-local" />
-                </div>
-              </div>
-
-              <!-- MULTI-CLIP & PHOTO UPLOAD SECTION (Available for All Stories & Reels) -->
-              <div id="clips-upload-section" class="clips-upload-container">
-                <div class="clips-section-header">
-                  <div>
-                    <h3 id="clips-section-title" style="margin:0;font-size:1.05rem;color:var(--navy);">
-                      <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                      Primary Featured Photo for Article &amp; Post (JPG, PNG, WebP)
-                    </h3>
-                    <p id="clips-section-hint" class="hint-text" style="margin:2px 0 0;">Upload your own authentic photo (used as the primary featured image for your Article &amp; Instagram post). Drag &amp; drop or tap to browse from photo library.</p>
-                  </div>
-                  <button type="button" id="btn-load-demo-clips" class="btn btn-ghost btn-sm">
-                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                    <span>Load Sample Clips (Tram &amp; Lapland)</span>
-                  </button>
-                </div>
-
-                <!-- Dropzone / Picker: sleek, compact, space-efficient -->
-                <div id="clip-dropzone" class="clip-dropzone">
-                  <input type="file" id="clip-file-input" multiple accept="video/mp4,video/quicktime,video/mov,video/*,image/jpeg,image/png,image/webp,image/heic,image/*" class="file-input-hidden" />
-                  <div class="dropzone-compact-inner">
-                    <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-blue);" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <span class="dropzone-text"><strong>Choose Primary Featured Photo</strong> from phone photo library or computer <span class="hint-inline">(drag &amp; drop or tap to browse JPG, PNG, WebP)</span></span>
-                  </div>
-                  <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
-                    <div class="progress-bar-bg"><div id="upload-progress-bar" class="progress-bar-fill"></div></div>
-                    <span id="upload-progress-text" class="hint-text" style="font-size:0.8rem;">Uploading 100%…</span>
-                  </div>
-                </div>
-
-                <!-- Clips List (Enlarges into rich cards when clips exist) -->
-                <div id="clips-list" class="clips-list"></div>
-
-                <!-- Editorial Clip Instructions & Settings -->
-                <div class="clips-editorial-box hidden">
-                  <div class="form-row">
-                    <div>
-                      <label class="label-sm" for="clip-opening-select">Opening Shot Choice</label>
-                      <select id="clip-opening-select">
-                        <option value="Clip 1">Clip 1 as Opening Hook (Recommended)</option>
-                        <option value="Clip 2">Clip 2 as Opening Hook</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="label-sm" for="clip-target-length">Target Reel Length</label>
-                      <select id="clip-target-length">
-                        <option value="9">9 seconds (Fast Civic Contrast)</option>
-                        <option value="15">15 seconds (Standard Nordic Utility)</option>
-                        <option value="30">30 seconds (In-depth explainer)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="label-sm" for="clip-audio-mode">Audio Mix Mode</label>
-                      <select id="clip-audio-mode">
-                        <option value="authentic_source_and_music">Authentic Field Audio + Nordic Pulse Bed</option>
-                        <option value="music_only">Nordic Pulse Music Only (No Narration)</option>
-                        <option value="source_only">Authentic Ambient Audio Only</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- INSTAGRAM POST / CAROUSEL DESIGNER SECTION (Visible when scope includes Instagram Post) -->
-              <div id="ig-post-section" class="ig-post-container hidden">
-                <div class="clips-section-header">
-                  <div>
-                    <h3 style="margin:0;font-size:1.05rem;color:var(--navy);">
-                      <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                      Instagram Feed Carousel Designer (4:5)
-                    </h3>
-                    <p class="hint-text" style="margin:2px 0 0;">Visual multi-slide carousel cards designed for high saves, reference, and shares on Instagram.</p>
-                  </div>
-                  <button type="button" id="btn-load-demo-ig" class="btn btn-ghost btn-sm">
-                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                    <span>Load Sample IG Carousel (Winter Tires)</span>
-                  </button>
-                </div>
-                <div class="ig-designer-box">
-                  <div class="form-row">
-                    <div>
-                      <label class="label-sm" for="ig-slide-count">Number of Slides</label>
-                      <select id="ig-slide-count">
-                        <option value="3">3 Slides (Quick Visual Checklist)</option>
-                        <option value="4">4 Slides (Standard Civic Guide)</option>
-                        <option value="5">5 Slides (In-depth Explainer)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="label-sm" for="ig-theme-select">Visual Theme / Template</label>
-                      <select id="ig-theme-select">
-                        <option value="navy_frost">Nordic Navy &amp; Ice Blue (Brand Clean)</option>
-                        <option value="aurora_night">Lapland Aurora &amp; Dark Sky</option>
-                        <option value="civic_alert">Civic Alert &amp; Warning Border</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="label-sm" for="ig-aspect-select">Aspect Ratio</label>
-                      <select id="ig-aspect-select">
-                        <option value="4:5">4:5 Vertical Feed (1080×1350 — Recommended)</option>
-                        <option value="1:1">1:1 Square Feed (1080×1080)</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Instructions (Text or Voice Note) -->
-              <label class="label-sm">Instructions &amp; Angle (Type or Voice Note)</label>
-              <div class="voice-bar" data-voice-for="assign-instructions">
-                <button type="button" class="btn btn-ghost btn-sm btn-rec">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                  <span>Record Voice Note</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-sim-voice">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                  <span>Sample Voice Note</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-replay hidden">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  <span>Replay</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-discard hidden">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  <span>Discard</span>
-                </button>
-                <span class="voice-status hint-text"></span>
-                <audio class="voice-audio hidden"></audio>
-              </div>
-              <textarea id="assign-instructions" rows="2" placeholder="Key angle, opening shot instructions, or facts to highlight…"></textarea>
-
-              <label class="label-sm" for="assign-links">Source Links (one per line)</label>
-              <textarea id="assign-links" rows="2" placeholder="https://kaupunkiliikenne.fi/en/&#10;https://en.ilmatieteenlaitos.fi/warnings"></textarea>
-
-              <button type="submit" class="btn btn-primary">
-                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                <span>Create Assignment &amp; Generate Draft</span>
+            <!-- Sleek Segmented Mode Selector Bar -->
+            <div class="prod-mode-selector-wrap" style="display:flex;gap:10px;margin-bottom:20px;border-bottom:2px solid #e2e8f0;padding-bottom:12px;">
+              <button type="button" id="tab-btn-mode-article" class="prod-mode-tab active" data-mode="article" style="display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:0.92rem;font-weight:700;border-radius:8px;border:none;background:var(--brand-blue);color:#fff;cursor:pointer;transition:all 0.15s;">
+                <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="4" y1="10" x2="20" y2="10"></line></svg>
+                <span>📰 1. Write Article &amp; Social Post</span>
               </button>
-            </form>
+              <button type="button" id="tab-btn-mode-reel" class="prod-mode-tab" data-mode="reel" style="display:flex;align-items:center;gap:8px;padding:10px 18px;font-size:0.92rem;font-weight:700;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;cursor:pointer;transition:all 0.15s;">
+                <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                <span>🎬 2. Create Video Reel (2–8 Clips)</span>
+              </button>
+            </div>
+
+            <!-- MODE 1: ARTICLE & SOCIAL POST FORM -->
+            <div id="mode-panel-article" class="prod-mode-panel">
+              <div style="margin-bottom:16px;">
+                <h2 class="panel-title" style="margin:0 0 4px;">Write WordPress Article &amp; Social Post</h2>
+                <p class="hint-text" style="margin:0;">AI drafts straight-news copy for WordPress and prepares an approved 1080×1350 Instagram feed graphic. Never creates a Reel.</p>
+              </div>
+
+              <form id="assignment-article-form" class="stack-form">
+                <div class="form-row" style="grid-template-columns: 2fr 1fr;">
+                  <div class="form-field-group">
+                    <label class="label-sm" for="assign-topic">Topic / Story Title *</label>
+                    <input id="assign-topic" type="text" placeholder="e.g., Finland’s President Stubb Urges Europe to Hold Direct Talks With Putin" required />
+                  </div>
+                  <div class="form-field-group">
+                    <label class="label-sm" for="assign-deadline">Production Deadline (Optional)</label>
+                    <input id="assign-deadline" type="datetime-local" />
+                  </div>
+                </div>
+
+                <!-- Clean Single Featured Photo Dropzone -->
+                <div class="article-photo-upload-box" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:14px;background:#f8fafc;margin-bottom:14px;">
+                  <label class="label-sm" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span>📸 Primary Featured Photo for Article &amp; Instagram Post</span>
+                    <span class="hint-inline">JPG, PNG, WebP (Used for WordPress &amp; 1080×1350 card)</span>
+                  </label>
+                  <input type="file" id="article-photo-input" accept="image/jpeg,image/png,image/webp,image/heic,image/*" class="file-input-hidden" />
+                  <div id="article-photo-dropzone" style="cursor:pointer;padding:16px;text-align:center;border-radius:8px;background:#fff;border:1px solid #e2e8f0;transition:border-color 0.15s;">
+                    <div id="article-photo-empty-state">
+                      <svg class="lucide" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--brand-blue);margin-bottom:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                      <div style="font-size:0.9rem;font-weight:700;color:var(--navy);">Click or Drag to Upload Featured Photo</div>
+                      <div class="hint-text" style="font-size:0.78rem;">Upload an authentic photo from your phone or computer.</div>
+                    </div>
+                    <div id="article-photo-preview-state" class="hidden" style="display:flex;align-items:center;gap:14px;text-align:left;">
+                      <img id="article-photo-img" src="" alt="Featured preview" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;" />
+                      <div style="flex:1;">
+                        <div id="article-photo-name" style="font-weight:700;font-size:0.88rem;color:#0f172a;"></div>
+                        <div class="hint-text" style="font-size:0.75rem;">Set as primary WordPress image &amp; social graphic.</div>
+                      </div>
+                      <button type="button" id="btn-remove-article-photo" class="btn btn-ghost btn-xs" style="color:#b91c1c;border:1px solid #fecaca;background:#fef2f2;">Remove</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Instructions / Angle -->
+                <div class="form-field-group">
+                  <label class="label-sm">Angle &amp; Editorial Instructions (Optional)</label>
+                  <div class="voice-bar" data-voice-for="assign-instructions">
+                    <button type="button" class="btn btn-ghost btn-sm btn-rec">
+                      <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                      <span>Record Voice Note</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm btn-discard hidden"><span>Discard</span></button>
+                    <span class="voice-status hint-text"></span>
+                    <audio class="voice-audio hidden"></audio>
+                  </div>
+                  <textarea id="assign-instructions" rows="2" placeholder="Key facts, quotes, official angle, or background context to include in the article…"></textarea>
+                </div>
+
+                <!-- Source Links -->
+                <div class="form-field-group">
+                  <label class="label-sm" for="assign-links">Source Links (one per line, optional)</label>
+                  <textarea id="assign-links" rows="2" placeholder="https://yle.fi/uutiset&#10;https://presidentti.fi"></textarea>
+                </div>
+
+                <button type="submit" id="btn-submit-article" class="btn btn-primary" style="padding:12px 24px;font-size:0.95rem;font-weight:700;">
+                  <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>✨ Generate Article &amp; Social Post</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- MODE 2: REEL CREATOR FORM -->
+            <div id="mode-panel-reel" class="prod-mode-panel hidden">
+              <div style="margin-bottom:16px;">
+                <h2 class="panel-title" style="margin:0 0 4px;">Create Video Reel (9:16 Vertical Storyboard)</h2>
+                <p class="hint-text" style="margin:0;">Upload 2 to 8 photos or video clips with scene-by-scene headlines, pacing, and branded closing card.</p>
+              </div>
+
+              <form id="assignment-reel-form" class="stack-form">
+                <div class="form-row" style="grid-template-columns: 2fr 1fr;">
+                  <div class="form-field-group">
+                    <label class="label-sm" for="reel-topic">Reel Topic / Title *</label>
+                    <input id="reel-topic" type="text" placeholder="e.g., Finland on Alert: Minister Warns of Russian Sabotage Threat" required />
+                  </div>
+                  <div class="form-field-group">
+                    <label class="label-sm" for="reel-target-length">Target Reel Duration</label>
+                    <select id="reel-target-length">
+                      <option value="15">15 seconds (Standard Quick Reel)</option>
+                      <option value="28" selected>28 seconds (Full Storyboard — 8 Scenes)</option>
+                      <option value="35">35 seconds (Extended In-Depth)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Multi-Clip Upload Container -->
+                <div class="reel-clips-container" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:14px;background:#f8fafc;margin-bottom:14px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div>
+                      <h3 style="margin:0;font-size:0.95rem;color:var(--navy);font-weight:700;">🎬 Upload 2 to 8 Photos or Video Clips</h3>
+                      <p class="hint-text" style="margin:2px 0 0;font-size:0.76rem;">Select photos in the order of your scenes (Clip 1 through Clip 8).</p>
+                    </div>
+                  </div>
+
+                  <input type="file" id="reel-files-input" multiple accept="video/mp4,video/quicktime,video/mov,video/*,image/jpeg,image/png,image/webp,image/*" class="file-input-hidden" />
+                  <div id="reel-dropzone" style="cursor:pointer;padding:16px;text-align:center;border-radius:8px;background:#fff;border:1px solid #e2e8f0;margin-bottom:10px;">
+                    <svg class="lucide" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--brand-blue);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <div style="font-size:0.88rem;font-weight:700;color:var(--navy);margin-top:4px;">Drop or Choose 2 to 8 Photos or Videos</div>
+                    <div class="hint-text" style="font-size:0.75rem;">Supports JPG, PNG, MP4, MOV from phone library or computer.</div>
+                  </div>
+
+                  <!-- Uploaded Clips List Grid -->
+                  <div id="reel-clips-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:8px;"></div>
+                </div>
+
+                <!-- Scene Script Input -->
+                <div class="form-field-group">
+                  <label class="label-sm" for="reel-script">Scene Script &amp; 3-Line Headlines (Optional or Automated)</label>
+                  <p class="hint-text" style="margin:0 0 6px;font-size:0.75rem;">Type your exact scene lines or paste numbered blocks. AI will auto-sync them to your clips.</p>
+                  <textarea id="reel-script" rows="6" placeholder="3.5s&#10;IMAGE 1&#10;IS FINLAND&#10;RUSSIA'S NEXT&#10;SABOTAGE TARGET?&#10;&#10;3.5s&#10;IMAGE 2&#10;AN ATTEMPTED ATTACK&#10;IN ESTONIA&#10;RAISES CONCERNS"></textarea>
+                </div>
+
+                <!-- Audio Settings -->
+                <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+                  <div>
+                    <label class="label-sm" for="reel-audio-mode">Audio Style</label>
+                    <select id="reel-audio-mode">
+                      <option value="authentic_source_and_music" selected>Nordic Pulse Ambient + Sound Bed</option>
+                      <option value="music_only">Music Only (No Voiceover)</option>
+                      <option value="source_only">Authentic Ambient Audio</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="label-sm" for="reel-opening-shot">Opening Hook Shot</label>
+                    <select id="reel-opening-shot">
+                      <option value="Clip 1" selected>Clip 1 as Opening Hook</option>
+                      <option value="Clip 2">Clip 2 as Opening Hook</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" id="btn-submit-reel" class="btn btn-primary" style="padding:12px 24px;font-size:0.95rem;font-weight:700;">
+                  <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>🎬 Compose Video Reel</span>
+                </button>
+              </form>
+            </div>
           </div>
         </section>
 
