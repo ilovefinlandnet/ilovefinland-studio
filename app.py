@@ -31,6 +31,10 @@ from db import (
     delete_plan_idea,
     edit_plan_idea,
     edit_project,
+    save_plan_idea,
+    unsave_plan_idea,
+    recover_plan_idea,
+    get_last_scan_info,
     get_calendar_data,
     get_last_daily_review_run,
     list_studio_titles,
@@ -558,7 +562,10 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
 
             if path == "/api/calendar/plan":
-                self._send_json({"ideas": get_weekly_plan(db_path=db_path)})
+                self._send_json({
+                    "ideas": get_weekly_plan(db_path=db_path),
+                    "last_scan": get_last_scan_info(db_path=db_path),
+                })
                 return
 
             if path == "/api/research/sources":
@@ -1700,6 +1707,15 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if action == "accept":
                 res = accept_plan_idea(idea_id, db_path=db_path)
                 self._send_json(res)
+            elif action == "save":
+                res = save_plan_idea(idea_id, db_path=db_path)
+                self._send_json(res)
+            elif action == "unsave":
+                res = unsave_plan_idea(idea_id, db_path=db_path)
+                self._send_json(res)
+            elif action in ("recover", "restore"):
+                res = recover_plan_idea(idea_id, db_path=db_path)
+                self._send_json(res)
             elif action == "dismiss":
                 res = dismiss_plan_idea(idea_id, db_path=db_path)
                 self._send_json(res)
@@ -1723,7 +1739,11 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
 
         if path == "/api/research/scan_now":
             sync_live_news_plan_ideas(db_path=db_path)
-            self._send_json({"ok": True, "ideas": get_weekly_plan(db_path=db_path)})
+            self._send_json({
+                "ok": True,
+                "ideas": get_weekly_plan(db_path=db_path),
+                "last_scan": get_last_scan_info(db_path=db_path),
+            })
             return
 
         if path == "/api/calendar/reschedule":

@@ -673,10 +673,15 @@ def detect_region_and_priority(title: str, description: str = "", section: str =
     if not is_finland:
         return ("International", 3, "🌐 International News")
 
-    # 2. Finland Stories
-    is_breaking_news = (section == "News" and category in ("Finland", "Weather"))
+    # 2. Finland Stories - distinguish genuine breaking alerts vs regular coverage
+    breaking_triggers = [
+        "warning", "alert", "severe", "gale", "storm", "blizzard", "emergency", "airspace",
+        "border shut", "border closed", "drone", "first snowfall", "black ice", "sub-zero frost",
+        "freeze warning", "power outage", "strikes near", "evacuat", "investigating death", "urgent"
+    ]
+    is_breaking_news = (section == "News") and any(w in text for w in breaking_triggers)
     base_priority = 1 if is_breaking_news else 2
-    priority_label = "⭐ Finland Breaking" if base_priority == 1 else "🇫🇮 Finland Priority"
+    priority_label = "Breaking Alert" if base_priority == 1 else "Finland Story"
 
     return ("Finland", base_priority, priority_label)
 

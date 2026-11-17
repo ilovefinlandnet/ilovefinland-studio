@@ -266,15 +266,32 @@ def init_db(db_path: str = DB_PATH) -> None:
             except sqlite3.OperationalError:
                 pass
 
-        # Ensure plan_ideas schema migrations (region and priority_rank)
+        # Ensure plan_ideas schema migrations (region, priority_rank, outlet, published_time, is_breaking)
         for col_name, col_sql in (
             ("region", "TEXT NOT NULL DEFAULT 'Pan-Finland'"),
             ("priority_rank", "INTEGER NOT NULL DEFAULT 2"),
+            ("outlet", "TEXT"),
+            ("published_time", "TEXT"),
+            ("is_breaking", "INTEGER NOT NULL DEFAULT 0"),
         ):
             try:
                 conn.execute(f"ALTER TABLE plan_ideas ADD COLUMN {col_name} {col_sql}")
             except sqlite3.OperationalError:
                 pass
+
+        # Create Scan Runs Table for tracking discovery scan status & timestamps
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS scan_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ran_at TEXT NOT NULL,
+                success INTEGER NOT NULL DEFAULT 1,
+                items_found INTEGER NOT NULL DEFAULT 0,
+                items_added INTEGER NOT NULL DEFAULT 0,
+                message TEXT
+            );
+            """
+        )
 
         try:
             conn.execute("ALTER TABLE package_versions ADD COLUMN ig_post_json TEXT")
@@ -4061,6 +4078,121 @@ def add_clip_to_package_reel(
     return bundle
 
 
+def infer_outlet_name(source_url: str = "", fit_reason: str = "") -> str:
+    url_l = (source_url or "").lower()
+    fit_l = (fit_reason or "").lower()
+    if "ilmatieteenlaitos" in url_l or "fmi" in fit_l:
+        return "Ilmatieteen laitos (FMI)"
+    if "yle.fi" in url_l:
+        if "english" in fit_l or "en" in url_l:
+            return "Yle News (English)"
+        return "Yle Uutiset"
+    if "is.fi" in url_l:
+        return "Ilta-Sanomat"
+    if "hs.fi" in url_l:
+        return "Helsingin Sanomat"
+    if "slush" in url_l:
+        return "Slush Official"
+    if "thl.fi" in url_l:
+        return "THL Finland"
+    if "posti.fi" in url_l:
+        return "Posti Finland"
+    if "hsl.fi" in url_l:
+        return "HSL Helsinki Transport"
+    if "pelastuslaitos" in url_l:
+        return "Helsinki Rescue Services"
+    if "traficom" in url_l:
+        return "Traficom Transport"
+    if "migri" in url_l:
+        return "Finnish Immigration Service (Migri)"
+    if "vero.fi" in url_l:
+        return "Tax Administration (Vero)"
+    if "kela.fi" in url_l:
+        return "Kela Social Insurance"
+    if "poliisi" in url_l:
+        return "Poliisi (Finnish Police)"
+    if "visitfinland" in url_l:
+        return "Visit Finland"
+    if "oulu.fi" in url_l:
+        return "University of Oulu"
+    if "liiga" in url_l:
+        return "Liiga Sports"
+    if "bbc" in url_l:
+        return "BBC News"
+    if "reuters" in url_l:
+        return "Reuters"
+    if "helsinkitimes" in url_l:
+        return "Helsinki Times"
+    if "hel.fi" in url_l:
+        return "City of Helsinki"
+    if source_url and "://" in source_url:
+        domain = source_url.split("://")[1].split("/")[0].replace("www.", "")
+        return domain.capitalize()
+    return "Verified Finnish Source"
+
+
+def record_scan_run(success: bool = True, items_found: int = 0, items_added: int = 0, message: str = "", db_path: str = DB_PATH) -> Dict[str, Any]:
+    conn = get_connection(db_path)
+    now_iso = utc_now_iso()
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS scan_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ran_at TEXT NOT NULL,
+                success INTEGER NOT NULL DEFAULT 1,
+                items_found INTEGER NOT NULL DEFAULT 0,
+                items_added INTEGER NOT NULL DEFAULT 0,
+                message TEXT
+            );
+            """
+        )
+        conn.execute(
+            "INSERT INTO scan_runs (ran_at, success, items_found, items_added, message) VALUES (?, ?, ?, ?, ?)",
+            (now_iso, 1 if success else 0, items_found, items_added, message),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {
+        "ran_at": now_iso,
+        "success": success,
+        "items_found": items_found,
+        "items_added": items_added,
+        "message": message,
+    }
+
+
+def get_last_scan_info(db_path: str = DB_PATH) -> Dict[str, Any]:
+    conn = get_connection(db_path)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS scan_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ran_at TEXT NOT NULL,
+                success INTEGER NOT NULL DEFAULT 1,
+                items_found INTEGER NOT NULL DEFAULT 0,
+                items_added INTEGER NOT NULL DEFAULT 0,
+                message TEXT
+            );
+            """
+        )
+        row = conn.execute("SELECT * FROM scan_runs ORDER BY id DESC LIMIT 1").fetchone()
+        if row:
+            return dict(row)
+        now_iso = utc_now_iso()
+        return {
+            "ran_at": now_iso,
+            "success": 1,
+            "items_found": 0,
+            "items_added": 0,
+            "message": "Discovery scanner ready.",
+        }
+    finally:
+        conn.close()
+
+
 def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
     """Sync today's live breaking news and hot topics into suggested plan ideas.
     
@@ -4078,6 +4210,7 @@ def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
         if not live_news:
             return
         conn = get_connection(db_path)
+        items_added = 0
         try:
             today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             now_iso = utc_now_iso()
@@ -4108,10 +4241,14 @@ def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
                     if item.get("priority_rank"):
                         priority_rank = item["priority_rank"]
 
+                    outlet = item.get("outlet") or infer_outlet_name(item.get("link", ""), priority_label)
+                    pub_date = item.get("pub_date") or today_str
+                    is_breaking = 1 if priority_rank == 1 else 0
+
                     conn.execute(
                         """
-                        INSERT INTO plan_ideas (section, category, region, priority_rank, title, angle, source_url, source_claim, target_date_hki, fit_reason, recommended_format, status, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Article + Static Post', 'suggested', ?)
+                        INSERT INTO plan_ideas (section, category, region, priority_rank, title, angle, source_url, source_claim, target_date_hki, fit_reason, recommended_format, status, created_at, outlet, published_time, is_breaking)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Article + Static Post', 'suggested', ?, ?, ?, ?)
                         """,
                         (
                             section,
@@ -4123,15 +4260,20 @@ def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
                             item.get("link", "https://yle.fi/uutiset"),
                             desc,
                             today_str,
-                            f"{priority_label} • Discovered from {item.get('outlet', 'Verified Source')}.",
+                            f"{priority_label} • Discovered from {outlet}.",
                             now_iso,
+                            outlet,
+                            pub_date,
+                            is_breaking,
                         ),
                     )
+                    items_added += 1
             conn.commit()
+            record_scan_run(success=True, items_found=len(live_news), items_added=items_added, message=f"Discovered {len(live_news)} stories from news feeds.", db_path=db_path)
         finally:
             conn.close()
-    except Exception:
-        pass
+    except Exception as ex:
+        record_scan_run(success=False, items_found=0, items_added=0, message=f"Scan error: {str(ex)}", db_path=db_path)
 
 
 def sync_live_news_sources(db_path: str = DB_PATH) -> None:
@@ -4174,10 +4316,28 @@ def get_weekly_plan(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
     sync_live_news_plan_ideas(db_path=db_path)
     conn = get_connection(db_path)
     try:
+        # Check active packages in studio to detect already covered topics
+        pkg_rows = conn.execute("SELECT id, title FROM packages").fetchall()
+        pkg_titles_lower = {r["title"].lower().strip(): r["id"] for r in pkg_rows if r["title"]}
+
         # Sort so that Priority 1 (Breaking Finland) & Priority 2 (Core Finland Guides, Travel, Culture) come first,
         # and Priority 3 (International News) comes second!
         rows = conn.execute("SELECT * FROM plan_ideas ORDER BY priority_rank ASC, id DESC").fetchall()
-        return [dict(r) for r in rows]
+        results = []
+        for r in rows:
+            d = dict(r)
+            if not d.get("outlet"):
+                d["outlet"] = infer_outlet_name(d.get("source_url", ""), d.get("fit_reason", ""))
+            if not d.get("published_time"):
+                d["published_time"] = d.get("created_at", "Today")
+            title_l = (d.get("title") or "").lower().strip()
+            if title_l in pkg_titles_lower:
+                d["covered_package_id"] = pkg_titles_lower[title_l]
+                d["is_covered"] = True
+            else:
+                d["is_covered"] = False
+            results.append(d)
+        return results
     finally:
         conn.close()
 
@@ -4209,7 +4369,36 @@ def accept_plan_idea(idea_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
         db_path=db_path,
     )
     return {"idea": idea, "bundle": bundle}
-    return {"idea": idea, "bundle": bundle}
+
+
+def save_plan_idea(idea_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
+    conn = get_connection(db_path)
+    try:
+        conn.execute("UPDATE plan_ideas SET status = 'saved' WHERE id = ?", (idea_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"id": idea_id, "status": "saved"}
+
+
+def unsave_plan_idea(idea_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
+    conn = get_connection(db_path)
+    try:
+        conn.execute("UPDATE plan_ideas SET status = 'suggested' WHERE id = ?", (idea_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"id": idea_id, "status": "suggested"}
+
+
+def recover_plan_idea(idea_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
+    conn = get_connection(db_path)
+    try:
+        conn.execute("UPDATE plan_ideas SET status = 'suggested' WHERE id = ?", (idea_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"id": idea_id, "status": "suggested"}
 
 
 def dismiss_plan_idea(idea_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:

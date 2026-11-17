@@ -1642,24 +1642,47 @@
     });
   }
 
-  /* ---------- ARTICLE SUGGESTIONS POOL ---------- */
+  /* ---------- ARTICLE SUGGESTIONS (EDITORIAL DISCOVERY) ---------- */
   let activeIdeaScope = "all";
   let activeIdeaSection = "all";
+  let activeIdeaStatus = "suggested";
+  let activeIdeaSort = "relevant";
   let activeIdeaSearch = "";
+  let ideasVisibleCount = 12;
   let cachedSuggestions = [];
+  let lastScanData = null;
+  let activeModalStory = null;
 
   function formatIdeaDate(dateStr) {
-    if (!dateStr) return "";
+    if (!dateStr) return "Today";
     try {
       const d = new Date(dateStr.replace(" ", "T"));
       if (isNaN(d.getTime())) return dateStr;
       const day = String(d.getDate()).padStart(2, "0");
       const month = d.toLocaleString("en-US", { month: "short" });
-      const year = d.getFullYear();
       const hours = String(d.getHours()).padStart(2, "0");
       const mins = String(d.getMinutes()).padStart(2, "0");
-      return `${day} ${month} ${year}, ${hours}:${mins}`;
-    } catch (e) {
+      return `${day} ${month}, ${hours}:${mins}`;
+    } catch {
+      return dateStr;
+    }
+  }
+
+  function formatRelativeTime(dateStr) {
+    if (!dateStr) return "Recently";
+    try {
+      const d = new Date(dateStr.replace(" ", "T"));
+      if (isNaN(d.getTime())) return dateStr;
+      const now = new Date();
+      const diffSec = Math.floor((now - d) / 1000);
+      if (diffSec < 60) return "Just now";
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+      const days = Math.floor(diffSec / 86400);
+      if (days === 1) return "Yesterday";
+      if (days < 7) return `${days}d ago`;
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    } catch {
       return dateStr;
     }
   }
@@ -1667,59 +1690,60 @@
   async function loadIdeasPool() {
     try {
       const data = await api("/api/calendar/plan");
-      const allIdeas = data.ideas || [];
-      const suggestions = allIdeas.filter((i) => i.status === "suggested");
-      cachedSuggestions = suggestions;
+      cachedSuggestions = data.ideas || [];
+      lastScanData = data.last_scan || null;
 
-      // Update counters for Scope
-      const countTotal = suggestions.length;
-      const countFinland = suggestions.filter((i) => i.priority_rank !== 3 && (i.region || "").toLowerCase() !== "international" && (i.category || "").toLowerCase() !== "international").length;
-      const countIntl = suggestions.filter((i) => i.priority_rank === 3 || (i.region || "").toLowerCase() === "international" || (i.category || "").toLowerCase() === "international").length;
+      // Update Header Scanner Status
+      updateScanStatusDisplay();
 
-      // Update counters for Website Sections (ilovefinland.net taxonomy)
-      const countNews = suggestions.filter((i) => (i.section || "").toLowerCase() === "news").length;
-      const countGuide = suggestions.filter((i) => (i.section || "").toLowerCase() === "finland guide").length;
-      const countThings = suggestions.filter((i) => (i.section || "").toLowerCase() === "things to do").length;
-      const countTravel = suggestions.filter((i) => (i.section || "").toLowerCase() === "travel").length;
-      const countFood = suggestions.filter((i) => (i.section || "").toLowerCase() === "food & restaurants").length;
-      const countEvents = suggestions.filter((i) => (i.section || "").toLowerCase() === "events").length;
-
+      // Update Global Sidebar / BNav Counters
+      const countActive = cachedSuggestions.filter((i) => (i.status || "suggested") === "suggested").length;
       const badgeCount = $("badge-ideas-count");
-      if (badgeCount) badgeCount.textContent = countTotal;
+      if (badgeCount) badgeCount.textContent = countActive;
       const inlineCount = $("btn-ideas-count-inline");
-      if (inlineCount) inlineCount.textContent = countTotal;
+      if (inlineCount) inlineCount.textContent = countActive;
       const tabCount = $("suggestions-tab-count");
-      if (tabCount) tabCount.textContent = countTotal;
+      if (tabCount) tabCount.textContent = countActive;
 
-      // Scope counts
-      if ($("ideas-filter-count-all")) $("ideas-filter-count-all").textContent = countTotal;
-      if ($("ideas-filter-count-finland")) $("ideas-filter-count-finland").textContent = countFinland;
-      if ($("ideas-filter-count-intl")) $("ideas-filter-count-intl").textContent = countIntl;
-
-      // Section counts
-      if ($("ideas-sec-count-all")) $("ideas-sec-count-all").textContent = countTotal;
-      if ($("ideas-sec-count-news")) $("ideas-sec-count-news").textContent = countNews;
-      if ($("ideas-sec-count-guide")) $("ideas-sec-count-guide").textContent = countGuide;
-      if ($("ideas-sec-count-things")) $("ideas-sec-count-things").textContent = countThings;
-      if ($("ideas-sec-count-travel")) $("ideas-sec-count-travel").textContent = countTravel;
-      if ($("ideas-sec-count-food")) $("ideas-sec-count-food").textContent = countFood;
-      if ($("ideas-sec-count-events")) $("ideas-sec-count-events").textContent = countEvents;
-
-      renderIdeasCards(suggestions);
+      renderIdeasCards();
     } catch (err) {
       console.warn("Could not load ideas pool:", err);
     }
   }
 
-  function renderIdeasCards(suggestions) {
+  function updateScanStatusDisplay() {
+    const textEl = $("ideas-last-scan-text");
+    const dotEl = $("ideas-scan-indicator-dot");
+    if (!textEl) return;
+    if (lastScanData && lastScanData.ran_at) {
+      const relTime = formatRelativeTime(lastScanData.ran_at);
+      const isSuccess = Boolean(lastScanData.success);
+      if (dotEl) {
+        dotEl.style.background = isSuccess ? "#10b981" : "#ef4444";
+      }
+      textEl.textContent = `Last successful scan: ${relTime} · Scanner Active`;
+    } else {
+      textEl.textContent = "Last scan: Today · Scanner Active";
+    }
+  }
+
+  function renderIdeasCards() {
     const grid = $("ideas-cards-grid");
     if (!grid) return;
 
-    let filtered = suggestions || cachedSuggestions;
+    let list = cachedSuggestions || [];
 
-    // Filter by Scope (Finland First vs International vs All)
+    // 1. Filter by Status (Active Suggestions | Saved Stories | Dismissed)
+    list = list.filter((i) => {
+      const st = i.status || "suggested";
+      if (activeIdeaStatus === "saved") return st === "saved";
+      if (activeIdeaStatus === "dismissed") return st === "dismissed";
+      return st === "suggested";
+    });
+
+    // 2. Filter by Scope (All | Finland | International)
     if (activeIdeaScope !== "all") {
-      filtered = filtered.filter((i) => {
+      list = list.filter((i) => {
         const isIntl = i.priority_rank === 3 || (i.region || "").toLowerCase() === "international" || (i.category || "").toLowerCase() === "international";
         if (activeIdeaScope === "finland") return !isIntl;
         if (activeIdeaScope === "international") return isIntl;
@@ -1727,192 +1751,325 @@
       });
     }
 
-    // Filter by Website Section (News, Finland Guide, Things to Do, Travel, Food & Restaurants, Events)
+    // 3. Filter by Website Section
     if (activeIdeaSection !== "all") {
-      filtered = filtered.filter((i) => (i.section || "").toLowerCase() === activeIdeaSection.toLowerCase());
+      list = list.filter((i) => (i.section || "").toLowerCase() === activeIdeaSection.toLowerCase());
     }
 
-    // Filter by Search Query
+    // 4. Search Filter
     if (activeIdeaSearch && activeIdeaSearch.trim()) {
       const q = activeIdeaSearch.trim().toLowerCase();
-      filtered = filtered.filter((i) => {
+      list = list.filter((i) => {
         const t = (i.title || "").toLowerCase();
         const a = (i.angle || "").toLowerCase();
         const s = (i.section || "").toLowerCase();
         const c = (i.category || "").toLowerCase();
-        const f = (i.fit_reason || "").toLowerCase();
-        const u = (i.source_url || "").toLowerCase();
-        return t.includes(q) || a.includes(q) || s.includes(q) || c.includes(q) || f.includes(q) || u.includes(q);
+        const r = (i.region || "").toLowerCase();
+        const o = (i.outlet || "").toLowerCase();
+        return t.includes(q) || a.includes(q) || s.includes(q) || c.includes(q) || r.includes(q) || o.includes(q);
       });
     }
 
-    if (filtered.length === 0) {
-      grid.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:48px 16px;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px;">
-          <div style="font-size:2rem;margin-bottom:8px;">🔍</div>
-          <h3 style="margin:0 0 6px;color:var(--navy);">No matching article suggestions found</h3>
-          <p style="margin:0 0 16px;color:var(--text-muted);font-size:0.875rem;">
-            Try switching your section filter or resetting scope to view all available ideas.
-          </p>
-          <button type="button" class="btn btn-outline btn-sm btn-clear-filters" style="margin-right:8px;">
-            Reset Filters
-          </button>
-          <button type="button" class="btn btn-primary btn-sm btn-trigger-scan">
-            ⚡ Scan News Feeds Now
-          </button>
-        </div>`;
-      grid.querySelector(".btn-clear-filters")?.addEventListener("click", () => {
-        activeIdeaScope = "all";
-        activeIdeaSection = "all";
-        activeIdeaSearch = "";
-        const searchInput = $("ideas-search-input");
-        if (searchInput) searchInput.value = "";
-        document.querySelectorAll(".filter-idea-scope").forEach((b) => b.classList.toggle("active", b.dataset.scope === "all"));
-        document.querySelectorAll(".filter-idea-sec").forEach((b) => b.classList.toggle("active", b.dataset.sec === "all"));
-        renderIdeasCards(cachedSuggestions);
+    // 5. Sorting (Most Relevant vs Latest)
+    if (activeIdeaSort === "latest") {
+      list.sort((a, b) => (b.id || 0) - (a.id || 0));
+    } else {
+      // Most Relevant: Priority rank 1 first, then 2, then 3; within rank, higher id first
+      list.sort((a, b) => {
+        const pDiff = (a.priority_rank || 2) - (b.priority_rank || 2);
+        if (pDiff !== 0) return pDiff;
+        return (b.id || 0) - (a.id || 0);
       });
-      grid.querySelector(".btn-trigger-scan")?.addEventListener("click", triggerScanNow);
+    }
+
+    // Update Summary Count Line
+    const summaryCount = $("ideas-summary-count");
+    if (summaryCount) {
+      const label = activeIdeaStatus === "saved" ? "saved stories" : activeIdeaStatus === "dismissed" ? "dismissed stories" : "article suggestions";
+      summaryCount.textContent = `Showing ${Math.min(ideasVisibleCount, list.length)} of ${list.length} ${label}`;
+    }
+
+    // Empty state
+    if (list.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:44px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;">
+          <h3 style="margin:0 0 6px;color:var(--navy);font-size:1.05rem;">No stories found</h3>
+          <p style="margin:0 0 16px;color:#64748b;font-size:0.875rem;">
+            ${activeIdeaSearch ? 'No suggestions match your search keyword.' : activeIdeaStatus === 'saved' ? 'You have no saved stories yet.' : activeIdeaStatus === 'dismissed' ? 'No dismissed stories in archive.' : 'Try adjusting your section filter or scan for new stories.'}
+          </p>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            ${activeIdeaSearch || activeIdeaSection !== 'all' || activeIdeaScope !== 'all' ? `
+              <button type="button" class="btn btn-outline btn-sm btn-reset-idea-filters">
+                Reset Filters
+              </button>` : ''}
+            <button type="button" class="btn btn-primary btn-sm btn-trigger-scan-inline" style="background:var(--brand-blue);color:#fff;">
+              Scan for New Stories
+            </button>
+          </div>
+        </div>`;
+      grid.querySelector(".btn-reset-idea-filters")?.addEventListener("click", resetIdeaFilters);
+      grid.querySelector(".btn-trigger-scan-inline")?.addEventListener("click", triggerScanNow);
+      const pag = $("ideas-pagination-wrap");
+      if (pag) pag.style.display = "none";
       return;
     }
 
-    grid.innerHTML = filtered.map((idea) => {
-      const dateDisplay = formatIdeaDate(idea.created_at || idea.target_date_hki);
+    // Visible sliced items
+    const visibleItems = list.slice(0, ideasVisibleCount);
+
+    grid.innerHTML = visibleItems.map((idea) => {
       const isIntl = idea.priority_rank === 3 || (idea.region || "").toLowerCase() === "international" || (idea.category || "").toLowerCase() === "international";
-      const isBreaking = idea.priority_rank === 1;
+      const isBreaking = idea.priority_rank === 1 && Boolean(idea.is_breaking);
 
-      let priorityPill = `<span class="badge" style="font-size:0.72rem;background:#eff6ff;color:#1e40af;margin-left:auto;font-weight:700;padding:2px 8px;border-radius:4px;">🇫🇮 Finland (Top Priority)</span>`;
+      // Clean, non-repetitive relevance badge only when supported by evaluation
+      let relevanceBadge = "";
       if (isBreaking) {
-        priorityPill = `<span class="badge" style="font-size:0.72rem;background:#fee2e2;color:#991b1b;margin-left:auto;font-weight:700;padding:2px 8px;border-radius:4px;">⭐ Finland Breaking</span>`;
-      } else if (isIntl) {
-        priorityPill = `<span class="badge" style="font-size:0.72rem;background:#f3e8ff;color:#6b21a8;margin-left:auto;font-weight:600;padding:2px 8px;border-radius:4px;">🌐 International News</span>`;
+        relevanceBadge = `<span class="badge" style="font-size:0.7rem;background:#fee2e2;color:#991b1b;font-weight:700;padding:2px 6px;border-radius:4px;">Breaking Alert</span>`;
+      } else if (idea.priority_rank === 1) {
+        relevanceBadge = `<span class="badge" style="font-size:0.7rem;background:#eff6ff;color:#1e40af;font-weight:600;padding:2px 6px;border-radius:4px;">High Priority</span>`;
       }
 
-      // Clean editorial reason
-      let cleanReason = idea.fit_reason || "";
-      if (isIntl) {
-        cleanReason = cleanReason.replace(/⭐\s*Finland\s*Breaking\s*•?\s*/gi, "").replace(/🇫🇮\s*Finland\s*Story\s*•?\s*/gi, "");
-        if (!cleanReason.includes("International")) {
-          cleanReason = `🌐 Major International Development. ${cleanReason}`.trim();
-        }
-      }
+      const dateStr = formatRelativeTime(idea.published_time || idea.created_at);
+      const isSaved = idea.status === "saved";
 
       return `
-        <div class="card idea-card" data-id="${idea.id}" style="display:flex;flex-direction:column;justify-content:space-between;padding:16px;border:1px solid ${isIntl ? '#cbd5e1' : '#bfdbfe'};border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.05);transition:box-shadow 0.15s ease;">
+        <div class="idea-card-clean" data-id="${idea.id}">
           <div>
-            <!-- Official ilovefinland.net Section, Category & Priority Badges -->
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-              <span class="badge" style="font-size:0.72rem;background:#003882;color:#fff;font-weight:600;padding:2px 8px;border-radius:4px;">
-                📂 ${escapeHtml(idea.section || 'News')}
-              </span>
-              <span class="badge" style="font-size:0.72rem;background:#e0f2fe;color:#0369a1;font-weight:600;padding:2px 8px;border-radius:4px;">
-                🏷️ ${escapeHtml(idea.category || 'Finland')}
-              </span>
-              ${priorityPill}
+            <!-- Meta Bar: Section & Category, Region, Relevance -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span class="badge" style="font-size:0.72rem;background:#003580;color:#fff;font-weight:600;padding:2px 8px;border-radius:4px;">
+                  ${escapeHtml(idea.section || 'News')} • ${escapeHtml(idea.category || 'Finland')}
+                </span>
+                <span class="badge" style="font-size:0.72rem;background:#f1f5f9;color:#475569;font-weight:500;padding:2px 6px;border-radius:4px;">
+                  ${escapeHtml(idea.region || (isIntl ? 'International' : 'Finland'))}
+                </span>
+              </div>
+              ${relevanceBadge}
             </div>
 
-            <!-- Discovery Date -->
-            <div style="font-size:0.74rem;color:#64748b;display:flex;align-items:center;gap:4px;margin-bottom:8px;">
-              <span>🕒 Discovered: <strong>${escapeHtml(dateDisplay || 'Recent')}</strong></span>
-            </div>
-
-            <!-- Headline -->
-            <h3 style="font-size:1.05rem;line-height:1.4;margin:0 0 8px;color:var(--navy);font-weight:700;">
+            <!-- Headline (max 3 lines) -->
+            <h3 class="idea-headline-clamp" title="${escapeHtml(idea.title)}">
               ${escapeHtml(idea.title)}
             </h3>
 
-            <!-- Angle / Summary -->
-            <p style="font-size:0.825rem;line-height:1.45;color:#334155;margin:0 0 10px;">
+            <!-- Summary (max 2 lines) -->
+            <p class="idea-summary-clamp">
               ${escapeHtml(idea.angle || '')}
             </p>
 
-            ${cleanReason ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;"><strong>Editorial Context:</strong> ${escapeHtml(cleanReason)}</div>` : ''}
-
-            ${idea.source_url ? `
-              <div style="font-size:0.75rem;margin-bottom:12px;">
-                <a href="${escapeHtml(idea.source_url)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;display:inline-flex;align-items:center;gap:4px;">
-                  🔗 Source: ${escapeHtml(idea.source_url.length > 40 ? idea.source_url.slice(0, 37) + '...' : idea.source_url)}
-                </a>
-              </div>` : ''}
+            <!-- Source & Timing -->
+            <div style="font-size:0.74rem;color:#64748b;display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+              <span style="font-weight:500;color:#334155;">${escapeHtml(idea.outlet || 'Verified Source')}</span>
+              <span>·</span>
+              <span>${escapeHtml(dateStr)}</span>
+              ${idea.is_covered ? `<span class="badge" style="background:#fef3c7;color:#92400e;font-size:0.68rem;padding:1px 5px;margin-left:auto;">Covered in Studio</span>` : ''}
+            </div>
           </div>
 
-          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f1f5f9;gap:6px;">
-            <button type="button" class="btn btn-primary btn-sm btn-write-article-from-idea" style="font-size:0.8rem;padding:7px 12px;font-weight:700;flex:1;background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:5px;">
+          <!-- Actions Bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #f1f5f9;gap:6px;" onclick="event.stopPropagation();">
+            <button type="button" class="btn btn-primary btn-sm btn-write-article-from-idea" data-id="${idea.id}" style="font-size:0.8rem;padding:6px 14px;font-weight:600;background:var(--brand-blue);color:#fff;border-radius:6px;display:inline-flex;align-items:center;gap:5px;">
               <span>✍️ Write Article</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-dismiss-idea" style="font-size:0.78rem;padding:6px 8px;color:#64748b;" title="Dismiss from suggestions">
-              ✕ Dismiss
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-delete-idea" style="font-size:0.78rem;padding:6px 8px;color:#ef4444;" title="Delete permanently">
-              🗑
-            </button>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button type="button" class="btn btn-ghost btn-sm btn-save-idea" data-id="${idea.id}" title="${isSaved ? 'Remove from Saved' : 'Save for later'}" style="padding:6px 8px;font-size:0.95rem;color:${isSaved ? '#003580' : '#64748b'};">
+                ${isSaved ? '🔖' : '🏷️'}
+              </button>
+              ${activeIdeaStatus === 'dismissed' ? `
+                <button type="button" class="btn btn-ghost btn-sm btn-recover-idea" data-id="${idea.id}" title="Recover to active suggestions" style="padding:6px 8px;font-size:0.78rem;color:#16a34a;font-weight:600;">
+                  ↩ Recover
+                </button>
+              ` : `
+                <button type="button" class="btn btn-ghost btn-sm btn-dismiss-idea" data-id="${idea.id}" title="Dismiss from suggestions" style="padding:6px 8px;font-size:0.85rem;color:#94a3b8;">
+                  ✕
+                </button>
+              `}
+            </div>
           </div>
         </div>
       `;
     }).join("");
 
-    // Wire actions
-    grid.querySelectorAll(".btn-write-article-from-idea").forEach((b) => {
-      b.addEventListener("click", (e) => {
-        const card = e.target.closest(".idea-card");
+    // Wire Card Click -> Open Story Details Modal
+    grid.querySelectorAll(".idea-card-clean").forEach((card) => {
+      card.addEventListener("click", () => {
         const id = parseInt(card.dataset.id, 10);
         const idea = cachedSuggestions.find((i) => i.id === id);
+        if (idea) openStoryDetailsModal(idea);
+      });
+    });
+
+    // Wire "Write Article" Button
+    grid.querySelectorAll(".btn-write-article-from-idea").forEach((b) => {
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = parseInt(b.dataset.id, 10);
+        const idea = cachedSuggestions.find((i) => i.id === id);
+        if (idea) openCreateArticleFromIdea(idea);
+      });
+    });
+
+    // Wire "Save" Button (Instant in-place update)
+    grid.querySelectorAll(".btn-save-idea").forEach((b) => {
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = parseInt(b.dataset.id, 10);
+        const idea = cachedSuggestions.find((i) => i.id === id);
         if (!idea) return;
-
-        // Open Creation Modal with topic, instructions, references, section, category pre-filled
-        const modal = $("modal-create-article-post");
-        if (modal) {
-          modal.classList.remove("hidden");
-          if ($("new-article-topic")) $("new-article-topic").value = idea.title || "";
-          if ($("new-article-instructions")) {
-            let instr = idea.angle || "";
-            if (idea.fit_reason) instr += `\n\nEditorial Context: ${idea.fit_reason}`;
-            $("new-article-instructions").value = instr;
-          }
-          if ($("new-article-references")) $("new-article-references").value = idea.source_url || "";
-          if ($("new-article-section") && idea.section) $("new-article-section").value = idea.section;
-          if ($("new-article-category") && idea.category) $("new-article-category").value = idea.category;
-          if ($("new-article-language")) $("new-article-language").value = "English";
-
-          // Reset photo
-          pendingCreatedPhoto = null;
-          if ($("create-photo-preview-wrap")) $("create-photo-preview-wrap").classList.add("hidden");
-          if ($("create-photo-preview-img")) $("create-photo-preview-img").src = "";
-          if ($("create-photo-filename")) $("create-photo-filename").textContent = "No photo selected (can be uploaded later)";
-          if ($("create-photo-status-badge")) {
-            $("create-photo-status-badge").textContent = "No Image Uploaded";
-            $("create-photo-status-badge").style.background = "#e2e8f0";
-            $("create-photo-status-badge").style.color = "#475569";
-          }
-          if ($("btn-remove-create-photo")) $("btn-remove-create-photo").classList.add("hidden");
-        }
-      });
-    });
-
-    grid.querySelectorAll(".btn-dismiss-idea").forEach((b) => {
-      b.addEventListener("click", async (e) => {
-        const card = e.target.closest(".idea-card");
-        const id = parseInt(card.dataset.id, 10);
-        await api("/api/calendar/plan/action", {
-          method: "POST",
-          body: JSON.stringify({ action: "dismiss", id }),
-        });
-        await loadIdeasPool();
-      });
-    });
-
-    grid.querySelectorAll(".btn-delete-idea").forEach((b) => {
-      b.addEventListener("click", async (e) => {
-        const card = e.target.closest(".idea-card");
-        const id = parseInt(card.dataset.id, 10);
-        if (confirm("Delete this suggestion permanently?")) {
+        const newStatus = idea.status === "saved" ? "suggested" : "saved";
+        const action = newStatus === "saved" ? "save" : "unsave";
+        idea.status = newStatus;
+        renderIdeasCards();
+        try {
           await api("/api/calendar/plan/action", {
             method: "POST",
-            body: JSON.stringify({ action: "delete", id }),
+            body: JSON.stringify({ action, id }),
           });
-          await loadIdeasPool();
+          showToast(newStatus === "saved" ? "Story saved for later." : "Story removed from saved.", "info");
+        } catch (err) {
+          console.warn("Save failed:", err);
         }
       });
     });
+
+    // Wire "Dismiss" Button (Instant in-place update)
+    grid.querySelectorAll(".btn-dismiss-idea").forEach((b) => {
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = parseInt(b.dataset.id, 10);
+        const idea = cachedSuggestions.find((i) => i.id === id);
+        if (!idea) return;
+        idea.status = "dismissed";
+        renderIdeasCards();
+        try {
+          await api("/api/calendar/plan/action", {
+            method: "POST",
+            body: JSON.stringify({ action: "dismiss", id }),
+          });
+          showToast("Story dismissed (recoverable in Archive).", "info");
+        } catch (err) {
+          console.warn("Dismiss failed:", err);
+        }
+      });
+    });
+
+    // Wire "Recover" Button (Instant in-place restore)
+    grid.querySelectorAll(".btn-recover-idea").forEach((b) => {
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = parseInt(b.dataset.id, 10);
+        const idea = cachedSuggestions.find((i) => i.id === id);
+        if (!idea) return;
+        idea.status = "suggested";
+        renderIdeasCards();
+        try {
+          await api("/api/calendar/plan/action", {
+            method: "POST",
+            body: JSON.stringify({ action: "recover", id }),
+          });
+          showToast("Story recovered to active suggestions.", "success");
+        } catch (err) {
+          console.warn("Recover failed:", err);
+        }
+      });
+    });
+
+    // Pagination / Load More
+    const pag = $("ideas-pagination-wrap");
+    if (pag) {
+      pag.style.display = list.length > ideasVisibleCount ? "block" : "none";
+    }
+  }
+
+  function resetIdeaFilters() {
+    activeIdeaScope = "all";
+    activeIdeaSection = "all";
+    activeIdeaSearch = "";
+    ideasVisibleCount = 12;
+    const searchInput = $("ideas-search-input");
+    if (searchInput) searchInput.value = "";
+    const secSelect = $("ideas-section-select");
+    if (secSelect) secSelect.value = "all";
+    document.querySelectorAll(".filter-idea-scope").forEach((b) => b.classList.toggle("active", b.dataset.scope === "all"));
+    renderIdeasCards();
+  }
+
+  function openCreateArticleFromIdea(idea) {
+    const modal = $("modal-create-article-post");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    if ($("new-article-topic")) $("new-article-topic").value = idea.title || "";
+    if ($("new-article-instructions")) {
+      let instr = idea.angle || "";
+      if (idea.fit_reason) instr += `\n\nEditorial Context: ${idea.fit_reason}`;
+      $("new-article-instructions").value = instr;
+    }
+    if ($("new-article-references")) $("new-article-references").value = idea.source_url || "";
+    if ($("new-article-section") && idea.section) $("new-article-section").value = idea.section;
+    if ($("new-article-category") && idea.category) $("new-article-category").value = idea.category;
+    if ($("new-article-language")) $("new-article-language").value = "English";
+
+    // Reset photo upload
+    pendingCreatedPhoto = null;
+    if ($("create-photo-preview-wrap")) $("create-photo-preview-wrap").classList.add("hidden");
+    if ($("create-photo-preview-img")) $("create-photo-preview-img").src = "";
+    if ($("create-photo-filename")) $("create-photo-filename").textContent = "No photo selected (can be uploaded later)";
+    if ($("create-photo-status-badge")) {
+      $("create-photo-status-badge").textContent = "No Image Uploaded";
+      $("create-photo-status-badge").style.background = "#e2e8f0";
+      $("create-photo-status-badge").style.color = "#475569";
+    }
+    if ($("btn-remove-create-photo")) $("btn-remove-create-photo").classList.add("hidden");
+  }
+
+  function openStoryDetailsModal(idea) {
+    activeModalStory = idea;
+    const modal = $("modal-story-details");
+    if (!modal) return;
+
+    if ($("modal-story-title")) $("modal-story-title").textContent = idea.title || "";
+    if ($("modal-story-angle")) $("modal-story-angle").textContent = idea.angle || "No summary available.";
+    if ($("modal-story-context")) $("modal-story-context").textContent = idea.fit_reason || "Timely and relevant coverage for ilovefinland.net.";
+    if ($("modal-story-outlet")) $("modal-story-outlet").textContent = idea.outlet || "Verified Finnish Source";
+    if ($("modal-story-date")) $("modal-story-date").textContent = formatIdeaDate(idea.published_time || idea.created_at);
+
+    if ($("modal-story-section-badge")) $("modal-story-section-badge").textContent = `${idea.section || 'News'} • ${idea.category || 'Finland'}`;
+    if ($("modal-story-region-badge")) $("modal-story-region-badge").textContent = idea.region || "Finland";
+
+    const relBadge = $("modal-story-relevance-badge");
+    if (relBadge) {
+      if (idea.priority_rank === 1 && idea.is_breaking) {
+        relBadge.style.display = "inline-block";
+        relBadge.style.background = "#ef4444";
+        relBadge.textContent = "Breaking Alert";
+      } else if (idea.priority_rank === 1) {
+        relBadge.style.display = "inline-block";
+        relBadge.style.background = "#2563eb";
+        relBadge.textContent = "High Priority";
+      } else {
+        relBadge.style.display = "none";
+      }
+    }
+
+    const urlLink = $("modal-story-url-link");
+    const urlText = $("modal-story-url-text");
+    if (urlLink && urlText) {
+      if (idea.source_url) {
+        urlLink.href = idea.source_url;
+        urlText.textContent = idea.source_url;
+        urlLink.parentElement.style.display = "block";
+      } else {
+        urlLink.parentElement.style.display = "none";
+      }
+    }
+
+    const saveText = $("btn-modal-story-save-text");
+    const saveIcon = $("btn-modal-story-save-icon");
+    if (saveText) saveText.textContent = idea.status === "saved" ? "Unsave Story" : "Save Story";
+    if (saveIcon) saveIcon.textContent = idea.status === "saved" ? "🔖" : "🏷️";
+
+    modal.classList.remove("hidden");
   }
 
   async function triggerScanNow() {
@@ -1920,13 +2077,18 @@
     const origHtml = btn ? btn.innerHTML : "";
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = "Scanning news feeds...";
+      btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">⏳ <span>Scanning for stories…</span></span>`;
     }
     try {
-      await api("/api/research/scan_now", { method: "POST", body: "{}" });
-      await loadIdeasPool();
+      const res = await api("/api/research/scan_now", { method: "POST", body: "{}" });
+      cachedSuggestions = res.ideas || [];
+      lastScanData = res.last_scan || null;
+      updateScanStatusDisplay();
+      renderIdeasCards();
+      showToast("Scan complete: New stories checked & synced.", "success");
     } catch (err) {
       console.warn("Scan failed:", err);
+      showToast("Scan failed: " + err.message, "error");
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -5826,33 +5988,93 @@
     $("btn-back-to-projects")?.addEventListener("click", () => switchView("projects"));
     $("btn-scan-now")?.addEventListener("click", triggerScanNow);
 
-    // Scope filter buttons (All, Finland First, International)
+    // Scope filter buttons (All, Finland, International)
     document.querySelectorAll(".filter-idea-scope").forEach((b) => {
       b.addEventListener("click", () => {
         document.querySelectorAll(".filter-idea-scope").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
         activeIdeaScope = b.dataset.scope || "all";
-        renderIdeasCards(cachedSuggestions);
+        ideasVisibleCount = 12;
+        renderIdeasCards();
       });
     });
 
-    // Website Section filter buttons (All, News, Finland Guide, Things to Do, Travel, Food & Restaurants, Events)
-    document.querySelectorAll(".filter-idea-sec").forEach((b) => {
-      b.addEventListener("click", () => {
-        document.querySelectorAll(".filter-idea-sec").forEach((x) => x.classList.remove("active"));
-        b.classList.add("active");
-        activeIdeaSection = b.dataset.sec || "all";
-        renderIdeasCards(cachedSuggestions);
-      });
+    // Website Section dropdown
+    $("ideas-section-select")?.addEventListener("change", (e) => {
+      activeIdeaSection = e.target.value || "all";
+      ideasVisibleCount = 12;
+      renderIdeasCards();
     });
 
-    const searchInput = $("ideas-search-input");
-    if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
-        activeIdeaSearch = e.target.value || "";
-        renderIdeasCards(cachedSuggestions);
-      });
-    }
+    // Status view selector (Active Suggestions, Saved, Dismissed)
+    $("ideas-status-select")?.addEventListener("change", (e) => {
+      activeIdeaStatus = e.target.value || "suggested";
+      ideasVisibleCount = 12;
+      renderIdeasCards();
+    });
+
+    // Sort dropdown (Most Relevant, Latest)
+    $("ideas-sort-select")?.addEventListener("change", (e) => {
+      activeIdeaSort = e.target.value || "relevant";
+      ideasVisibleCount = 12;
+      renderIdeasCards();
+    });
+
+    // Search input
+    $("ideas-search-input")?.addEventListener("input", (e) => {
+      activeIdeaSearch = e.target.value || "";
+      ideasVisibleCount = 12;
+      renderIdeasCards();
+    });
+
+    // Load More Suggestions button
+    $("btn-load-more-ideas")?.addEventListener("click", () => {
+      ideasVisibleCount += 12;
+      renderIdeasCards();
+    });
+
+    // Story Details Modal Wiring
+    $("btn-close-story-details")?.addEventListener("click", () => $("modal-story-details")?.classList.add("hidden"));
+    $("btn-modal-story-close")?.addEventListener("click", () => $("modal-story-details")?.classList.add("hidden"));
+    $("btn-modal-story-write")?.addEventListener("click", () => {
+      $("modal-story-details")?.classList.add("hidden");
+      if (activeModalStory) openCreateArticleFromIdea(activeModalStory);
+    });
+    $("btn-modal-story-save")?.addEventListener("click", async () => {
+      if (!activeModalStory) return;
+      const newStatus = activeModalStory.status === "saved" ? "suggested" : "saved";
+      const action = newStatus === "saved" ? "save" : "unsave";
+      activeModalStory.status = newStatus;
+      const saveText = $("btn-modal-story-save-text");
+      const saveIcon = $("btn-modal-story-save-icon");
+      if (saveText) saveText.textContent = newStatus === "saved" ? "Unsave Story" : "Save Story";
+      if (saveIcon) saveIcon.textContent = newStatus === "saved" ? "🔖" : "🏷️";
+      renderIdeasCards();
+      try {
+        await api("/api/calendar/plan/action", {
+          method: "POST",
+          body: JSON.stringify({ action, id: activeModalStory.id }),
+        });
+        showToast(newStatus === "saved" ? "Story saved for later." : "Story removed from saved.", "info");
+      } catch (err) {
+        console.warn("Save failed:", err);
+      }
+    });
+    $("btn-modal-story-dismiss")?.addEventListener("click", async () => {
+      if (!activeModalStory) return;
+      activeModalStory.status = "dismissed";
+      $("modal-story-details")?.classList.add("hidden");
+      renderIdeasCards();
+      try {
+        await api("/api/calendar/plan/action", {
+          method: "POST",
+          body: JSON.stringify({ action: "dismiss", id: activeModalStory.id }),
+        });
+        showToast("Story dismissed (recoverable in Archive).", "info");
+      } catch (err) {
+        console.warn("Dismiss failed:", err);
+      }
+    });
 
     // Export helpers for automation & testing
     window.loadPackage = loadPackage;

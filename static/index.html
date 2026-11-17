@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=7.0" />
+  <link rel="stylesheet" href="/styles.css?v=8.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=2.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
@@ -245,60 +245,92 @@
           </div>
         </section>
 
-        <!-- VIEW: ARTICLE SUGGESTIONS & DAILY NEWS RESEARCH -->
+        <!-- VIEW: ARTICLE SUGGESTIONS (EDITORIAL DISCOVERY) -->
         <section id="view-ideas" class="view hidden">
-          <div class="card">
-            <div class="panel-header">
+          <div class="card" style="padding:22px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <!-- 1. Header -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
               <div>
-                <span class="badge badge-accent">Autonomous 24/7 Discovery</span>
-                <h2 class="panel-title" style="margin-top:4px;">Article Suggestions &amp; Topic Pool</h2>
-                <p class="hint-text">
-                  Our background researcher scans Finnish news, guides &amp; hot international tech topics every hour (finding 3–4 daily).
-                  <br /><strong>Rule:</strong> Ideas remain strictly in this pool until you approve them. Unapproved items never enter your working pipeline.
-                </p>
+                <h1 style="font-size:1.55rem;font-weight:700;color:var(--navy);margin:0 0 3px;letter-spacing:-0.02em;">Article Suggestions</h1>
+                <p style="font-size:0.88rem;color:#64748b;margin:0;">Discover the latest stories worth covering.</p>
+                <div id="ideas-scan-status-line" style="font-size:0.78rem;color:#64748b;margin-top:6px;display:flex;align-items:center;gap:6px;">
+                  <span id="ideas-scan-indicator-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;"></span>
+                  <span id="ideas-last-scan-text">Checking scanner status…</span>
+                </div>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <button type="button" id="btn-scan-now" class="btn btn-primary btn-sm">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                  <span>⚡ Scan Internet &amp; News Now</span>
-                </button>
-                <button type="button" id="btn-back-to-projects" class="btn btn-ghost btn-sm">
-                  &larr; Back to Active Projects
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button type="button" id="btn-scan-now" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:8px;font-size:0.86rem;box-shadow:0 1px 2px rgba(0,0,0,0.06);">
+                  <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Scan for New Stories</span>
                 </button>
               </div>
             </div>
 
-            <!-- Search Bar -->
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-              <div style="position:relative;flex:1;min-width:260px;">
-                <input type="text" id="ideas-search-input" placeholder="Search suggestions by topic, country, keyword, or source..." style="width:100%;box-sizing:border-box;padding:8px 12px 8px 34px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;background:#fff;" />
-                <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.9rem;pointer-events:none;">🔍</span>
+            <!-- 2. Compact Filters Toolbar -->
+            <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <!-- Left: Scope Pills & Section Dropdown & Status Filter -->
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <!-- Scope Segmented Control: All | Finland | International -->
+                <div style="display:inline-flex;background:#e2e8f0;padding:3px;border-radius:8px;gap:2px;">
+                  <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;">All</button>
+                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;">Finland</button>
+                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;">International</button>
+                </div>
+
+                <!-- Website Section Dropdown -->
+                <select id="ideas-section-select" style="padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--navy);background:#fff;cursor:pointer;min-width:140px;">
+                  <option value="all">All Sections</option>
+                  <option value="News">News</option>
+                  <option value="Finland Guide">Finland Guide</option>
+                  <option value="Things to Do">Things to Do</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Food & Restaurants">Food &amp; Restaurants</option>
+                  <option value="Events">Events</option>
+                </select>
+
+                <!-- Status View Selector (Active Suggestions | Saved Stories | Dismissed) -->
+                <select id="ideas-status-select" style="padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--navy);background:#fff;cursor:pointer;">
+                  <option value="suggested">Active Suggestions</option>
+                  <option value="saved">Saved Stories</option>
+                  <option value="dismissed">Dismissed (Archive)</option>
+                </select>
+              </div>
+
+              <!-- Right: Sort & Search -->
+              <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;min-width:280px;">
+                <!-- Sort Dropdown: Latest | Most Relevant -->
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <label for="ideas-sort-select" style="font-size:0.78rem;font-weight:600;color:#64748b;">Sort:</label>
+                  <select id="ideas-sort-select" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--navy);background:#fff;cursor:pointer;">
+                    <option value="relevant">Most Relevant</option>
+                    <option value="latest">Latest</option>
+                  </select>
+                </div>
+
+                <!-- Search Input -->
+                <div style="position:relative;flex:1;max-width:320px;min-width:180px;">
+                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." style="width:100%;box-sizing:border-box;padding:7px 12px 7px 32px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;background:#fff;" />
+                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem;pointer-events:none;">🔍</span>
+                </div>
               </div>
             </div>
 
-            <!-- Priority & Scope Filters -->
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-              <span style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-right:4px;">Editorial Scope:</span>
-              <button type="button" class="btn btn-sm btn-outline active filter-idea-scope" data-scope="all">All Suggestions (<span id="ideas-filter-count-all">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-scope" data-scope="finland">🇫🇮 Finland (Top Priority) (<span id="ideas-filter-count-finland">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-scope" data-scope="international">🌐 International News (<span id="ideas-filter-count-intl">0</span>)</button>
+            <!-- Suggestions Summary Line -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:0 2px;">
+              <span id="ideas-summary-count" style="font-size:0.82rem;font-weight:600;color:#64748b;">Showing suggestions…</span>
+              <span id="ideas-active-filters-pill" style="font-size:0.78rem;color:#94a3b8;"></span>
             </div>
 
-            <!-- Website Sections Filters (ilovefinland.net structure) -->
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-              <span style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-right:4px;">Website Section:</span>
-              <button type="button" class="btn btn-sm btn-outline active filter-idea-sec" data-sec="all">All Sections (<span id="ideas-sec-count-all">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="News">News (<span id="ideas-sec-count-news">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Finland Guide">Finland Guide (<span id="ideas-sec-count-guide">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Things to Do">Things to Do (<span id="ideas-sec-count-things">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Travel">Travel (<span id="ideas-sec-count-travel">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Food & Restaurants">Food &amp; Restaurants (<span id="ideas-sec-count-food">0</span>)</button>
-              <button type="button" class="btn btn-sm btn-outline filter-idea-sec" data-sec="Events">Events (<span id="ideas-sec-count-events">0</span>)</button>
-            </div>
-
-            <!-- Suggestions Cards Grid -->
-            <div id="ideas-cards-grid" class="plan-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:14px;">
+            <!-- Suggestions Cards Grid (2 balanced columns on desktop, 1 on mobile) -->
+            <div id="ideas-cards-grid" class="ideas-cards-grid">
               <!-- Populated dynamically -->
+            </div>
+
+            <!-- Load More / Pagination -->
+            <div id="ideas-pagination-wrap" style="text-align:center;margin-top:22px;display:none;">
+              <button type="button" id="btn-load-more-ideas" class="btn btn-secondary" style="padding:9px 24px;font-size:0.85rem;font-weight:600;border-radius:8px;cursor:pointer;">
+                Load More Suggestions
+              </button>
             </div>
           </div>
         </section>
@@ -2318,6 +2350,76 @@
     </div>
   </div>
 
+  <!-- MODAL: STORY SUGGESTION DETAILS -->
+  <div id="modal-story-details" class="modal-overlay hidden" style="z-index:9999;">
+    <div class="modal-card" style="max-width:680px;width:95%;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:12px;">
+      <!-- Modal Header -->
+      <div style="padding:18px 24px;background:#0A192F;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="flex:1;padding-right:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <span id="modal-story-section-badge" class="badge" style="background:#003580;color:#fff;font-weight:600;font-size:0.75rem;">News</span>
+            <span id="modal-story-region-badge" class="badge" style="background:rgba(255,255,255,0.15);color:#fff;font-size:0.75rem;">Finland</span>
+            <span id="modal-story-relevance-badge" class="badge" style="display:none;background:#22c55e;color:#fff;font-size:0.75rem;font-weight:700;">High Priority</span>
+          </div>
+          <h2 id="modal-story-title" style="font-size:1.25rem;font-weight:700;line-height:1.35;margin:0;color:#fff;">Story Headline</h2>
+        </div>
+        <button type="button" id="btn-close-story-details" class="btn btn-ghost btn-sm" style="color:#94a3b8;font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer;">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding:22px 24px;overflow-y:auto;flex:1;">
+        <!-- Summary / Angle -->
+        <div style="margin-bottom:18px;">
+          <h4 style="font-size:0.78rem;text-transform:uppercase;color:#64748b;letter-spacing:0.04em;margin:0 0 6px;">Story Summary &amp; Angle</h4>
+          <p id="modal-story-angle" style="font-size:0.92rem;line-height:1.5;color:#1e293b;margin:0;background:#f8fafc;padding:12px 14px;border-radius:8px;border:1px solid #e2e8f0;"></p>
+        </div>
+
+        <!-- Why It Matters / Editorial Context -->
+        <div id="modal-story-context-wrap" style="margin-bottom:18px;">
+          <h4 style="font-size:0.78rem;text-transform:uppercase;color:#64748b;letter-spacing:0.04em;margin:0 0 6px;">Why This Story Matters</h4>
+          <p id="modal-story-context" style="font-size:0.88rem;line-height:1.45;color:#475569;margin:0;"></p>
+        </div>
+
+        <!-- Source & Verification Details -->
+        <div style="background:#f1f5f9;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <span style="font-size:0.74rem;color:#64748b;display:block;">Original Source</span>
+            <strong id="modal-story-outlet" style="font-size:0.88rem;color:var(--navy);">Yle Uutiset</strong>
+          </div>
+          <div>
+            <span style="font-size:0.74rem;color:#64748b;display:block;">Publication Date</span>
+            <strong id="modal-story-date" style="font-size:0.88rem;color:var(--navy);">Today</strong>
+          </div>
+          <div style="grid-column:1/-1;">
+            <span style="font-size:0.74rem;color:#64748b;display:block;margin-bottom:2px;">Original Source Link</span>
+            <a id="modal-story-url-link" href="#" target="_blank" rel="noopener noreferrer" style="font-size:0.85rem;color:#003580;font-weight:600;word-break:break-all;display:inline-flex;align-items:center;gap:4px;">
+              <span id="modal-story-url-text">Visit Original Source</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="btn-modal-story-save" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+            <span id="btn-modal-story-save-icon">🔖</span> <span id="btn-modal-story-save-text">Save Story</span>
+          </button>
+          <button type="button" id="btn-modal-story-dismiss" class="btn btn-ghost btn-sm" style="color:#ef4444;display:inline-flex;align-items:center;gap:4px;">
+            <span>✕ Dismiss</span>
+          </button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="btn-modal-story-close" class="btn btn-secondary btn-sm">Close</button>
+          <button type="button" id="btn-modal-story-write" class="btn btn-primary btn-sm" style="background:var(--brand-blue);color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;">
+            <span>✍️ Write Article</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Create New Article & Post Modal -->
   <div id="modal-create-article-post" class="modal-overlay hidden">
     <div class="modal-card" style="max-width:640px;width:95%;max-height:90vh;overflow-y:auto;padding:24px;">
@@ -2473,6 +2575,6 @@
 
   <script src="/reel-player.js?v=24.0"></script>
   <script src="/reel-studio.js?v=3.0"></script>
-  <script src="/app.js?v=28.0"></script>
+  <script src="/app.js?v=29.0"></script>
 </body>
 </html>
