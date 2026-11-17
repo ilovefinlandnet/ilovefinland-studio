@@ -279,6 +279,7 @@
     // =========================================================================
 
     async loadHubProjects() {
+      if (!this.cardsGrid) this.bindElements();
       if (!this.cardsGrid) return;
       this.cardsGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">⏳ Loading Reel projects…</div>`;
       try {
@@ -372,6 +373,7 @@
     }
 
     async openProject(id) {
+      if (!this.editorScreen || !this.canvas) this.bindElements();
       try {
         const res = await (await fetch(`/api/reel/project?id=${id}`)).json();
         if (!res.project) throw new Error("Project not found");
@@ -1840,6 +1842,13 @@
     return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  // Export globally
+  // Export globally and auto-initialize
   window.ReelStudio = new ReelStudioApp();
+  if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => window.ReelStudio.init());
+    } else {
+      window.ReelStudio.init();
+    }
+  }
 })();
