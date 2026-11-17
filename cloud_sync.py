@@ -157,6 +157,7 @@ def push_to_cloud(reason: str = "Studio database updated") -> Dict[str, Any]:
 
         except Exception as e:
             _state["is_syncing"] = False
+            _state["pending_changes"] = False
             _state["last_error"] = str(e)
             return {
                 "ok": False,

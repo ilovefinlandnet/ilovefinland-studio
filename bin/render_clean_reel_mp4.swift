@@ -143,12 +143,22 @@ func exportCleanMP4(configPath: String) {
     let duration = config.duration_sec ?? 16.0
     let totalFrames = Int(duration * Double(fps))
 
-    // Pre-cache scene images
+    // Pre-cache scene images and video frame generators
     var sceneImages: [CGImage?] = []
+    var videoGenerators: [Int: AVAssetImageGenerator] = [:]
     let scenes = config.scenes ?? []
-    for sc in scenes {
-        if let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: sc.image_path) as CFURL, nil),
-           let img = CGImageSourceCreateImageAtIndex(src, 0, nil) {
+    for (idx, sc) in scenes.enumerated() {
+        let lower = sc.image_path.lowercased()
+        if lower.hasSuffix(".mp4") || lower.hasSuffix(".mov") || lower.hasSuffix(".m4v") || lower.hasSuffix(".webm") {
+            let asset = AVURLAsset(url: URL(fileURLWithPath: sc.image_path))
+            let gen = AVAssetImageGenerator(asset: asset)
+            gen.appliesPreferredTrackTransform = true
+            gen.requestedTimeToleranceBefore = .zero
+            gen.requestedTimeToleranceAfter = .zero
+            videoGenerators[idx] = gen
+            sceneImages.append(nil)
+        } else if let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: sc.image_path) as CFURL, nil),
+                  let img = CGImageSourceCreateImageAtIndex(src, 0, nil) {
             sceneImages.append(img)
         } else {
             sceneImages.append(nil)
@@ -167,6 +177,20 @@ func exportCleanMP4(configPath: String) {
     if let logoPath = config.logo_image_path,
        let lSrc = CGImageSourceCreateWithURL(URL(fileURLWithPath: logoPath) as CFURL, nil) {
         logoImg = CGImageSourceCreateImageAtIndex(lSrc, 0, nil)
+    }
+
+    func getSceneFrame(index: Int, timeInScene: Double) -> CGImage? {
+        guard scenes.indices.contains(index) else { return fallbackImg }
+        if let img = sceneImages[index] {
+            return img
+        }
+        if let gen = videoGenerators[index] {
+            let cmTime = CMTime(seconds: max(0.0, timeInScene), preferredTimescale: 600)
+            if let frame = try? gen.copyCGImage(at: cmTime, actualTime: nil) {
+                return frame
+            }
+        }
+        return fallbackImg
     }
 
     let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -264,8 +288,13 @@ func exportCleanMP4(configPath: String) {
             let isTransition = activeSceneIndex > 0 && (t - sStart) < transDur
 
             // Deep Midnight Blue Background
-            if isTransition, let prevImg = (scenes.indices.contains(activeSceneIndex - 1) ? sceneImages[activeSceneIndex - 1] : nil) ?? fallbackImg {
-                drawCoverImage(ctx: ctx, img: prevImg, width: width, height: height, zoom: 1.09, alpha: 1.0)
+            if isTransition {
+                let prevIdx = activeSceneIndex - 1
+                let prevScene = scenes[prevIdx]
+                let prevTime = t - prevScene.start_sec
+                if let prevImg = getSceneFrame(index: prevIdx, timeInScene: prevTime) {
+                    drawCoverImage(ctx: ctx, img: prevImg, width: width, height: height, zoom: 1.09, alpha: 1.0)
+                }
                 let p = CGFloat((t - sStart) / transDur)
                 let smoothBlend = p * p * (3.0 - 2.0 * p)
                 ctx.saveGState()
@@ -357,13 +386,17 @@ func exportCleanMP4(configPath: String) {
 
         } else {
             // ================= REGULAR STORY SCENE =================
-            // 1. Draw Active Scene Image with Transition Style
-            let activeImg = (scenes.indices.contains(activeSceneIndex) ? sceneImages[activeSceneIndex] : nil) ?? fallbackImg
+            // 1. Draw Active Scene Image/Video with Transition Style
+            let activeImg = getSceneFrame(index: activeSceneIndex, timeInScene: t - sStart) ?? fallbackImg
             let transType = curScene?.transition ?? "dissolve"
             let transDur: Double = (transType == "cut") ? 0.0 : 0.50
             let isTransition = activeSceneIndex > 0 && transType != "cut" && (t - sStart) < transDur
 
-            if isTransition, let prevImg = (scenes.indices.contains(activeSceneIndex - 1) ? sceneImages[activeSceneIndex - 1] : nil) ?? fallbackImg {
+            if isTransition {
+                let prevIdx = activeSceneIndex - 1
+                let prevScene = scenes[prevIdx]
+                let prevTime = t - prevScene.start_sec
+                let prevImg = getSceneFrame(index: prevIdx, timeInScene: prevTime) ?? fallbackImg
                 let p = CGFloat((t - sStart) / transDur)
                 let smoothBlend = p * p * (3.0 - 2.0 * p)
 
@@ -372,19 +405,25 @@ func exportCleanMP4(configPath: String) {
                     let fadeAlpha = (p < 0.5) ? (1.0 - p * 2.0) : 0.0
                     let inAlpha = (p >= 0.5) ? ((p - 0.5) * 2.0) : 0.0
                     if p < 0.5 {
-                        drawCoverImage(ctx: ctx, img: prevImg, width: width, height: height, zoom: 1.05, alpha: fadeAlpha)
+                        if let pImg = prevImg {
+                            drawCoverImage(ctx: ctx, img: pImg, width: width, height: height, zoom: 1.05, alpha: fadeAlpha)
+                        }
                     } else if let img = activeImg {
                         drawCoverImage(ctx: ctx, img: img, width: width, height: height, zoom: zoom, alpha: inAlpha)
                     }
                 } else if transType == "zoom_push" {
                     // Outgoing zoom out, incoming push in
-                    drawCoverImage(ctx: ctx, img: prevImg, width: width, height: height, zoom: 1.05 + p * 0.1, alpha: 1.0 - smoothBlend)
+                    if let pImg = prevImg {
+                        drawCoverImage(ctx: ctx, img: pImg, width: width, height: height, zoom: 1.05 + p * 0.1, alpha: 1.0 - smoothBlend)
+                    }
                     if let img = activeImg {
                         drawCoverImage(ctx: ctx, img: img, width: width, height: height, zoom: 0.95 + p * 0.1, alpha: smoothBlend)
                     }
                 } else {
                     // Standard smooth cross-dissolve
-                    drawCoverImage(ctx: ctx, img: prevImg, width: width, height: height, zoom: 1.09, alpha: 1.0)
+                    if let pImg = prevImg {
+                        drawCoverImage(ctx: ctx, img: pImg, width: width, height: height, zoom: 1.09, alpha: 1.0)
+                    }
                     if let img = activeImg {
                         drawCoverImage(ctx: ctx, img: img, width: width, height: height, zoom: zoom, alpha: smoothBlend)
                     }

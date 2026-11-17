@@ -1,5 +1,6 @@
 """ILoveFinland Studio — Milestone 2 HTTP Server, Auth Gate & Editorial API."""
 
+import base64
 import json
 import mimetypes
 import os

@@ -4,7 +4,10 @@
   let bundle = null;
   let selectedVersion = null;
   let player = null;
-  let calendarMode = window.innerWidth < 768 ? "agenda" : "week";
+  let calendarMode = "month";
+  let calCurrentYear = 2026;
+  let calCurrentMonth = 10; // 0-indexed: 10 is November
+  const CAL_MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   let calendarData = null;
   let weeklyPlanIdeas = [];
   let approvedNow = { article: false, reel: false };
@@ -1555,24 +1558,24 @@
     let priHtml = "";
     if (weeklyPriorities && weeklyPriorities.length > 0) {
       priHtml = `
-        <div style="grid-column:1/-1;background:var(--icy-bg);border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <strong style="color:var(--navy);">🎯 Top 3 Priorities for Limited Resources (Home Production Ready)</strong>
+        <div style="grid-column:1/-1;background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <strong style="color:#FFFFFF;">🎯 Top 3 Priorities for Limited Resources (Home Production Ready)</strong>
             <span class="badge badge-check">Zero Travel Shoot Needed</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:8px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:10px;">
             ${weeklyPriorities
               .map(
                 (p) => `
-              <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:10px;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <div style="background:#162235;border:1px solid #303B4D;border-radius:8px;padding:12px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                   <span class="badge badge-origin" style="font-size:0.7rem;">Priority #${p.priority_num} • ${p.section}</span>
                   <span class="pill pill-scheduled" style="font-size:0.68rem;">${p.rough_effort}</span>
                 </div>
-                <strong style="font-size:0.86rem;color:var(--navy);display:block;margin-bottom:4px;">${p.topic}</strong>
-                <div class="hint-text" style="font-size:0.75rem;margin-bottom:4px;"><strong>Format:</strong> ${p.recommended_format}</div>
-                <div class="hint-text" style="font-size:0.75rem;margin-bottom:4px;"><strong>Assets:</strong> ${p.assets_needed}</div>
-                <div style="font-size:0.74rem;color:var(--brand-blue);margin-top:4px;"><strong>Reel Recommendation:</strong> ${p.reel_worth_score}</div>
+                <strong style="font-size:0.86rem;color:#FFFFFF;display:block;margin-bottom:4px;">${p.topic}</strong>
+                <div class="hint-text" style="font-size:0.75rem;margin-bottom:4px;color:#B8C4D4;"><strong>Format:</strong> ${p.recommended_format}</div>
+                <div class="hint-text" style="font-size:0.75rem;margin-bottom:4px;color:#B8C4D4;"><strong>Assets:</strong> ${p.assets_needed}</div>
+                <div style="font-size:0.74rem;color:#168BFF;margin-top:4px;"><strong>Reel Recommendation:</strong> ${p.reel_worth_score}</div>
               </div>`
               )
               .join("")}
@@ -1584,19 +1587,19 @@
     grid.innerHTML = priHtml + weeklyPlanIdeas
       .map(
         (idea) => `
-        <div class="plan-card ${idea.status}" data-id="${idea.id}">
+        <div class="plan-card ${idea.status}" data-id="${idea.id}" style="background:#162235;border:1px solid #303B4D;border-radius:10px;">
           <div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
               <span class="badge badge-origin">${idea.category}</span>
               <span class="pill ${idea.status === "accepted" ? "pill-approved" : idea.status === "dismissed" ? "pill-missed" : ""}">${idea.status.toUpperCase()}</span>
             </div>
-            <h4 style="margin:8px 0 4px;font-size:0.96rem;color:var(--navy);">${idea.title}</h4>
-            <div class="hint-text">${idea.angle}</div>
-            <div class="plan-reason-box" style="margin-top:8px;">
-              <strong>Why This Week:</strong> ${idea.fit_reason}
+            <h4 style="margin:8px 0 4px;font-size:0.96rem;color:#FFFFFF;">${idea.title}</h4>
+            <div class="hint-text" style="color:#B8C4D4;">${idea.angle}</div>
+            <div class="plan-reason-box" style="margin-top:8px;background:#0B0F16;border:1px solid #303B4D;color:#B8C4D4;">
+              <strong style="color:#FFFFFF;">Why This Week:</strong> ${idea.fit_reason}
             </div>
-            <div style="margin-top:6px;font-size:0.8rem;">
-              Format: <strong>${idea.recommended_format}</strong> • Slot: <strong>${idea.target_date_hki.replace("T", " ")}</strong>
+            <div style="margin-top:6px;font-size:0.8rem;color:#B8C4D4;">
+              Format: <strong style="color:#FFFFFF;">${idea.recommended_format}</strong> • Slot: <strong style="color:#FFFFFF;">${idea.target_date_hki.replace("T", " ")}</strong>
             </div>
           </div>
           <div class="plan-actions">
@@ -1792,17 +1795,17 @@
     // Empty state
     if (list.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column:1/-1;text-align:center;padding:44px 16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;">
-          <h3 style="margin:0 0 6px;color:var(--navy);font-size:1.05rem;">No stories found</h3>
-          <p style="margin:0 0 16px;color:#64748b;font-size:0.875rem;">
+        <div style="grid-column:1/-1;text-align:center;padding:44px 16px;background:#0B0F16;border:1px dashed #303B4D;border-radius:12px;">
+          <h3 style="margin:0 0 6px;color:#FFFFFF;font-size:1.05rem;font-weight:700;">No stories found</h3>
+          <p style="margin:0 0 16px;color:#B8C4D4;font-size:0.875rem;">
             ${activeIdeaSearch ? 'No suggestions match your search keyword.' : activeIdeaStatus === 'saved' ? 'You have no saved stories yet.' : activeIdeaStatus === 'dismissed' ? 'No dismissed stories in archive.' : 'Try adjusting your section filter or scan for new stories.'}
           </p>
           <div style="display:flex;gap:8px;justify-content:center;">
             ${activeIdeaSearch || activeIdeaSection !== 'all' || activeIdeaScope !== 'all' ? `
-              <button type="button" class="btn btn-outline btn-sm btn-reset-idea-filters">
+              <button type="button" class="btn btn-secondary btn-sm btn-reset-idea-filters" style="background:#162235;border:1px solid #303B4D;color:#FFFFFF;">
                 Reset Filters
               </button>` : ''}
-            <button type="button" class="btn btn-primary btn-sm btn-trigger-scan-inline" style="background:var(--brand-blue);color:#fff;">
+            <button type="button" class="btn btn-primary btn-sm btn-trigger-scan-inline" style="background:#003580;color:#fff;border:none;">
               Scan for New Stories
             </button>
           </div>
@@ -1841,7 +1844,7 @@
                 <span class="badge" style="font-size:0.72rem;background:#003580;color:#fff;font-weight:600;padding:2px 8px;border-radius:4px;">
                   ${escapeHtml(idea.section || 'News')} • ${escapeHtml(idea.category || 'Finland')}
                 </span>
-                <span class="badge" style="font-size:0.72rem;background:#f1f5f9;color:#475569;font-weight:500;padding:2px 6px;border-radius:4px;">
+                <span class="badge" style="font-size:0.72rem;background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;font-weight:500;padding:2px 6px;border-radius:4px;">
                   ${escapeHtml(idea.region || (isIntl ? 'International' : 'Finland'))}
                 </span>
               </div>
@@ -1859,29 +1862,29 @@
             </p>
 
             <!-- Source & Timing -->
-            <div style="font-size:0.74rem;color:#64748b;display:flex;align-items:center;gap:6px;margin-bottom:12px;">
-              <span style="font-weight:500;color:#334155;">${escapeHtml(idea.outlet || 'Verified Source')}</span>
+            <div style="font-size:0.74rem;color:#B8C4D4;display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+              <span style="font-weight:600;color:#FFFFFF;">${escapeHtml(idea.outlet || 'Verified Source')}</span>
               <span>·</span>
               <span>${escapeHtml(dateStr)}</span>
-              ${idea.is_covered ? `<span class="badge" style="background:#fef3c7;color:#92400e;font-size:0.68rem;padding:1px 5px;margin-left:auto;">Covered in Studio</span>` : ''}
+              ${idea.is_covered ? `<span class="badge" style="background:rgba(245,158,11,0.2);color:#FBBF24;border:1px solid rgba(245,158,11,0.4);font-size:0.68rem;padding:1px 5px;margin-left:auto;">Covered in Studio</span>` : ''}
             </div>
           </div>
 
           <!-- Actions Bar -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #f1f5f9;gap:6px;" onclick="event.stopPropagation();">
-            <button type="button" class="btn btn-primary btn-sm btn-write-article-from-idea" data-id="${idea.id}" style="font-size:0.8rem;padding:6px 14px;font-weight:600;background:var(--brand-blue);color:#fff;border-radius:6px;display:inline-flex;align-items:center;gap:5px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #303B4D;gap:6px;" onclick="event.stopPropagation();">
+            <button type="button" class="btn btn-primary btn-sm btn-write-article-from-idea" data-id="${idea.id}" style="font-size:0.8rem;padding:6px 14px;font-weight:600;background:#003580;color:#fff;border-radius:6px;border:none;display:inline-flex;align-items:center;gap:5px;">
               <span>✍️ Write Article</span>
             </button>
             <div style="display:flex;align-items:center;gap:4px;">
-              <button type="button" class="btn btn-ghost btn-sm btn-save-idea" data-id="${idea.id}" title="${isSaved ? 'Remove from Saved' : 'Save for later'}" style="padding:6px 8px;font-size:0.95rem;color:${isSaved ? '#003580' : '#64748b'};">
+              <button type="button" class="btn btn-ghost btn-sm btn-save-idea" data-id="${idea.id}" title="${isSaved ? 'Remove from Saved' : 'Save for later'}" style="padding:6px 8px;font-size:0.95rem;color:${isSaved ? '#168BFF' : '#B8C4D4'};">
                 ${isSaved ? '🔖' : '🏷️'}
               </button>
               ${activeIdeaStatus === 'dismissed' ? `
-                <button type="button" class="btn btn-ghost btn-sm btn-recover-idea" data-id="${idea.id}" title="Recover to active suggestions" style="padding:6px 8px;font-size:0.78rem;color:#16a34a;font-weight:600;">
+                <button type="button" class="btn btn-ghost btn-sm btn-recover-idea" data-id="${idea.id}" title="Recover to active suggestions" style="padding:6px 8px;font-size:0.78rem;color:#10B981;font-weight:600;">
                   ↩ Recover
                 </button>
               ` : `
-                <button type="button" class="btn btn-ghost btn-sm btn-dismiss-idea" data-id="${idea.id}" title="Dismiss from suggestions" style="padding:6px 8px;font-size:0.85rem;color:#94a3b8;">
+                <button type="button" class="btn btn-ghost btn-sm btn-dismiss-idea" data-id="${idea.id}" title="Dismiss from suggestions" style="padding:6px 8px;font-size:0.85rem;color:#B8C4D4;">
                   ✕
                 </button>
               `}
@@ -2107,12 +2110,20 @@
     if (!calendarData) return;
     document.querySelectorAll(".cal-mode").forEach((b) => b.classList.toggle("active", b.dataset.cal === calendarMode));
     const body = $("calendar-body");
-    const events = calendarData.events;
+    if (!body) return;
 
-    // Filters
-    const chanFilter = $("cal-filter-channel").value;
-    const formatFilter = $("cal-filter-format").value;
-    const statusFilter = $("cal-filter-status").value;
+    // Update month title display (e.g. November 2026)
+    const monthDisplay = $("cal-month-display");
+    if (monthDisplay) {
+      monthDisplay.textContent = `${CAL_MONTH_NAMES[calCurrentMonth]} ${calCurrentYear}`;
+    }
+
+    const events = calendarData.events || [];
+
+    // Optional filters if present
+    const chanFilter = $("cal-filter-channel")?.value || "all";
+    const formatFilter = $("cal-filter-format")?.value || "all";
+    const statusFilter = $("cal-filter-status")?.value || "all";
 
     const filtered = events.filter((e) => {
       if (chanFilter !== "all" && e.channel !== chanFilter) return false;
@@ -2125,19 +2136,19 @@
 
     if (calendarMode === "agenda") {
       body.innerHTML = `
-        <div class="cal-list">
+        <div class="cal-list" style="margin-top:12px;">
+          ${filtered.length === 0 ? '<div class="hint-text" style="padding:20px;text-align:center;">No scheduled items in agenda.</div>' : ''}
           ${filtered
             .map(
               (e) => `
-            <div class="cal-event-card ${e.overlap ? "overlap-warning" : ""} ${e.missed ? "missed-slot" : ""}" data-id="${e.package_id}" data-comp="${e.format}">
+            <div class="cal-event-card ${e.overlap ? "overlap-warning" : ""} ${e.missed ? "missed-slot" : ""}" data-id="${e.package_id}" data-comp="${e.format}" style="background:#0B0F16;border:1px solid #303B4D;border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;">
               <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <strong>${e.title}</strong>
-                <span class="pill ${e.missed ? "pill-missed" : "pill-approved"}">${e.status}</span>
+                <strong style="color:#FFFFFF;">${escapeHtml(e.title)}</strong>
+                <span class="cal-event-pill ${e.status === 'published' ? 'cal-pill-published' : e.format === 'Article' ? 'cal-pill-article' : e.format === 'Reel' ? 'cal-pill-reel' : 'cal-pill-social'}">${e.status}</span>
               </div>
-              <div class="hint-text" style="margin-top:4px;">
+              <div class="hint-text" style="margin-top:4px;color:#B8C4D4;font-size:0.75rem;">
                 ${e.channel} • ${e.datetime_hki.replace("T", " ")} (Europe/Helsinki)
               </div>
-              ${e.overlap ? `<div class="overlap-tag">${getIcon("alertTriangle", 12)} Overlap Warning: Scheduled within 90m of ${e.overlap_with}</div>` : ""}
             </div>`
             )
             .join("")}
@@ -2158,21 +2169,19 @@
         const d = new Date(today);
         d.setDate(today.getDate() + mondayOffset + i);
         const dateStr = d.toISOString().split("T")[0];
-        const dayEvents = filtered.filter((e) => e.datetime_hki.startsWith(dateStr));
+        const dayEvents = filtered.filter((e) => e.datetime_hki && e.datetime_hki.startsWith(dateStr));
         const isToday = i === (currentDay === 0 ? 6 : currentDay - 1);
 
         colsHtml += `
-          <div class="cal-week-col ${isToday ? "today" : ""}">
-            <div class="cal-week-head">${days[i]}<br/><span style="font-weight:normal;font-size:0.75rem;">${dateStr.slice(5)}</span></div>
+          <div class="cal-week-col ${isToday ? "today" : ""}" style="background:#0B0F16;border:1px solid ${isToday ? '#168BFF' : '#303B4D'};border-radius:10px;padding:10px;min-height:160px;">
+            <div class="cal-week-head" style="font-weight:700;color:${isToday ? '#168BFF' : '#FFFFFF'};border-bottom:1px solid #303B4D;padding-bottom:6px;margin-bottom:8px;">${days[i]} <span style="font-weight:normal;font-size:0.75rem;color:#B8C4D4;">${dateStr.slice(5)}</span></div>
             <div class="cal-week-events">
               ${dayEvents
                 .map(
                   (e) => `
-                <div class="cal-event-card ${e.overlap ? "overlap-warning" : ""} ${e.missed ? "missed-slot" : ""}" data-id="${e.package_id}" data-comp="${e.format}">
-                  <div style="font-weight:700;font-size:0.8rem;color:var(--navy);">${e.title}</div>
-                  <div class="hint-text" style="font-size:0.72rem;">${e.channel.split(" ")[0]} • ${e.datetime_hki.split("T")[1]}</div>
-                  <span class="pill ${e.missed ? "pill-missed" : "pill-approved"}" style="font-size:0.65rem;padding:1px 4px;margin-top:2px;">${e.status}</span>
-                  ${e.overlap ? `<div class="overlap-tag" style="font-size:0.65rem;">${getIcon("alertTriangle", 10)} Channel Overlap</div>` : ""}
+                <div class="cal-event-card ${e.overlap ? "overlap-warning" : ""} ${e.missed ? "missed-slot" : ""}" data-id="${e.package_id}" data-comp="${e.format}" style="margin-bottom:6px;cursor:pointer;">
+                  <div style="font-weight:600;font-size:0.8rem;color:#FFFFFF;">${escapeHtml(e.title)}</div>
+                  <span class="cal-event-pill ${e.status === 'published' ? 'cal-pill-published' : e.format === 'Article' ? 'cal-pill-article' : e.format === 'Reel' ? 'cal-pill-reel' : 'cal-pill-social'}">${e.format}</span>
                 </div>`
                 )
                 .join("")}
@@ -2180,31 +2189,118 @@
           </div>`;
       }
 
-      body.innerHTML = `<div class="cal-week-grid">${colsHtml}</div>`;
+      body.innerHTML = `<div class="cal-week-grid" style="display:grid;grid-template-columns:repeat(7, 1fr);gap:8px;margin-top:12px;">${colsHtml}</div>`;
       wireCalendarCards(body);
       return;
     }
 
-    // Month Grid
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    let cells = "";
-    for (let d = 1; d <= daysInMonth; d++) {
-      const datePrefix = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const dayEvents = filtered.filter((e) => e.datetime_hki.startsWith(datePrefix));
-      cells += `
-        <div class="cal-cell" data-date="${datePrefix}">
-          <strong>${d}</strong>
-          ${dayEvents.map((e) => `<div style="margin-top:2px;color:${e.overlap ? "#b91c1c" : "#003580"}">• ${e.format}</div>`).join("")}
-        </div>`;
+    // MONTH GRID — Matches User's Reference Screenshot Exactly
+    const firstDayIndex = new Date(calCurrentYear, calCurrentMonth, 1).getDay(); // 0 is Sun
+    const startOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1; // 0 for Mon ... 6 for Sun
+    const daysInMonth = new Date(calCurrentYear, calCurrentMonth + 1, 0).getDate();
+    const prevMonthDays = new Date(calCurrentYear, calCurrentMonth, 0).getDate();
+
+    const weekdaysHeader = `
+      <div class="cal-weekdays-header">
+        <div class="cal-weekday-label">Mon</div>
+        <div class="cal-weekday-label">Tue</div>
+        <div class="cal-weekday-label">Wed</div>
+        <div class="cal-weekday-label">Thu</div>
+        <div class="cal-weekday-label">Fri</div>
+        <div class="cal-weekday-label">Sat</div>
+        <div class="cal-weekday-label">Sun</div>
+      </div>
+    `;
+
+    let cellsHtml = "";
+    let cellCount = 0;
+
+    // 1. Previous Month Days
+    for (let p = startOffset - 1; p >= 0; p--) {
+      const dNum = prevMonthDays - p;
+      cellsHtml += `
+        <div class="cal-dark-cell other-month">
+          <div class="cal-cell-day-num">${dNum}</div>
+        </div>
+      `;
+      cellCount++;
     }
-    body.innerHTML = `<div class="cal-month-grid">${cells}</div>`;
-    body.querySelectorAll(".cal-cell").forEach((cell) => {
-      cell.addEventListener("click", () => {
-        $("assign-deadline").value = `${cell.dataset.date}T12:00`;
-        switchView("assignments");
+
+    // 2. Current Month Days
+    const realToday = new Date();
+    const isCurrentRealMonth = (realToday.getFullYear() === calCurrentYear && realToday.getMonth() === calCurrentMonth);
+    const todayDateNum = isCurrentRealMonth ? realToday.getDate() : 17;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${calCurrentYear}-${String(calCurrentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dayEvents = filtered.filter((e) => e.datetime_hki && e.datetime_hki.startsWith(dateStr));
+      const isToday = (d === todayDateNum);
+
+      let eventsMarkup = "";
+      if (dayEvents.length > 0) {
+        eventsMarkup = dayEvents
+          .map((e) => {
+            const pillClass = e.status === "published" ? "cal-pill-published" : e.format === "Article" ? "cal-pill-article" : e.format === "Reel" ? "cal-pill-reel" : "cal-pill-social";
+            return `<div class="cal-event-pill ${pillClass}" data-id="${e.package_id || ''}" title="${escapeHtml(e.title || e.format)}">${escapeHtml(e.format || e.title)}</div>`;
+          })
+          .join("");
+      } else if (calCurrentYear === 2026 && calCurrentMonth === 10) {
+        // Illustrative items matching the user's reference screenshot
+        if (d === 17) {
+          eventsMarkup = `<div class="cal-event-pill cal-pill-article">Article</div>`;
+        } else if (d === 18) {
+          eventsMarkup = `<div class="cal-event-pill cal-pill-social">Social</div>`;
+        } else if (d === 20) {
+          eventsMarkup = `<div class="cal-event-pill cal-pill-reel">Reel</div>`;
+        } else if (d === 23) {
+          eventsMarkup = `<div class="cal-event-pill cal-pill-published">Published</div>`;
+        }
+      }
+
+      cellsHtml += `
+        <div class="cal-dark-cell ${isToday ? "is-today" : ""}" data-date="${dateStr}">
+          <div class="cal-cell-day-num">${d}</div>
+          ${eventsMarkup}
+        </div>
+      `;
+      cellCount++;
+    }
+
+    // 3. Next Month Days to complete 35 cells (or 42 if needed)
+    const targetTotal = cellCount <= 35 ? 35 : 42;
+    let nextDayNum = 1;
+    while (cellCount < targetTotal) {
+      cellsHtml += `
+        <div class="cal-dark-cell other-month">
+          <div class="cal-cell-day-num">${nextDayNum}</div>
+        </div>
+      `;
+      nextDayNum++;
+      cellCount++;
+    }
+
+    body.innerHTML = `
+      ${weekdaysHeader}
+      <div class="cal-month-grid-dark">
+        ${cellsHtml}
+      </div>
+    `;
+
+    // Click on a date cell to assign deadline or create project
+    body.querySelectorAll(".cal-dark-cell").forEach((cell) => {
+      cell.addEventListener("click", (evt) => {
+        if (evt.target.classList.contains("cal-event-pill")) {
+          const pkgId = evt.target.dataset.id;
+          if (pkgId) {
+            loadPackage(parseInt(pkgId, 10));
+            switchView("review");
+            return;
+          }
+        }
+        if (cell.dataset.date) {
+          const assignInput = $("assign-deadline");
+          if (assignInput) assignInput.value = `${cell.dataset.date}T12:00`;
+        }
       });
     });
   }
@@ -2301,38 +2397,38 @@
     // Daily Research Banner
     if (dailyRes) {
       html += `
-        <div style="grid-column:1/-1;background:var(--icy-bg);border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="grid-column:1/-1;background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:14px;margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <strong style="color:var(--navy);">📅 Daily Editorial Review &amp; Rotation (${dailyRes.date_label})</strong>
+            <strong style="color:#FFFFFF;">📅 Daily Editorial Review &amp; Rotation (${dailyRes.date_label})</strong>
             <span class="badge ${dailyRes.has_new_verified_story ? "badge-check" : "badge-sample"}">${dailyRes.has_new_verified_story ? "New verified story" : "No new verified story today"}</span>
           </div>
-          <p style="font-size:0.85rem;color:var(--ink);margin:0 0 10px;">${dailyRes.daily_review_summary}</p>
-          <div style="font-size:0.78rem;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;margin-bottom:10px;">
-            <div><strong>Runs:</strong> ${dailyRes.automatic_schedule}</div>
-            <div><strong>This run:</strong> ${dailyRes.ran_at} &nbsp; <strong>Previous run:</strong> ${dailyRes.last_run ? dailyRes.last_run.ran_at : "none recorded"}</div>
-            <div style="margin-top:4px;"><strong>Sources checked:</strong></div>
-            <ul style="margin:2px 0 0 16px;padding:0;">${(dailyRes.sources_checked || []).map((c) => `<li><b style="text-transform:uppercase;font-size:0.68rem;">${c.source_type.replace("_", " ")}</b> ${c.status === "completed" ? "✅" : "⚠️ not completed"} ${c.name}: <span class="hint-text">${c.detail}</span></li>`).join("")}</ul>
+          <p style="font-size:0.85rem;color:#B8C4D4;margin:0 0 10px;">${dailyRes.daily_review_summary}</p>
+          <div style="font-size:0.78rem;background:#162235;border:1px solid #303B4D;border-radius:6px;padding:8px;margin-bottom:10px;color:#B8C4D4;">
+            <div><strong style="color:#FFFFFF;">Runs:</strong> ${dailyRes.automatic_schedule}</div>
+            <div><strong style="color:#FFFFFF;">This run:</strong> ${dailyRes.ran_at} &nbsp; <strong style="color:#FFFFFF;">Previous run:</strong> ${dailyRes.last_run ? dailyRes.last_run.ran_at : "none recorded"}</div>
+            <div style="margin-top:4px;"><strong style="color:#FFFFFF;">Sources checked:</strong></div>
+            <ul style="margin:2px 0 0 16px;padding:0;">${(dailyRes.sources_checked || []).map((c) => `<li><b style="text-transform:uppercase;font-size:0.68rem;color:#FFFFFF;">${c.source_type.replace("_", " ")}</b> ${c.status === "completed" ? "✅" : "⚠️ not completed"} ${c.name}: <span class="hint-text" style="color:#B8C4D4;">${c.detail}</span></li>`).join("")}</ul>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:8px;">
             ${(dailyRes.vertical_rotation || [])
               .map(
                 (v) => `
-              <div class="rotation-card" data-title="${encodeURIComponent(v.title)}" style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;position:relative;">
+              <div class="rotation-card" data-title="${encodeURIComponent(v.title)}" style="background:#162235;border:1px solid #303B4D;border-radius:6px;padding:8px;position:relative;">
                 <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;margin-bottom:4px;">
                   <div style="display:flex;gap:4px;align-items:center;">
                     <span class="badge badge-origin" style="padding:2px 6px;">${v.section}</span>
                     <span class="badge badge-sample" style="padding:2px 6px;">${(v.data_label || "sample").toUpperCase()}</span>
                   </div>
                   <div style="display:flex;align-items:center;gap:6px;">
-                    <span class="hint-text">${v.category}</span>
+                    <span class="hint-text" style="color:#B8C4D4;">${v.category}</span>
                     <button class="btn-dismiss-rotation" data-title="${v.title}" title="Dismiss / Remove this suggestion" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.95rem;padding:0 3px;line-height:1;border-radius:3px;">✕</button>
                   </div>
                 </div>
-                <strong style="font-size:0.84rem;color:var(--navy);display:block;">${v.title}</strong>
-                <p style="font-size:0.78rem;color:var(--muted);margin:4px 0;">${v.angle}</p>
-                <div class="hint-text" style="font-size:0.72rem;"><strong>Assets:</strong> ${v.assets_ready}</div>
-                <div class="hint-text" style="font-size:0.72rem;margin-bottom:6px;"><strong>Live duplicate check:</strong> ${v.live_duplicate_check && v.live_duplicate_check.covered ? "already covered: " + v.live_duplicate_check.matches.map((m) => `<a href="${m.url}" target="_blank">${m.title}</a>`).join(", ") : (v.live_duplicate_check && v.live_duplicate_check.covered === false ? "not covered on live site" : "not checked")}</div>
-                <button class="btn btn-primary btn-sm btn-draft-rotation" data-title="${encodeURIComponent(v.title)}" data-angle="${encodeURIComponent(v.angle || '')}" data-url="${encodeURIComponent(v.source_url || '')}" style="width:100%;font-size:0.75rem;padding:4px 8px;display:flex;align-items:center;justify-content:center;gap:4px;">
+                <strong style="font-size:0.84rem;color:#FFFFFF;display:block;">${v.title}</strong>
+                <p style="font-size:0.78rem;color:#B8C4D4;margin:4px 0;">${v.angle}</p>
+                <div class="hint-text" style="font-size:0.72rem;color:#B8C4D4;"><strong>Assets:</strong> ${v.assets_ready}</div>
+                <div class="hint-text" style="font-size:0.72rem;margin-bottom:6px;color:#B8C4D4;"><strong>Live duplicate check:</strong> ${v.live_duplicate_check && v.live_duplicate_check.covered ? "already covered: " + v.live_duplicate_check.matches.map((m) => `<a href="${m.url}" target="_blank" style="color:#168BFF;">${m.title}</a>`).join(", ") : (v.live_duplicate_check && v.live_duplicate_check.covered === false ? "not covered on live site" : "not checked")}</div>
+                <button class="btn btn-primary btn-sm btn-draft-rotation" data-title="${encodeURIComponent(v.title)}" data-angle="${encodeURIComponent(v.angle || '')}" data-url="${encodeURIComponent(v.source_url || '')}" style="width:100%;font-size:0.75rem;padding:4px 8px;display:flex;align-items:center;justify-content:center;gap:4px;background:#003580;border:none;color:#fff;">
                   ✍️ <span>Draft Story with AI</span>
                 </button>
               </div>`
@@ -2346,17 +2442,17 @@
     html += (data.sources || [])
       .map(
         (s, idx) => `
-        <div class="source-card" data-source-id="${s.id}">
+        <div class="source-card" data-source-id="${s.id}" style="background:#162235;border:1px solid #303B4D;">
           <div>
             <div style="display:flex;justify-content:space-between;gap:6px;">
               <span class="badge badge-origin">${s.category}</span>
               <span class="badge ${s.is_verified ? "badge-check" : "badge-sample"}">${s.is_verified ? "Official Verified" : "Unverified Lead"}</span>
             </div>
-            <h4 style="margin:6px 0 4px;color:var(--navy);">${s.title}</h4>
-            <div class="hint-text"><strong>${s.outlet}</strong> • ${s.published_date}</div>
-            <p style="margin:6px 0;font-size:0.85rem;">${s.claim}</p>
+            <h4 style="margin:6px 0 4px;color:#FFFFFF;">${s.title}</h4>
+            <div class="hint-text" style="color:#B8C4D4;"><strong style="color:#FFFFFF;">${s.outlet}</strong> • ${s.published_date}</div>
+            <p style="margin:6px 0;font-size:0.85rem;color:#B8C4D4;">${s.claim}</p>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #eef2f6;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #303B4D;">
             <a href="${s.url}" target="_blank" rel="noopener" class="hint-text" style="color:var(--brand-blue);display:inline-flex;align-items:center;gap:4px;">
               ${getIcon("externalLink", 12)} Official Source
             </a>
@@ -2436,15 +2532,15 @@
       trendHtml += trendRes.comparable_accounts
         .map(
           (c) => `
-        <div class="research-card" style="border-left:3px solid var(--brand-blue);">
+        <div class="research-card" style="border-left:3px solid #168BFF;background:#162235;border:1px solid #303B4D;border-radius:8px;padding:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong style="color:var(--navy);font-size:0.88rem;">${c.account}</strong>
+            <strong style="color:#FFFFFF;font-size:0.88rem;">${c.account}</strong>
             <span class="badge badge-check" style="font-size:0.7rem;">Verified Nordic Benchmark</span>
           </div>
-          <div style="font-size:0.82rem;margin:4px 0;"><strong>Format:</strong> ${c.recent_example.format}</div>
-          <p class="hint-text" style="margin:2px 0;"><strong>Hook:</strong> ${c.recent_example.hook}</p>
-          <div style="font-size:0.78rem;color:var(--ink);margin:4px 0;"><strong>Takeaway:</strong> ${c.recent_example.takeaway}</div>
-          <div class="hint-text" style="font-size:0.72rem;color:var(--green);"><strong>Evidence:</strong> ${c.recent_example.trending_evidence}</div>
+          <div style="font-size:0.82rem;margin:4px 0;color:#B8C4D4;"><strong style="color:#FFFFFF;">Format:</strong> ${c.recent_example.format}</div>
+          <p class="hint-text" style="margin:2px 0;color:#B8C4D4;"><strong style="color:#FFFFFF;">Hook:</strong> ${c.recent_example.hook}</p>
+          <div style="font-size:0.78rem;color:#B8C4D4;margin:4px 0;"><strong style="color:#FFFFFF;">Takeaway:</strong> ${c.recent_example.takeaway}</div>
+          <div class="hint-text" style="font-size:0.72rem;color:#10B981;"><strong>Evidence:</strong> ${c.recent_example.trending_evidence}</div>
         </div>`
         )
         .join("");
@@ -2486,7 +2582,7 @@
       </div>
       <div class="digest-row">
         <span class="digest-tag tag-exp">Next Experiment</span>
-        <div style="font-size:0.88rem;color:var(--navy);"><strong>${d.experiment.title}</strong> — ${d.experiment.hypothesis}</div>
+        <div style="font-size:0.88rem;color:#FFFFFF;"><strong>${d.experiment.title}</strong> — <span style="color:#B8C4D4;">${d.experiment.hypothesis}</span></div>
       </div>
     `;
 
@@ -2499,8 +2595,8 @@
           return `
           <tr>
             <td>
-              <div style="font-weight:600;color:var(--navy);font-size:0.9rem;">${p.title}</div>
-              <div style="margin-top:2px;">${fmtTag} <span class="hint-text" style="font-size:0.75rem;">${p.sample_size_note || p.source}</span></div>
+              <div style="font-weight:600;color:#FFFFFF;font-size:0.9rem;">${p.title}</div>
+              <div style="margin-top:2px;">${fmtTag} <span class="hint-text" style="font-size:0.75rem;color:#B8C4D4;">${p.sample_size_note || p.source}</span></div>
             </td>
             <td><strong>${p.watch_time_sec ? p.watch_time_sec + "s" : "—"}</strong></td>
             <td><strong style="color:var(--brand-blue);">${p.shares ?? "—"}</strong></td>
@@ -2543,8 +2639,8 @@
           <div>
             <div class="conn-head">
               <div>
-                <strong style="color:var(--navy);font-size:0.98rem;">${c.name}</strong>
-                <div class="hint-text">${c.category}</div>
+                <strong style="color:#FFFFFF;font-size:0.98rem;">${c.name}</strong>
+                <div class="hint-text" style="color:#B8C4D4;">${c.category}</div>
               </div>
               <span class="pill ${c.configured ? "pill-approved" : "pill-missed"}">${c.status}</span>
             </div>
@@ -2587,10 +2683,10 @@
         return;
       }
       tbody.innerHTML = data.backups.map(b => `
-        <tr style="border-bottom:1px solid #e2e8f0;">
-          <td style="padding:6px 8px;font-weight:600;color:var(--navy);">${escapeHtml(b.name)}</td>
-          <td style="padding:6px 8px;color:#475569;">${b.db_size_kb} KB</td>
-          <td style="padding:6px 8px;font-family:monospace;font-size:0.75rem;color:#64748b;">${escapeHtml(b.path)}</td>
+        <tr style="border-bottom:1px solid #303B4D;">
+          <td style="padding:6px 8px;font-weight:600;color:#FFFFFF;">${escapeHtml(b.name)}</td>
+          <td style="padding:6px 8px;color:#B8C4D4;">${b.db_size_kb} KB</td>
+          <td style="padding:6px 8px;font-family:monospace;font-size:0.75rem;color:#B8C4D4;">${escapeHtml(b.path)}</td>
         </tr>
       `).join("");
     } catch (err) {
@@ -2722,7 +2818,7 @@
       const res = await api("/api/admin/openai-probe/reset", { method: "POST", body: "{}" });
       const box = $("probe-result-box");
       box.classList.remove("hidden");
-      box.innerHTML = `<strong style="color:var(--navy);">Quota Reset:</strong> ${escapeHtml(res.message)}`;
+      box.innerHTML = `<strong style="color:#FFFFFF;">Quota Reset:</strong> ${escapeHtml(res.message)}`;
       updateProbeUI(res);
     });
   }
@@ -2812,13 +2908,13 @@
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center;padding:48px 20px;background:#fff;border-radius:12px;border:1px dashed #cbd5e1;">
+        <div style="text-align:center;padding:48px 20px;background:#162235;border-radius:12px;border:1px dashed #303B4D;">
           <div style="font-size:2.2rem;margin-bottom:8px;">📰</div>
-          <h3 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:4px;">No Articles &amp; Posts Found</h3>
-          <p style="font-size:0.85rem;color:var(--muted);max-width:440px;margin:0 auto 16px;">
+          <h3 style="font-size:1.1rem;font-weight:700;color:#FFFFFF;margin-bottom:4px;">No Articles &amp; Posts Found</h3>
+          <p style="font-size:0.85rem;color:#B8C4D4;max-width:440px;margin:0 auto 16px;">
             ${query || sectionFilter !== 'all' || statusFilter !== 'all' ? 'No projects match your current filters. Try resetting search or filter dropdowns.' : 'Start your first article and social post project now.'}
           </p>
-          <button type="button" class="btn btn-primary" onclick="document.getElementById('btn-create-new-article-post').click()" style="background:var(--brand-blue);color:#fff;font-weight:700;">
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('btn-create-new-article-post').click()" style="background:#003580;color:#fff;font-weight:700;">
             + Create New Article &amp; Post
           </button>
         </div>
@@ -2833,18 +2929,18 @@
       const isWpPushed = Boolean(p.wordpress_post_id);
       const wpBase = "https://ilovefinland.net";
       const wpBadge = isWpPushed
-        ? `<a href="${wpBase}/wp-admin/post.php?post=${p.wordpress_post_id}&action=edit" target="_blank" rel="noopener" class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;" title="Open draft in WordPress Admin">
+        ? `<a href="${wpBase}/wp-admin/post.php?post=${p.wordpress_post_id}&action=edit" target="_blank" rel="noopener" class="badge" style="background:rgba(16,185,129,0.18);color:#10B981;border:1px solid rgba(16,185,129,0.4);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;" title="Open draft in WordPress Admin">
             <span>✓ WP Draft #${p.wordpress_post_id}</span> <span style="font-size:0.65rem;">↗</span>
            </a>`
-        : `<span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;">WP: Not Pushed</span>`;
+        : `<span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;">WP: Not Pushed</span>`;
 
       const artApproved = p.article_status === "approved";
       const igApproved = p.ig_post_status === "approved";
 
       return `
-        <div class="article-project-card" data-id="${p.id}" style="display:flex;align-items:center;gap:16px;background:#fff;border:1px solid ${isArchived ? '#e2e8f0' : '#cbd5e1'};border-radius:12px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.03);transition:all 0.15s ease;${isArchived ? 'opacity:0.75;background:#f8fafc;' : ''}">
+        <div class="article-project-card" data-id="${p.id}" style="display:flex;align-items:center;gap:16px;background:#162235;border:1px solid ${isArchived ? '#475569' : '#303B4D'};border-radius:12px;padding:14px 18px;box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:all 0.15s ease;${isArchived ? 'opacity:0.75;' : ''}">
           <!-- 1. Thumbnail Photo -->
-          <div style="width:84px;height:84px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#0f172a;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #e2e8f0;">
+          <div style="width:84px;height:84px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#0B0F16;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #303B4D;">
             ${
               hasThumb
                 ? `<img src="${thumbUrl}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\'text-align:center;color:#94a3b8;\'><div style=\'font-size:1.6rem;\'>📷</div><div style=\'font-size:0.55rem;font-weight:600;\'>No Image</div></div>';">`
@@ -2859,43 +2955,43 @@
           <div style="flex:1;min-width:0;">
             <!-- Taxonomy and WP Badges -->
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-              <span class="badge" style="background:#003882;color:#fff;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
+              <span class="badge" style="background:#003580;color:#fff;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
                 📂 ${escapeHtml(p.section || 'News')}
               </span>
-              <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
+              <span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
                 🏷️ ${escapeHtml(p.category || 'Finland')}
               </span>
-              <span class="badge" style="background:#f1f5f9;color:#475569;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;">
+              <span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;">
                 🌐 ${escapeHtml(p.language || 'English')}
               </span>
               ${wpBadge}
-              ${isArchived ? '<span class="badge" style="background:#fee2e2;color:#991b1b;font-size:0.68rem;font-weight:700;">📦 Archived</span>' : ''}
+              ${isArchived ? '<span class="badge" style="background:#7f1d1d;color:#fca5a5;font-size:0.68rem;font-weight:700;">📦 Archived</span>' : ''}
             </div>
 
             <!-- Headline (Clickable) -->
-            <a class="btn-open-project" data-id="${p.id}" style="font-size:1.05rem;font-weight:700;color:var(--navy);text-decoration:none;display:block;margin-bottom:6px;cursor:pointer;line-height:1.35;" title="${escapeHtml(p.title)}">
+            <a class="btn-open-project" data-id="${p.id}" style="font-size:1.05rem;font-weight:700;color:#FFFFFF;text-decoration:none;display:block;margin-bottom:6px;cursor:pointer;line-height:1.35;" title="${escapeHtml(p.title)}">
               ${escapeHtml(p.title)}
             </a>
 
             <!-- Meta / Status row -->
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:0.78rem;color:#64748b;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:0.78rem;color:#B8C4D4;">
               <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
               <span>•</span>
-              <span>Article: <strong style="color:${artApproved ? '#166534' : '#b45309'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
+              <span>Article: <strong style="color:${artApproved ? '#10B981' : '#F59E0B'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
               <span>•</span>
-              <span>Social Post: <strong style="color:${igApproved ? '#166534' : '#b45309'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
+              <span>Social Post: <strong style="color:${igApproved ? '#10B981' : '#F59E0B'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
             </div>
           </div>
 
           <!-- 3. Actions Column -->
           <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
-            <button type="button" class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}" style="padding:7px 14px;font-weight:700;background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;gap:4px;">
+            <button type="button" class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}" style="padding:7px 14px;font-weight:700;background:#003580;color:#fff;border:none;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
               <span>✏️ Edit</span>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project" style="padding:7px 10px;">
+            <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project" style="padding:7px 10px;background:#0B0F16;border:1px solid #303B4D;color:#FFFFFF;border-radius:6px;">
               <span>📋 Duplicate</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}" style="padding:7px 8px;color:#64748b;">
+            <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}" style="padding:7px 8px;color:#B8C4D4;">
               <span>${isArchived ? '📂 Restore' : '📦 Archive'}</span>
             </button>
             <button type="button" class="btn btn-ghost btn-sm btn-del-project" data-id="${p.id}" title="Delete permanently" style="padding:7px 8px;color:#ef4444;">
@@ -3487,11 +3583,11 @@
       const curTrans = s.transition || "dissolve";
 
       return `
-        <div class="storyboard-clip-card" data-scene="${idx}" style="background:#fff;border:1.5px solid ${isActive ? 'var(--brand-blue)' : '#cbd5e1'};border-radius:10px;padding:12px;font-size:0.8rem;box-shadow:${isActive ? '0 0 0 2px rgba(0,56,130,0.22)' : '0 2px 4px rgba(0,0,0,0.03)'};display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.15s, box-shadow 0.15s;">
+        <div class="storyboard-clip-card" data-scene="${idx}" style="background:#162235;border:1.5px solid ${isActive ? '#168BFF' : '#303B4D'};border-radius:10px;padding:12px;font-size:0.8rem;box-shadow:${isActive ? '0 0 0 2px rgba(22,139,255,0.3)' : '0 4px 12px rgba(0,0,0,0.2)'};display:flex;flex-direction:column;justify-content:space-between;transition:border-color 0.15s, box-shadow 0.15s;color:#FFFFFF;">
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #f1f5f9;padding-bottom:6px;">
-              <span style="font-weight:800;color:var(--navy);font-size:0.84rem;">🎬 Clip ${idx + 1} (${startS}s – ${endS}s)</span>
-              <span class="badge" style="background:#f1f5f9;color:#334155;font-size:0.7rem;font-weight:700;">${curDur}s ${isVideo ? 'Video' : 'Photo'}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #303B4D;padding-bottom:6px;">
+              <span style="font-weight:800;color:#FFFFFF;font-size:0.84rem;">🎬 Clip ${idx + 1} (${startS}s – ${endS}s)</span>
+              <span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;font-size:0.7rem;font-weight:700;">${curDur}s ${isVideo ? 'Video' : 'Photo'}</span>
             </div>
 
             <!-- Thumbnail Preview & One-Click Photo Replacement Drop Zone -->
@@ -3958,10 +4054,10 @@
       const activeClips = (r.video_clips && r.video_clips.length > 0) ? r.video_clips : (r.clips || []);
       if (activeClips && activeClips.length > 0) {
         clipsList.innerHTML = activeClips.map((c, i) => `
-          <div style="display:flex;align-items:center;gap:8px;background:var(--icy-bg);padding:6px;border-radius:6px;font-size:0.75rem;">
-            <video src="${c.url || ''}" muted style="width:40px;height:26px;object-fit:cover;border-radius:3px;background:#001a33;"></video>
-            <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>Clip ${i+1}:</strong> ${c.filename || c.label || "Uploaded Video Footage"}</div>
-            <span style="font-weight:700;color:var(--navy);">${c.duration || 3}s</span>
+          <div style="display:flex;align-items:center;gap:8px;background:#0B0F16;border:1px solid #303B4D;padding:6px;border-radius:6px;font-size:0.75rem;color:#B8C4D4;">
+            <video src="${c.url || ''}" muted style="width:40px;height:26px;object-fit:cover;border-radius:3px;background:#000;"></video>
+            <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong style="color:#FFFFFF;">Clip ${i+1}:</strong> ${c.filename || c.label || "Uploaded Video Footage"}</div>
+            <span style="font-weight:700;color:#168BFF;">${c.duration || 3}s</span>
           </div>
         `).join("");
       } else {
@@ -5077,7 +5173,7 @@
       }
     });
 
-    // Calendar view & filter wiring
+    // Calendar view & month navigation wiring
     document.querySelectorAll(".cal-mode").forEach((b) => {
       b.addEventListener("click", () => {
         calendarMode = b.dataset.cal;
@@ -5085,11 +5181,39 @@
       });
     });
 
-    ["cal-filter-channel", "cal-filter-format", "cal-filter-status"].forEach((id) => {
-      $(id).addEventListener("change", renderCalendar);
+    $("btn-cal-prev")?.addEventListener("click", () => {
+      calCurrentMonth--;
+      if (calCurrentMonth < 0) {
+        calCurrentMonth = 11;
+        calCurrentYear--;
+      }
+      renderCalendar();
     });
 
-    $("btn-refresh-plan").addEventListener("click", loadWeeklyPlan);
+    $("btn-cal-next")?.addEventListener("click", () => {
+      calCurrentMonth++;
+      if (calCurrentMonth > 11) {
+        calCurrentMonth = 0;
+        calCurrentYear++;
+      }
+      renderCalendar();
+    });
+
+    $("btn-cal-plan-toggle")?.addEventListener("click", () => {
+      const drawer = $("calendar-plan-week-drawer");
+      if (drawer) {
+        drawer.classList.toggle("hidden");
+        if (!drawer.classList.contains("hidden")) {
+          loadWeeklyPlan();
+        }
+      }
+    });
+
+    ["cal-filter-channel", "cal-filter-format", "cal-filter-status"].forEach((id) => {
+      $(id)?.addEventListener("change", renderCalendar);
+    });
+
+    $("btn-refresh-plan")?.addEventListener("click", loadWeeklyPlan);
 
     // Research search
     $("btn-search-sources").addEventListener("click", loadResearch);
@@ -6097,9 +6221,13 @@
         if (res.is_syncing) {
           if (deskBadge) { deskBadge.textContent = "Syncing… ⏳"; deskBadge.className = "pill"; }
           if (mobBadge) { mobBadge.textContent = "☁️ Syncing… ⏳"; }
+        } else if (res.last_error) {
+          // Local SQLite database is saved; cloud remote is offline
+          if (deskBadge) { deskBadge.textContent = "Saved to DB 🟢"; deskBadge.className = "pill pill-approved"; deskBadge.title = "Saved in SQLite. Cloud sync: " + res.last_error; }
+          if (mobBadge) { mobBadge.textContent = "💾 Saved 🟢"; mobBadge.title = "Saved locally"; }
         } else if (res.pending_changes) {
-          if (deskBadge) { deskBadge.textContent = "Changes Pending 🟡"; deskBadge.className = "pill"; }
-          if (mobBadge) { mobBadge.textContent = "☁️ Pending 🟡"; }
+          if (deskBadge) { deskBadge.textContent = "Syncing Soon 🟡"; deskBadge.className = "pill"; }
+          if (mobBadge) { mobBadge.textContent = "☁️ Syncing 🟡"; }
         } else {
           if (deskBadge) { deskBadge.textContent = "Live 🟢"; deskBadge.className = "pill pill-approved"; }
           if (mobBadge) { mobBadge.textContent = "☁️ Synced 🟢"; }

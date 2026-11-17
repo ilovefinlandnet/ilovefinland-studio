@@ -158,23 +158,23 @@
       <main class="workspace">
         <!-- VIEW 0: UNIFIED ARTICLES & POSTS WORKSPACE -->
         <section id="view-projects" class="view active">
-          <div class="card" style="padding:24px;">
-            <div class="panel-header" style="flex-wrap:wrap;gap:12px;margin-bottom:20px;border-bottom:1px solid #e2e8f0;padding-bottom:16px;">
+          <div class="card" style="padding:24px;background:#162235;border:1px solid #303B4D;border-radius:14px;">
+            <div class="panel-header" style="flex-wrap:wrap;gap:12px;margin-bottom:20px;border-bottom:1px solid #303B4D;padding-bottom:16px;">
               <div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                  <span class="badge" style="background:#003882;color:#fff;font-weight:700;">Main Editorial Desk</span>
-                  <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">WordPress + Social Post</span>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <span class="badge" style="background:#003580;color:#fff;font-weight:700;padding:3px 8px;border-radius:4px;">Main Editorial Desk</span>
+                  <span class="badge" style="background:rgba(16,185,129,0.18);color:#10B981;border:1px solid rgba(16,185,129,0.4);padding:3px 8px;border-radius:4px;">WordPress + Social Post</span>
                 </div>
-                <h1 class="panel-title" style="font-size:1.6rem;margin-top:2px;">Articles &amp; Posts</h1>
-                <p class="hint-text" style="font-size:0.88rem;margin-top:4px;">
+                <h1 class="panel-title" style="font-size:1.6rem;color:#FFFFFF;margin:0;font-weight:800;letter-spacing:-0.02em;">Articles &amp; Posts</h1>
+                <p class="hint-text" style="font-size:0.88rem;color:#B8C4D4;margin-top:4px;">
                   Create, manage, edit, review, and accurately publish articles to ilovefinland.net with independent Instagram &amp; Facebook social graphics.
                 </p>
               </div>
               <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
-                <button type="button" id="btn-goto-ideas" class="btn btn-ghost btn-sm" style="border:1px solid #cbd5e1;display:inline-flex;align-items:center;gap:6px;">
+                <button type="button" id="btn-goto-ideas" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;background:#0B0F16;border:1px solid #303B4D;color:#B8C4D4;">
                   💡 <span>Article Suggestions (<span id="btn-ideas-count-inline">17</span>)</span>
                 </button>
-                <button type="button" id="btn-create-new-article-post" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;gap:8px;padding:10px 20px;font-weight:700;box-shadow:0 2px 8px rgba(0,56,130,0.2);">
+                <button type="button" id="btn-create-new-article-post" class="btn btn-primary" style="background:#003580;color:#fff;display:inline-flex;align-items:center;gap:8px;padding:10px 20px;font-weight:700;border:none;border-radius:8px;">
                   <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                   <span>+ Create New Article &amp; Post</span>
                 </button>
@@ -184,22 +184,22 @@
             <!-- Subheading & Search/Filters Toolbar -->
             <div style="margin-bottom:16px;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-                <h3 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin:0;">My Articles &amp; Posts</h3>
-                <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--muted);">
+                <h2 style="font-size:1.25rem;font-weight:800;color:#FFFFFF;margin:0;">My Articles &amp; Posts</h2>
+                <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#B8C4D4;">
                   <span id="articles-count-total">0</span> total projects
                 </div>
               </div>
 
-              <!-- Search & Filters Row -->
-              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#f8fafc;padding:12px;border:1px solid #e2e8f0;border-radius:10px;">
+              <!-- Search & Filters Row (Compact Dark Toolbar) -->
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#0B0F16;padding:12px 14px;border:1px solid #303B4D;border-radius:10px;">
                 <!-- Search Input -->
-                <div style="position:relative;flex:1;min-width:240px;">
-                  <input type="text" id="articles-search-input" placeholder="Search by headline, keyword, or ID..." style="width:100%;box-sizing:border-box;padding:8px 12px 8px 34px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;background:#fff;" />
-                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.9rem;pointer-events:none;">🔍</span>
+                <div style="position:relative;flex:1;min-width:220px;">
+                  <input type="text" id="articles-search-input" placeholder="Search by headline, keyword, or ID..." style="width:100%;box-sizing:border-box;padding:8px 12px 8px 34px;border:1px solid #303B4D;border-radius:8px;font-size:0.875rem;background:#162235;color:#FFFFFF;" />
+                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#B8C4D4;font-size:0.9rem;pointer-events:none;">🔍</span>
                 </div>
 
                 <!-- Section Filter -->
-                <select id="articles-section-filter" class="form-select-sm" style="min-width:140px;background:#fff;">
+                <select id="articles-section-filter" class="form-select-sm" style="min-width:140px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
                   <option value="all">All Sections</option>
                   <option value="News">News</option>
                   <option value="Finland Guide">Finland Guide</option>
@@ -211,7 +211,7 @@
                 </select>
 
                 <!-- Status Filter -->
-                <select id="articles-status-filter" class="form-select-sm" style="min-width:140px;background:#fff;">
+                <select id="articles-status-filter" class="form-select-sm" style="min-width:140px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
                   <option value="all">All Statuses</option>
                   <option value="draft">Draft</option>
                   <option value="in_review">Ready for Review</option>
@@ -220,21 +220,21 @@
                 </select>
 
                 <!-- Language Filter -->
-                <select id="articles-lang-filter" class="form-select-sm" style="min-width:120px;background:#fff;">
+                <select id="articles-lang-filter" class="form-select-sm" style="min-width:120px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
                   <option value="all">All Languages</option>
                   <option value="English">English</option>
                   <option value="Finnish">Finnish</option>
                 </select>
 
                 <!-- Sort Filter -->
-                <select id="articles-sort-filter" class="form-select-sm" style="min-width:130px;background:#fff;">
+                <select id="articles-sort-filter" class="form-select-sm" style="min-width:130px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;padding:8px 12px;">
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
                   <option value="title_asc">Title (A–Z)</option>
                 </select>
 
                 <!-- Refresh Button -->
-                <button type="button" id="btn-refresh-articles-posts" class="btn btn-ghost btn-sm" title="Refresh projects list">🔄</button>
+                <button type="button" id="btn-refresh-articles-posts" class="btn btn-ghost btn-sm" title="Refresh projects list" style="color:#B8C4D4;border:1px solid #303B4D;background:#162235;padding:8px 12px;border-radius:8px;">🔄</button>
               </div>
             </div>
 
@@ -247,19 +247,19 @@
 
         <!-- VIEW: ARTICLE SUGGESTIONS (EDITORIAL DISCOVERY) -->
         <section id="view-ideas" class="view hidden">
-          <div class="card" style="padding:22px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+          <div class="card" style="padding:22px;border-radius:14px;background:#162235;border:1px solid #303B4D;">
             <!-- 1. Header -->
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #303B4D;">
               <div>
-                <h1 style="font-size:1.55rem;font-weight:700;color:var(--navy);margin:0 0 3px;letter-spacing:-0.02em;">Article Suggestions</h1>
-                <p style="font-size:0.88rem;color:#64748b;margin:0;">Discover the latest stories worth covering.</p>
-                <div id="ideas-scan-status-line" style="font-size:0.78rem;color:#64748b;margin-top:6px;display:flex;align-items:center;gap:6px;">
+                <h1 style="font-size:1.6rem;font-weight:800;color:#FFFFFF;margin:0 0 4px;letter-spacing:-0.02em;">Article Suggestions</h1>
+                <p style="font-size:0.88rem;color:#B8C4D4;margin:0;">Discover the latest stories worth covering.</p>
+                <div id="ideas-scan-status-line" style="font-size:0.78rem;color:#B8C4D4;margin-top:6px;display:flex;align-items:center;gap:6px;">
                   <span id="ideas-scan-indicator-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;"></span>
                   <span id="ideas-last-scan-text">Checking scanner status…</span>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:10px;">
-                <button type="button" id="btn-scan-now" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:8px;font-size:0.86rem;box-shadow:0 1px 2px rgba(0,0,0,0.06);">
+                <button type="button" id="btn-scan-now" class="btn btn-primary" style="background:#003580;color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;font-size:0.86rem;border:none;">
                   <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                   <span>Scan for New Stories</span>
                 </button>
@@ -267,18 +267,18 @@
             </div>
 
             <!-- 2. Compact Filters Toolbar -->
-            <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div style="background:#0B0F16;padding:12px 14px;border-radius:10px;border:1px solid #303B4D;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
               <!-- Left: Scope Pills & Section Dropdown & Status Filter -->
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                 <!-- Scope Segmented Control: All | Finland | International -->
-                <div style="display:inline-flex;background:#e2e8f0;padding:3px;border-radius:8px;gap:2px;">
-                  <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;">All</button>
-                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;">Finland</button>
-                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;">International</button>
+                <div style="display:inline-flex;background:#162235;border:1px solid #303B4D;padding:3px;border-radius:8px;gap:2px;">
+                  <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:#003580;color:#fff;">All</button>
+                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">Finland</button>
+                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international" style="padding:5px 12px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">International</button>
                 </div>
 
                 <!-- Website Section Dropdown -->
-                <select id="ideas-section-select" style="padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--navy);background:#fff;cursor:pointer;min-width:140px;">
+                <select id="ideas-section-select" style="padding:7px 12px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;font-weight:600;color:#FFFFFF;background:#162235;cursor:pointer;min-width:140px;">
                   <option value="all">All Sections</option>
                   <option value="News">News</option>
                   <option value="Finland Guide">Finland Guide</option>
@@ -289,7 +289,7 @@
                 </select>
 
                 <!-- Status View Selector (Active Suggestions | Saved Stories | Dismissed) -->
-                <select id="ideas-status-select" style="padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--navy);background:#fff;cursor:pointer;">
+                <select id="ideas-status-select" style="padding:7px 12px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;font-weight:600;color:#FFFFFF;background:#162235;cursor:pointer;">
                   <option value="suggested">Active Suggestions</option>
                   <option value="saved">Saved Stories</option>
                   <option value="dismissed">Dismissed (Archive)</option>
@@ -300,8 +300,8 @@
               <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;min-width:280px;">
                 <!-- Sort Dropdown: Latest | Most Relevant -->
                 <div style="display:flex;align-items:center;gap:6px;">
-                  <label for="ideas-sort-select" style="font-size:0.78rem;font-weight:600;color:#64748b;">Sort:</label>
-                  <select id="ideas-sort-select" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;font-weight:500;color:var(--navy);background:#fff;cursor:pointer;">
+                  <label for="ideas-sort-select" style="font-size:0.78rem;font-weight:600;color:#B8C4D4;">Sort:</label>
+                  <select id="ideas-sort-select" style="padding:7px 10px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;font-weight:600;color:#FFFFFF;background:#162235;cursor:pointer;">
                     <option value="relevant">Most Relevant</option>
                     <option value="latest">Latest</option>
                   </select>
@@ -309,16 +309,16 @@
 
                 <!-- Search Input -->
                 <div style="position:relative;flex:1;max-width:320px;min-width:180px;">
-                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." style="width:100%;box-sizing:border-box;padding:7px 12px 7px 32px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.82rem;background:#fff;" />
-                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem;pointer-events:none;">🔍</span>
+                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." style="width:100%;box-sizing:border-box;padding:7px 12px 7px 32px;border:1px solid #303B4D;border-radius:8px;font-size:0.82rem;background:#162235;color:#FFFFFF;" />
+                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#B8C4D4;font-size:0.85rem;pointer-events:none;">🔍</span>
                 </div>
               </div>
             </div>
 
             <!-- Suggestions Summary Line -->
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:0 2px;">
-              <span id="ideas-summary-count" style="font-size:0.82rem;font-weight:600;color:#64748b;">Showing suggestions…</span>
-              <span id="ideas-active-filters-pill" style="font-size:0.78rem;color:#94a3b8;"></span>
+              <span id="ideas-summary-count" style="font-size:0.82rem;font-weight:600;color:#B8C4D4;">Showing suggestions…</span>
+              <span id="ideas-active-filters-pill" style="font-size:0.78rem;color:#B8C4D4;"></span>
             </div>
 
             <!-- Suggestions Cards Grid (2 balanced columns on desktop, 1 on mobile) -->
@@ -328,7 +328,7 @@
 
             <!-- Load More / Pagination -->
             <div id="ideas-pagination-wrap" style="text-align:center;margin-top:22px;display:none;">
-              <button type="button" id="btn-load-more-ideas" class="btn btn-secondary" style="padding:9px 24px;font-size:0.85rem;font-weight:600;border-radius:8px;cursor:pointer;">
+              <button type="button" id="btn-load-more-ideas" class="btn btn-secondary" style="padding:9px 24px;font-size:0.85rem;font-weight:600;border-radius:8px;cursor:pointer;background:#0B0F16;border:1px solid #303B4D;color:#FFFFFF;">
                 Load More Suggestions
               </button>
             </div>
@@ -341,24 +341,24 @@
         <section id="view-reel-studio" class="view hidden">
           <!-- SCREEN 1: REEL PROJECT HUB -->
           <div id="reel-hub-screen">
-            <div class="card">
+            <div class="card" style="background:#162235;border:1px solid #303B4D;border-radius:14px;padding:24px;">
               <div class="reel-hub-header">
                 <div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                    <span class="badge" style="background:#003882;color:#fff;font-weight:700;">CapCut-Style Editor</span>
-                    <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">9:16 Vertical Video</span>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span class="badge" style="background:#003580;color:#fff;font-weight:700;padding:3px 8px;border-radius:4px;">CapCut-Style Editor</span>
+                    <span class="badge" style="background:rgba(16,185,129,0.18);color:#10B981;border:1px solid rgba(16,185,129,0.4);padding:3px 8px;border-radius:4px;">9:16 Vertical Video</span>
                   </div>
-                  <h1 class="panel-title" style="font-size:1.6rem;margin-top:2px;">ILoveFinland Reel Studio</h1>
-                  <p class="hint-text" style="font-size:0.88rem;margin-top:4px;">
+                  <h1 class="panel-title" style="font-size:1.6rem;color:#FFFFFF;margin:0;font-weight:800;letter-spacing:-0.02em;">ILoveFinland Reel Studio</h1>
+                  <p class="hint-text" style="font-size:0.88rem;color:#B8C4D4;margin-top:4px;">
                     Create professional Instagram &amp; Facebook Reels directly inside Studio. Multi-track timeline, freeform text, audio sync, and 1080×1920 MP4 export.
                   </p>
                 </div>
                 <div class="reel-hub-actions">
-                  <button type="button" id="btn-reel-hub-new" onclick="window.ReelStudio &amp;&amp; window.ReelStudio.createNewProject()" class="btn btn-primary" style="background:var(--brand-blue);color:#fff;display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-weight:700;">
+                  <button type="button" id="btn-reel-hub-new" onclick="window.ReelStudio &amp;&amp; window.ReelStudio.createNewProject()" class="btn btn-primary" style="background:#003580;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px;padding:10px 18px;font-weight:700;border-radius:8px;">
                     <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>✨ Start New Blank Reel</span>
                   </button>
-                  <button type="button" id="btn-reel-hub-import" onclick="window.ReelStudio &amp;&amp; window.ReelStudio.showArticleImportModal()" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;">
+                  <button type="button" id="btn-reel-hub-import" onclick="window.ReelStudio &amp;&amp; window.ReelStudio.showArticleImportModal()" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#0B0F16;border:1px solid #303B4D;color:#FFFFFF;border-radius:8px;">
                     <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                     <span>📰 Import from Article Draft</span>
                   </button>
@@ -366,11 +366,11 @@
               </div>
 
               <!-- Projects Grid Section -->
-              <div style="border-top:1px solid #e2e8f0;padding-top:18px;">
+              <div style="border-top:1px solid #303B4D;padding-top:18px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                  <h3 style="font-size:1rem;font-weight:700;color:var(--navy);">Your Reel Projects</h3>
+                  <h3 style="font-size:1rem;font-weight:700;color:#FFFFFF;">Your Reel Projects</h3>
                   <div style="display:flex;gap:8px;">
-                    <button type="button" class="btn btn-sm btn-ghost" id="btn-refresh-reel-projects" onclick="window.ReelStudio &amp;&amp; window.ReelStudio.loadHubProjects()">🔄 Refresh</button>
+                    <button type="button" class="btn btn-sm btn-ghost" id="btn-refresh-reel-projects" onclick="window.ReelStudio &amp;&amp; window.ReelStudio.loadHubProjects()" style="color:#B8C4D4;">🔄 Refresh</button>
                   </div>
                 </div>
                 <div id="reel-projects-cards-container" class="reel-cards-grid">
@@ -431,6 +431,10 @@
                       <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                       <span>Media</span>
                     </button>
+                    <button type="button" class="reel-tab-btn" data-drawer="transitions" id="tab-drawer-transitions">
+                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                      <span>Transitions</span>
+                    </button>
                     <button type="button" class="reel-tab-btn" data-drawer="text" id="tab-drawer-text">
                       <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
                       <span>Text</span>
@@ -464,10 +468,66 @@
                         <input type="file" id="reel-media-file-input" multiple accept="image/*,video/*" style="display:none;" />
                       </div>
 
+                      <!-- Upload progress bar container -->
+                      <div id="reel-upload-progress-box" class="hidden" style="margin-bottom:12px;padding:10px;background:#0B0F16;border:1px solid #303B4D;border-radius:8px;">
+                        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;">
+                          <span id="reel-upload-status-text">Uploading media...</span>
+                          <span id="reel-upload-status-pct">0%</span>
+                        </div>
+                        <div style="width:100%;height:6px;background:#162235;border-radius:3px;overflow:hidden;">
+                          <div id="reel-upload-progress-bar" style="width:0%;height:100%;background:#168BFF;transition:width 0.2s ease;"></div>
+                        </div>
+                      </div>
+
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                         <span class="reel-drawer-section-title" style="margin:0;">Media Pool (<span id="reel-media-pool-count">0</span>/10)</span>
                         <button type="button" id="btn-add-all-media-timeline" class="btn btn-sm btn-ghost" style="font-size:0.72rem;color:var(--reel-accent-blue);">+ Add All to Timeline</button>
                       </div>
+                      <div id="reel-media-pool-items" class="reel-media-pool-grid">
+                        <!-- Populated dynamically -->
+                      </div>
+                    </div>
+
+                    <!-- TRANSITIONS DRAWER -->
+                    <div id="drawer-panel-transitions" class="drawer-panel hidden">
+                      <div class="reel-drawer-section-title">Video Transitions</div>
+                      <p style="font-size:0.75rem;color:var(--reel-text-muted);margin-bottom:12px;">
+                        Set transitions between clips. Transitions render live on canvas and in the exported 1080×1920 MP4.
+                      </p>
+
+                      <div class="reel-prop-group">
+                        <label class="reel-prop-label">Transition Duration: <span id="val-transition-dur">0.5s</span></label>
+                        <input type="range" id="slider-transition-dur" min="0.2" max="2.0" step="0.1" value="0.5" style="width:100%;" />
+                      </div>
+
+                      <div class="reel-drawer-section-title">Choose Transition Style</div>
+                      <div class="reel-transitions-grid" style="display:grid;grid-template-columns:repeat(2, 1fr);gap:8px;margin-bottom:14px;">
+                        <button type="button" class="btn btn-outline btn-transition-card active" data-trans="dissolve" style="text-align:left;padding:8px 10px;border-color:var(--brand-blue);background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">✨ Cross Dissolve</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Smooth blend (Default)</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-transition-card" data-trans="fade" style="text-align:left;padding:8px 10px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">🌑 Fade from Black</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Cinematic dip</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-transition-card" data-trans="slide_left" style="text-align:left;padding:8px 10px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">⬅️ Slide Left</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Horizontal push</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-transition-card" data-trans="zoom" style="text-align:left;padding:8px 10px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">🔍 Zoom In</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Dynamic zoom punch</div>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-transition-card" data-trans="none" style="text-align:left;padding:8px 10px;border-color:#303B4D;background:#162235;color:#fff;">
+                          <div style="font-weight:700;font-size:0.8rem;">✂️ Cut (None)</div>
+                          <div style="font-size:0.68rem;color:var(--reel-text-muted);">Direct cut</div>
+                        </button>
+                      </div>
+
+                      <button type="button" id="btn-apply-transition-all" class="btn btn-primary" style="width:100%;background:#003580;color:#fff;font-weight:700;padding:8px;">
+                        ⚡ Apply Transition to All Clips
+                      </button>
+                    </div>
                       <div id="reel-media-pool-items" class="reel-media-pool-grid">
                         <!-- Populated dynamically -->
                       </div>
@@ -528,10 +588,20 @@
                       </div>
                       <div class="reel-prop-group" style="margin-top:14px;border-top:1px solid var(--reel-panel-border);padding-top:12px;">
                         <label class="reel-prop-label">Voiceover Track (Optional)</label>
-                        <button type="button" id="btn-upload-voiceover" class="btn btn-sm btn-outline" style="width:100%;color:#fff;border-color:#475569;">
-                          🎙️ Upload Voiceover Audio (MP3/WAV)
-                        </button>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                          <button type="button" id="btn-upload-voiceover" class="btn btn-sm btn-outline" style="width:100%;color:#fff;border-color:#475569;">
+                            📁 Upload Voiceover Audio (MP3/WAV)
+                          </button>
+                          <button type="button" id="btn-record-voiceover" class="btn btn-sm btn-outline" style="width:100%;color:#fff;border-color:#475569;">
+                            🎙️ Record Voiceover with Microphone
+                          </button>
+                        </div>
                         <input type="file" id="reel-voice-file-input" accept="audio/*" style="display:none;" />
+                        <div id="voice-recording-status" class="hidden" style="margin-top:8px;padding:8px 10px;background:#0B0F16;border:1px solid #ef4444;border-radius:6px;font-size:0.75rem;color:#ef4444;display:flex;align-items:center;gap:8px;">
+                          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;animation:pulse 1s infinite;"></span>
+                          <span>Recording: <strong id="voice-rec-timer">00:00</strong></span>
+                          <button type="button" id="btn-stop-voiceover" class="btn btn-sm" style="margin-left:auto;padding:3px 8px;font-size:0.7rem;background:#ef4444;color:#fff;border:none;border-radius:4px;">Stop &amp; Use</button>
+                        </div>
                       </div>
                     </div>
 
@@ -697,6 +767,7 @@
                     <div class="reel-track-header-item">🔤 Text</div>
                     <div class="reel-track-header-item">💙 Logo</div>
                     <div class="reel-track-header-item">🎵 Music</div>
+                    <div class="reel-track-header-item">🎙️ Voice</div>
                   </div>
 
                   <!-- Timeline Tracks Viewport -->
@@ -714,6 +785,7 @@
                     <div id="lane-text" class="reel-track-lane"></div>
                     <div id="lane-logo" class="reel-track-lane"></div>
                     <div id="lane-audio" class="reel-track-lane"></div>
+                    <div id="lane-voiceover" class="reel-track-lane"></div>
                   </div>
                 </div>
               </div>
@@ -856,16 +928,16 @@
             <div class="checks-header">
               <div class="checks-title-group">
                 <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <strong style="color:var(--navy);">Pre-Approval Editorial &amp; Safe Area Checks</strong>
+                <strong style="color:#FFFFFF;">Pre-Approval Editorial &amp; Safe Area Checks</strong>
               </div>
-              <span class="hint-text">Only approved versions can be scheduled or published</span>
+              <span class="hint-text" style="color:#B8C4D4;">Only approved versions can be scheduled or published</span>
             </div>
             <div id="pre-approval-checks-list" class="checks-grid"></div>
           </div>
 
           <!-- Section Navigation / Workspaces Bar -->
           <div class="mobile-tabs" role="tablist">
-            <span class="jump-nav-label" style="font-size:0.75rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:4px;padding:0 4px;">
+            <span class="jump-nav-label" style="font-size:0.75rem;font-weight:700;color:#FFFFFF;display:flex;align-items:center;gap:4px;padding:0 4px;">
               <span>Workspace:</span>
             </span>
             <button class="tab-btn active" data-tab="article" id="tab-btn-article">
@@ -876,7 +948,7 @@
               <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
               <span>📱 2. Social Post (1080×1350)</span>
             </button>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-open-reel-from-review" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--brand-blue);border-color:#cbd5e1;background:#fff;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-reel-from-review" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#168BFF;border:1px solid #303B4D;background:#0B0F16;border-radius:6px;padding:6px 12px;">
               <span>🎬 Open in Reel Editor</span>
             </button>
           </div>
@@ -1296,40 +1368,10 @@
                 </div>
               </div>
 
-              <!-- Format Explanation & Guidance Banner -->
-              <div class="social-guidance-card">
-                <div class="social-guide-grid">
-                  <div class="social-guide-item active-guide" id="guide-item-feed">
-                    <div class="guide-tag-row">
-                      <span class="badge" style="background:#E1306C;color:#fff;font-size:0.68rem;">Instagram Feed</span>
-                      <span class="badge" style="background:#1877F2;color:#fff;font-size:0.68rem;">Facebook Mobile</span>
-                      <strong class="guide-dim">1080 × 1350 px (4:5)</strong>
-                    </div>
-                    <p class="guide-desc"><strong>Main Publishing File:</strong> Upload the 4:5 vertical card to BOTH Instagram and Facebook. It gives maximum mobile screen coverage and highest reader engagement.</p>
-                  </div>
-
-                  <div class="social-guide-item" id="guide-item-fb">
-                    <div class="guide-tag-row">
-                      <span class="badge" style="background:#1877F2;color:#fff;font-size:0.68rem;">Facebook Desktop</span>
-                      <strong class="guide-dim">1200 × 630 px (1.91:1)</strong>
-                    </div>
-                    <p class="guide-desc"><strong>Facebook Landscape:</strong> Optimized wide format for Facebook Page desktop feeds and link shares.</p>
-                  </div>
-
-                  <div class="social-guide-item" id="guide-item-crop">
-                    <div class="guide-tag-row">
-                      <span class="badge" style="background:#833AB4;color:#fff;font-size:0.68rem;">IG Profile Grid</span>
-                      <strong class="guide-dim">3:4 Safety Check</strong>
-                    </div>
-                    <p class="guide-desc"><strong>Profile Grid Preview:</strong> Visual verification that your headline and category badge remain safely visible inside your Instagram account profile grid.</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Format Switch Tabs (Mobile & Tablet) -->
+              <!-- Format Switch Tabs -->
               <div class="social-format-tabs" role="tablist">
                 <button type="button" class="social-tab-btn active" data-format-target="format-view-feed">
-                  📱 IG &amp; FB Feed (1080×1350)
+                  📱 Instagram &amp; Facebook (1080×1350)
                 </button>
                 <button type="button" class="social-tab-btn" data-format-target="format-view-fb">
                   📘 Facebook Landscape (1200×630)
@@ -1343,15 +1385,15 @@
                 <!-- Visual Cards Preview Container -->
                 <div class="static-canvas-card">
                   <!-- No Image Uploaded Warning Banner -->
-                  <div id="static-no-image-banner" class="alert-box hidden" style="background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;padding:12px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                  <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:12px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:10px;">
                       <span style="font-size:1.4rem;">⚠️</span>
                       <div>
-                        <strong style="color:#9f1239;font-size:0.92rem;">No Image Uploaded for Social Post</strong>
-                        <p style="margin:2px 0 0;font-size:0.78rem;color:#b91c1c;">An authentic photo is required before exporting or publishing to Instagram and Facebook.</p>
+                        <strong style="color:#FFFFFF;font-size:0.92rem;">No Image Uploaded for Social Post</strong>
+                        <p style="margin:2px 0 0;font-size:0.78rem;color:#FCA5A5;">An authentic photo is required before exporting or publishing to Instagram and Facebook.</p>
                       </div>
                     </div>
-                    <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#e11d48;border:none;">
+                    <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#003580;border:1px solid #168BFF;color:#fff;">
                       📸 Upload Photo
                     </button>
                   </div>
@@ -1426,17 +1468,17 @@
                 <!-- Direct Editor Controls & Caption -->
                 <div class="static-controls-col">
                   <!-- Photo Upload / Replacement Box -->
-                  <div class="wp-field-wrap" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:14px;">
+                  <div class="wp-field-wrap" style="background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:12px;margin-bottom:14px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <label class="label-sm" style="margin:0;">📸 Social Post Background Photo</label>
+                      <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
                       <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
                     </div>
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                      <button type="button" id="btn-upload-post-photo" class="btn btn-outline btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border-color:#cbd5e1;font-weight:700;">
+                      <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#003580;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
                         <span>📷 Upload / Replace Photo</span>
                       </button>
                       <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                      <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;">No photo selected</span>
+                      <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
                     </div>
                   </div>
 
@@ -1468,8 +1510,8 @@
                     <div class="wp-field-label-row">
                       <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
                       <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:0.72rem;color:#64748b;font-weight:600;">Color:</span>
-                        <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;">
+                        <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                        <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#0B0F16;border:1px solid #303B4D;color:#FFFFFF;">
                           <option value="white" selected>⚪ White (Default)</option>
                           <option value="blue">🔵 Electric Blue</option>
                         </select>
@@ -1477,9 +1519,9 @@
                     </div>
                     <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
                     <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:2px 8px;background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;font-weight:700;cursor:pointer;">+ DISCOVER MORE AT ILOVEFINLAND.NET</button>
-                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:2px 8px;background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;font-weight:700;cursor:pointer;">+ READ FULL GUIDE</button>
-                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:2px 8px;background:#fff;border:1px solid #e2e8f0;color:#64748b;font-weight:600;cursor:pointer;">✕ Clear (Hide)</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#0B0F16;border:1px solid #303B4D;color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE AT ILOVEFINLAND.NET</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#0B0F16;border:1px solid #303B4D;color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#0B0F16;border:1px solid #303B4D;color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear (Hide)</button>
                     </div>
                   </div>
 
@@ -1533,29 +1575,29 @@
             </div>
 
             <!-- Target Selection Checkboxes -->
-            <div class="revision-target-selector" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+            <div class="revision-target-selector" style="background:#0B0F16;border:1px solid #303B4D;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+              <div style="font-size:0.8rem;font-weight:700;color:#FFFFFF;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
                 <span>🎯 What should be revised? (Tick all that apply):</span>
-                <span class="hint-text" style="font-size:0.75rem;font-weight:400;">Selected components will be updated in the new version</span>
+                <span class="hint-text" style="font-size:0.75rem;font-weight:400;color:#B8C4D4;">Selected components will be updated in the new version</span>
               </div>
               <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #3b82f6;border-radius:6px;background:#eff6ff;cursor:pointer;font-size:0.83rem;font-weight:600;color:#1e40af;user-select:none;">
-                  <input type="checkbox" id="rev-target-article" checked style="cursor:pointer;width:16px;height:16px;accent-color:#2563eb;" />
+                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #168BFF;border-radius:6px;background:#162235;cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;">
+                  <input type="checkbox" id="rev-target-article" checked style="cursor:pointer;width:16px;height:16px;accent-color:#168BFF;" />
                   <span>📝 Article (Text, Photo &amp; Category)</span>
                 </label>
-                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #3b82f6;border-radius:6px;background:#eff6ff;cursor:pointer;font-size:0.83rem;font-weight:600;color:#1e40af;user-select:none;">
-                  <input type="checkbox" id="rev-target-post" checked style="cursor:pointer;width:16px;height:16px;accent-color:#2563eb;" />
+                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #168BFF;border-radius:6px;background:#162235;cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;">
+                  <input type="checkbox" id="rev-target-post" checked style="cursor:pointer;width:16px;height:16px;accent-color:#168BFF;" />
                   <span>📱 Static Post (Social Graphic &amp; Caption)</span>
                 </label>
-                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:0.83rem;font-weight:600;color:#475569;user-select:none;">
-                  <input type="checkbox" id="rev-target-reel" style="cursor:pointer;width:16px;height:16px;accent-color:#2563eb;" />
+                <label class="rev-target-pill" style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1.5px solid #303B4D;border-radius:6px;background:#0B0F16;cursor:pointer;font-size:0.83rem;font-weight:600;color:#B8C4D4;user-select:none;">
+                  <input type="checkbox" id="rev-target-reel" style="cursor:pointer;width:16px;height:16px;accent-color:#168BFF;" />
                   <span>🎬 Reel (Video Script &amp; Voiceover)</span>
                 </label>
               </div>
             </div>
 
             <div class="quick-chips">
-              <span class="label-sm">Quick editorial feedback:</span>
+              <span class="label-sm" style="color:#B8C4D4;">Quick editorial feedback:</span>
               <button class="btn btn-ghost btn-sm chip-btn" data-comment="move the logo lower and make the second line bigger">
                 “move the logo lower and make the second line bigger”
               </button>
@@ -1597,27 +1639,27 @@
               ></textarea>
 
               <!-- Clip / Video Upload Zone for Reel Feedback -->
-              <div class="feedback-clip-upload-zone" style="margin-top:10px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:12px;">
+              <div class="feedback-clip-upload-zone" style="margin-top:10px;background:#0B0F16;border:1px dashed #303B4D;border-radius:8px;padding:12px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <label style="font-weight:600;font-size:0.83rem;color:var(--navy);display:flex;align-items:center;gap:6px;margin:0;">
+                  <label style="font-weight:600;font-size:0.83rem;color:#FFFFFF;display:flex;align-items:center;gap:6px;margin:0;">
                     <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
                     <span>🎬 Attach Custom Video Clip or Photo for Reel Revision</span>
                   </label>
-                  <span class="hint-text" style="font-size:0.72rem;">MP4, MOV, WebM, JPG (Max 100 MB)</span>
+                  <span class="hint-text" style="font-size:0.72rem;color:#B8C4D4;">MP4, MOV, WebM, JPG (Max 100 MB)</span>
                 </div>
 
                 <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                  <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" class="form-control" style="font-size:12px;padding:6px;flex:1;" />
+                  <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" class="form-control" style="font-size:12px;padding:6px;flex:1;background:#162235;border:1px solid #303B4D;color:#FFFFFF;" />
                   <button type="button" id="btn-feedback-clear-clip" class="btn btn-ghost btn-sm hidden" style="color:#ef4444;white-space:nowrap;">✕ Remove Clip</button>
                 </div>
 
                 <!-- Live Preview Pill when Clip is Chosen -->
-                <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:12px;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #e2e8f0;">
+                <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:12px;background:#162235;padding:8px 12px;border-radius:6px;border:1px solid #303B4D;">
                   <video id="feedback-clip-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;background:#000;" muted playsinline></video>
                   <img id="feedback-img-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;display:none;" />
                   <div style="flex:1;min-width:0;">
-                    <div id="feedback-clip-name" style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--navy);">video_clip.mp4</div>
-                    <div id="feedback-clip-meta" style="font-size:0.72rem;color:#64748b;">Ready to attach • Will be stitched into new Reel revision</div>
+                    <div id="feedback-clip-name" style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFFFFF;">video_clip.mp4</div>
+                    <div id="feedback-clip-meta" style="font-size:0.72rem;color:#B8C4D4;">Ready to attach • Will be stitched into new Reel revision</div>
                   </div>
                   <span class="badge badge-success" style="font-size:0.7rem;white-space:nowrap;">Attached</span>
                 </div>
@@ -1692,17 +1734,17 @@
                     <span class="hint-inline">JPG, PNG, WebP (Used for WordPress &amp; 1080×1350 card)</span>
                   </label>
                   <input type="file" id="article-photo-input" accept="image/jpeg,image/png,image/webp,image/heic,image/*" class="file-input-hidden" />
-                  <div id="article-photo-dropzone" style="cursor:pointer;padding:16px;text-align:center;border-radius:8px;background:#fff;border:1px solid #e2e8f0;transition:border-color 0.15s;">
+                  <div id="article-photo-dropzone" style="cursor:pointer;padding:16px;text-align:center;border-radius:8px;background:#0B0F16;border:1px dashed #303B4D;transition:border-color 0.15s;">
                     <div id="article-photo-empty-state">
-                      <svg class="lucide" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--brand-blue);margin-bottom:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                      <div style="font-size:0.9rem;font-weight:700;color:var(--navy);">Click or Drag to Upload Featured Photo</div>
-                      <div class="hint-text" style="font-size:0.78rem;">Upload an authentic photo from your phone or computer.</div>
+                      <svg class="lucide" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#168BFF;margin-bottom:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                      <div style="font-size:0.9rem;font-weight:700;color:#FFFFFF;">Click or Drag to Upload Featured Photo</div>
+                      <div class="hint-text" style="font-size:0.78rem;color:#B8C4D4;">Upload an authentic photo from your phone or computer.</div>
                     </div>
                     <div id="article-photo-preview-state" class="hidden" style="display:flex;align-items:center;gap:14px;text-align:left;">
-                      <img id="article-photo-img" src="" alt="Featured preview" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;" />
+                      <img id="article-photo-img" src="" alt="Featured preview" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #303B4D;" />
                       <div style="flex:1;">
-                        <div id="article-photo-name" style="font-weight:700;font-size:0.88rem;color:#0f172a;"></div>
-                        <div class="hint-text" style="font-size:0.75rem;">Set as primary WordPress image &amp; social graphic.</div>
+                        <div id="article-photo-name" style="font-weight:700;font-size:0.88rem;color:#FFFFFF;"></div>
+                        <div class="hint-text" style="font-size:0.75rem;color:#B8C4D4;">Set as primary WordPress image &amp; social graphic.</div>
                       </div>
                       <button type="button" id="btn-remove-article-photo" class="btn btn-ghost btn-xs" style="color:#b91c1c;border:1px solid #fecaca;background:#fef2f2;">Remove</button>
                     </div>
@@ -1742,8 +1784,54 @@
 
         <!-- VIEW 3: CALENDAR & PLAN MY WEEK -->
         <section id="view-calendar" class="view hidden">
-          <!-- "Plan My Week" AI suggestions section -->
-          <div class="card plan-week-card">
+          <div class="calendar-hero-card">
+            <div class="calendar-hero-top">
+              <div>
+                <h1 class="calendar-main-title">Publishing Calendar</h1>
+                <p class="calendar-sub-title">Plan, schedule and track your content</p>
+              </div>
+              <div class="calendar-header-icon" title="Publishing Calendar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </div>
+            </div>
+
+            <div class="calendar-nav-row">
+              <div class="cal-month-nav">
+                <button id="btn-cal-prev" class="cal-nav-btn" aria-label="Previous month">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span id="cal-month-display" class="cal-month-title">November 2026</span>
+                <button id="btn-cal-next" class="cal-nav-btn" aria-label="Next month">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+              <div class="cal-tz-pill">Europe/Helsinki</div>
+            </div>
+
+            <div class="calendar-actions-bar">
+              <div class="cal-segmented-capsule">
+                <button type="button" class="cal-mode-capsule cal-mode active" data-cal="month">Month</button>
+                <button type="button" class="cal-mode-capsule cal-mode" data-cal="week">Week</button>
+                <button type="button" class="cal-mode-capsule cal-mode" data-cal="agenda">Agenda</button>
+              </div>
+              <button type="button" id="btn-cal-plan-toggle" class="cal-plan-week-btn">Plan My Week</button>
+            </div>
+
+            <!-- Calendar Container -->
+            <div id="calendar-body"></div>
+
+            <!-- Bottom Legend Matching Screenshot -->
+            <div class="cal-legend-bar">
+              <div class="cal-legend-item"><span class="legend-dot" style="background:#003580;"></span> Article</div>
+              <div class="cal-legend-item"><span class="legend-dot" style="background:#168BFF;"></span> Social Post</div>
+              <div class="cal-legend-item"><span class="legend-dot" style="background:#8B5CF6;"></span> Reel</div>
+              <div class="cal-legend-item"><span class="legend-dot" style="background:#10B981;"></span> Published</div>
+            </div>
+            <div class="cal-footnote-text">Illustrative calendar layout — example items only.</div>
+          </div>
+
+          <!-- Collapsible "Plan My Week" AI suggestions section -->
+          <div id="calendar-plan-week-drawer" class="card plan-week-card hidden" style="margin-top:20px;">
             <div class="panel-header">
               <div>
                 <span class="badge badge-origin">AI Editorial Planning</span>
@@ -1756,66 +1844,6 @@
               </button>
             </div>
             <div id="plan-ideas-grid" class="plan-grid"></div>
-          </div>
-
-          <!-- Calendar Controls & Schedule Grid -->
-          <div class="card">
-            <div class="panel-header">
-              <div>
-                <h2 class="panel-title">Editorial Calendar (Europe/Helsinki)</h2>
-                <p class="hint-text">Production deadlines shown separately from Article &amp; Reel publishing times. Missed times and same-channel collisions (&le;90 min) are flagged.</p>
-              </div>
-              <div class="cal-nav-group">
-                <div class="cal-arrows">
-                  <button id="btn-cal-prev" class="btn btn-ghost btn-sm" aria-label="Previous">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                  </button>
-                  <button id="btn-cal-today" class="btn btn-ghost btn-sm">Today</button>
-                  <button id="btn-cal-next" class="btn btn-ghost btn-sm" aria-label="Next">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                  </button>
-                </div>
-                <div class="cal-views">
-                  <button class="btn btn-ghost btn-sm cal-mode active" data-cal="week">Week</button>
-                  <button class="btn btn-ghost btn-sm cal-mode" data-cal="agenda">Agenda</button>
-                  <button class="btn btn-ghost btn-sm cal-mode" data-cal="month">Month</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Calendar Filters -->
-            <div class="cal-filters-bar">
-              <div class="filter-item">
-                <label class="label-sm" for="cal-filter-channel">Channel</label>
-                <select id="cal-filter-channel">
-                  <option value="all">All Channels</option>
-                  <option value="WordPress">WordPress (Articles)</option>
-                  <option value="Instagram & TikTok">Instagram &amp; TikTok (Reels)</option>
-                  <option value="Production Queue">Production Queue</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <label class="label-sm" for="cal-filter-format">Format</label>
-                <select id="cal-filter-format">
-                  <option value="all">All Formats</option>
-                  <option value="Article">Article</option>
-                  <option value="Reel">Reel</option>
-                  <option value="Deadline">Deadline</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <label class="label-sm" for="cal-filter-status">Status</label>
-                <select id="cal-filter-status">
-                  <option value="all">All Statuses</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="overlap">Channel Overlaps (Alert)</option>
-                  <option value="missed">Missed Slots</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Calendar Container -->
-            <div id="calendar-body"></div>
           </div>
         </section>
 
@@ -1856,24 +1884,24 @@
             </div>
 
             <!-- Inline Add Custom Official Source Form -->
-            <div id="add-source-form-wrap" class="hidden" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin:12px 0;">
-              <strong style="color:var(--navy);font-size:0.88rem;display:block;margin-bottom:8px;">Add Verified Official Finnish Source</strong>
+            <div id="add-source-form-wrap" class="hidden" style="background:#0B0F16;border:1px solid #303B4D;border-radius:8px;padding:12px;margin:12px 0;">
+              <strong style="color:#FFFFFF;font-size:0.88rem;display:block;margin-bottom:8px;">Add Verified Official Finnish Source</strong>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-                <input type="text" id="new-src-outlet" placeholder="Authority / Outlet (e.g. Traficom, FMI, Vero)" style="font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;" />
-                <input type="text" id="new-src-category" placeholder="Category (e.g. Transport, Tax, Road Safety)" style="font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;" />
+                <input type="text" id="new-src-outlet" placeholder="Authority / Outlet (e.g. Traficom, FMI, Vero)" class="wp-input" style="font-size:0.8rem;padding:6px 10px;" />
+                <input type="text" id="new-src-category" placeholder="Category (e.g. Transport, Tax, Road Safety)" class="wp-input" style="font-size:0.8rem;padding:6px 10px;" />
               </div>
-              <input type="text" id="new-src-title" placeholder="Source Headline (e.g. Finnish Studded Tyre Regulations)" style="width:100%;font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;" />
-              <input type="text" id="new-src-url" placeholder="Official Source URL (https://...)" style="width:100%;font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;" />
-              <textarea id="new-src-claim" placeholder="Verified Claim / Rule Summary" style="width:100%;height:52px;font-size:0.8rem;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;resize:vertical;"></textarea>
+              <input type="text" id="new-src-title" placeholder="Source Headline (e.g. Finnish Studded Tyre Regulations)" class="wp-input" style="width:100%;font-size:0.8rem;padding:6px 10px;margin-bottom:8px;" />
+              <input type="text" id="new-src-url" placeholder="Official Source URL (https://...)" class="wp-input" style="width:100%;font-size:0.8rem;padding:6px 10px;margin-bottom:8px;" />
+              <textarea id="new-src-claim" placeholder="Verified Claim / Rule Summary" class="wp-textarea" style="width:100%;height:52px;font-size:0.8rem;padding:6px 10px;margin-bottom:8px;resize:vertical;"></textarea>
               <div style="display:flex;gap:8px;justify-content:flex-end;">
-                <button type="button" id="btn-cancel-add-source" class="btn btn-ghost btn-sm">Cancel</button>
-                <button type="button" id="btn-save-new-source" class="btn btn-primary btn-sm">Save Official Source</button>
+                <button type="button" id="btn-cancel-add-source" class="btn btn-ghost btn-sm" style="color:#B8C4D4;">Cancel</button>
+                <button type="button" id="btn-save-new-source" class="btn btn-primary btn-sm" style="background:#003580;border:none;color:#fff;">Save Official Source</button>
               </div>
             </div>
 
             <div id="sources-results-list" class="sources-grid"></div>
 
-            <h3 style="margin-top:24px;color:var(--navy);">Trend &amp; Competitor Signals</h3>
+            <h3 style="margin-top:24px;color:#FFFFFF;">Trend &amp; Competitor Signals</h3>
             <div id="research-list" class="research-grid"></div>
           </div>
         </section>
@@ -1922,8 +1950,8 @@
             <div class="perf-layout">
               <div>
                 <div class="table-header-row">
-                  <h3 style="margin:0;font-size:1.02rem;color:var(--navy);">Recent Posts at Comparable 48h Age</h3>
-                  <span class="hint-text" style="font-size:0.78rem;">Sorted by 48h Engagement</span>
+                  <h3 style="margin:0;font-size:1.02rem;color:#FFFFFF;">Recent Posts at Comparable 48h Age</h3>
+                  <span class="hint-text" style="font-size:0.78rem;color:#B8C4D4;">Sorted by 48h Engagement</span>
                 </div>
                 <div class="table-wrap" style="margin-top:8px;">
                   <table id="perf-table" class="perf-table">
@@ -1937,16 +1965,16 @@
                 </div>
               </div>
               <div>
-                <h3 style="margin-top:0;font-size:1.02rem;color:var(--navy);">Search Demand (FI vs EN)</h3>
+                <h3 style="margin-top:0;font-size:1.02rem;color:#FFFFFF;">Search Demand (FI vs EN)</h3>
                 <div id="search-demand-box" class="search-demand-grid"></div>
 
-                <div class="csv-import-box">
+                <div class="csv-import-box" style="background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:14px;margin-top:14px;">
                   <div class="csv-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                    <h3 style="margin:0;font-size:0.95rem;color:var(--navy);">Manual / CSV Data Import</h3>
-                    <button type="button" id="btn-demo-csv" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:0.75rem;">Load Demo Row</button>
+                    <h3 style="margin:0;font-size:0.95rem;color:#FFFFFF;">Manual / CSV Data Import</h3>
+                    <button type="button" id="btn-demo-csv" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:0.75rem;background:#162235;border:1px solid #303B4D;color:#FFFFFF;">Load Demo Row</button>
                   </div>
-                  <textarea id="csv-import-input" rows="3" placeholder="title,format,age_hours,watch_time_sec,shares,saves,follows,site_clicks&#10;Finland Winter Tire Rules,Instagram Carousel (4:5),48,,108,235,41,88"></textarea>
-                  <button id="btn-import-csv" class="btn btn-primary btn-sm" style="margin-top:8px;">Import CSV Rows</button>
+                  <textarea id="csv-import-input" class="wp-textarea" rows="3" placeholder="title,format,age_hours,watch_time_sec,shares,saves,follows,site_clicks&#10;Finland Winter Tire Rules,Instagram Carousel (4:5),48,,108,235,41,88"></textarea>
+                  <button id="btn-import-csv" class="btn btn-primary btn-sm" style="margin-top:8px;background:#003580;border:none;">Import CSV Rows</button>
                 </div>
               </div>
             </div>
@@ -1957,23 +1985,23 @@
 
         <!-- VIEW 7: CONNECTIONS & SECRETS -->
         <section id="view-connections" class="view hidden">
-          <div class="card">
-            <div class="panel-header">
+          <div class="card" style="background:#162235;border:1px solid #303B4D;border-radius:14px;padding:24px;">
+            <div class="panel-header" style="border-bottom:1px solid #303B4D;padding-bottom:14px;margin-bottom:16px;">
               <div>
-                <h2 class="panel-title">Service Connections, AI Secrets &amp; Handover</h2>
-                <p class="hint-text">All credentials stay server-side in host environment secrets. Keys never enter the browser. Target domain: <code>studio.ilovefinland.net</code>.</p>
+                <h2 class="panel-title" style="color:#FFFFFF;">Service Connections, AI Secrets &amp; Handover</h2>
+                <p class="hint-text" style="color:#B8C4D4;">All credentials stay server-side in host environment secrets. Keys never enter the browser. Target domain: <code>studio.ilovefinland.net</code>.</p>
               </div>
               <span class="pill pill-approved">Safe Sandbox Mode</span>
             </div>
             
             <!-- SECURE OPENAI CONNECTION PROBE & SPENDING PROTECTION -->
-            <div id="openai-spending-guard" class="probe-guard-panel" style="background:var(--sky-soft);border:1px solid #BAE6FD;border-radius:10px;padding:16px;margin-bottom:20px;">
+            <div id="openai-spending-guard" class="probe-guard-panel" style="background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:16px;margin-bottom:20px;">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                   <span style="font-size:1.2rem;">🔒</span>
                   <div>
-                    <h3 style="margin:0;font-size:1rem;color:var(--navy);">Secure OpenAI Connection Probe (Strict Spending Protection)</h3>
-                    <p class="hint-text" style="margin:2px 0 0;">Zero automatic calls on load • Single-request spending limiter • Lowest-cost model: <code>gpt-4o-mini</code></p>
+                    <h3 style="margin:0;font-size:1rem;color:#FFFFFF;">Secure OpenAI Connection Probe (Strict Spending Protection)</h3>
+                    <p class="hint-text" style="margin:2px 0 0;color:#B8C4D4;">Zero automatic calls on load • Single-request spending limiter • Lowest-cost model: <code>gpt-4o-mini</code></p>
                   </div>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
@@ -1983,57 +2011,57 @@
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px;background:#fff;padding:12px;border-radius:8px;border:1px solid #E2E8F0;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px;background:#162235;padding:12px;border-radius:8px;border:1px solid #303B4D;">
                 <div>
-                  <div class="label-sm">Active Test Model</div>
-                  <strong style="color:var(--navy);font-size:0.92rem;">gpt-4o-mini</strong>
-                  <div class="hint-text">Lowest-cost supported text model</div>
+                  <div class="label-sm" style="color:#B8C4D4;">Active Test Model</div>
+                  <strong style="color:#FFFFFF;font-size:0.92rem;">gpt-4o-mini</strong>
+                  <div class="hint-text" style="color:#B8C4D4;">Lowest-cost supported text model</div>
                 </div>
                 <div>
-                  <div class="label-sm">Verified OpenAI Pricing</div>
-                  <div style="font-size:0.85rem;color:var(--navy);">$0.150 / 1M in • $0.600 / 1M out</div>
-                  <div class="hint-text">$0.00000015 / input token</div>
+                  <div class="label-sm" style="color:#B8C4D4;">Verified OpenAI Pricing</div>
+                  <div style="font-size:0.85rem;color:#FFFFFF;">$0.150 / 1M in • $0.600 / 1M out</div>
+                  <div class="hint-text" style="color:#B8C4D4;">$0.00000015 / input token</div>
                 </div>
                 <div>
-                  <div class="label-sm">Estimated Test Cost</div>
-                  <div style="font-size:0.85rem;font-weight:700;color:var(--green);">&lt; $0.00001 USD</div>
-                  <div class="hint-text">1 probe: ~14 in + 2 out tokens</div>
+                  <div class="label-sm" style="color:#B8C4D4;">Estimated Test Cost</div>
+                  <div style="font-size:0.85rem;font-weight:700;color:#10B981;">&lt; $0.00001 USD</div>
+                  <div class="hint-text" style="color:#B8C4D4;">1 probe: ~14 in + 2 out tokens</div>
                 </div>
                 <div>
-                  <div class="label-sm">Single-Use Limit</div>
-                  <div id="probe-limit-desc" style="font-size:0.85rem;color:var(--navy);">Max 1 request allowed</div>
-                  <div class="hint-text">Requires manual admin reset</div>
+                  <div class="label-sm" style="color:#B8C4D4;">Single-Use Limit</div>
+                  <div id="probe-limit-desc" style="font-size:0.85rem;color:#FFFFFF;">Max 1 request allowed</div>
+                  <div class="hint-text" style="color:#B8C4D4;">Requires manual admin reset</div>
                 </div>
               </div>
 
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                <button type="button" id="btn-run-mock-probe" class="btn btn-secondary btn-sm">
+                <button type="button" id="btn-run-mock-probe" class="btn btn-secondary btn-sm" style="background:#162235;border:1px solid #303B4D;color:#FFFFFF;">
                   <span>🧪 Test with Mocked Response (Zero Cost)</span>
                 </button>
                 <button type="button" id="btn-run-live-probe" class="btn btn-primary btn-sm" disabled style="opacity:0.6;cursor:not-allowed;" title="Requires explicit administrator approval to activate">
                   <span>⚡ Test OpenAI Connection (Paid — Locked)</span>
                 </button>
-                <button type="button" id="btn-toggle-kill-switch" class="btn btn-ghost btn-sm" style="color:#DC2626;border-color:#FCA5A5;">
+                <button type="button" id="btn-toggle-kill-switch" class="btn btn-ghost btn-sm" style="color:#EF4444;border-color:rgba(239,68,68,0.4);">
                   <span>🛑 Emergency Kill Switch</span>
                 </button>
-                <button type="button" id="btn-reset-probe-quota" class="btn btn-ghost btn-sm">
+                <button type="button" id="btn-reset-probe-quota" class="btn btn-ghost btn-sm" style="color:#B8C4D4;">
                   <span>🔄 Reset Single-Use Quota</span>
                 </button>
               </div>
 
-              <div id="probe-result-box" class="conn-test-box hidden" style="margin-top:12px;background:#fff;"></div>
+              <div id="probe-result-box" class="conn-test-box hidden" style="margin-top:12px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;"></div>
             </div>
 
             <div id="connections-catalog" class="connections-catalog-grid"></div>
 
             <!-- DATABASE BACKUPS & DISASTER RECOVERY -->
-            <div class="card" style="margin-top:20px;border-top:1px solid #E2E8F0;padding-top:18px;">
+            <div class="card" style="margin-top:20px;border-top:1px solid #303B4D;padding-top:18px;background:#0B0F16;border:1px solid #303B4D;border-radius:10px;padding:16px;">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
                 <div>
-                  <h3 style="margin:0;font-size:1rem;color:var(--navy);">Studio Database Backups &amp; Disaster Recovery</h3>
-                  <p class="hint-text" style="margin:2px 0 0;">Zero-downtime hot snapshots via SQLite Online Backup API. Preserves all stories, revisions, assets, and comments.</p>
+                  <h3 style="margin:0;font-size:1rem;color:#FFFFFF;">Studio Database Backups &amp; Disaster Recovery</h3>
+                  <p class="hint-text" style="margin:2px 0 0;color:#B8C4D4;">Zero-downtime hot snapshots via SQLite Online Backup API. Preserves all stories, revisions, assets, and comments.</p>
                 </div>
-                <button type="button" id="btn-trigger-backup" class="btn btn-primary btn-sm" style="background:#003882;color:#fff;">
+                <button type="button" id="btn-trigger-backup" class="btn btn-primary btn-sm" style="background:#003580;color:#fff;border:none;">
                   <span>💾 Create Backup Snapshot Now</span>
                 </button>
               </div>
@@ -2318,19 +2346,19 @@
   <!-- Quick Edit Project Modal -->
   <div id="modal-edit-proj" class="modal-overlay hidden">
     <div class="modal-card">
-      <div class="modal-header">
-        <h3 style="margin:0;font-size:1.05rem;color:var(--navy);">Quick Edit Project</h3>
-        <button type="button" id="btn-close-edit-modal" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:1rem;line-height:1;">✕</button>
+      <div class="modal-header" style="border-bottom:1px solid #303B4D;padding-bottom:12px;margin-bottom:14px;">
+        <h3 style="margin:0;font-size:1.05rem;color:#FFFFFF;font-weight:700;">Quick Edit Project</h3>
+        <button type="button" id="btn-close-edit-modal" class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:1rem;line-height:1;color:#B8C4D4;">✕</button>
       </div>
       <form id="form-edit-proj" class="stack-form" style="margin-top:12px;">
         <input type="hidden" id="edit-proj-id" />
         <div>
-          <label class="label-sm" for="edit-proj-title">Project / Story Title</label>
-          <input type="text" id="edit-proj-title" required />
+          <label class="label-sm" for="edit-proj-title" style="color:#B8C4D4;">Project / Story Title</label>
+          <input type="text" id="edit-proj-title" class="wp-input" required />
         </div>
         <div>
-          <label class="label-sm" for="edit-proj-scope">Format / Scope</label>
-          <select id="edit-proj-scope">
+          <label class="label-sm" for="edit-proj-scope" style="color:#B8C4D4;">Format / Scope</label>
+          <select id="edit-proj-scope" class="wp-input">
             <option value="Both">Both (Article + Reel)</option>
             <option value="Both (Article + Instagram Post)">Both (Article + Instagram Post)</option>
             <option value="Instagram Post">Instagram Post / Carousel (4:5)</option>
@@ -2339,12 +2367,12 @@
           </select>
         </div>
         <div>
-          <label class="label-sm" for="edit-proj-deadline">Production Deadline (Europe/Helsinki)</label>
-          <input type="datetime-local" id="edit-proj-deadline" />
+          <label class="label-sm" for="edit-proj-deadline" style="color:#B8C4D4;">Production Deadline (Europe/Helsinki)</label>
+          <input type="datetime-local" id="edit-proj-deadline" class="wp-input" />
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-          <button type="button" id="btn-cancel-edit-proj" class="btn btn-ghost btn-sm">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+          <button type="button" id="btn-cancel-edit-proj" class="btn btn-ghost btn-sm" style="color:#B8C4D4;">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" style="background:#003580;color:#fff;border:none;font-weight:700;">Save Changes</button>
         </div>
       </form>
     </div>
@@ -2352,47 +2380,47 @@
 
   <!-- MODAL: STORY SUGGESTION DETAILS -->
   <div id="modal-story-details" class="modal-overlay hidden" style="z-index:9999;">
-    <div class="modal-card" style="max-width:680px;width:95%;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:12px;">
+    <div class="modal-card" style="max-width:680px;width:95%;max-height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:12px;background:#162235;border:1px solid #303B4D;">
       <!-- Modal Header -->
-      <div style="padding:18px 24px;background:#0A192F;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="padding:18px 24px;background:#0A192F;border-bottom:1px solid #303B4D;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="flex:1;padding-right:12px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
             <span id="modal-story-section-badge" class="badge" style="background:#003580;color:#fff;font-weight:600;font-size:0.75rem;">News</span>
             <span id="modal-story-region-badge" class="badge" style="background:rgba(255,255,255,0.15);color:#fff;font-size:0.75rem;">Finland</span>
             <span id="modal-story-relevance-badge" class="badge" style="display:none;background:#22c55e;color:#fff;font-size:0.75rem;font-weight:700;">High Priority</span>
           </div>
-          <h2 id="modal-story-title" style="font-size:1.25rem;font-weight:700;line-height:1.35;margin:0;color:#fff;">Story Headline</h2>
+          <h2 id="modal-story-title" style="font-size:1.25rem;font-weight:700;line-height:1.35;margin:0;color:#FFFFFF;">Story Headline</h2>
         </div>
-        <button type="button" id="btn-close-story-details" class="btn btn-ghost btn-sm" style="color:#94a3b8;font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer;">✕</button>
+        <button type="button" id="btn-close-story-details" class="btn btn-ghost btn-sm" style="color:#B8C4D4;font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer;">✕</button>
       </div>
 
       <!-- Modal Body -->
-      <div style="padding:22px 24px;overflow-y:auto;flex:1;">
+      <div style="padding:22px 24px;overflow-y:auto;flex:1;background:#162235;">
         <!-- Summary / Angle -->
         <div style="margin-bottom:18px;">
-          <h4 style="font-size:0.78rem;text-transform:uppercase;color:#64748b;letter-spacing:0.04em;margin:0 0 6px;">Story Summary &amp; Angle</h4>
-          <p id="modal-story-angle" style="font-size:0.92rem;line-height:1.5;color:#1e293b;margin:0;background:#f8fafc;padding:12px 14px;border-radius:8px;border:1px solid #e2e8f0;"></p>
+          <h4 style="font-size:0.78rem;text-transform:uppercase;color:#B8C4D4;letter-spacing:0.04em;margin:0 0 6px;">Story Summary &amp; Angle</h4>
+          <p id="modal-story-angle" style="font-size:0.92rem;line-height:1.5;color:#FFFFFF;margin:0;background:#0B0F16;padding:12px 14px;border-radius:8px;border:1px solid #303B4D;"></p>
         </div>
 
         <!-- Why It Matters / Editorial Context -->
         <div id="modal-story-context-wrap" style="margin-bottom:18px;">
-          <h4 style="font-size:0.78rem;text-transform:uppercase;color:#64748b;letter-spacing:0.04em;margin:0 0 6px;">Why This Story Matters</h4>
-          <p id="modal-story-context" style="font-size:0.88rem;line-height:1.45;color:#475569;margin:0;"></p>
+          <h4 style="font-size:0.78rem;text-transform:uppercase;color:#B8C4D4;letter-spacing:0.04em;margin:0 0 6px;">Why This Story Matters</h4>
+          <p id="modal-story-context" style="font-size:0.88rem;line-height:1.45;color:#B8C4D4;margin:0;"></p>
         </div>
 
         <!-- Source & Verification Details -->
-        <div style="background:#f1f5f9;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#0B0F16;border:1px solid #303B4D;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
-            <span style="font-size:0.74rem;color:#64748b;display:block;">Original Source</span>
-            <strong id="modal-story-outlet" style="font-size:0.88rem;color:var(--navy);">Yle Uutiset</strong>
+            <span style="font-size:0.74rem;color:#B8C4D4;display:block;">Original Source</span>
+            <strong id="modal-story-outlet" style="font-size:0.88rem;color:#FFFFFF;">Yle Uutiset</strong>
           </div>
           <div>
-            <span style="font-size:0.74rem;color:#64748b;display:block;">Publication Date</span>
-            <strong id="modal-story-date" style="font-size:0.88rem;color:var(--navy);">Today</strong>
+            <span style="font-size:0.74rem;color:#B8C4D4;display:block;">Publication Date</span>
+            <strong id="modal-story-date" style="font-size:0.88rem;color:#FFFFFF;">Today</strong>
           </div>
           <div style="grid-column:1/-1;">
-            <span style="font-size:0.74rem;color:#64748b;display:block;margin-bottom:2px;">Original Source Link</span>
-            <a id="modal-story-url-link" href="#" target="_blank" rel="noopener noreferrer" style="font-size:0.85rem;color:#003580;font-weight:600;word-break:break-all;display:inline-flex;align-items:center;gap:4px;">
+            <span style="font-size:0.74rem;color:#B8C4D4;display:block;margin-bottom:2px;">Original Source Link</span>
+            <a id="modal-story-url-link" href="#" target="_blank" rel="noopener noreferrer" style="font-size:0.85rem;color:#168BFF;font-weight:600;word-break:break-all;display:inline-flex;align-items:center;gap:4px;">
               <span id="modal-story-url-text">Visit Original Source</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </a>
@@ -2401,9 +2429,9 @@
       </div>
 
       <!-- Modal Footer Actions -->
-      <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="padding:14px 24px;background:#0B0F16;border-top:1px solid #303B4D;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
         <div style="display:flex;gap:8px;">
-          <button type="button" id="btn-modal-story-save" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+          <button type="button" id="btn-modal-story-save" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;background:#162235;border:1px solid #303B4D;color:#FFFFFF;">
             <span id="btn-modal-story-save-icon">🔖</span> <span id="btn-modal-story-save-text">Save Story</span>
           </button>
           <button type="button" id="btn-modal-story-dismiss" class="btn btn-ghost btn-sm" style="color:#ef4444;display:inline-flex;align-items:center;gap:4px;">
@@ -2411,8 +2439,8 @@
           </button>
         </div>
         <div style="display:flex;gap:8px;">
-          <button type="button" id="btn-modal-story-close" class="btn btn-secondary btn-sm">Close</button>
-          <button type="button" id="btn-modal-story-write" class="btn btn-primary btn-sm" style="background:var(--brand-blue);color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;">
+          <button type="button" id="btn-modal-story-close" class="btn btn-secondary btn-sm" style="background:#162235;border:1px solid #303B4D;color:#FFFFFF;">Close</button>
+          <button type="button" id="btn-modal-story-write" class="btn btn-primary btn-sm" style="background:#003580;color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;">
             <span>✍️ Write Article</span>
           </button>
         </div>
@@ -2422,18 +2450,18 @@
 
   <!-- Create New Article & Post Modal -->
   <div id="modal-create-article-post" class="modal-overlay hidden">
-    <div class="modal-card" style="max-width:640px;width:95%;max-height:90vh;overflow-y:auto;padding:24px;">
-      <div class="modal-header" style="border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:16px;">
+    <div class="modal-card" style="max-width:640px;width:95%;max-height:90vh;overflow-y:auto;padding:24px;background:#162235;border:1px solid #303B4D;">
+      <div class="modal-header" style="border-bottom:1px solid #303B4D;padding-bottom:12px;margin-bottom:16px;">
         <div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-            <span class="badge" style="background:#003882;color:#fff;font-size:0.7rem;font-weight:700;">WordPress + Social Post</span>
+            <span class="badge" style="background:#003580;color:#fff;font-size:0.7rem;font-weight:700;padding:3px 8px;border-radius:4px;">WordPress + Social Post</span>
           </div>
-          <h3 style="margin:0;font-size:1.25rem;color:var(--navy);font-weight:700;">+ Create New Article &amp; Post</h3>
-          <p class="hint-text" style="font-size:0.8rem;margin:2px 0 0;">
+          <h3 style="margin:0;font-size:1.25rem;color:#FFFFFF;font-weight:800;">+ Create New Article &amp; Post</h3>
+          <p class="hint-text" style="font-size:0.8rem;margin:4px 0 0;color:#B8C4D4;">
             Prepare an original article and matching social graphics with full field mapping for ilovefinland.net.
           </p>
         </div>
-        <button type="button" id="btn-close-create-modal" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:4px 8px;">✕</button>
+        <button type="button" id="btn-close-create-modal" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:4px 8px;color:#B8C4D4;">✕</button>
       </div>
 
       <form id="form-create-article-post" class="stack-form">
@@ -2546,10 +2574,10 @@
   <div id="modal-save-to-photos" class="modal-overlay hidden">
     <div class="modal-card save-photos-card">
       <div class="modal-header">
-        <h3 style="margin:0;font-size:1.05rem;color:var(--navy);display:flex;align-items:center;gap:6px;">
+        <h3 style="margin:0;font-size:1.05rem;color:#FFFFFF;display:flex;align-items:center;gap:6px;font-weight:700;">
           <span>📲</span> Save Directly to Photos
         </h3>
-        <button type="button" id="btn-close-save-photos" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:4px 8px;">✕</button>
+        <button type="button" id="btn-close-save-photos" class="btn btn-ghost btn-sm" style="font-size:1.2rem;line-height:1;padding:4px 8px;color:#B8C4D4;">✕</button>
       </div>
 
       <div class="save-photos-instructions">

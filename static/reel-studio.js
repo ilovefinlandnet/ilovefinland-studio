@@ -70,6 +70,8 @@
       this.laneText = document.getElementById("lane-text");
       this.laneLogo = document.getElementById("lane-logo");
       this.laneAudio = document.getElementById("lane-audio");
+      this.laneVoiceover = document.getElementById("lane-voiceover");
+      this.voiceoverEl = new Audio();
 
       // Inspector
       this.inspectorHeading = document.getElementById("inspector-heading");
@@ -160,9 +162,124 @@
         const music = this.getAudioTrack("music");
         if (music) { music.fade_in = parseFloat(e.target.value) || 0.0; this.scheduleAutosave(); }
       });
-      document.getElementById("input-music-fadeout")?.addEventListener("input", (e) => {
-        const music = this.getAudioTrack("music");
-        if (music) { music.fade_out = parseFloat(e.target.value) || 0.0; this.scheduleAutosave(); }
+      // Transitions wiring
+      let currentSelectedTransition = "dissolve";
+      document.querySelectorAll(".btn-transition-card").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".btn-transition-card").forEach((b) => {
+            b.classList.remove("active");
+            b.style.borderColor = "#303B4D";
+          });
+          btn.classList.add("active");
+          btn.style.borderColor = "var(--brand-blue)";
+          currentSelectedTransition = btn.dataset.trans;
+
+          // If a media clip is selected in the timeline, apply immediately
+          if (this.selectedTrack === "media" && this.selectedId && this.currentProject) {
+            const clip = this.currentProject.timeline.tracks.media.find(c => c.id === this.selectedId);
+            if (clip) {
+              clip.transition_in = currentSelectedTransition;
+              this.renderTimeline();
+              this.renderInspector();
+              this.render();
+              this.scheduleAutosave();
+            }
+          }
+        });
+      });
+
+      document.getElementById("slider-transition-dur")?.addEventListener("input", (e) => {
+        const dur = parseFloat(e.target.value);
+        const valEl = document.getElementById("val-transition-dur");
+        if (valEl) valEl.textContent = `${dur.toFixed(1)}s`;
+        if (this.selectedTrack === "media" && this.selectedId && this.currentProject) {
+          const clip = this.currentProject.timeline.tracks.media.find(c => c.id === this.selectedId);
+          if (clip) {
+            clip.transition_duration = dur;
+            this.render();
+            this.scheduleAutosave();
+          }
+        }
+      });
+
+      document.getElementById("btn-apply-transition-all")?.addEventListener("click", () => {
+        if (!this.currentProject) return;
+        const dur = parseFloat(document.getElementById("slider-transition-dur")?.value || "0.5");
+        const mediaClips = this.currentProject.timeline.tracks.media || [];
+        mediaClips.forEach((c, idx) => {
+          if (idx > 0) {
+            c.transition_in = currentSelectedTransition;
+            c.transition_duration = dur;
+          }
+        });
+        this.pushState();
+        this.renderTimeline();
+        this.render();
+        alert(`Applied '${currentSelectedTransition}' transition (${dur}s) across all clips!`);
+      });
+
+      // Microphone Voiceover Recording
+      let mediaRecorder = null;
+      let recordedChunks = [];
+      let recTimerInterval = null;
+      let recStartTime = 0;
+
+      document.getElementById("btn-record-voiceover")?.addEventListener("click", async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          recordedChunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+          };
+          mediaRecorder.onstop = async () => {
+            clearInterval(recTimerInterval);
+            stream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(recordedChunks, { type: "audio/webm" });
+            const reader = new FileReader();
+            reader.onload = async () => {
+              try {
+                const res = await (await fetch("/api/reel/upload-media", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    data_base64: reader.result,
+                    filename: `voiceover_${Date.now()}.webm`,
+                    media_type: "audio"
+                  })
+                })).json();
+                if (res.ok && res.url) {
+                  this.setAudioTrack("voiceover", res.url, "Recorded Voiceover");
+                  alert("Voiceover recorded and attached successfully!");
+                }
+              } catch (err) {
+                alert(`Failed to save voiceover: ${err.message}`);
+              }
+            };
+            reader.readAsDataURL(blob);
+            document.getElementById("voice-recording-status")?.classList.add("hidden");
+          };
+
+          mediaRecorder.start();
+          recStartTime = Date.now();
+          const statusBox = document.getElementById("voice-recording-status");
+          const timerEl = document.getElementById("voice-rec-timer");
+          if (statusBox) statusBox.classList.remove("hidden");
+          recTimerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - recStartTime) / 1000);
+            const m = String(Math.floor(elapsed / 60)).padStart(2, "0");
+            const s = String(elapsed % 60).padStart(2, "0");
+            if (timerEl) timerEl.textContent = `${m}:${s}`;
+          }, 500);
+        } catch (err) {
+          alert(`Could not access microphone: ${err.message}`);
+        }
+      });
+
+      document.getElementById("btn-stop-voiceover")?.addEventListener("click", () => {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
       });
 
       // Logo properties
@@ -499,9 +616,25 @@
         return;
       }
 
-      for (const file of files) {
+      const progressBox = document.getElementById("reel-upload-progress-box");
+      const statusText = document.getElementById("reel-upload-status-text");
+      const statusPct = document.getElementById("reel-upload-status-pct");
+      const progressBar = document.getElementById("reel-upload-progress-bar");
+
+      if (progressBox) progressBox.classList.remove("hidden");
+
+      const totalToUpload = Math.min(files.length, 10 - pool.length);
+      let uploadedCount = 0;
+
+      for (let i = 0; i < files.length; i++) {
         if (pool.length >= 10) break;
+        const file = files[i];
         try {
+          if (statusText) statusText.textContent = `Uploading ${i + 1} of ${totalToUpload}: ${file.name}...`;
+          const pct = Math.round(((i) / totalToUpload) * 100);
+          if (statusPct) statusPct.textContent = `${pct}%`;
+          if (progressBar) progressBar.style.width = `${pct}%`;
+
           const isImg = file.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|gif)$/i.test(file.name);
           const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -528,11 +661,18 @@
               type: isImg ? "image" : "video",
               duration: isImg ? 3.5 : (res.duration || 5.0),
             });
+            uploadedCount++;
           }
         } catch (err) {
           alert(`Failed to upload ${file.name}: ${err.message}`);
         }
       }
+
+      if (statusPct) statusPct.textContent = "100%";
+      if (progressBar) progressBar.style.width = "100%";
+      setTimeout(() => {
+        if (progressBox) progressBox.classList.add("hidden");
+      }, 900);
 
       this.currentProject.timeline.media_pool = pool;
       this.renderMediaPoolUI();
@@ -554,8 +694,11 @@
       if (countEl) countEl.textContent = pool.length;
 
       container.innerHTML = pool.map((m, idx) => `
-        <div class="reel-media-pool-card" data-idx="${idx}">
-          <img src="${m.url}" alt="${escapeHtml(m.filename)}" onerror="this.src='/assets/sample-clips/tesla-clean-bg.jpg'" />
+        <div class="reel-media-pool-card" data-idx="${idx}" draggable="true" data-id="${m.id}" title="Drag clip to timeline or click '+ Add to Reel'">
+          ${m.type === 'video'
+            ? `<video src="${m.url}#t=0.5" muted preload="metadata" style="width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>`
+            : `<img src="${m.url}" alt="${escapeHtml(m.filename)}" onerror="this.src='/assets/sample-clips/tesla-clean-bg.jpg'" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" />`
+          }
           <div class="reel-pool-card-hover">
             <button type="button" class="btn btn-sm btn-primary btn-add-pool-clip" data-idx="${idx}" style="font-size:0.7rem;padding:4px 8px;">
               + Add to Reel
@@ -564,11 +707,43 @@
               ✕ Remove
             </button>
           </div>
-          <span style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.7);color:#fff;font-size:0.65rem;padding:2px 4px;border-radius:3px;">
+          <span style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.65rem;padding:2px 5px;border-radius:3px;">
             ${m.type === 'video' ? '🎬 Video' : '📷 Photo'}
           </span>
         </div>
       `).join("");
+
+      // Drag and drop from media pool
+      container.querySelectorAll(".reel-media-pool-card").forEach((card) => {
+        card.addEventListener("dragstart", (e) => {
+          const idx = parseInt(card.dataset.idx, 10);
+          e.dataTransfer.setData("application/json", JSON.stringify({ action: "add_clip", index: idx }));
+        });
+      });
+
+      // Timeline drop targets
+      const mediaLane = document.getElementById("lane-media");
+      const tracksViewport = document.getElementById("reel-tracks-viewport");
+      [mediaLane, tracksViewport].forEach((target) => {
+        if (!target || target._hasReelDrop) return;
+        target._hasReelDrop = true;
+        target.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+        });
+        target.addEventListener("drop", (e) => {
+          e.preventDefault();
+          try {
+            const raw = e.dataTransfer.getData("application/json");
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            if (data && data.action === "add_clip" && typeof data.index === "number") {
+              const item = this.currentProject.timeline.media_pool[data.index];
+              if (item) this.addMediaItemToTimeline(item);
+            }
+          } catch (_) {}
+        });
+      });
 
       container.querySelectorAll(".btn-add-pool-clip").forEach((b) => {
         b.addEventListener("click", (e) => {
@@ -716,6 +891,33 @@
     getAudioTrack(type = "music") {
       if (!this.currentProject) return null;
       return (this.currentProject.timeline.tracks.audio || []).find((a) => a.type === type);
+    }
+
+    setAudioTrack(type = "voiceover", url, filename = "Audio Track") {
+      if (!this.currentProject) return;
+      if (!this.currentProject.timeline.tracks.audio) {
+        this.currentProject.timeline.tracks.audio = [];
+      }
+      let aud = this.getAudioTrack(type);
+      if (!aud) {
+        aud = {
+          id: `aud_${type}_${Date.now().toString(36)}`,
+          type: type,
+          filename: filename,
+          url: url,
+          start_sec: 0,
+          duration: this.getTotalDuration(),
+          volume: 1.0,
+          fade_in: 0.2,
+          fade_out: 0.5
+        };
+        this.currentProject.timeline.tracks.audio.push(aud);
+      } else {
+        aud.url = url;
+        aud.filename = filename;
+      }
+      this.pushState();
+      this.renderTimeline();
     }
 
     onMusicSelectChange(val) {
@@ -973,42 +1175,114 @@
         const rect = this.canvas.getBoundingClientRect();
         const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
         const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : e.clientY);
-        const xPct = ((clientX - rect.left) / rect.width) * 100.0;
-        const yPct = ((clientY - rect.top) / rect.height) * 100.0;
-        return { xPct, yPct };
+        const xCanvas = ((clientX - rect.left) / rect.width) * CANVAS_W;
+        const yCanvas = ((clientY - rect.top) / rect.height) * CANVAS_H;
+        return { xCanvas, yCanvas, xPct: (xCanvas / CANVAS_W) * 100.0, yPct: (yCanvas / CANVAS_H) * 100.0 };
       };
 
       const onPointerDown = (e) => {
         if (!this.currentProject) return;
-        const { xPct, yPct } = getCanvasPoint(e);
+        const { xCanvas, yCanvas, xPct, yPct } = getCanvasPoint(e);
         const t = this.currentTime;
 
-        // 1. Check if clicking Logo
-        const logo = this.currentProject.timeline.tracks.logo;
-        if (logo.visible) {
-          const dist = Math.hypot(xPct - logo.x_pct, yPct - logo.y_pct);
-          if (dist < 8.0) {
-            this.selectedTrack = "logo";
-            this.selectedId = "logo";
-            this.canvasDrag = { origXPct: logo.x_pct, origYPct: logo.y_pct, startXPct: xPct, startYPct: yPct, target: logo };
-            this.renderInspector();
-            this.openMobileInspector();
-            this.render();
-            return;
+        // Check if currently selected text layer was clicked on its handles
+        if (this.selectedTrack === "text" && this.selectedId) {
+          const selTxt = (this.currentProject.timeline.tracks.text || []).find((x) => x.id === this.selectedId);
+          if (selTxt && selTxt._bounds) {
+            const b = selTxt._bounds;
+            const dx = xCanvas - b.cx;
+            const dy = yCanvas - b.cy;
+            const localX = dx * Math.cos(-b.rotRad) - dy * Math.sin(-b.rotRad);
+            const localY = dx * Math.sin(-b.rotRad) + dy * Math.cos(-b.rotRad);
+
+            // 1. Check Rotation Handle Knob
+            const knobX = b.selX + b.selW / 2;
+            const knobY = b.selY - 44;
+            if (Math.hypot(localX - knobX, localY - knobY) < 32) {
+              this.canvasDrag = {
+                mode: "rotate",
+                target: selTxt,
+                origRot: selTxt.rotation_deg || 0,
+                startCanvasX: xCanvas,
+                startCanvasY: yCanvas,
+                centerX: b.cx,
+                centerY: b.cy
+              };
+              return;
+            }
+
+            // 2. Check Corner Resize Handles
+            const corners = [
+              [b.selX, b.selY],
+              [b.selX + b.selW, b.selY],
+              [b.selX, b.selY + b.selH],
+              [b.selX + b.selW, b.selY + b.selH]
+            ];
+            for (let c = 0; c < corners.length; c++) {
+              if (Math.hypot(localX - corners[c][0], localY - corners[c][1]) < 28) {
+                const startDist = Math.hypot(dx, dy);
+                this.canvasDrag = {
+                  mode: "resize",
+                  target: selTxt,
+                  origFontSize: selTxt.font_size || 40,
+                  startDist: Math.max(20, startDist),
+                  centerX: b.cx,
+                  centerY: b.cy
+                };
+                return;
+              }
+            }
+
+            // 3. Check Inside Bounding Box (Move)
+            if (localX >= b.selX - 10 && localX <= b.selX + b.selW + 10 &&
+                localY >= b.selY - 10 && localY <= b.selY + b.selH + 10) {
+              this.canvasDrag = {
+                mode: "move",
+                target: selTxt,
+                origXPct: selTxt.x_pct,
+                origYPct: selTxt.y_pct,
+                startXPct: xPct,
+                startYPct: yPct
+              };
+              return;
+            }
           }
         }
 
-        // 2. Check if clicking active text layer
-        const textLayers = (this.currentProject.timeline.tracks.text || []).filter(
-          (txt) => t >= txt.start_sec && t <= txt.end_sec
-        );
-        for (let i = textLayers.length - 1; i >= 0; i--) {
-          const txt = textLayers[i];
-          const dist = Math.hypot(xPct - txt.x_pct, yPct - txt.y_pct);
-          if (dist < 14.0) {
-            this.selectedTrack = "text";
-            this.selectedId = txt.id;
-            this.canvasDrag = { origXPct: txt.x_pct, origYPct: txt.y_pct, startXPct: xPct, startYPct: yPct, target: txt };
+        // Check if clicking Logo
+        const logo = this.currentProject.timeline.tracks.logo;
+        if (logo && logo.visible) {
+          const logoX = (logo.x_pct / 100.0) * CANVAS_W;
+          const logoY = (logo.y_pct / 100.0) * CANVAS_H;
+          const logoSize = (logo.size_px || 76) * 2;
+          const distLogo = Math.hypot(xCanvas - logoX, yCanvas - logoY);
+
+          if (this.selectedTrack === "logo" && distLogo < (logoSize / 2 + 30)) {
+            const cornerDist = Math.hypot(Math.abs(xCanvas - logoX) - logoSize / 2, Math.abs(yCanvas - logoY) - logoSize / 2);
+            if (cornerDist < 30) {
+              this.canvasDrag = {
+                mode: "resize_logo",
+                target: logo,
+                origSize: logo.size_px || 76,
+                startDist: distLogo,
+                centerX: logoX,
+                centerY: logoY
+              };
+              return;
+            }
+          }
+
+          if (distLogo < logoSize / 2 + 10) {
+            this.selectedTrack = "logo";
+            this.selectedId = "logo";
+            this.canvasDrag = {
+              mode: "move",
+              target: logo,
+              origXPct: logo.x_pct,
+              origYPct: logo.y_pct,
+              startXPct: xPct,
+              startYPct: yPct
+            };
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
@@ -1017,7 +1291,34 @@
           }
         }
 
-        // Clicked empty canvas
+        // Check if clicking another visible text layer
+        const textLayers = (this.currentProject.timeline.tracks.text || []).filter(
+          (txt) => t >= txt.start_sec && t <= txt.end_sec
+        );
+        for (let i = textLayers.length - 1; i >= 0; i--) {
+          const txt = textLayers[i];
+          const tx = (txt.x_pct / 100.0) * CANVAS_W;
+          const ty = (txt.y_pct / 100.0) * CANVAS_H;
+          if (Math.hypot(xCanvas - tx, yCanvas - ty) < 90) {
+            this.selectedTrack = "text";
+            this.selectedId = txt.id;
+            this.canvasDrag = {
+              mode: "move",
+              target: txt,
+              origXPct: txt.x_pct,
+              origYPct: txt.y_pct,
+              startXPct: xPct,
+              startYPct: yPct
+            };
+            this.renderTimeline();
+            this.renderInspector();
+            this.openMobileInspector();
+            this.render();
+            return;
+          }
+        }
+
+        // Clicked background: deselect
         this.selectedTrack = null;
         this.selectedId = null;
         this.renderTimeline();
@@ -1028,28 +1329,77 @@
       const onPointerMove = (e) => {
         if (!this.canvasDrag) return;
         if (e.cancelable) e.preventDefault();
-        const { xPct, yPct } = getCanvasPoint(e);
-        const dx = xPct - this.canvasDrag.startXPct;
-        const dy = yPct - this.canvasDrag.startYPct;
+        const { xCanvas, yCanvas, xPct, yPct } = getCanvasPoint(e);
 
-        let newX = this.canvasDrag.origXPct + dx;
-        let newY = this.canvasDrag.origYPct + dy;
+        if (this.canvasDrag.mode === "move") {
+          const dx = xPct - this.canvasDrag.startXPct;
+          const dy = yPct - this.canvasDrag.startYPct;
+          let newX = this.canvasDrag.origXPct + dx;
+          let newY = this.canvasDrag.origYPct + dy;
 
-        // Snapping: Center X (snap to 50% if within 2%)
-        if (Math.abs(newX - 50.0) < 2.0) newX = 50.0;
-        // Snapping: Instagram safe boundaries
-        if (Math.abs(newY - 20.0) < 1.5) newY = 20.0;
-        if (Math.abs(newY - 80.0) < 1.5) newY = 80.0;
+          // Alignment Guides Snapping
+          if (Math.abs(newX - 50.0) < 2.5) {
+            newX = 50.0;
+            this.showGuideX = true;
+          } else {
+            this.showGuideX = false;
+          }
 
-        this.canvasDrag.target.x_pct = Math.max(5, Math.min(95, round1(newX)));
-        this.canvasDrag.target.y_pct = Math.max(5, Math.min(95, round1(newY)));
-        this.render();
+          if (Math.abs(newY - 50.0) < 2.0) {
+            newY = 50.0;
+            this.showGuideY = true;
+          } else {
+            this.showGuideY = false;
+          }
+
+          this.canvasDrag.target.x_pct = Math.max(5, Math.min(95, round1(newX)));
+          this.canvasDrag.target.y_pct = Math.max(5, Math.min(95, round1(newY)));
+          this.render();
+        } else if (this.canvasDrag.mode === "resize") {
+          const curDist = Math.hypot(xCanvas - this.canvasDrag.centerX, yCanvas - this.canvasDrag.centerY);
+          const ratio = curDist / this.canvasDrag.startDist;
+          const newSize = Math.max(16, Math.min(120, Math.round(this.canvasDrag.origFontSize * ratio)));
+          this.canvasDrag.target.font_size = newSize;
+          const slider = document.getElementById("prop-slider-fontsize");
+          if (slider) slider.value = newSize;
+          const label = document.getElementById("prop-val-fontsize");
+          if (label) label.textContent = `${newSize}px`;
+          this.render();
+        } else if (this.canvasDrag.mode === "rotate") {
+          const dx = xCanvas - this.canvasDrag.centerX;
+          const dy = yCanvas - this.canvasDrag.centerY;
+          let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+          [-180, -90, 0, 90, 180, 270, 360].forEach((snap) => {
+            if (Math.abs(angle - snap) < 4.0) angle = snap;
+          });
+          const normalized = Math.round(((angle % 360) + 360) % 360);
+          const degFinal = normalized > 180 ? normalized - 360 : normalized;
+          this.canvasDrag.target.rotation_deg = degFinal;
+          const rotSlider = document.getElementById("prop-slider-rotation");
+          if (rotSlider) rotSlider.value = degFinal;
+          const rotLabel = document.getElementById("prop-val-rotation");
+          if (rotLabel) rotLabel.textContent = `${degFinal}°`;
+          this.render();
+        } else if (this.canvasDrag.mode === "resize_logo") {
+          const curDist = Math.hypot(xCanvas - this.canvasDrag.centerX, yCanvas - this.canvasDrag.centerY);
+          const ratio = curDist / Math.max(20, this.canvasDrag.startDist);
+          const newSize = Math.max(30, Math.min(220, Math.round(this.canvasDrag.origSize * ratio)));
+          this.canvasDrag.target.size_px = newSize;
+          const slider = document.getElementById("prop-slider-logosize");
+          if (slider) slider.value = newSize;
+          const label = document.getElementById("prop-val-logosize");
+          if (label) label.textContent = `${newSize}px`;
+          this.render();
+        }
       };
 
       const onPointerUp = () => {
         if (this.canvasDrag) {
           this.canvasDrag = null;
+          this.showGuideX = false;
+          this.showGuideY = false;
           this.pushState();
+          this.render();
         }
       };
 
@@ -1057,20 +1407,106 @@
       window.addEventListener("mousemove", onPointerMove);
       window.addEventListener("mouseup", onPointerUp);
 
-      // Mobile Touch Interaction with preventDefault to stop scroll while dragging
-      this.canvas.addEventListener("touchstart", (e) => {
-        onPointerDown(e);
-      }, { passive: false });
-
-      window.addEventListener("touchmove", (e) => {
-        if (this.canvasDrag) {
-          if (e.cancelable) e.preventDefault();
-          onPointerMove(e);
-        }
-      }, { passive: false });
-
+      this.canvas.addEventListener("touchstart", onPointerDown, { passive: false });
+      window.addEventListener("touchmove", onPointerMove, { passive: false });
       window.addEventListener("touchend", onPointerUp);
       window.addEventListener("touchcancel", onPointerUp);
+    }
+
+    bindTrimHandle(handleEl, targetType, targetObj, isLeft) {
+      if (!handleEl) return;
+
+      const onStart = (e) => {
+        e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+        const startX = clientX;
+        const totalDur = this.getTotalDuration();
+
+        let origStart = 0;
+        let origEnd = 0;
+        let origDur = 0;
+
+        if (targetType === "media") {
+          origStart = targetObj.start_sec || 0;
+          origEnd = targetObj.end_sec || (origStart + targetObj.duration);
+          origDur = targetObj.duration || (origEnd - origStart);
+        } else if (targetType === "text") {
+          origStart = targetObj.start_sec || 0;
+          origEnd = targetObj.end_sec || 5.0;
+        } else if (targetType === "audio") {
+          origStart = targetObj.start_sec || 0;
+          origDur = targetObj.duration || totalDur;
+          origEnd = origStart + origDur;
+        }
+
+        const onMove = (me) => {
+          if (me.cancelable) me.preventDefault();
+          const curX = me.touches && me.touches.length > 0 ? me.touches[0].clientX : (me.changedTouches ? me.changedTouches[0].clientX : me.clientX);
+          const deltaSec = (curX - startX) / this.zoomPxPerSec;
+
+          if (targetType === "media") {
+            if (!isLeft) {
+              const newDur = Math.max(0.5, Math.min(30.0, round2(origDur + deltaSec)));
+              targetObj.duration = newDur;
+              targetObj.end_sec = round2(targetObj.start_sec + newDur);
+              const clips = this.currentProject.timeline.tracks.media || [];
+              const idx = clips.indexOf(targetObj);
+              const diff = newDur - origDur;
+              for (let i = idx + 1; i < clips.length; i++) {
+                clips[i].start_sec = round2(clips[i].start_sec + diff);
+                clips[i].end_sec = round2(clips[i].end_sec + diff);
+              }
+            } else {
+              const newStart = Math.max(0, origStart + deltaSec);
+              const newDur = Math.max(0.5, round2(origEnd - newStart));
+              targetObj.start_sec = round2(newStart);
+              targetObj.duration = newDur;
+            }
+            this.recalculateTotalDuration();
+          } else if (targetType === "text") {
+            if (isLeft) {
+              const newStart = Math.max(0, Math.min(origEnd - 0.5, round2(origStart + deltaSec)));
+              targetObj.start_sec = newStart;
+              this.seekTo(newStart);
+            } else {
+              const newEnd = Math.max(origStart + 0.5, Math.min(totalDur, round2(origEnd + deltaSec)));
+              targetObj.end_sec = newEnd;
+              this.seekTo(newEnd);
+            }
+          } else if (targetType === "audio") {
+            if (isLeft) {
+              targetObj.start_sec = Math.max(0, round2(origStart + deltaSec));
+            } else {
+              targetObj.duration = Math.max(0.5, round2(origDur + deltaSec));
+            }
+          }
+
+          this.renderTimeline();
+          this.render();
+        };
+
+        const onEnd = () => {
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onEnd);
+          window.removeEventListener("touchmove", onMove);
+          window.removeEventListener("touchend", onEnd);
+          window.removeEventListener("touchcancel", onEnd);
+          this.pushState();
+          this.renderTimeline();
+          this.renderInspector();
+          this.render();
+        };
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onEnd);
+        window.addEventListener("touchmove", onMove, { passive: false });
+        window.addEventListener("touchend", onEnd);
+        window.addEventListener("touchcancel", onEnd);
+      };
+
+      handleEl.addEventListener("mousedown", onStart);
+      handleEl.addEventListener("touchstart", onStart, { passive: false });
     }
 
     // =========================================================================
@@ -1088,6 +1524,7 @@
       if (this.laneText) this.laneText.style.width = `${totalWidthPx}px`;
       if (this.laneLogo) this.laneLogo.style.width = `${totalWidthPx}px`;
       if (this.laneAudio) this.laneAudio.style.width = `${totalWidthPx}px`;
+      if (this.laneVoiceover) this.laneVoiceover.style.width = `${totalWidthPx}px`;
 
       // 1. Draw Time Ruler Marks
       if (this.timeRuler) {
@@ -1105,7 +1542,7 @@
       if (this.laneMedia) {
         this.laneMedia.innerHTML = "";
         const mediaClips = this.currentProject.timeline.tracks.media || [];
-        mediaClips.forEach((c) => {
+        mediaClips.forEach((c, idx) => {
           const leftPx = c.start_sec * this.zoomPxPerSec;
           const widthPx = c.duration * this.zoomPxPerSec;
           const block = document.createElement("div");
@@ -1113,11 +1550,24 @@
           block.style.left = `${leftPx}px`;
           block.style.width = `${widthPx}px`;
           block.dataset.id = c.id;
+
+          const transBadge = (idx > 0 && c.transition_in && c.transition_in !== "none")
+            ? `<span style="background:rgba(22,139,255,0.3);border:1px solid #168BFF;color:#38bdf8;font-size:0.6rem;padding:1px 4px;border-radius:3px;margin-right:4px;">⚡${c.transition_in}</span>`
+            : "";
+
           block.innerHTML = `
-            <div class="reel-trim-handle-left"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">${escapeHtml(c.filename)}</span>
-            <div class="reel-trim-handle-right"></div>
+            <div class="reel-trim-handle-left" title="Trim start"></div>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;">
+              ${transBadge} ${c.type === 'video' ? '🎬' : '📷'} ${escapeHtml(c.filename)}
+            </span>
+            <div class="reel-trim-handle-right" title="Trim end / duration"></div>
           `;
+
+          const hLeft = block.querySelector(".reel-trim-handle-left");
+          const hRight = block.querySelector(".reel-trim-handle-right");
+          this.bindTrimHandle(hLeft, "media", c, true);
+          this.bindTrimHandle(hRight, "media", c, false);
+
           block.addEventListener("click", (e) => {
             e.stopPropagation();
             this.selectedTrack = "media";
@@ -1143,10 +1593,16 @@
           block.style.width = `${widthPx}px`;
           block.dataset.id = txt.id;
           block.innerHTML = `
-            <div class="reel-trim-handle-left"></div>
+            <div class="reel-trim-handle-left" title="Trim start"></div>
             <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🔤 ${escapeHtml(txt.text)}</span>
-            <div class="reel-trim-handle-right"></div>
+            <div class="reel-trim-handle-right" title="Trim end"></div>
           `;
+
+          const hLeft = block.querySelector(".reel-trim-handle-left");
+          const hRight = block.querySelector(".reel-trim-handle-right");
+          this.bindTrimHandle(hLeft, "text", txt, true);
+          this.bindTrimHandle(hRight, "text", txt, false);
+
           block.addEventListener("click", (e) => {
             e.stopPropagation();
             this.selectedTrack = "text";
@@ -1191,15 +1647,68 @@
           const leftPx = (music.start_sec || 0) * this.zoomPxPerSec;
           const widthPx = (music.duration || totalDur) * this.zoomPxPerSec;
           const block = document.createElement("div");
-          block.className = "reel-clip-block type-audio";
+          block.className = `reel-clip-block type-audio ${this.selectedTrack === 'music' ? 'active' : ''}`;
           block.style.left = `${leftPx}px`;
           block.style.width = `${widthPx}px`;
-          block.innerHTML = `<span>🎵 ${escapeHtml(music.filename || 'Background Music')} (Vol: ${Math.round((music.volume || 0.75) * 100)}%)</span>`;
+          block.innerHTML = `
+            <div class="reel-trim-handle-left" title="Trim start"></div>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🎵 ${escapeHtml(music.filename || 'Background Music')} (Vol: ${Math.round((music.volume || 0.75) * 100)}%)</span>
+            <div class="reel-trim-handle-right" title="Trim end"></div>
+          `;
+
+          const hLeft = block.querySelector(".reel-trim-handle-left");
+          const hRight = block.querySelector(".reel-trim-handle-right");
+          this.bindTrimHandle(hLeft, "audio", music, true);
+          this.bindTrimHandle(hRight, "audio", music, false);
+
+          block.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.selectedTrack = "music";
+            this.selectedId = music.id;
+            this.renderTimeline();
+            this.renderInspector();
+            this.openMobileInspector();
+          });
           this.laneAudio.appendChild(block);
         }
       }
 
+      // 6. Render Voiceover Track
+      if (this.laneVoiceover) {
+        this.laneVoiceover.innerHTML = "";
+        const vo = this.getAudioTrack("voiceover");
+        if (vo && vo.url) {
+          const leftPx = (vo.start_sec || 0) * this.zoomPxPerSec;
+          const widthPx = (vo.duration || totalDur) * this.zoomPxPerSec;
+          const block = document.createElement("div");
+          block.className = `reel-clip-block type-voiceover ${this.selectedTrack === 'voiceover' ? 'active' : ''}`;
+          block.style.left = `${leftPx}px`;
+          block.style.width = `${widthPx}px`;
+          block.innerHTML = `
+            <div class="reel-trim-handle-left" title="Trim start"></div>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🎙️ ${escapeHtml(vo.filename || 'Voiceover')} (Vol: ${Math.round((vo.volume || 1.0) * 100)}%)</span>
+            <div class="reel-trim-handle-right" title="Trim end"></div>
+          `;
+
+          const hLeft = block.querySelector(".reel-trim-handle-left");
+          const hRight = block.querySelector(".reel-trim-handle-right");
+          this.bindTrimHandle(hLeft, "audio", vo, true);
+          this.bindTrimHandle(hRight, "audio", vo, false);
+
+          block.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.selectedTrack = "voiceover";
+            this.selectedId = vo.id;
+            this.renderTimeline();
+            this.renderInspector();
+            this.openMobileInspector();
+          });
+          this.laneVoiceover.appendChild(block);
+        }
+      }
+
       this.updatePlayheadPosition();
+    }
     }
 
     bindTimelineInteraction() {
@@ -1260,6 +1769,11 @@
       if (this.audioEl && !isNaN(this.audioEl.duration)) {
         this.audioEl.currentTime = this.currentTime;
       }
+      if (this.voiceoverEl && !isNaN(this.voiceoverEl.duration)) {
+        const vo = this.getAudioTrack("voiceover");
+        const voOffset = Math.max(0, this.currentTime - ((vo && vo.start_sec) || 0));
+        this.voiceoverEl.currentTime = voOffset;
+      }
       this.updatePlayheadPosition();
       this.render();
     }
@@ -1277,6 +1791,17 @@
         this.audioEl.currentTime = this.currentTime;
         this.audioEl.play().catch(() => {});
       }
+      const vo = this.getAudioTrack("voiceover");
+      if (vo && vo.url) {
+        if (!this.voiceoverEl) this.voiceoverEl = new Audio();
+        if (this.voiceoverEl.src !== vo.url) this.voiceoverEl.src = vo.url;
+        this.voiceoverEl.volume = vo.volume ?? 1.0;
+        const voOffset = Math.max(0, this.currentTime - (vo.start_sec || 0));
+        if (this.currentTime >= (vo.start_sec || 0) && this.currentTime <= ((vo.start_sec || 0) + (vo.duration || 60))) {
+          this.voiceoverEl.currentTime = voOffset;
+          this.voiceoverEl.play().catch(() => {});
+        }
+      }
     }
 
     pause() {
@@ -1284,6 +1809,7 @@
       if (this.iconPlay) this.iconPlay.classList.remove("hidden");
       if (this.iconPause) this.iconPause.classList.add("hidden");
       if (this.audioEl) this.audioEl.pause();
+      if (this.voiceoverEl) this.voiceoverEl.pause();
     }
 
     startRenderLoop() {
@@ -1350,10 +1876,106 @@
             this.drawLogo(ctx, logo, this.selectedId === "logo");
           }
         }
+
+        // 4. Render Alignment & Safe Area Guidelines during drag
+        if (this.canvasDrag) {
+          ctx.save();
+          // Safe Margins (Instagram Reels 9:16 safe area)
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([10, 8]);
+          ctx.beginPath();
+          ctx.moveTo(60, 280); ctx.lineTo(CANVAS_W - 60, 280);
+          ctx.moveTo(60, CANVAS_H - 380); ctx.lineTo(CANVAS_W - 60, CANVAS_H - 380);
+          ctx.stroke();
+
+          // Magnetic Center Guides
+          if (this.showGuideX) {
+            ctx.strokeStyle = "#168BFF";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.moveTo(CANVAS_W / 2, 0);
+            ctx.lineTo(CANVAS_W / 2, CANVAS_H);
+            ctx.stroke();
+          }
+          if (this.showGuideY) {
+            ctx.strokeStyle = "#168BFF";
+            ctx.lineWidth = 4;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.moveTo(0, CANVAS_H / 2);
+            ctx.lineTo(CANVAS_W, CANVAS_H / 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
       }
     }
 
     drawMediaClip(ctx, clip, t) {
+      const isVideo = clip.type === "video" || /\.(mp4|mov|webm)$/i.test(clip.url);
+      const transDur = clip.transition_duration || 0.5;
+
+      const applyTransition = () => {
+        if (clip.transition_in && clip.transition_in !== "none" && t < clip.start_sec + transDur) {
+          const p = Math.min(1.0, Math.max(0.0, (t - clip.start_sec) / transDur));
+          if (clip.transition_in === "fade" || clip.transition_in === "fade_black") {
+            ctx.globalAlpha = p;
+          } else if (clip.transition_in === "dissolve") {
+            ctx.globalAlpha = p;
+          } else if (clip.transition_in === "slide_left") {
+            const slideOffset = (1.0 - p) * CANVAS_W;
+            ctx.translate(slideOffset, 0);
+          } else if (clip.transition_in === "zoom") {
+            const zScale = 0.8 + 0.2 * p;
+            ctx.translate(CANVAS_W / 2, CANVAS_H / 2);
+            ctx.scale(zScale, zScale);
+            ctx.translate(-CANVAS_W / 2, -CANVAS_H / 2);
+            ctx.globalAlpha = p;
+          }
+        }
+      };
+
+      if (isVideo) {
+        let vid = this.cachedImages[clip.url];
+        if (!vid || !(vid instanceof HTMLVideoElement)) {
+          vid = document.createElement("video");
+          vid.src = clip.url;
+          vid.muted = true;
+          vid.playsInline = true;
+          vid.preload = "auto";
+          vid.onloadeddata = () => this.render();
+          this.cachedImages[clip.url] = vid;
+          return;
+        }
+
+        if (vid.readyState >= 2) {
+          const clipOffset = Math.max(0, (t - clip.start_sec) * (clip.speed || 1.0) + (clip.src_in || 0));
+          if (this.isPlaying) {
+            if (vid.paused) vid.play().catch(() => {});
+          } else {
+            if (!vid.paused) vid.pause();
+            if (Math.abs(vid.currentTime - clipOffset) > 0.15) {
+              vid.currentTime = clipOffset;
+            }
+          }
+
+          ctx.save();
+          applyTransition();
+          const vW = vid.videoWidth || 1080;
+          const vH = vid.videoHeight || 1920;
+          const scale = Math.max(CANVAS_W / vW, CANVAS_H / vH);
+          const dw = vW * scale;
+          const dh = vH * scale;
+          const dx = (CANVAS_W - dw) / 2.0;
+          const dy = (CANVAS_H - dh) / 2.0;
+          ctx.drawImage(vid, dx, dy, dw, dh);
+          ctx.restore();
+          return;
+        }
+      }
+
       let img = this.cachedImages[clip.url];
       if (!img) {
         img = new Image();
@@ -1366,6 +1988,7 @@
       if (!img.complete || img.naturalWidth === 0) return;
 
       ctx.save();
+      applyTransition();
       const imgW = img.naturalWidth;
       const imgH = img.naturalHeight;
       const scale = Math.max(CANVAS_W / imgW, CANVAS_H / imgH);
@@ -1374,39 +1997,71 @@
       const dx = (CANVAS_W - dw) / 2.0;
       const dy = (CANVAS_H - dh) / 2.0;
 
-      // Dissolve Transition In
-      if (clip.transition_in === "dissolve" && t < clip.start_sec + 0.4) {
-        ctx.globalAlpha = Math.min(1.0, (t - clip.start_sec) / 0.4);
-      }
-
       ctx.drawImage(img, dx, dy, dw, dh);
       ctx.restore();
     }
 
     drawTextLayer(ctx, txt, isSelected) {
+      if (!txt || !txt.text) return;
       ctx.save();
       const x = (txt.x_pct / 100.0) * CANVAS_W;
       const y = (txt.y_pct / 100.0) * CANVAS_H;
       const fontSize = (txt.font_size || 40) * 2; // High-res subpixel scale
+      const rotDeg = txt.rotation_deg || 0;
+      const rotRad = (rotDeg * Math.PI) / 180;
+
+      ctx.translate(x, y);
+      if (rotDeg) {
+        ctx.rotate(rotRad);
+      }
 
       ctx.font = `${txt.font_style || ''} ${txt.font_weight || '800'} ${fontSize}px "${txt.font_family || 'Inter'}", sans-serif`;
       ctx.textAlign = txt.text_align || "center";
       ctx.textBaseline = "middle";
 
-      const metrics = ctx.measureText(txt.text);
-      const textW = metrics.width;
-      const textH = fontSize * 1.2;
-      const pad = (txt.bg_padding || 10) * 2;
+      // Calculate automatic word wrapping so long titles never spill off screen
+      const maxW = Math.min(CANVAS_W * 0.84, 900);
+      const rawParagraphs = String(txt.text).split("\n");
+      const lines = [];
+
+      for (const para of rawParagraphs) {
+        const words = para.split(/\s+/).filter(Boolean);
+        if (words.length === 0) {
+          lines.push("");
+          continue;
+        }
+        let currentLine = "";
+        for (let w = 0; w < words.length; w++) {
+          const word = words[w];
+          const testLine = currentLine ? currentLine + " " + word : word;
+          if (ctx.measureText(testLine).width > maxW && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+      }
+      if (lines.length === 0) lines.push(txt.text);
+
+      const lineHeight = fontSize * 1.25;
+      const totalTextH = lines.length * lineHeight;
+      const maxLineW = Math.max(...lines.map((l) => ctx.measureText(l).width));
+      const pad = (txt.bg_padding || 12) * 2;
 
       // Draw Background Box if present
       if (txt.bg_color && txt.bg_color !== "transparent") {
         ctx.save();
         ctx.fillStyle = txt.bg_color;
-        const boxX = x - (txt.text_align === "center" ? textW / 2 + pad : pad);
-        const boxY = y - textH / 2 - pad / 2;
-        const boxW = textW + pad * 2;
-        const boxH = textH + pad;
-        const rad = (txt.bg_radius || 6) * 2;
+        let boxX = - maxLineW / 2 - pad;
+        if (txt.text_align === "left") boxX = - pad;
+        else if (txt.text_align === "right") boxX = - maxLineW - pad;
+
+        const boxY = - totalTextH / 2 - pad / 2;
+        const boxW = maxLineW + pad * 2;
+        const boxH = totalTextH + pad;
+        const rad = (txt.bg_radius || 8) * 2;
 
         ctx.beginPath();
         ctx.roundRect ? ctx.roundRect(boxX, boxY, boxW, boxH, rad) : ctx.rect(boxX, boxY, boxW, boxH);
@@ -1417,41 +2072,97 @@
       // Draw Shadow / Halo
       if (txt.shadow) {
         ctx.shadowColor = "rgba(0,0,0,0.85)";
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         ctx.shadowOffsetY = 4;
       }
 
-      // Draw Text Outline
-      if (txt.outline_width && txt.outline_color) {
-        ctx.strokeStyle = txt.outline_color;
-        ctx.lineWidth = (txt.outline_width || 3) * 2;
-        ctx.lineJoin = "round";
-        ctx.strokeText(txt.text, x, y);
-      }
+      // Starting baseline for centered multiline block
+      let textOriginX = 0;
+      if (txt.text_align === "left") textOriginX = - maxLineW / 2;
+      else if (txt.text_align === "right") textOriginX = maxLineW / 2;
 
-      // Fill Text
-      ctx.fillStyle = txt.color || "#FFFFFF";
-      ctx.fillText(txt.text, x, y);
+      const startY = - (totalTextH / 2) + (lineHeight / 2);
 
-      // Selection bounding box on canvas
+      // Render each line (outline + fill)
+      lines.forEach((lineText, idx) => {
+        const lineY = startY + (idx * lineHeight);
+
+        if (txt.outline_width && txt.outline_color) {
+          ctx.strokeStyle = txt.outline_color;
+          ctx.lineWidth = (txt.outline_width || 3) * 2;
+          ctx.lineJoin = "round";
+          ctx.strokeText(lineText, textOriginX, lineY);
+        }
+
+        ctx.fillStyle = txt.color || "#FFFFFF";
+        ctx.fillText(lineText, textOriginX, lineY);
+      });
+
+      // Bounding box calculations relative to origin (0,0)
+      let selX = - maxLineW / 2 - pad - 8;
+      if (txt.text_align === "left") selX = - pad - 8;
+      else if (txt.text_align === "right") selX = - maxLineW - pad - 8;
+
+      const selY = - totalTextH / 2 - pad / 2 - 8;
+      const selW = maxLineW + pad * 2 + 16;
+      const selH = totalTextH + pad + 16;
+
+      // Cache unrotated geometry bounds for exact hit-testing
+      txt._bounds = {
+        cx: x,
+        cy: y,
+        rotDeg: rotDeg,
+        rotRad: rotRad,
+        selX: selX,
+        selY: selY,
+        selW: selW,
+        selH: selH,
+        fontSize: txt.font_size || 40
+      };
+
+      // Selection bounding box & interactive handles on canvas
       if (isSelected) {
         ctx.save();
-        ctx.strokeStyle = "#38BDF8";
+        ctx.strokeStyle = "#168BFF";
         ctx.lineWidth = 4;
         ctx.setLineDash([8, 6]);
-        const selX = x - (txt.text_align === "center" ? textW / 2 + pad + 6 : pad + 6);
-        const selY = y - textH / 2 - pad / 2 - 6;
-        const selW = textW + pad * 2 + 12;
-        const selH = textH + pad + 12;
         ctx.strokeRect(selX, selY, selW, selH);
 
-        // Corner handles
-        ctx.fillStyle = "#FFFFFF";
+        // 4 Corner resize handles
         ctx.setLineDash([]);
-        const hSize = 14;
-        [[selX, selY], [selX + selW, selY], [selX, selY + selH], [selX + selW, selY + selH]].forEach(([hx, hy]) => {
+        const hSize = 18;
+        const corners = [
+          [selX, selY],
+          [selX + selW, selY],
+          [selX, selY + selH],
+          [selX + selW, selY + selH]
+        ];
+        corners.forEach(([hx, hy]) => {
+          ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(hx - hSize / 2, hy - hSize / 2, hSize, hSize);
+          ctx.strokeStyle = "#168BFF";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(hx - hSize / 2, hy - hSize / 2, hSize, hSize);
         });
+
+        // Top rotation handle stem & circular knob
+        const rotKnobY = selY - 44;
+        ctx.beginPath();
+        ctx.strokeStyle = "#168BFF";
+        ctx.lineWidth = 3;
+        ctx.moveTo(selX + selW / 2, selY);
+        ctx.lineTo(selX + selW / 2, rotKnobY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.fillStyle = "#168BFF";
+        ctx.arc(selX + selW / 2, rotKnobY, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.arc(selX + selW / 2, rotKnobY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
       }
 
@@ -1469,9 +2180,29 @@
       ctx.drawImage(this.logoImg, x - size / 2, y - size / 2, size, size);
 
       if (isSelected) {
-        ctx.strokeStyle = "#38BDF8";
+        ctx.save();
+        ctx.strokeStyle = "#168BFF";
         ctx.lineWidth = 4;
-        ctx.strokeRect(x - size / 2 - 6, y - size / 2 - 6, size + 12, size + 12);
+        ctx.setLineDash([8, 6]);
+        ctx.strokeRect(x - size / 2 - 8, y - size / 2 - 8, size + 16, size + 16);
+
+        // 4 Corner resize handles
+        ctx.setLineDash([]);
+        const hSize = 18;
+        const corners = [
+          [x - size / 2 - 8, y - size / 2 - 8],
+          [x + size / 2 + 8, y - size / 2 - 8],
+          [x - size / 2 - 8, y + size / 2 + 8],
+          [x + size / 2 + 8, y + size / 2 + 8]
+        ];
+        corners.forEach(([hx, hy]) => {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(hx - hSize / 2, hy - hSize / 2, hSize, hSize);
+          ctx.strokeStyle = "#168BFF";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(hx - hSize / 2, hy - hSize / 2, hSize, hSize);
+        });
+        ctx.restore();
       }
       ctx.restore();
     }
@@ -1546,35 +2277,64 @@
             <textarea id="prop-text-content" class="reel-prop-textarea" rows="2">${escapeHtml(txt.text)}</textarea>
           </div>
           <div class="reel-prop-group">
-            <label class="reel-prop-label">Font Family</label>
-            <select id="prop-text-font" class="reel-prop-select">
+            <label class="reel-prop-label">Font Family &amp; Alignment</label>
+            <select id="prop-text-font" class="reel-prop-select" style="margin-bottom:6px;">
               <option value="Inter" ${txt.font_family === 'Inter' ? 'selected' : ''}>Inter (Brand Standard)</option>
               <option value="Helvetica" ${txt.font_family === 'Helvetica' ? 'selected' : ''}>Helvetica Bold</option>
               <option value="Impact" ${txt.font_family === 'Impact' ? 'selected' : ''}>Impact (Bold News)</option>
               <option value="Georgia" ${txt.font_family === 'Georgia' ? 'selected' : ''}>Georgia (Editorial)</option>
             </select>
+            <div style="display:flex;gap:4px;">
+              <button type="button" class="btn btn-sm btn-outline btn-text-align" data-align="left" style="flex:1;color:#fff;border-color:#303B4D;${txt.text_align === 'left' ? 'background:#003580;' : ''}">Left</button>
+              <button type="button" class="btn btn-sm btn-outline btn-text-align" data-align="center" style="flex:1;color:#fff;border-color:#303B4D;${(!txt.text_align || txt.text_align === 'center') ? 'background:#003580;' : ''}">Center</button>
+              <button type="button" class="btn btn-sm btn-outline btn-text-align" data-align="right" style="flex:1;color:#fff;border-color:#303B4D;${txt.text_align === 'right' ? 'background:#003580;' : ''}">Right</button>
+            </div>
           </div>
           <div class="reel-prop-group">
             <label class="reel-prop-label">Font Size: <span id="prop-val-fontsize">${txt.font_size}px</span></label>
-            <input type="range" id="prop-slider-fontsize" min="20" max="72" value="${txt.font_size}" style="width:100%;" />
+            <input type="range" id="prop-slider-fontsize" min="16" max="96" value="${txt.font_size}" style="width:100%;" />
           </div>
           <div class="reel-prop-group">
-            <label class="reel-prop-label">Color Presets</label>
-            <div class="reel-color-row">
-              <div class="reel-color-swatch" data-col="#FFFFFF" style="background:#FFFFFF;"></div>
-              <div class="reel-color-swatch" data-col="#38BDF8" style="background:#38BDF8;"></div>
-              <div class="reel-color-swatch" data-col="#0A192F" style="background:#0A192F;border:1px solid #475569;"></div>
-              <div class="reel-color-swatch" data-col="#003882" style="background:#003882;"></div>
-              <div class="reel-color-swatch" data-col="#EF4444" style="background:#EF4444;"></div>
+            <label class="reel-prop-label">Rotation: <span id="prop-val-rotation">${txt.rotation_deg || 0}°</span></label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="range" id="prop-slider-rotation" min="-180" max="180" value="${txt.rotation_deg || 0}" style="flex:1;" />
+              <button type="button" id="btn-reset-rotation" class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;" title="Reset to 0°">0°</button>
+            </div>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Color &amp; Custom Hex</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="reel-color-row" style="flex:1;">
+                <div class="reel-color-swatch" data-col="#FFFFFF" style="background:#FFFFFF;"></div>
+                <div class="reel-color-swatch" data-col="#38BDF8" style="background:#38BDF8;"></div>
+                <div class="reel-color-swatch" data-col="#0A192F" style="background:#0A192F;border:1px solid #475569;"></div>
+                <div class="reel-color-swatch" data-col="#003580" style="background:#003580;"></div>
+                <div class="reel-color-swatch" data-col="#EF4444" style="background:#EF4444;"></div>
+              </div>
+              <input type="color" id="prop-text-color-picker" value="${txt.color || '#FFFFFF'}" title="Pick custom color" style="width:32px;height:32px;border:none;background:transparent;cursor:pointer;" />
             </div>
           </div>
           <div class="reel-prop-group">
             <label class="reel-prop-label">Background Box</label>
             <select id="prop-text-bg" class="reel-prop-select">
-              <option value="rgba(10, 25, 47, 0.85)" ${txt.bg_color.includes('10, 25, 47') ? 'selected' : ''}>Navy Box (#0A192F)</option>
-              <option value="rgba(0, 56, 130, 0.88)" ${txt.bg_color.includes('0, 56, 130') ? 'selected' : ''}>Blue Box (#003882)</option>
+              <option value="rgba(10, 25, 47, 0.85)" ${txt.bg_color && txt.bg_color.includes('10, 25, 47') ? 'selected' : ''}>Navy Box (#0A192F)</option>
+              <option value="rgba(0, 56, 130, 0.88)" ${txt.bg_color && txt.bg_color.includes('0, 56, 130') ? 'selected' : ''}>Blue Box (#003580)</option>
               <option value="transparent" ${txt.bg_color === 'transparent' ? 'selected' : ''}>No Background (Transparent)</option>
             </select>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="prop-chk-text-shadow" ${txt.shadow ? 'checked' : ''} />
+              <span>Drop Shadow / Contrast Halo</span>
+            </label>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Timing (Start &amp; End Seconds)</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="number" id="prop-num-text-start" min="0" max="60" step="0.5" value="${(txt.start_sec || 0).toFixed(1)}" class="reel-prop-select" style="flex:1;" />
+              <span style="color:#B8C4D4;font-size:0.8rem;">to</span>
+              <input type="number" id="prop-num-text-end" min="0.5" max="60" step="0.5" value="${(txt.end_sec || 5).toFixed(1)}" class="reel-prop-select" style="flex:1;" />
+            </div>
           </div>
           <div class="reel-prop-group">
             <button type="button" id="btn-prop-del-text" class="btn btn-sm btn-ghost" style="color:#ef4444;width:100%;margin-top:10px;">
@@ -1593,21 +2353,65 @@
           this.render();
           this.scheduleAutosave();
         });
+        this.inspectorContent.querySelectorAll(".btn-text-align").forEach((b) => {
+          b.addEventListener("click", () => {
+            txt.text_align = b.dataset.align;
+            this.renderInspector();
+            this.render();
+            this.scheduleAutosave();
+          });
+        });
         document.getElementById("prop-slider-fontsize")?.addEventListener("input", (e) => {
           txt.font_size = parseInt(e.target.value, 10);
           document.getElementById("prop-val-fontsize").textContent = `${txt.font_size}px`;
           this.render();
           this.scheduleAutosave();
         });
+        document.getElementById("prop-slider-rotation")?.addEventListener("input", (e) => {
+          txt.rotation_deg = parseInt(e.target.value, 10);
+          document.getElementById("prop-val-rotation").textContent = `${txt.rotation_deg}°`;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("btn-reset-rotation")?.addEventListener("click", () => {
+          txt.rotation_deg = 0;
+          this.renderInspector();
+          this.render();
+          this.scheduleAutosave();
+        });
         this.inspectorContent.querySelectorAll(".reel-color-swatch").forEach((s) => {
           s.addEventListener("click", () => {
             txt.color = s.dataset.col;
+            const cp = document.getElementById("prop-text-color-picker");
+            if (cp) cp.value = s.dataset.col;
             this.render();
             this.scheduleAutosave();
           });
         });
+        document.getElementById("prop-text-color-picker")?.addEventListener("input", (e) => {
+          txt.color = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
         document.getElementById("prop-text-bg")?.addEventListener("change", (e) => {
           txt.bg_color = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-chk-text-shadow")?.addEventListener("change", (e) => {
+          txt.shadow = e.target.checked;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-num-text-start")?.addEventListener("change", (e) => {
+          txt.start_sec = Math.max(0, parseFloat(e.target.value) || 0);
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-num-text-end")?.addEventListener("change", (e) => {
+          txt.end_sec = Math.max((txt.start_sec || 0) + 0.5, parseFloat(e.target.value) || 5);
+          this.renderTimeline();
           this.render();
           this.scheduleAutosave();
         });
@@ -1626,7 +2430,7 @@
           </div>
           <div class="reel-prop-group">
             <label class="reel-prop-label">Duration: <span id="prop-val-clipdur">${c.duration.toFixed(1)}s</span></label>
-            <input type="range" id="prop-slider-clipdur" min="1.0" max="12.0" step="0.5" value="${c.duration}" style="width:100%;" />
+            <input type="range" id="prop-slider-clipdur" min="1.0" max="15.0" step="0.5" value="${c.duration}" style="width:100%;" />
           </div>
           <div class="reel-prop-group">
             <label class="reel-prop-label">Fit Mode</label>
@@ -1641,7 +2445,13 @@
               <option value="none" ${c.transition_in === 'none' ? 'selected' : ''}>None (Cut)</option>
               <option value="dissolve" ${c.transition_in === 'dissolve' ? 'selected' : ''}>Dissolve / Crossfade</option>
               <option value="fade" ${c.transition_in === 'fade' ? 'selected' : ''}>Fade from Black</option>
+              <option value="slide_left" ${c.transition_in === 'slide_left' ? 'selected' : ''}>Slide Left</option>
+              <option value="zoom" ${c.transition_in === 'zoom' ? 'selected' : ''}>Zoom In</option>
             </select>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Transition Duration: <span id="prop-val-transdur">${(c.transition_duration || 0.5).toFixed(1)}s</span></label>
+            <input type="range" id="prop-slider-transdur" min="0.2" max="2.0" step="0.1" value="${c.transition_duration || 0.5}" style="width:100%;" />
           </div>
           <div style="display:flex;gap:6px;margin-top:14px;">
             <button type="button" id="btn-prop-split-clip" class="btn btn-sm btn-outline" style="flex:1;color:#fff;border-color:#475569;">
@@ -1661,7 +2471,6 @@
           const diff = newDur - c.duration;
           c.duration = round1(newDur);
           c.end_sec = round1(c.start_sec + newDur);
-          // Shift subsequent clips
           const clips = this.currentProject.timeline.tracks.media;
           const idx = clips.indexOf(c);
           for (let i = idx + 1; i < clips.length; i++) {
@@ -1673,14 +2482,144 @@
           this.render();
           this.scheduleAutosave();
         });
+        document.getElementById("prop-clip-fit")?.addEventListener("change", (e) => {
+          c.fit_mode = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
         document.getElementById("prop-clip-trans")?.addEventListener("change", (e) => {
           c.transition_in = e.target.value;
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-slider-transdur")?.addEventListener("input", (e) => {
+          c.transition_duration = parseFloat(e.target.value) || 0.5;
+          const valEl = document.getElementById("prop-val-transdur");
+          if (valEl) valEl.textContent = `${c.transition_duration.toFixed(1)}s`;
           this.render();
           this.scheduleAutosave();
         });
         document.getElementById("btn-prop-split-clip")?.addEventListener("click", () => this.splitAtPlayhead());
         document.getElementById("btn-prop-dup-clip")?.addEventListener("click", () => this.duplicateSelected());
         document.getElementById("btn-prop-del-clip")?.addEventListener("click", () => this.deleteSelected());
+      } else if (this.selectedTrack === "logo") {
+        const logo = this.currentProject?.timeline?.tracks?.logo;
+        if (!logo) { this.renderEmptyInspector(); return; }
+
+        if (this.inspectorHeading) this.inspectorHeading.textContent = "Logo Overlay";
+        if (this.inspectorIcon) this.inspectorIcon.textContent = "💙";
+
+        this.inspectorContent.innerHTML = `
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Logo Size: <span id="prop-val-logosize">${logo.size_px || 76}px</span></label>
+            <input type="range" id="prop-slider-logosize" min="36" max="180" value="${logo.size_px || 76}" style="width:100%;" />
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Opacity: <span id="prop-val-logoopacity">${Math.round((logo.opacity || 0.95) * 100)}%</span></label>
+            <input type="range" id="prop-slider-logoopacity" min="0.1" max="1.0" step="0.05" value="${logo.opacity || 0.95}" style="width:100%;" />
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Position Presets</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button type="button" class="btn btn-sm btn-outline btn-logo-preset" data-preset="top_left" style="color:#fff;border-color:#303B4D;">Top Left</button>
+              <button type="button" class="btn btn-sm btn-outline btn-logo-preset" data-preset="top_center" style="color:#fff;border-color:#303B4D;">Top Center</button>
+              <button type="button" class="btn btn-sm btn-outline btn-logo-preset" data-preset="safe_header" style="color:#fff;border-color:#303B4D;">Safe Header</button>
+              <button type="button" class="btn btn-sm btn-outline btn-logo-preset" data-preset="bottom_center" style="color:#fff;border-color:#303B4D;">Bottom Center</button>
+            </div>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="prop-chk-logo-always" ${logo.always_on !== false ? 'checked' : ''} />
+              <span>Display throughout entire Reel</span>
+            </label>
+          </div>
+        `;
+
+        document.getElementById("prop-slider-logosize")?.addEventListener("input", (e) => {
+          logo.size_px = parseInt(e.target.value, 10);
+          document.getElementById("prop-val-logosize").textContent = `${logo.size_px}px`;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-slider-logoopacity")?.addEventListener("input", (e) => {
+          logo.opacity = parseFloat(e.target.value);
+          document.getElementById("prop-val-logoopacity").textContent = `${Math.round(logo.opacity * 100)}%`;
+          this.render();
+          this.scheduleAutosave();
+        });
+        this.inspectorContent.querySelectorAll(".btn-logo-preset").forEach((b) => {
+          b.addEventListener("click", () => {
+            this.setLogoPositionPreset(b.dataset.preset);
+          });
+        });
+        document.getElementById("prop-chk-logo-always")?.addEventListener("change", (e) => {
+          logo.always_on = e.target.checked;
+          this.renderTimeline();
+          this.render();
+          this.scheduleAutosave();
+        });
+      } else if (this.selectedTrack === "voiceover" || this.selectedTrack === "music") {
+        const isVoice = this.selectedTrack === "voiceover";
+        const aud = this.getAudioTrack(isVoice ? "voiceover" : "music");
+        if (!aud) { this.renderEmptyInspector(); return; }
+
+        if (this.inspectorHeading) this.inspectorHeading.textContent = isVoice ? "Voiceover Track" : "Music Track";
+        if (this.inspectorIcon) this.inspectorIcon.textContent = isVoice ? "🎙️" : "🎵";
+
+        this.inspectorContent.innerHTML = `
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">File</label>
+            <div style="font-size:0.82rem;font-weight:700;color:#fff;word-break:break-all;">${escapeHtml(aud.filename || 'Audio Track')}</div>
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Volume: <span id="prop-val-audvolume">${Math.round((aud.volume ?? 1.0) * 100)}%</span></label>
+            <input type="range" id="prop-slider-audvolume" min="0" max="1.0" step="0.05" value="${aud.volume ?? 1.0}" style="width:100%;" />
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Fade In: <span id="prop-val-fadein">${(aud.fade_in || 0.2).toFixed(1)}s</span></label>
+            <input type="range" id="prop-slider-fadein" min="0" max="2.0" step="0.1" value="${aud.fade_in || 0.2}" style="width:100%;" />
+          </div>
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Fade Out: <span id="prop-val-fadeout">${(aud.fade_out || 0.5).toFixed(1)}s</span></label>
+            <input type="range" id="prop-slider-fadeout" min="0" max="2.0" step="0.1" value="${aud.fade_out || 0.5}" style="width:100%;" />
+          </div>
+          <button type="button" id="btn-prop-del-aud" class="btn btn-sm btn-ghost" style="color:#ef4444;width:100%;margin-top:10px;">
+            🗑️ Remove ${isVoice ? 'Voiceover' : 'Music'}
+          </button>
+        `;
+
+        document.getElementById("prop-slider-audvolume")?.addEventListener("input", (e) => {
+          aud.volume = parseFloat(e.target.value);
+          document.getElementById("prop-val-audvolume").textContent = `${Math.round(aud.volume * 100)}%`;
+          if (isVoice && this.voiceoverEl) this.voiceoverEl.volume = aud.volume;
+          if (!isVoice && this.audioEl) this.audioEl.volume = aud.volume;
+          this.renderTimeline();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-slider-fadein")?.addEventListener("input", (e) => {
+          aud.fade_in = parseFloat(e.target.value);
+          document.getElementById("prop-val-fadein").textContent = `${aud.fade_in.toFixed(1)}s`;
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-slider-fadeout")?.addEventListener("input", (e) => {
+          aud.fade_out = parseFloat(e.target.value);
+          document.getElementById("prop-val-fadeout").textContent = `${aud.fade_out.toFixed(1)}s`;
+          this.scheduleAutosave();
+        });
+        document.getElementById("btn-prop-del-aud")?.addEventListener("click", () => {
+          const list = this.currentProject.timeline.tracks.audio || [];
+          const idx = list.indexOf(aud);
+          if (idx !== -1) list.splice(idx, 1);
+          if (isVoice && this.voiceoverEl) this.voiceoverEl.pause();
+          if (!isVoice && this.audioEl) this.audioEl.pause();
+          this.selectedTrack = null;
+          this.selectedId = null;
+          this.renderTimeline();
+          this.renderInspector();
+          this.render();
+          this.scheduleAutosave();
+        });
       } else {
         this.renderEmptyInspector();
       }
