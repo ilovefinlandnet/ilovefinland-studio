@@ -20,6 +20,27 @@ struct SceneConfig: Codable {
     let transition: String?
 }
 
+struct TextOverlayConfig: Codable {
+    let id: String?
+    let text: String
+    let start_sec: Double
+    let end_sec: Double
+    let x_pct: Double?
+    let y_pct: Double?
+    let font_family: String?
+    let font_size: Double?
+    let font_weight: String?
+    let color: String?
+    let outline_color: String?
+    let outline_width: Double?
+    let bg_color: String?
+    let bg_padding: Double?
+    let bg_radius: Double?
+    let text_align: String?
+    let shadow: Bool?
+    let rotation_deg: Double?
+}
+
 struct ReelConfig: Codable {
     let width: Int?
     let height: Int?
@@ -38,6 +59,7 @@ struct ReelConfig: Codable {
     let audio_track_path: String?
     let output_path: String
     let scenes: [SceneConfig]?
+    let text_overlays: [TextOverlayConfig]?
 }
 
 func drawText(ctx: CGContext, text: String, fontName: String, fontSize: CGFloat, color: CGColor, x: CGFloat, yFromBottom: CGFloat, withHalo: Bool = false) {
@@ -128,6 +150,180 @@ func drawCoverImage(ctx: CGContext, img: CGImage, width: Int, height: Int, zoom:
     // In CoreGraphics native space, (0,0) is bottom-left, y grows upwards.
     // CGContextDrawImage draws the image right-side up in native space.
     ctx.draw(img, in: CGRect(x: dx, y: dy, width: dw, height: dh))
+    ctx.restoreGState()
+}
+
+func parseColor(_ str: String?) -> CGColor {
+    guard let s = str?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else {
+        return CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+    }
+    if s.hasPrefix("#") {
+        var hex = String(s.dropFirst())
+        if hex.count == 3 {
+            hex = hex.map { "\($0)\($0)" }.joined()
+        }
+        if hex.count == 6 {
+            if let val = UInt64(hex, radix: 16) {
+                let r = CGFloat((val >> 16) & 0xFF) / 255.0
+                let g = CGFloat((val >> 8) & 0xFF) / 255.0
+                let b = CGFloat(val & 0xFF) / 255.0
+                return CGColor(red: r, green: g, blue: b, alpha: 1.0)
+            }
+        } else if hex.count == 8 {
+            if let val = UInt64(hex, radix: 16) {
+                let r = CGFloat((val >> 24) & 0xFF) / 255.0
+                let g = CGFloat((val >> 16) & 0xFF) / 255.0
+                let b = CGFloat((val >> 8) & 0xFF) / 255.0
+                let a = CGFloat(val & 0xFF) / 255.0
+                return CGColor(red: r, green: g, blue: b, alpha: a)
+            }
+        }
+    } else if s.hasPrefix("rgba") || s.hasPrefix("rgb") {
+        let clean = s.replacingOccurrences(of: "rgba(", with: "")
+                     .replacingOccurrences(of: "rgb(", with: "")
+                     .replacingOccurrences(of: ")", with: "")
+        let parts = clean.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        if parts.count >= 3 {
+            let r = (Double(parts[0]) ?? 255.0) / 255.0
+            let g = (Double(parts[1]) ?? 255.0) / 255.0
+            let b = (Double(parts[2]) ?? 255.0) / 255.0
+            let a = parts.count >= 4 ? (Double(parts[3]) ?? 1.0) : 1.0
+            return CGColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: CGFloat(a))
+        }
+    }
+    return CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+}
+
+func drawTimelineTextOverlay(ctx: CGContext, txt: TextOverlayConfig, canvasWidth: Int, canvasHeight: Int) {
+    let rawText = txt.text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !rawText.isEmpty else { return }
+
+    let xPct = txt.x_pct ?? 50.0
+    let yPct = txt.y_pct ?? 50.0
+    let cx = CGFloat(canvasWidth) * (CGFloat(xPct) / 100.0)
+    let cy = CGFloat(canvasHeight) * (1.0 - CGFloat(yPct) / 100.0)
+
+    let scale = CGFloat(canvasWidth) / 540.0
+    let fontSize = CGFloat(txt.font_size ?? 30.0) * scale
+    let isBold = (txt.font_weight == "bold" || txt.font_weight == "700" || txt.font_weight == "800" || txt.font_weight == "900")
+    let fontName = isBold ? "Helvetica-Bold" : "Helvetica"
+    let font = CTFontCreateWithName(fontName as CFString, fontSize, nil)
+
+    let maxW = min(CGFloat(canvasWidth) * 0.86, CGFloat(canvasWidth) - 40.0 * scale)
+    let rawParas = rawText.components(separatedBy: "\n")
+    var lines: [String] = []
+
+    for para in rawParas {
+        let words = para.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        if words.isEmpty {
+            lines.append("")
+            continue
+        }
+        var cur = ""
+        for w in words {
+            let test = cur.isEmpty ? w : "\(cur) \(w)"
+            let attr = CFAttributedStringCreate(nil, test as CFString, [
+                NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font
+            ] as CFDictionary)
+            let ctLine = CTLineCreateWithAttributedString(attr!)
+            let testW = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
+            if testW > maxW && !cur.isEmpty {
+                lines.append(cur)
+                cur = w
+            } else {
+                cur = test
+            }
+        }
+        if !cur.isEmpty { lines.append(cur) }
+    }
+    if lines.isEmpty { lines.append(rawText) }
+
+    var lineWidths: [CGFloat] = []
+    var maxLineW: CGFloat = 0.0
+    for l in lines {
+        let attr = CFAttributedStringCreate(nil, l as CFString, [
+            NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font
+        ] as CFDictionary)
+        let ctLine = CTLineCreateWithAttributedString(attr!)
+        let lw = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
+        lineWidths.append(lw)
+        if lw > maxLineW { maxLineW = lw }
+    }
+
+    let lineHeight = fontSize * 1.25
+    let totalH = CGFloat(lines.count) * lineHeight
+    let pad = CGFloat(txt.bg_padding ?? 12.0) * scale
+
+    ctx.saveGState()
+    ctx.translateBy(x: cx, y: cy)
+    if let rot = txt.rotation_deg, rot != 0 {
+        ctx.rotate(by: CGFloat(-rot * .pi / 180.0))
+    }
+
+    // Background Rounded Rect Box
+    if let bgColStr = txt.bg_color, !bgColStr.isEmpty, bgColStr != "transparent" {
+        let bgCol = parseColor(bgColStr)
+        let boxW = maxLineW + pad * 2.0
+        let boxH = totalH + pad * 2.0
+        let boxRect = CGRect(x: -boxW / 2.0, y: -boxH / 2.0, width: boxW, height: boxH)
+        let rad = CGFloat(txt.bg_radius ?? 8.0) * scale
+
+        ctx.saveGState()
+        ctx.setFillColor(bgCol)
+        let path = CGPath(roundedRect: boxRect, cornerWidth: rad, cornerHeight: rad, transform: nil)
+        ctx.addPath(path)
+        ctx.fillPath()
+        ctx.restoreGState()
+    }
+
+    if txt.shadow ?? true {
+        ctx.setShadow(offset: CGSize(width: 0, height: -2 * scale), blur: 8 * scale, color: CGColor(red: 0, green: 0, blue: 0, alpha: 0.85))
+    }
+
+    let textColor = parseColor(txt.color ?? "#FFFFFF")
+    let outlineColor = parseColor(txt.outline_color ?? "#0A192F")
+    let outlineWidth = CGFloat(txt.outline_width ?? 3.0) * scale
+
+    let startY = (totalH / 2.0) - (lineHeight * 0.80)
+
+    for (idx, line) in lines.enumerated() {
+        let curY = startY - (CGFloat(idx) * lineHeight)
+        let lw = lineWidths[idx]
+        var lineX: CGFloat = -lw / 2.0
+        if txt.text_align == "left" {
+            lineX = -maxLineW / 2.0
+        } else if txt.text_align == "right" {
+            lineX = maxLineW / 2.0 - lw
+        }
+
+        if outlineWidth > 0 {
+            ctx.saveGState()
+            ctx.setTextDrawingMode(.stroke)
+            ctx.setStrokeColor(outlineColor)
+            ctx.setLineWidth(outlineWidth * 2.0)
+            ctx.setLineJoin(.round)
+            let strokeAttr = CFAttributedStringCreate(nil, line as CFString, [
+                NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font,
+                NSAttributedString.Key(rawValue: kCTForegroundColorAttributeName as String): outlineColor
+            ] as CFDictionary)
+            let strokeLine = CTLineCreateWithAttributedString(strokeAttr!)
+            ctx.textPosition = CGPoint(x: lineX, y: curY)
+            CTLineDraw(strokeLine, ctx)
+            ctx.restoreGState()
+        }
+
+        ctx.saveGState()
+        ctx.setTextDrawingMode(.fill)
+        let fillAttr = CFAttributedStringCreate(nil, line as CFString, [
+            NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font,
+            NSAttributedString.Key(rawValue: kCTForegroundColorAttributeName as String): textColor
+        ] as CFDictionary)
+        let fillLine = CTLineCreateWithAttributedString(fillAttr!)
+        ctx.textPosition = CGPoint(x: lineX, y: curY)
+        CTLineDraw(fillLine, ctx)
+        ctx.restoreGState()
+    }
+
     ctx.restoreGState()
 }
 
@@ -343,7 +539,7 @@ func exportCleanMP4(configPath: String) {
             }
 
             // 2. Centered Pill Badge: "DISCOVER MORE"
-            let badgeText = "DISCOVER MORE"
+            let badgeText = "YOUR FINLAND DISCOVERED"
             let badgeFont = CTFontCreateWithName("Helvetica-Bold" as CFString, 13, nil)
             let badgeAttr = [
                 NSAttributedString.Key(rawValue: kCTFontAttributeName as String): badgeFont,
@@ -466,107 +662,115 @@ func exportCleanMP4(configPath: String) {
                 ctx.restoreGState()
             }
 
-            // 4. Scene Typography - Exact Instagram Safe-Area Left Alignment with Smooth Fade
-            let textFadeIn = min(1.0, CGFloat((t - sStart) / 0.40))
-            let textFadeOut = (activeSceneIndex < scenes.count - 1) ? min(1.0, CGFloat((sEnd - t) / 0.40)) : 1.0
-            let textOpacity = max(0.0, min(1.0, textFadeIn * textFadeOut))
-
-            ctx.saveGState()
-            ctx.setAlpha(textOpacity)
-
-            let badgeRaw = curScene?.badge ?? curScene?.tag ?? config.badge_text ?? "LAPLAND"
-            let badgeText = (badgeRaw.contains("•") ? badgeRaw.components(separatedBy: "•").last!.trimmingCharacters(in: .whitespaces) : badgeRaw).uppercased()
-
-            let line1Text = (curScene?.line1 ?? config.line1_text ?? "").uppercased()
-            let line2Text = curScene?.line2 ?? config.line2_text ?? ""
-            let line3Text = curScene?.line3 ?? curScene?.line2_highlight ?? ""
-            let subtitleText = curScene?.subtitle ?? config.subtitle_text ?? ""
-
-            let headlineFontSize = CGFloat(config.line2_font_px ?? 28)
-
-            var yCur = CGFloat(height) * 0.38 // ~365px from bottom
-
-            // Pill Badge
-            if !badgeText.isEmpty {
-                let badgeFont = CTFontCreateWithName("Helvetica-Bold" as CFString, 13, nil)
-                let badgeStr = CFAttributedStringCreate(nil, badgeText as CFString, [
-                    NSAttributedString.Key(rawValue: kCTFontAttributeName as String): badgeFont,
-                    NSAttributedString.Key(rawValue: kCTForegroundColorAttributeName as String): CGColor(red: 1, green: 1, blue: 1, alpha: 1)
-                ] as CFDictionary)
-                let badgeLine = CTLineCreateWithAttributedString(badgeStr!)
-                let badgeTextWidth = CGFloat(CTLineGetTypographicBounds(badgeLine, nil, nil, nil))
-                let badgeW = badgeTextWidth + 24.0
-                let badgeH: CGFloat = 26.0
+            // 4. Scene Typography / Timeline Text Overlays
+            if let overlays = config.text_overlays {
+                for txt in overlays {
+                    if t >= txt.start_sec && t <= txt.end_sec {
+                        drawTimelineTextOverlay(ctx: ctx, txt: txt, canvasWidth: width, canvasHeight: height)
+                    }
+                }
+            } else if curScene != nil {
+                let textFadeIn = min(1.0, CGFloat((t - sStart) / 0.40))
+                let textFadeOut = (activeSceneIndex < scenes.count - 1) ? min(1.0, CGFloat((sEnd - t) / 0.40)) : 1.0
+                let textOpacity = max(0.0, min(1.0, textFadeIn * textFadeOut))
 
                 ctx.saveGState()
-                ctx.setFillColor(red: 0.0, green: 0.22, blue: 0.51, alpha: 1.0) // Deep Finnish Blue #003882
-                let badgeRect = CGRect(x: safeLeft, y: yCur - badgeH, width: badgeW, height: badgeH)
-                let badgePath = CGPath(roundedRect: badgeRect, cornerWidth: 6, cornerHeight: 6, transform: nil)
-                ctx.addPath(badgePath)
-                ctx.fillPath()
-                ctx.restoreGState()
+                ctx.setAlpha(textOpacity)
 
-                drawText(ctx: ctx, text: badgeText, fontName: "Helvetica-Bold", fontSize: 13, color: CGColor(red: 1, green: 1, blue: 1, alpha: 1), x: safeLeft + 12.0, yFromBottom: yCur - badgeH + 7.0)
-                yCur -= (badgeH + 16.0)
-            }
+                let badgeRaw = curScene?.badge ?? curScene?.tag ?? config.badge_text ?? "LAPLAND"
+                let badgeText = (badgeRaw.contains("•") ? badgeRaw.components(separatedBy: "•").last!.trimmingCharacters(in: .whitespaces) : badgeRaw).uppercased()
 
-            // Line 1: Bold White (Using unified headlineFontSize with protective contrast halo)
-            if !line1Text.isEmpty {
-                let l1Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
-                let l1Lines = wrapLines(text: line1Text, font: l1Font, maxWidth: maxTextWidth)
-                for line in l1Lines {
-                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: CGColor(red: 1, green: 1, blue: 1, alpha: 1), x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
-                    yCur -= headlineFontSize * 1.18
+                let line1Text = (curScene?.line1 ?? config.line1_text ?? "").uppercased()
+                let line2Text = curScene?.line2 ?? config.line2_text ?? ""
+                let line3Text = curScene?.line3 ?? curScene?.line2_highlight ?? ""
+                let subtitleText = curScene?.subtitle ?? config.subtitle_text ?? ""
+
+                let headlineFontSize = CGFloat(config.line2_font_px ?? 28)
+
+                var yCur = CGFloat(height) * 0.38 // ~365px from bottom
+
+                // Pill Badge
+                if !badgeText.isEmpty {
+                    let badgeFont = CTFontCreateWithName("Helvetica-Bold" as CFString, 13, nil)
+                    let badgeStr = CFAttributedStringCreate(nil, badgeText as CFString, [
+                        NSAttributedString.Key(rawValue: kCTFontAttributeName as String): badgeFont,
+                        NSAttributedString.Key(rawValue: kCTForegroundColorAttributeName as String): CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+                    ] as CFDictionary)
+                    let badgeLine = CTLineCreateWithAttributedString(badgeStr!)
+                    let badgeTextWidth = CGFloat(CTLineGetTypographicBounds(badgeLine, nil, nil, nil))
+                    let badgeW = badgeTextWidth + 24.0
+                    let badgeH: CGFloat = 26.0
+
+                    ctx.saveGState()
+                    ctx.setFillColor(red: 0.0, green: 0.22, blue: 0.51, alpha: 1.0) // Deep Finnish Blue #003882
+                    let badgeRect = CGRect(x: safeLeft, y: yCur - badgeH, width: badgeW, height: badgeH)
+                    let badgePath = CGPath(roundedRect: badgeRect, cornerWidth: 6, cornerHeight: 6, transform: nil)
+                    ctx.addPath(badgePath)
+                    ctx.fillPath()
+                    ctx.restoreGState()
+
+                    drawText(ctx: ctx, text: badgeText, fontName: "Helvetica-Bold", fontSize: 13, color: CGColor(red: 1, green: 1, blue: 1, alpha: 1), x: safeLeft + 12.0, yFromBottom: yCur - badgeH + 7.0)
+                    yCur -= (badgeH + 16.0)
                 }
-            }
 
-            // Line 2: Bold White or Ice Blue (Using same unified headlineFontSize with protective contrast halo)
-            if !line2Text.isEmpty {
-                let l2Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
-                let l2Lines = wrapLines(text: line2Text, font: l2Font, maxWidth: maxTextWidth)
-                let iceBlueColor = CGColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0) // Ice Blue #38BDF8
-                let l2Color = (curScene?.line2_color == "blue") ? iceBlueColor : CGColor(red: 1, green: 1, blue: 1, alpha: 1)
-                for line in l2Lines {
-                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l2Color, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
-                    yCur -= headlineFontSize * 1.18
+                // Line 1: Bold White (Using unified headlineFontSize with protective contrast halo)
+                if !line1Text.isEmpty {
+                    let l1Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
+                    let l1Lines = wrapLines(text: line1Text, font: l1Font, maxWidth: maxTextWidth)
+                    for line in l1Lines {
+                        drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: CGColor(red: 1, green: 1, blue: 1, alpha: 1), x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
+                        yCur -= headlineFontSize * 1.18
+                    }
                 }
-            }
 
-            // Line 3: Electric Ice Blue (#38BDF8) (Using same unified headlineFontSize with protective contrast halo)
-            if !line3Text.isEmpty && line3Text != line2Text {
-                let l3Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
-                let l3Lines = wrapLines(text: line3Text, font: l3Font, maxWidth: maxTextWidth)
-                let iceBlueColor = CGColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0)
-                for line in l3Lines {
-                    drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: iceBlueColor, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
-                    yCur -= headlineFontSize * 1.18
+                // Line 2: Bold White or Ice Blue (Using same unified headlineFontSize with protective contrast halo)
+                if !line2Text.isEmpty {
+                    let l2Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
+                    let l2Lines = wrapLines(text: line2Text, font: l2Font, maxWidth: maxTextWidth)
+                    let iceBlueColor = CGColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0) // Ice Blue #38BDF8
+                    let l2Color = (curScene?.line2_color == "blue") ? iceBlueColor : CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+                    for line in l2Lines {
+                        drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l2Color, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
+                        yCur -= headlineFontSize * 1.18
+                    }
                 }
-            }
 
-            // Subtitle Narration Box
-            if !subtitleText.isEmpty {
-                yCur -= 6.0
-                let subFont = CTFontCreateWithName("Helvetica" as CFString, 14, nil)
-                let subLines = wrapLines(text: subtitleText, font: subFont, maxWidth: maxTextWidth - 28.0)
-                let subLineH: CGFloat = 19.0
-                let subBoxH = CGFloat(subLines.count) * subLineH + 14.0
-
-                ctx.saveGState()
-                ctx.setFillColor(red: 0.01, green: 0.03, blue: 0.08, alpha: 0.78)
-                let subBoxRect = CGRect(x: safeLeft, y: yCur - subBoxH, width: maxTextWidth, height: subBoxH)
-                let subPath = CGPath(roundedRect: subBoxRect, cornerWidth: 8, cornerHeight: 8, transform: nil)
-                ctx.addPath(subPath)
-                ctx.fillPath()
-                ctx.restoreGState()
-
-                var sy = yCur - 18.0
-                let slateGrey = CGColor(red: 0.92, green: 0.95, blue: 0.98, alpha: 1.0)
-                for sLine in subLines {
-                    drawText(ctx: ctx, text: sLine, fontName: "Helvetica", fontSize: 14, color: slateGrey, x: safeLeft + 12.0, yFromBottom: sy)
-                    sy -= subLineH
+                // Line 3: Electric Ice Blue (#38BDF8) (Using same unified headlineFontSize with protective contrast halo)
+                if !line3Text.isEmpty && line3Text != line2Text {
+                    let l3Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
+                    let l3Lines = wrapLines(text: line3Text, font: l3Font, maxWidth: maxTextWidth)
+                    let iceBlueColor = CGColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0)
+                    for line in l3Lines {
+                        drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: iceBlueColor, x: safeLeft, yFromBottom: yCur - headlineFontSize * 0.90, withHalo: true)
+                        yCur -= headlineFontSize * 1.18
+                    }
                 }
+
+                // Subtitle Narration Box
+                if !subtitleText.isEmpty {
+                    yCur -= 6.0
+                    let subFont = CTFontCreateWithName("Helvetica" as CFString, 14, nil)
+                    let subLines = wrapLines(text: subtitleText, font: subFont, maxWidth: maxTextWidth - 28.0)
+                    let subLineH: CGFloat = 19.0
+                    let subBoxH = CGFloat(subLines.count) * subLineH + 14.0
+
+                    ctx.saveGState()
+                    ctx.setFillColor(red: 0.01, green: 0.03, blue: 0.08, alpha: 0.78)
+                    let subBoxRect = CGRect(x: safeLeft, y: yCur - subBoxH, width: maxTextWidth, height: subBoxH)
+                    let subPath = CGPath(roundedRect: subBoxRect, cornerWidth: 8, cornerHeight: 8, transform: nil)
+                    ctx.addPath(subPath)
+                    ctx.fillPath()
+                    ctx.restoreGState()
+
+                    var sy = yCur - 18.0
+                    let slateGrey = CGColor(red: 0.92, green: 0.95, blue: 0.98, alpha: 1.0)
+                    for sLine in subLines {
+                        drawText(ctx: ctx, text: sLine, fontName: "Helvetica", fontSize: 14, color: slateGrey, x: safeLeft + 12.0, yFromBottom: sy)
+                        sy -= subLineH
+                    }
+                }
+                ctx.restoreGState() // textOpacity restore
             }
-            ctx.restoreGState() // textOpacity restore
         }
 
         CVPixelBufferUnlockBaseAddress(buffer, [])

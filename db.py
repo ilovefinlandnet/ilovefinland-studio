@@ -1970,7 +1970,7 @@ def recalculate_reel_scenes_timings(reel: Dict[str, Any]) -> Dict[str, Any]:
         "duration": 2.8,
         "is_outro": True,
         "tag": "ILOVEFINLAND",
-        "badge": "DISCOVER MORE",
+        "badge": "YOUR FINLAND DISCOVERED",
         "line1": "FALL IN LOVE WITH FINLAND.",
         "line2": "VISIT www.ilovefinland.net",
         "line2_color": "blue",
@@ -5297,8 +5297,9 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
     total_duration = max(t_cursor, 5.0) if clips else 10.0
 
     text_layers = []
-    clean_title = (title or "DISCOVER FINLAND").strip().upper()
-    if clean_title:
+    clean_title = (title or "").strip().upper()
+    is_blank_reel = clean_title in ("", "NEW BLANK REEL", "UNTITLED REEL", "NEW REEL", "BLANK REEL")
+    if clean_title and not is_blank_reel and media_items:
         title_end = min(total_duration, 3.8)
         # Scene 1: Kicker / Badge text placed cleanly above the headline
         text_layers.append({
@@ -5448,9 +5449,9 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
                 "end_sec": round(total_duration, 2),
             },
             "outro": {
-                "enabled": True,
+                "enabled": False,
                 "duration": 2.8,
-                "title": "DISCOVER MORE",
+                "title": "YOUR FINLAND DISCOVERED",
                 "subtitle": "FALL IN LOVE WITH FINLAND",
                 "website": "ilovefinland.net",
                 "bg_color": "#0A192F",

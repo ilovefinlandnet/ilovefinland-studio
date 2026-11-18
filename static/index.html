@@ -481,6 +481,25 @@
                       <div id="reel-media-pool-items" class="reel-media-pool-grid">
                         <!-- Populated dynamically -->
                       </div>
+
+                      <!-- SAVED ENDING CLIPS SPACE (User can add to media at end) -->
+                      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #1e293b;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                          <span style="font-size:0.76rem;font-weight:800;color:#38bdf8;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:6px;">
+                            🎬 Saved Ending Clips (<span id="reel-ending-clips-count">3</span>)
+                          </span>
+                          <button type="button" id="btn-upload-custom-ending" class="btn btn-sm btn-ghost" style="font-size:0.7rem;color:#38bdf8;padding:2px 6px;">
+                            + Upload / Add New
+                          </button>
+                        </div>
+                        <p style="font-size:0.72rem;color:var(--reel-text-muted);margin-bottom:10px;line-height:1.35;">
+                          Your saved ending cards. Click <strong>"+ Add to End"</strong> on any clip to place it at the end of your media timeline yourself.
+                        </p>
+                        <div id="reel-ending-clips-grid" style="display:flex;flex-direction:column;gap:8px;">
+                          <!-- Populated dynamically -->
+                        </div>
+                        <input type="file" id="reel-ending-file-input" accept="image/*,video/*" style="display:none;" />
+                      </div>
                     </div>
 
                     <!-- TRANSITIONS DRAWER -->
@@ -673,7 +692,7 @@
                       <div class="reel-drawer-section-title">Closing Branded Card</div>
                       <div class="reel-prop-group">
                         <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;color:#fff;cursor:pointer;">
-                          <input type="checkbox" id="chk-outro-enabled" checked />
+                          <input type="checkbox" id="chk-outro-enabled" />
                           <span>Include Branded Outro Card</span>
                         </label>
                       </div>
@@ -683,7 +702,7 @@
                       </div>
                       <div class="reel-prop-group">
                         <label class="reel-prop-label">Headline</label>
-                        <input type="text" id="input-outro-title" class="reel-prop-input" value="DISCOVER MORE" />
+                        <input type="text" id="input-outro-title" class="reel-prop-input" value="YOUR FINLAND DISCOVERED" />
                       </div>
                       <div class="reel-prop-group">
                         <label class="reel-prop-label">Subtitle</label>

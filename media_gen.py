@@ -274,7 +274,7 @@ def export_reel_project_timeline_mp4(
                 "image_path": c_img,
                 "badge": badge,
                 "tag": badge,
-                "line1": title_text or project_title.upper()[:28],
+                "line1": title_text,
                 "line2": sub_text or "",
                 "line2_color": "blue" if idx % 2 == 1 else "white",
                 "line3": callout_text or "",
@@ -292,7 +292,7 @@ def export_reel_project_timeline_mp4(
             "image_path": fallback_bg,
             "badge": "ILOVEFINLAND",
             "tag": "ILOVEFINLAND",
-            "line1": project_title.upper()[:28],
+            "line1": project_title.upper()[:28] if project_title not in ("New Blank Reel", "Untitled Reel") else "",
             "line2": "EXPLORE FINLAND",
             "line2_color": "white",
             "line3": "",
@@ -302,16 +302,16 @@ def export_reel_project_timeline_mp4(
             "transition": "none",
         })
 
-    # Outro Scene if enabled
-    if outro_config.get("enabled", True):
+    # Outro Scene only if explicitly enabled
+    if outro_config.get("enabled", False):
         outro_dur = float(outro_config.get("duration", 2.8))
         last_end = scene_configs[-1]["end_sec"] if scene_configs else 0.0
         scene_configs.append({
             "start_sec": last_end,
             "end_sec": last_end + outro_dur,
             "image_path": scene_configs[-1]["image_path"] if scene_configs else logo_path,
-            "badge": "DISCOVER MORE",
-            "tag": "DISCOVER MORE",
+            "badge": "YOUR FINLAND DISCOVERED",
+            "tag": "YOUR FINLAND DISCOVERED",
             "line1": outro_config.get("subtitle", "FALL IN LOVE WITH FINLAND."),
             "line2": outro_config.get("website", "ilovefinland.net"),
             "line2_color": "blue",
@@ -372,23 +372,24 @@ def export_reel_project_timeline_mp4(
 
     # Swift AVAssetWriter Engine (Hardware accelerated on macOS)
     swift_config = {
-        "width": 540,
-        "height": 960,
-        "fps": 24,
+        "width": 1080,
+        "height": 1920,
+        "fps": 30,
         "duration_sec": total_dur,
         "bg_image_path": scene_configs[0]["image_path"] if scene_configs else "",
         "logo_image_path": logo_path,
         "logo_x_pct": float(logo_config.get("x_pct", 50.0)),
         "logo_y_pct": float(logo_config.get("y_pct", 18.0)),
         "logo_size_px": float(logo_config.get("size_px", 76.0)),
-        "badge_text": scene_configs[0].get("badge", "ILOVEFINLAND"),
-        "line1_text": scene_configs[0].get("line1", project_title.upper()[:28]),
-        "line2_text": scene_configs[0].get("line2", ""),
+        "badge_text": "",
+        "line1_text": "",
+        "line2_text": "",
         "line2_font_px": 32,
-        "subtitle_text": scene_configs[0].get("subtitle", "")[:120],
+        "subtitle_text": "",
         "audio_track_path": audio_path,
         "output_path": output_path,
         "scenes": scene_configs,
+        "text_overlays": text_layers,
     }
 
     cfg_tmp = f"/tmp/reel_timeline_cfg_{secrets.token_hex(4)}.json"

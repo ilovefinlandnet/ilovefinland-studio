@@ -230,6 +230,43 @@
       });
       document.getElementById("btn-add-all-media-timeline")?.addEventListener("click", () => this.addAllMediaToTimeline());
 
+      // Custom ending clip upload listener
+      const endingUploadBtn = document.getElementById("btn-upload-custom-ending");
+      const endingFileInput = document.getElementById("reel-ending-file-input");
+      endingUploadBtn?.addEventListener("click", () => endingFileInput?.click());
+      endingFileInput?.addEventListener("change", async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          endingUploadBtn.textContent = "Uploading...";
+          const res = await fetch("/api/media/upload", { method: "POST", body: formData });
+          const data = await res.json();
+          if (data && data.url) {
+            const custom = JSON.parse(localStorage.getItem("ilf_user_saved_ending_clips") || "[]");
+            custom.push({
+              id: "custom_ending_" + Date.now(),
+              name: file.name.replace(/\.[^/.]+$/, ""),
+              desc: "Custom Saved Ending Card",
+              filename: file.name,
+              url: data.url,
+              duration: 3.0,
+              type: file.type.startsWith("video") ? "video" : "image",
+              badge: "Custom"
+            });
+            localStorage.setItem("ilf_user_saved_ending_clips", JSON.stringify(custom));
+            this.renderEndingClipsSpace();
+            alert("Uploaded and saved new ending clip to your library!");
+          }
+        } catch (err) {
+          alert("Failed to upload ending clip: " + err.message);
+        } finally {
+          endingUploadBtn.textContent = "+ Upload / Add New";
+          endingFileInput.value = "";
+        }
+      });
+
       // Text presets & add
       document.getElementById("btn-add-custom-text")?.addEventListener("click", () => this.addTextBox());
       document.querySelectorAll(".btn-preset-text").forEach((btn) => {
@@ -647,6 +684,21 @@
           this.audioEl.src = music.url;
         }
 
+        // Sync Outro drawer settings with project state
+        const outro = this.currentProject.timeline?.tracks?.outro || {};
+        const chkOutro = document.getElementById("chk-outro-enabled");
+        if (chkOutro) chkOutro.checked = Boolean(outro.enabled);
+        const sliderOutro = document.getElementById("slider-outro-dur");
+        if (sliderOutro) sliderOutro.value = String(outro.duration || 2.8);
+        const valOutro = document.getElementById("val-outro-dur");
+        if (valOutro) valOutro.textContent = `${(outro.duration || 2.8).toFixed(1)}s`;
+        const inOutroTitle = document.getElementById("input-outro-title");
+        if (inOutroTitle) inOutroTitle.value = outro.title || "YOUR FINLAND DISCOVERED";
+        const inOutroSub = document.getElementById("input-outro-sub");
+        if (inOutroSub) inOutroSub.value = outro.subtitle || "FALL IN LOVE WITH FINLAND";
+        const inOutroWeb = document.getElementById("input-outro-web");
+        if (inOutroWeb) inOutroWeb.value = outro.website || "ilovefinland.net";
+
         this.renderMediaPoolUI();
         this.renderTimeline();
         this.renderInspector();
@@ -839,6 +891,8 @@
       const pool = this.currentProject.timeline.media_pool || [];
       if (countEl) countEl.textContent = pool.length;
 
+      this.renderEndingClipsSpace();
+
       container.innerHTML = pool.map((m, idx) => `
         <div class="reel-media-pool-card" data-idx="${idx}" draggable="true" data-id="${m.id}" title="Drag clip to timeline or click '+ Add to Reel'">
           ${m.type === 'video'
@@ -989,6 +1043,132 @@
       this.render();
       this.scheduleAutosave();
     }
+
+    // ========================================================
+    // SAVED ENDING CLIPS LIBRARY (User adds to media track)
+    // ========================================================
+    getSavedEndingClips() {
+      const builtins = [
+        {
+          id: "ending_brand",
+          name: "Your Finland Discovered",
+          desc: "Brand Standard • Logo + Subtitle",
+          filename: "your_finland_discovered.png",
+          url: "/assets/ending_clips/your_finland_discovered.png",
+          duration: 3.0,
+          type: "image",
+          badge: "Brand Standard"
+        },
+        {
+          id: "ending_social",
+          name: "Follow @ilovefinland.fi",
+          desc: "Social Growth • Instagram & TikTok",
+          filename: "follow_ilovefinland.png",
+          url: "/assets/ending_clips/follow_ilovefinland.png",
+          duration: 3.0,
+          type: "image",
+          badge: "Social"
+        },
+        {
+          id: "ending_guide",
+          name: "Read The Full Guide",
+          desc: "Web Traffic • ilovefinland.net",
+          filename: "read_the_guide.png",
+          url: "/assets/ending_clips/read_the_guide.png",
+          duration: 3.0,
+          type: "image",
+          badge: "Website"
+        }
+      ];
+
+      try {
+        const custom = JSON.parse(localStorage.getItem("ilf_user_saved_ending_clips") || "[]");
+        return [...builtins, ...custom];
+      } catch (e) {
+        return builtins;
+      }
+    }
+
+    renderEndingClipsSpace() {
+      const container = document.getElementById("reel-ending-clips-grid");
+      const countEl = document.getElementById("reel-ending-clips-count");
+      if (!container) return;
+
+      const clips = this.getSavedEndingClips();
+      if (countEl) countEl.textContent = clips.length;
+
+      container.innerHTML = clips.map((c, idx) => `
+        <div class="reel-ending-clip-card" data-idx="${idx}" style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:12px;transition:all 0.15s ease;">
+          <div style="width:40px;height:68px;border-radius:4px;overflow:hidden;background:#000;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.5);">
+            <img src="${c.url}" alt="${escapeHtml(c.name)}" style="width:100%;height:100%;object-fit:cover;" />
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+              <span style="font-weight:750;font-size:0.78rem;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${escapeHtml(c.name)}
+              </span>
+              <span style="font-size:0.6rem;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;padding:1px 4px;border-radius:3px;">
+                ${escapeHtml(c.badge || "Ending")}
+              </span>
+            </div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-bottom:6px;line-height:1.2;">
+              ${escapeHtml(c.desc || "Branded Ending Card")}
+            </div>
+            <button type="button" class="btn btn-sm btn-primary btn-add-ending-to-media" data-idx="${idx}" style="font-size:0.68rem;padding:3px 10px;display:inline-flex;align-items:center;gap:4px;">
+              <span>+ Add to End</span>
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      container.querySelectorAll(".btn-add-ending-to-media").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx, 10);
+          if (clips[idx]) this.addEndingClipToTimeline(clips[idx]);
+        });
+      });
+    }
+
+    addEndingClipToTimeline(endingItem) {
+      if (!this.currentProject) return;
+      const mediaClips = this.currentProject.timeline.tracks.media || [];
+      const lastEnd = mediaClips.length > 0 ? mediaClips[mediaClips.length - 1].end_sec : 0.0;
+      const dur = endingItem.duration || 3.0;
+
+      const newClip = {
+        id: "media_ending_" + Date.now(),
+        filename: endingItem.name || "Ending Clip",
+        url: endingItem.url,
+        type: "image",
+        start_sec: round1(lastEnd),
+        end_sec: round1(lastEnd + dur),
+        duration: dur,
+        fit_mode: "cover",
+        filter: "none",
+        transition_in: mediaClips.length > 0 ? "fade" : "none",
+        transition_duration: 0.5,
+        is_ending_clip: true
+      };
+
+      mediaClips.push(newClip);
+      this.currentProject.timeline.tracks.media = mediaClips;
+
+      // Make sure auto outro is disabled so it doesn't double-render
+      if (this.currentProject.timeline.tracks.outro) {
+        this.currentProject.timeline.tracks.outro.enabled = false;
+      }
+
+      this.recalculateTotalDuration();
+      this.pushState();
+      this.renderTimeline();
+      this.renderInspector();
+      this.seekTo(lastEnd);
+      this.render();
+      this.scheduleAutosave();
+    }
+
+
 
     // =========================================================================
     // TEXT OVERLAYS & PRESETS
@@ -1807,13 +1987,13 @@
         };
 
         const onMouseUp = () => {
-          this._lastDragEndTime = Date.now();
           window.removeEventListener("mousemove", onMouseMove);
           window.removeEventListener("mouseup", onMouseUp);
           window.removeEventListener("touchmove", onMouseMove);
           window.removeEventListener("touchend", onMouseUp);
 
           if (isDragging) {
+            this._lastDragEndTime = Date.now();
             this.recalculateTotalDuration();
             this.pushState();
             this.renderTimeline();
@@ -1980,7 +2160,6 @@
           this.bindClipMove(block, "text", txt);
 
           block.addEventListener("click", (e) => {
-            if (Date.now() - (this._lastDragEndTime || 0) < 250) return;
             e.stopPropagation();
             this.selectedTrack = "text";
             this.selectedId = txt.id;
@@ -2314,7 +2493,7 @@
       } else {
         // 1. Render Current Media Clip
         const currentClipIndex = mediaClips.findIndex((c) => t >= c.start_sec && t <= c.end_sec);
-        const currentClip = currentClipIndex >= 0 ? mediaClips[currentClipIndex] : mediaClips[0];
+        const currentClip = currentClipIndex >= 0 ? mediaClips[currentClipIndex] : (t <= (mediaClips[0]?.end_sec || 0) ? mediaClips[0] : null);
         if (currentClip && currentClip.url) {
           // If in transition during active playback, draw outgoing clip underneath so dissolve blends seamlessly
           if (this.isPlaying && currentClipIndex > 0 && currentClip.transition_in && currentClip.transition_in !== "none") {
@@ -2714,7 +2893,7 @@
       ctx.font = '800 64px "Inter", sans-serif';
       ctx.fillStyle = "#FFFFFF";
       ctx.textAlign = "center";
-      ctx.fillText(outro.title || "DISCOVER MORE", CANVAS_W / 2, 850);
+      ctx.fillText(outro.title || "YOUR FINLAND DISCOVERED", CANVAS_W / 2, 850);
 
       // Subtitle
       ctx.font = '700 48px "Inter", sans-serif';

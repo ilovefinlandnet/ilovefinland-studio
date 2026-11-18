@@ -495,7 +495,7 @@
         }
 
         // Centered Pill Badge: "DISCOVER MORE"
-        const bText = "DISCOVER MORE";
+        const bText = "YOUR FINLAND DISCOVERED";
         ctx.save();
         ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
         const bTextW = ctx.measureText(bText).width;
