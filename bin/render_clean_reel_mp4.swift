@@ -64,6 +64,8 @@ struct ReelConfig: Codable {
     let logo_x_pct: Double?
     let logo_y_pct: Double?
     let logo_size_px: Double?
+    let logo_start_sec: Double?
+    let logo_end_sec: Double?
     let badge_text: String?
     let line1_text: String?
     let line2_text: String?
@@ -288,49 +290,55 @@ func drawTimelineTextOverlay(ctx: CGContext, txt: TextOverlayConfig, canvasWidth
         let headlineFontSize: CGFloat = CGFloat(txt.font_size ?? 32.0) * scale
         let lineSpacing: CGFloat = 1.16
 
-        // Line 1
-        if !activeL1.isEmpty {
-            let l1Color = parseColor(txt.line1_color ?? "#FFFFFF")
-            let l1Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
-            let l1Lines = wrapLines(text: activeL1, font: l1Font, maxWidth: maxTextWidth)
-            for line in l1Lines {
-                let attr = CFAttributedStringCreate(nil, line as CFString, [NSAttributedString.Key(rawValue: kCTFontAttributeName as String): l1Font] as CFDictionary)
+        let hasBgBox = (txt.bg_color != nil && !txt.bg_color!.isEmpty && txt.bg_color != "transparent")
+        let bgBoxColor = hasBgBox ? parseColor(txt.bg_color!) : CGColor(red: 0, green: 0, blue: 0, alpha: 0)
+        let padX: CGFloat = CGFloat(txt.bg_padding ?? 10.0) * scale
+        let padY: CGFloat = 5.0 * scale
+        let rad: CGFloat = CGFloat(txt.bg_radius ?? 6.0) * scale
+
+        func renderHeadlineBlock(text: String, color: CGColor) {
+            guard !text.isEmpty else { return }
+            let font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
+            let lines = wrapLines(text: text, font: font, maxWidth: maxTextWidth)
+            for line in lines {
+                let attr = CFAttributedStringCreate(nil, line as CFString, [NSAttributedString.Key(rawValue: kCTFontAttributeName as String): font] as CFDictionary)
                 let ctLine = CTLineCreateWithAttributedString(attr!)
                 let lw = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
                 let lx = isCenter ? ((CGFloat(canvasWidth) - lw) / 2.0) : safeLeft
-                drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l1Color, x: lx, yFromBottom: yCur - headlineFontSize * 0.92, withHalo: true)
+                let ly = yCur - headlineFontSize * 0.92
+
+                // Draw background highlight box behind this line if set
+                if hasBgBox {
+                    ctx.saveGState()
+                    ctx.setFillColor(bgBoxColor)
+                    let boxRect = CGRect(x: lx - padX, y: ly - padY, width: lw + padX * 2.0, height: headlineFontSize + padY * 2.0)
+                    let bPath = CGPath(roundedRect: boxRect, cornerWidth: rad, cornerHeight: rad, transform: nil)
+                    ctx.addPath(bPath)
+                    ctx.fillPath()
+                    ctx.restoreGState()
+                }
+
+                drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: color, x: lx, yFromBottom: ly, withHalo: true)
                 yCur -= headlineFontSize * lineSpacing
             }
+        }
+
+        // Line 1
+        if !activeL1.isEmpty {
+            let l1Color = parseColor(txt.line1_color ?? "#FFFFFF")
+            renderHeadlineBlock(text: activeL1, color: l1Color)
         }
 
         // Line 2
         if !l2Text.isEmpty {
             let l2Color = parseColor(txt.line2_color ?? "#FFFFFF")
-            let l2Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
-            let l2Lines = wrapLines(text: l2Text, font: l2Font, maxWidth: maxTextWidth)
-            for line in l2Lines {
-                let attr = CFAttributedStringCreate(nil, line as CFString, [NSAttributedString.Key(rawValue: kCTFontAttributeName as String): l2Font] as CFDictionary)
-                let ctLine = CTLineCreateWithAttributedString(attr!)
-                let lw = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
-                let lx = isCenter ? ((CGFloat(canvasWidth) - lw) / 2.0) : safeLeft
-                drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l2Color, x: lx, yFromBottom: yCur - headlineFontSize * 0.92, withHalo: true)
-                yCur -= headlineFontSize * lineSpacing
-            }
+            renderHeadlineBlock(text: l2Text, color: l2Color)
         }
 
         // Line 3
         if !l3Text.isEmpty {
             let l3Color = parseColor(txt.line3_color ?? "#38BDF8") // Default Ice Blue
-            let l3Font = CTFontCreateWithName("Helvetica-Bold" as CFString, headlineFontSize, nil)
-            let l3Lines = wrapLines(text: l3Text, font: l3Font, maxWidth: maxTextWidth)
-            for line in l3Lines {
-                let attr = CFAttributedStringCreate(nil, line as CFString, [NSAttributedString.Key(rawValue: kCTFontAttributeName as String): l3Font] as CFDictionary)
-                let ctLine = CTLineCreateWithAttributedString(attr!)
-                let lw = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
-                let lx = isCenter ? ((CGFloat(canvasWidth) - lw) / 2.0) : safeLeft
-                drawText(ctx: ctx, text: line, fontName: "Helvetica-Bold", fontSize: headlineFontSize, color: l3Color, x: lx, yFromBottom: yCur - headlineFontSize * 0.92, withHalo: true)
-                yCur -= headlineFontSize * lineSpacing
-            }
+            renderHeadlineBlock(text: l3Text, color: l3Color)
         }
 
         // Subtitle
@@ -799,8 +807,9 @@ func exportCleanMP4(configPath: String) {
                 ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
             }
 
-            // 2. Optional Heart Logo - ONLY when logo_visible is true
-            if (config.logo_visible ?? false), let lImg = logoImg {
+            // 2. Optional Heart Logo - ONLY when logo_visible is true and within time window
+            let isLogoTime = (t >= (config.logo_start_sec ?? 0.0) && t <= (config.logo_end_sec ?? 9999.0))
+            if (config.logo_visible ?? false) && isLogoTime, let lImg = logoImg {
                 let logoSizePct = (config.logo_size_px ?? 76.0) / 1080.0
                 let logoSize: CGFloat = round(CGFloat(width) * CGFloat(logoSizePct))
                 let xPct = CGFloat(config.logo_x_pct ?? 50.0) / 100.0

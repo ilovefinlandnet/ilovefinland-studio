@@ -382,6 +382,8 @@ def export_reel_project_timeline_mp4(
         "logo_x_pct": float(logo_config.get("x_pct", 50.0)),
         "logo_y_pct": float(logo_config.get("y_pct", 18.0)),
         "logo_size_px": float(logo_config.get("size_px", 76.0)),
+        "logo_start_sec": float(logo_config.get("start_sec", 0.0)),
+        "logo_end_sec": float(logo_config.get("end_sec", total_dur)) if not logo_config.get("always_on", True) else total_dur,
         "badge_text": "",
         "line1_text": "",
         "line2_text": "",

@@ -2785,10 +2785,33 @@
           }
           if (curLine) lines.push(curLine);
 
+          const hasBgBox = (txt.bg_color && txt.bg_color !== "transparent");
+          const padX = (txt.bg_padding || 10) * 2;
+          const padY = 8;
+          const rad = (txt.bg_radius || 6) * 2;
+
           lines.forEach((l) => {
-            ctx.strokeText(l, stackStartX, yCur + headlineFontSize * 0.85);
-            ctx.fillText(l, stackStartX, yCur + headlineFontSize * 0.85);
-            yCur += headlineFontSize * 1.16;
+            const lw = ctx.measureText(l).width;
+            const lx = isCenter ? (CANVAS_W / 2 - lw / 2) : stackStartX;
+
+            if (hasBgBox) {
+              ctx.save();
+              ctx.fillStyle = txt.bg_color;
+              ctx.shadowBlur = 6;
+              const boxX = lx - padX / 2;
+              const boxY = yCur - 4;
+              const boxW = lw + padX;
+              const boxH = headlineFontSize + padY * 2;
+              ctx.beginPath();
+              ctx.roundRect ? ctx.roundRect(boxX, boxY, boxW, boxH, rad) : ctx.rect(boxX, boxY, boxW, boxH);
+              ctx.fill();
+              ctx.restore();
+            }
+
+            const textX = isCenter ? (CANVAS_W / 2) : stackStartX;
+            ctx.strokeText(l, textX, yCur + headlineFontSize * 0.85);
+            ctx.fillText(l, textX, yCur + headlineFontSize * 0.85);
+            yCur += headlineFontSize * 1.18;
           });
         };
 
@@ -3194,8 +3217,18 @@
           <div class="reel-prop-group">
             <label class="reel-prop-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#0A192F;padding:8px 12px;border-radius:6px;border:1px solid #1E293B;">
               <input type="checkbox" id="prop-chk-bgdim" ${txt.bg_dim !== false ? 'checked' : ''} />
-              <span style="font-weight:600;color:#F1F5F9;font-size:0.8rem;">🌙 Background Dim Scrim (High contrast over snow)</span>
+              <span style="font-weight:600;color:#F1F5F9;font-size:0.8rem;">🌙 Bottom Dim Scrim (High contrast over snow)</span>
             </label>
+          </div>
+
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Text Background Highlight Box</label>
+            <select id="prop-text-bg-box" class="reel-prop-select">
+              <option value="rgba(10, 25, 47, 0.88)" ${(!txt.bg_color || txt.bg_color.includes('10, 25, 47')) ? 'selected' : ''}>Navy Box (#0A192F)</option>
+              <option value="rgba(0, 56, 130, 0.90)" ${txt.bg_color && txt.bg_color.includes('0, 56, 130') ? 'selected' : ''}>Nordic Blue Box (#003882)</option>
+              <option value="rgba(0, 0, 0, 0.82)" ${txt.bg_color && txt.bg_color.includes('0, 0, 0') ? 'selected' : ''}>Black Box (High Contrast)</option>
+              <option value="transparent" ${txt.bg_color === 'transparent' ? 'selected' : ''}>No Box (Transparent / Halo Only)</option>
+            </select>
           </div>
 
           <div class="reel-prop-group">
@@ -3294,6 +3327,11 @@
         });
         document.getElementById("prop-chk-bgdim")?.addEventListener("change", (e) => {
           txt.bg_dim = e.target.checked;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-text-bg-box")?.addEventListener("change", (e) => {
+          txt.bg_color = e.target.value;
           this.render();
           this.scheduleAutosave();
         });
