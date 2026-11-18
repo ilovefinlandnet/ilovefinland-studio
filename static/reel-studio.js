@@ -64,6 +64,7 @@
 
       // Timeline
       this.tracksViewport = document.getElementById("reel-tracks-viewport");
+      this.trackHeaders = document.querySelector(".reel-track-headers");
       this.timeRuler = document.getElementById("reel-time-ruler");
       this.playhead = document.getElementById("reel-playhead");
       this.laneMedia = document.getElementById("lane-media");
@@ -79,7 +80,66 @@
       this.inspectorContent = document.getElementById("inspector-content");
     }
 
+    openDrawer(name) {
+      const btn = document.querySelector(`.reel-tab-btn[data-drawer="${name}"]`);
+      if (btn) btn.click();
+    }
+
     bindEvents() {
+      // Synchronize vertical scrolling between track lanes and track headers
+      if (this.tracksViewport) {
+        this.tracksViewport.addEventListener("scroll", () => {
+          if (this.trackHeaders) {
+            this.trackHeaders.scrollTop = this.tracksViewport.scrollTop;
+          }
+        });
+      }
+
+      // Track Headers 1-click select & inspector open
+      document.getElementById("header-media")?.addEventListener("click", () => {
+        this.selectedTrack = "media";
+        const clips = this.currentProject?.timeline?.tracks?.media || [];
+        this.selectedId = clips[0]?.id || null;
+        this.renderTimeline();
+        this.renderInspector();
+        this.openMobileInspector();
+        this.openDrawer("media");
+      });
+      document.getElementById("header-text")?.addEventListener("click", () => {
+        this.selectedTrack = "text";
+        const texts = this.currentProject?.timeline?.tracks?.text || [];
+        this.selectedId = texts[0]?.id || null;
+        this.renderTimeline();
+        this.renderInspector();
+        this.openMobileInspector();
+        this.openDrawer("text");
+      });
+      document.getElementById("header-logo")?.addEventListener("click", () => {
+        this.selectedTrack = "logo";
+        this.selectedId = "logo";
+        this.renderTimeline();
+        this.renderInspector();
+        this.openMobileInspector();
+        this.openDrawer("logo");
+      });
+      document.getElementById("header-audio")?.addEventListener("click", () => {
+        this.selectedTrack = "music";
+        const m = this.getAudioTrack("music");
+        this.selectedId = m ? m.id : "music";
+        this.renderTimeline();
+        this.renderInspector();
+        this.openMobileInspector();
+        this.openDrawer("audio");
+      });
+      document.getElementById("header-voiceover")?.addEventListener("click", () => {
+        this.selectedTrack = "voiceover";
+        const vo = this.getAudioTrack("voiceover");
+        this.selectedId = vo ? vo.id : "voiceover";
+        this.renderTimeline();
+        this.renderInspector();
+        this.openMobileInspector();
+        this.openDrawer("audio");
+      });
       // Hub Actions
       document.getElementById("btn-reel-hub-new")?.addEventListener("click", () => this.createNewProject());
       document.getElementById("btn-reel-hub-import")?.addEventListener("click", () => this.showArticleImportModal());
@@ -934,20 +994,25 @@
     // TEXT OVERLAYS & PRESETS
     // =========================================================================
 
-    addTextBox(text = "NEW TEXT OVERLAY", type = "custom", yPct = null) {
+    addTextBox(text = "NEW TEXT OVERLAY", type = "custom", yPct = null, opts = {}) {
       if (!this.currentProject) return;
       const textLayers = this.currentProject.timeline.tracks.text;
-      const dur = Math.min(4.0, Math.max(2.0, this.getTotalDuration() - this.currentTime));
+      const totalDur = this.getTotalDuration();
+      const dur = opts.duration || Math.min(3.5, Math.max(2.0, totalDur - this.currentTime));
       const st = round1(this.currentTime);
-      const en = round1(st + Math.max(2.0, dur));
+      const en = round1(st + Math.max(1.8, dur));
 
       if (yPct == null) {
         // Choose intelligent non-colliding vertical position relative to active layers
         const activeLayers = textLayers.filter((t) => st < t.end_sec && en > t.start_sec);
         const usedY = activeLayers.map((l) => l.y_pct ?? 50.0);
-        const candidates = [50.0, 68.0, 32.0, 80.0, 22.0];
-        yPct = candidates.find((c) => !usedY.some((y) => Math.abs(y - c) < 9)) || (50.0 + (activeLayers.length * 10) % 35);
+        const candidates = type === "subtitle" ? [32.0, 68.0, 72.0] : (type === "callout" ? [24.0, 76.0] : [50.0, 48.0, 68.0, 32.0, 80.0]);
+        yPct = candidates.find((c) => !usedY.some((y) => Math.abs(y - c) < 10)) || (50.0 + (activeLayers.length * 10) % 35);
       }
+
+      const defaultFontSize = type === "title" ? 38 : (type === "subtitle" ? 22 : (type === "callout" ? 20 : 32));
+      const defaultColor = opts.color || (type === "subtitle" ? "#38BDF8" : "#FFFFFF");
+      const defaultBg = opts.bgColor || (type === "subtitle" ? "rgba(10, 25, 47, 0.82)" : "rgba(10, 25, 47, 0.88)");
 
       const newText = {
         id: `txt_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`,
@@ -957,19 +1022,19 @@
         end_sec: en,
         x_pct: 50.0,
         y_pct: yPct,
-        font_family: "Inter",
-        font_size: 40,
-        font_weight: "800",
+        font_family: opts.fontFamily || "Inter",
+        font_size: opts.fontSize || defaultFontSize,
+        font_weight: opts.fontWeight || "800",
         font_style: "normal",
         text_align: "center",
-        color: "#FFFFFF",
+        color: defaultColor,
         outline_color: "#0A192F",
-        outline_width: 3,
-        bg_color: "rgba(10, 25, 47, 0.85)",
-        bg_padding: 10,
+        outline_width: opts.outlineWidth || 3,
+        bg_color: defaultBg,
+        bg_padding: opts.bgPadding || 10,
         bg_radius: 6,
         shadow: true,
-        animation: "pop",
+        animation: type === "title" ? "pop" : "fade",
         opacity: 1.0,
         rotation: 0,
       };
@@ -985,13 +1050,27 @@
 
     addTextPreset(preset) {
       if (!this.currentProject) return;
+      const t = round1(this.currentTime);
+      const textLayers = this.currentProject.timeline.tracks.text || [];
+      const activeAtT = textLayers.filter((l) => t >= l.start_sec && t <= l.end_sec);
+      
+      // If there are already 2 or more active texts at current time, insert after them or separate
+      let st = t;
+      if (activeAtT.length >= 2) {
+        st = Math.max(...activeAtT.map(l => l.end_sec));
+        if (st >= this.getTotalDuration() - 1.5) st = 0.0;
+      }
+
       if (preset === "headline_sub") {
-        this.addTextBox("DISCOVER FINLAND'S MAGIC", "title", 48.0);
-        this.addTextBox("EXPERIENCE AUTHENTIC NORDIC LIFE", "subtitle", 68.0);
+        this.currentTime = st;
+        this.addTextBox("DISCOVER FINLAND'S MAGIC", "title", 48.0, { fontSize: 38, duration: 3.5 });
+        this.addTextBox("EXPERIENCE AUTHENTIC NORDIC LIFE", "subtitle", 32.0, { fontSize: 20, color: "#38BDF8", duration: 3.5 });
       } else if (preset === "scenic_callout") {
-        this.addTextBox("📍 ROVANIEMI, LAPLAND", "callout", 25.0);
+        this.currentTime = st;
+        this.addTextBox("📍 ROVANIEMI, LAPLAND", "callout", 24.0, { fontSize: 22, color: "#38BDF8", duration: 3.0 });
       } else if (preset === "breaking_news") {
-        this.addTextBox("🚨 BREAKING UPDATE", "title", 36.0);
+        this.currentTime = st;
+        this.addTextBox("🚨 BREAKING UPDATE", "title", 48.0, { fontSize: 36, color: "#EF4444", duration: 3.5 });
       }
     }
 
@@ -1287,7 +1366,7 @@
         const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
         if (!clientY) return;
         const delta = startY - clientY;
-        const newH = Math.max(130, Math.min(420, startH + delta));
+        const newH = Math.max(180, Math.min(480, startH + delta));
         timeline.style.height = `${newH}px`;
         this.render();
       };
@@ -1920,14 +1999,16 @@
         const logo = this.currentProject.timeline.tracks.logo;
         if (logo && logo.visible) {
           const leftPx = (logo.start_sec || 0) * this.zoomPxPerSec;
-          const widthPx = ((logo.always_on ? totalDur : (logo.end_sec || totalDur)) - (logo.start_sec || 0)) * this.zoomPxPerSec;
+          const widthPx = ((logo.always_on !== false ? totalDur : (logo.end_sec || totalDur)) - (logo.start_sec || 0)) * this.zoomPxPerSec;
           const block = document.createElement("div");
           block.className = `reel-clip-block type-logo ${this.selectedTrack === "logo" ? "active" : ""}`;
           block.style.left = `${leftPx}px`;
-          block.style.width = `${Math.max(24, widthPx)}px`;
+          block.style.width = `${Math.max(28, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">💙 ILoveFinland Logo (${Math.round((logo.opacity || 0.95) * 100)}%)</span>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;">
+              💙 ILoveFinland Logo (${Math.round((logo.opacity || 0.95) * 100)}%)
+            </span>
             <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
           `;
 
@@ -1945,8 +2026,39 @@
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
+            this.openDrawer("logo");
           });
           this.laneLogo.appendChild(block);
+        } else {
+          const emptyPrompt = document.createElement("div");
+          emptyPrompt.className = "reel-lane-empty-prompt";
+          emptyPrompt.title = "Click to enable ILoveFinland Brand Watermark";
+          emptyPrompt.innerHTML = "<span>💙 Click to enable ILoveFinland Logo Watermark</span>";
+          emptyPrompt.addEventListener("click", () => {
+            if (!this.currentProject.timeline.tracks.logo) {
+              this.currentProject.timeline.tracks.logo = {
+                visible: true,
+                url: "/assets/ilf-heart.png",
+                x_pct: 50.0,
+                y_pct: 18.0,
+                size_px: 76,
+                opacity: 0.95,
+                always_on: true,
+                start_sec: 0.0,
+                end_sec: totalDur
+              };
+            } else {
+              this.currentProject.timeline.tracks.logo.visible = true;
+            }
+            this.selectedTrack = "logo";
+            this.selectedId = "logo";
+            this.pushState();
+            this.renderTimeline();
+            this.renderInspector();
+            this.render();
+            this.openDrawer("logo");
+          });
+          this.laneLogo.appendChild(emptyPrompt);
         }
       }
 
@@ -1960,10 +2072,12 @@
           const block = document.createElement("div");
           block.className = `reel-clip-block type-audio ${this.selectedTrack === 'music' ? 'active' : ''}`;
           block.style.left = `${leftPx}px`;
-          block.style.width = `${Math.max(24, widthPx)}px`;
+          block.style.width = `${Math.max(28, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🎵 ${escapeHtml(music.filename || 'Background Music')} (Vol: ${Math.round((music.volume || 0.75) * 100)}%)</span>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;">
+              🎵 ${escapeHtml(music.filename || 'Background Music')} (Vol: ${Math.round((music.volume || 0.75) * 100)}%)
+            </span>
             <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
           `;
 
@@ -1981,8 +2095,19 @@
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
+            this.openDrawer("audio");
           });
           this.laneAudio.appendChild(block);
+        } else {
+          const emptyPrompt = document.createElement("div");
+          emptyPrompt.className = "reel-lane-empty-prompt";
+          emptyPrompt.title = "Click to choose or upload background music";
+          emptyPrompt.innerHTML = "<span>🎵 Add Background Music (from library or upload)</span>";
+          emptyPrompt.addEventListener("click", () => {
+            this.selectedTrack = "music";
+            this.openDrawer("audio");
+          });
+          this.laneAudio.appendChild(emptyPrompt);
         }
       }
 
@@ -1996,10 +2121,12 @@
           const block = document.createElement("div");
           block.className = `reel-clip-block type-voiceover ${this.selectedTrack === 'voiceover' ? 'active' : ''}`;
           block.style.left = `${leftPx}px`;
-          block.style.width = `${Math.max(24, widthPx)}px`;
+          block.style.width = `${Math.max(28, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;">🎙️ ${escapeHtml(vo.filename || 'Voiceover')} (Vol: ${Math.round((vo.volume || 1.0) * 100)}%)</span>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;">
+              🎙️ ${escapeHtml(vo.filename || 'Voiceover')} (Vol: ${Math.round((vo.volume || 1.0) * 100)}%)
+            </span>
             <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
           `;
 
@@ -2017,8 +2144,23 @@
             this.renderTimeline();
             this.renderInspector();
             this.openMobileInspector();
+            this.openDrawer("audio");
           });
           this.laneVoiceover.appendChild(block);
+        } else {
+          const emptyPrompt = document.createElement("div");
+          emptyPrompt.className = "reel-lane-empty-prompt";
+          emptyPrompt.title = "Click to record or upload voiceover";
+          emptyPrompt.innerHTML = "<span>🎙️ Add Voiceover Track (Record with Mic or Upload MP3/WAV)</span>";
+          emptyPrompt.addEventListener("click", () => {
+            this.selectedTrack = "voiceover";
+            this.openDrawer("audio");
+            const voBtn = document.getElementById("btn-record-voiceover");
+            if (voBtn) {
+              voBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          });
+          this.laneVoiceover.appendChild(emptyPrompt);
         }
       }
 

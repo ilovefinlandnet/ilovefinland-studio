@@ -5299,8 +5299,8 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
     text_layers = []
     clean_title = (title or "DISCOVER FINLAND").strip().upper()
     if clean_title:
-        title_end = min(total_duration, 4.0)
-        # Kicker / Badge text placed cleanly above the headline
+        title_end = min(total_duration, 3.8)
+        # Scene 1: Kicker / Badge text placed cleanly above the headline
         text_layers.append({
             "id": f"txt_sub_{secrets.token_hex(3)}",
             "type": "subtitle",
@@ -5308,7 +5308,7 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
             "start_sec": 0.0,
             "end_sec": round(title_end, 2),
             "x_pct": 50.0,
-            "y_pct": 36.0,
+            "y_pct": 32.0,
             "font_family": "Inter",
             "font_size": 18,
             "font_weight": "700",
@@ -5317,32 +5317,32 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
             "color": "#38BDF8",
             "outline_color": "#0A192F",
             "outline_width": 2,
-            "bg_color": "transparent",
-            "bg_padding": 4,
+            "bg_color": "rgba(10, 25, 47, 0.85)",
+            "bg_padding": 6,
             "bg_radius": 4,
             "shadow": True,
             "animation": "fade",
             "opacity": 1.0,
             "rotation": 0,
         })
-        # Main headline centered with ample separation
+        # Scene 1: Main headline centered with ample separation
         text_layers.append({
             "id": f"txt_title_{secrets.token_hex(3)}",
             "type": "title",
-            "text": clean_title[:45],
+            "text": clean_title[:50],
             "start_sec": 0.0,
             "end_sec": round(title_end, 2),
             "x_pct": 50.0,
-            "y_pct": 50.0,
+            "y_pct": 48.0,
             "font_family": "Inter",
-            "font_size": 40,
+            "font_size": 36,
             "font_weight": "800",
             "font_style": "normal",
             "text_align": "center",
             "color": "#FFFFFF",
             "outline_color": "#0A192F",
-            "outline_width": 4,
-            "bg_color": "rgba(10, 25, 47, 0.85)",
+            "outline_width": 3,
+            "bg_color": "rgba(10, 25, 47, 0.88)",
             "bg_padding": 12,
             "bg_radius": 8,
             "shadow": True,
@@ -5350,6 +5350,64 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
             "opacity": 1.0,
             "rotation": 0,
         })
+
+        # Scene 2: Supporting Deck / Takeaway (Appears seamlessly in Scene 2)
+        if total_duration > 5.5:
+            scene2_start = round(title_end, 2)
+            scene2_end = round(min(total_duration, scene2_start + 4.0), 2)
+            text_layers.append({
+                "id": f"txt_deck_{secrets.token_hex(3)}",
+                "type": "supporting",
+                "text": "DISCOVER AUTHENTIC FINNISH STORIES & LIFESTYLE",
+                "start_sec": scene2_start,
+                "end_sec": scene2_end,
+                "x_pct": 50.0,
+                "y_pct": 70.0,
+                "font_family": "Inter",
+                "font_size": 24,
+                "font_weight": "600",
+                "font_style": "normal",
+                "text_align": "center",
+                "color": "#FFFFFF",
+                "outline_color": "#0A192F",
+                "outline_width": 2,
+                "bg_color": "rgba(10, 25, 47, 0.88)",
+                "bg_padding": 10,
+                "bg_radius": 6,
+                "shadow": True,
+                "animation": "slide_up",
+                "opacity": 1.0,
+                "rotation": 0,
+            })
+
+        # Scene 3: Location / Callout tag (Appears in Scene 3)
+        if total_duration > 9.0:
+            scene3_start = round(min(total_duration - 2.8, 7.8), 2)
+            scene3_end = round(total_duration, 2)
+            text_layers.append({
+                "id": f"txt_callout_{secrets.token_hex(3)}",
+                "type": "callout",
+                "text": "📍 FALL IN LOVE WITH FINLAND",
+                "start_sec": scene3_start,
+                "end_sec": scene3_end,
+                "x_pct": 50.0,
+                "y_pct": 72.0,
+                "font_family": "Inter",
+                "font_size": 22,
+                "font_weight": "700",
+                "font_style": "normal",
+                "text_align": "center",
+                "color": "#38BDF8",
+                "outline_color": "#0A192F",
+                "outline_width": 2,
+                "bg_color": "rgba(10, 25, 47, 0.85)",
+                "bg_padding": 8,
+                "bg_radius": 6,
+                "shadow": True,
+                "animation": "fade",
+                "opacity": 1.0,
+                "rotation": 0,
+            })
 
     return {
         "version": 2,
@@ -5652,30 +5710,35 @@ def import_article_to_reel_project(package_id: int, db_path: str = DB_PATH) -> D
     timeline = make_default_reel_timeline(title=headline, media_items=media_items)
     
     if deck:
-        timeline["tracks"]["text"].append({
-            "id": f"txt_deck_{secrets.token_hex(3)}",
-            "type": "supporting",
-            "text": deck[:80],
-            "start_sec": 3.5,
-            "end_sec": min(timeline["duration_sec"], 8.0),
-            "x_pct": 50.0,
-            "y_pct": 72.0,
-            "font_family": "Inter",
-            "font_size": 24,
-            "font_weight": "600",
-            "font_style": "normal",
-            "text_align": "center",
-            "color": "#FFFFFF",
-            "outline_color": "#0A192F",
-            "outline_width": 2,
-            "bg_color": "rgba(10, 25, 47, 0.88)",
-            "bg_padding": 10,
-            "bg_radius": 6,
-            "shadow": True,
-            "animation": "slide_up",
-            "opacity": 1.0,
-            "rotation": 0,
-        })
+        deck_text = deck.strip()[:85]
+        scene2_layer = next((t for t in timeline["tracks"]["text"] if t["type"] == "supporting"), None)
+        if scene2_layer:
+            scene2_layer["text"] = deck_text
+        else:
+            timeline["tracks"]["text"].append({
+                "id": f"txt_deck_{secrets.token_hex(3)}",
+                "type": "supporting",
+                "text": deck_text,
+                "start_sec": 3.8,
+                "end_sec": min(timeline["duration_sec"], 7.8),
+                "x_pct": 50.0,
+                "y_pct": 70.0,
+                "font_family": "Inter",
+                "font_size": 24,
+                "font_weight": "600",
+                "font_style": "normal",
+                "text_align": "center",
+                "color": "#FFFFFF",
+                "outline_color": "#0A192F",
+                "outline_width": 2,
+                "bg_color": "rgba(10, 25, 47, 0.88)",
+                "bg_padding": 10,
+                "bg_radius": 6,
+                "shadow": True,
+                "animation": "slide_up",
+                "opacity": 1.0,
+                "rotation": 0,
+            })
 
     return create_reel_project(
         title=f"Reel: {headline}",

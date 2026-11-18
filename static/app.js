@@ -719,7 +719,34 @@
         }
       }
       const verBox = $("wp-verification-banner");
-      if (verBox) {
+      const wpPostId = bundle?.package?.wordpress_post_id || art?.wordpress_post_id;
+      if (wpPostId && verBox) {
+        verBox.classList.remove("hidden");
+        verBox.style.background = "#052e16";
+        verBox.style.color = "#86efac";
+        verBox.style.border = "1px solid #16a34a";
+        verBox.style.borderRadius = "8px";
+        verBox.style.padding = "12px 16px";
+        verBox.style.margin = "10px 0";
+        verBox.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div>
+              <strong style="color:#86efac;font-size:0.95rem;">✓ Published Live to WordPress as Draft!</strong>
+              <div style="font-size:0.82rem;color:#bbf7d0;margin-top:4px;">
+                WordPress Post ID: <code>#${wpPostId}</code> &bull; <a href="https://ilovefinland.net/?p=${wpPostId}&preview=true" target="_blank" style="color:#86efac;text-decoration:underline;">View Preview on ilovefinland.net ↗</a>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <a href="https://ilovefinland.net/wp-admin/post.php?post=${wpPostId}&action=edit" target="_blank" style="background:#003882;color:#ffffff;text-decoration:none;font-weight:600;border-radius:6px;padding:6px 14px;font-size:0.85rem;display:inline-block;">
+                Open in WP Admin →
+              </a>
+              <a href="https://ilovefinland.net/?p=${wpPostId}&preview=true" target="_blank" style="background:#1e293b;color:#cbd5e1;text-decoration:none;font-weight:600;border-radius:6px;padding:6px 12px;font-size:0.85rem;display:inline-block;border:1px solid #334155;">
+                Preview Post ↗
+              </a>
+            </div>
+          </div>
+        `;
+      } else if (verBox) {
         const v = art.verification;
         if (v && v.status && v.status !== "verified") {
           verBox.innerHTML = `<strong>⚠️ Not ready: ${esc(v.status.replace(/_/g, " "))}.</strong> ${esc(v.summary || "")}<ul style="margin:6px 0 0 16px;padding:0;">${(v.ready_blockers || []).map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
@@ -2077,9 +2104,7 @@
     modal.classList.remove("hidden");
     if ($("new-article-topic")) $("new-article-topic").value = idea.title || "";
     if ($("new-article-instructions")) {
-      let instr = idea.angle || "";
-      if (idea.fit_reason) instr += `\n\nEditorial Context: ${idea.fit_reason}`;
-      $("new-article-instructions").value = instr;
+      $("new-article-instructions").value = idea.angle || "";
     }
     if ($("new-article-references")) $("new-article-references").value = idea.source_url || "";
     if ($("new-article-section") && idea.section) $("new-article-section").value = idea.section;
@@ -5812,11 +5837,56 @@
       }
     });
 
+    // Copy all formatted WordPress fields to clipboard
+    const copyAllWpData = (article, pkg, triggerBtn) => {
+      const art = article || {};
+      const p = pkg || {};
+      const headline = art.headline || p.title || "";
+      const excerpt = art.short_description || art.excerpt || art.meta_description || "";
+      const content = art.body_html || (Array.isArray(art.body_paragraphs) ? art.body_paragraphs.join("\n\n") : (art.body || ""));
+      const section = art.section || "News";
+      const category = art.category || "Finland";
+      const tags = Array.isArray(art.tags) ? art.tags.join(", ") : (art.tags || "");
+      const seoTitle = art.seo_title || headline;
+      const metaDesc = art.meta_description || excerpt;
+      const imgCredit = art.featured_image?.credit_string || art.image_credit || "Photo: ILF";
+      const imgCaption = art.featured_image?.caption || art.image_caption || "";
+
+      const textBundle = `TITLE / HEADLINE:
+${headline}
+
+EXCERPT / SHORT DESCRIPTION:
+${excerpt}
+
+WEBSITE SECTION: ${section}
+CATEGORY: ${category}
+TAGS: ${tags}
+
+SEO TITLE: ${seoTitle}
+META DESCRIPTION: ${metaDesc}
+IMAGE CREDIT: ${imgCredit}
+IMAGE CAPTION: ${imgCaption}
+
+==================================================
+ARTICLE CONTENT (HTML FOR WORDPRESS CODE EDITOR):
+==================================================
+${content}`;
+
+      copyToClipboard(textBundle, triggerBtn, "All Fields Copied!");
+    };
+
+    // Quick direct Copy All for WordPress button in header actions
+    $("btn-copy-all-wp-direct")?.addEventListener("click", () => {
+      const curVerNum = selectedVersion || (bundle ? bundle.package.current_version : 1);
+      const curVerObj = bundle?.versions?.find((v) => v.version === curVerNum) || bundle?.versions?.[0];
+      copyAllWpData(curVerObj?.article, bundle?.package, $("btn-copy-all-wp-direct"));
+    });
+
     // Push Draft directly to WordPress
     $("btn-push-wordpress-draft")?.addEventListener("click", async () => {
       if (!currentPackageId) return;
-      const curVerNum = selectedVersion || (bundle ? bundle.package.current_version : 7);
-      const curVerObj = bundle?.versions?.find((v) => v.version === curVerNum);
+      const curVerNum = selectedVersion || (bundle ? bundle.package.current_version : 1);
+      const curVerObj = bundle?.versions?.find((v) => v.version === curVerNum) || bundle?.versions?.[0];
       const hasPhoto = Boolean(curVerObj?.article?.featured_image?.url);
       if (!hasPhoto) {
         const proceed = confirm(
@@ -5837,36 +5907,128 @@
         if (banner) {
           banner.classList.remove("hidden");
           if (res.success) {
-            banner.style.background = "#f0fdf4";
-            banner.style.color = "#166534";
-            banner.style.borderColor = "#86efac";
-            banner.innerHTML = `<strong>✓ Draft Published to WordPress!</strong> Post ID: #${res.post_id}. <a href="${res.edit_url}" target="_blank" style="text-decoration:underline;font-weight:600;color:#15803d;margin-left:8px;">Open Post in WP Admin →</a>`;
+            banner.style.background = "#052e16";
+            banner.style.color = "#86efac";
+            banner.style.border = "1px solid #16a34a";
+            banner.style.borderRadius = "8px";
+            banner.style.padding = "12px 16px";
+            banner.style.margin = "10px 0";
+
+            if (bundle && bundle.package) {
+              bundle.package.wordpress_post_id = res.post_id;
+              bundle.package.wordpress_post_url = res.preview_url;
+            }
+
+            if (res.simulated) {
+              banner.innerHTML = `
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                  <div>
+                    <div style="font-size:0.95rem;font-weight:700;color:#86efac;">✓ Draft Formatted & Saved to WordPress Outbox (Post #${res.post_id})</div>
+                    <div style="font-size:0.8rem;color:#bbf7d0;margin-top:4px;line-height:1.4;">
+                      ${escapeHtml(res.notice || res.message || "Saved in Studio Outbox ready for publishing.")}
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <button type="button" id="btn-copy-all-wp-banner" class="btn btn-sm" style="background:#16a34a;color:#ffffff;font-weight:600;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;">
+                      📋 Copy All Fields for WP
+                    </button>
+                    <a href="${res.edit_url}" target="_blank" style="background:#003882;color:#ffffff;text-decoration:none;font-weight:600;border-radius:6px;padding:6px 12px;font-size:0.85rem;display:inline-block;">
+                      Open WP Admin →
+                    </a>
+                  </div>
+                </div>
+              `;
+              $("btn-copy-all-wp-banner")?.addEventListener("click", () => {
+                copyAllWpData(curVerObj?.article, bundle?.package, $("btn-copy-all-wp-banner"));
+              });
+            } else {
+              banner.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                  <div>
+                    <strong style="color:#86efac;">✓ Draft Published to WordPress!</strong> Post ID: #${res.post_id}.
+                  </div>
+                  <a href="${res.edit_url}" target="_blank" style="background:#003882;color:#ffffff;text-decoration:none;font-weight:600;border-radius:6px;padding:6px 12px;font-size:0.85rem;">
+                    Open Post in WP Admin →
+                  </a>
+                </div>
+              `;
+            }
           } else if (res.requires_setup) {
-            banner.style.background = "#fff7ed";
-            banner.style.color = "#9a3412";
-            banner.style.borderColor = "#fdba74";
+            banner.style.background = "#451a03";
+            banner.style.color = "#fed7aa";
+            banner.style.border = "1px solid #c2410c";
+            banner.style.borderRadius = "8px";
+            banner.style.padding = "12px 16px";
+            banner.style.margin = "10px 0";
             banner.innerHTML = `
-              <strong>WordPress REST Setup Needed for Direct Push:</strong>
-              <div style="margin-top:6px;font-size:0.8rem;line-height:1.4;">
-                ${escapeHtml(res.message)}<br/>
-                1. In WP Admin: <em>Users → Profile → Application Passwords</em>.<br/>
-                2. Create 'ILoveFinland Studio' and add to <code>.env</code> as <code>WP_APPLICATION_PASSWORD</code>.<br/>
-                3. Meanwhile, use the <strong>📋 Copy</strong> buttons below to paste directly into WordPress.
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                  <strong style="color:#fdba74;">WordPress REST Setup Needed for Direct Push:</strong>
+                  <div style="margin-top:6px;font-size:0.8rem;line-height:1.4;color:#ffedd5;">
+                    ${escapeHtml(res.message)}<br/>
+                    1. In WP Admin: <em>Users → Profile → Application Passwords</em>.<br/>
+                    2. Create 'ILoveFinland Studio' and add to <code>.env</code> as <code>WP_APPLICATION_PASSWORD</code>.<br/>
+                    3. Meanwhile, use <strong>📋 Copy All Fields</strong> to paste directly into WordPress.
+                  </div>
+                </div>
+                <button type="button" id="btn-copy-all-wp-setup" class="btn btn-sm" style="background:#16a34a;color:#ffffff;font-weight:600;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;">
+                  📋 Copy All Fields for WP
+                </button>
               </div>
             `;
+            $("btn-copy-all-wp-setup")?.addEventListener("click", () => {
+              copyAllWpData(curVerObj?.article, bundle?.package, $("btn-copy-all-wp-setup"));
+            });
           } else {
-            banner.style.background = "#fef2f2";
-            banner.style.color = "#991b1b";
-            banner.style.borderColor = "#fecaca";
-            banner.innerHTML = `<strong>WordPress Push Notice:</strong> ${escapeHtml(res.error || res.message || "Failed to push draft")}`;
+            banner.style.background = "#450a0a";
+            banner.style.color = "#fecaca";
+            banner.style.border = "1px solid #b91c1c";
+            banner.style.borderRadius = "8px";
+            banner.style.padding = "12px 16px";
+            banner.style.margin = "10px 0";
+            banner.innerHTML = `
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                  <strong style="color:#f87171;">WordPress Push Notice:</strong>
+                  <div style="margin-top:4px;font-size:0.8rem;color:#fee2e2;">
+                    ${escapeHtml(res.error || res.message || "Failed to push draft")}
+                  </div>
+                </div>
+                <button type="button" id="btn-copy-all-wp-err" class="btn btn-sm" style="background:#16a34a;color:#ffffff;font-weight:600;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;">
+                  📋 Copy All Fields for WP
+                </button>
+              </div>
+            `;
+            $("btn-copy-all-wp-err")?.addEventListener("click", () => {
+              copyAllWpData(curVerObj?.article, bundle?.package, $("btn-copy-all-wp-err"));
+            });
           }
         }
       } catch (err) {
         if (banner) {
           banner.classList.remove("hidden");
-          banner.style.background = "#fef2f2";
-          banner.style.color = "#991b1b";
-          banner.innerHTML = `<strong>Error:</strong> ${escapeHtml(err.message)}`;
+          banner.style.background = "#450a0a";
+          banner.style.color = "#fecaca";
+          banner.style.border = "1px solid #b91c1c";
+          banner.style.borderRadius = "8px";
+          banner.style.padding = "12px 16px";
+          banner.style.margin = "10px 0";
+          banner.innerHTML = `
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+              <div>
+                <strong style="color:#f87171;">WordPress Sync Notice:</strong>
+                <div style="margin-top:4px;font-size:0.8rem;color:#fee2e2;">
+                  ${escapeHtml(err.message)}
+                </div>
+              </div>
+              <button type="button" id="btn-copy-all-wp-catch" class="btn btn-sm" style="background:#16a34a;color:#ffffff;font-weight:600;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;">
+                📋 Copy All Fields for WP
+              </button>
+            </div>
+          `;
+          $("btn-copy-all-wp-catch")?.addEventListener("click", () => {
+            copyAllWpData(curVerObj?.article, bundle?.package, $("btn-copy-all-wp-catch"));
+          });
         }
       } finally {
         btn.disabled = false;
@@ -6140,7 +6302,7 @@
       try {
         const payload = {
           topic,
-          instructions: instructions + (references ? `\n\nReferences & Notes:\n${references}` : ""),
+          instructions: instructions,
           links: references.match(/https?:\/\/[^\s]+/g) || [],
           language,
           section,

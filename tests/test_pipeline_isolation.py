@@ -1,9 +1,20 @@
 import unittest
 import json
+import os
+import tempfile
 import db
 import editorial_engine
 
 class TestPipelineIsolation(unittest.TestCase):
+    def setUp(self):
+        self.tmp_fd, self.test_db = tempfile.mkstemp(suffix=".db")
+        os.close(self.tmp_fd)
+        db.init_db(self.test_db)
+
+    def tearDown(self):
+        if os.path.exists(self.test_db):
+            os.remove(self.test_db)
+
     def test_article_mode_generates_zero_reel(self):
         """Mode 1: Creating an Article + Static Post must produce reel_status='none' and zero reel scenes."""
         bundle = db.create_assignment(
@@ -13,6 +24,7 @@ class TestPipelineIsolation(unittest.TestCase):
             links=["https://yle.fi/uutiset"],
             custom_photo={"url": "/assets/photos/finland-nato-defense-diplomacy.jpg", "filename": "stubb-diplomacy.jpg"},
             clips=None,
+            db_path=self.test_db,
         )
         self.assertIsNotNone(bundle)
         version = bundle["versions"][-1]
@@ -45,6 +57,7 @@ class TestPipelineIsolation(unittest.TestCase):
             instructions="3.5s\nIMAGE 1\nLAPLAND WINTER\nTOURISM BOOMS\nRECORD VISITOR NUMBERS\n\n3.5s\nIMAGE 2\nNORTHERN LIGHTS\nDRAW GLOBAL CROWDS\nFLIGHTS FULL",
             clips=clips,
             target_length_sec=15,
+            db_path=self.test_db,
         )
         self.assertIsNotNone(bundle)
         version = bundle["versions"][-1]

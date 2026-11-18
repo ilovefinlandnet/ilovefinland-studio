@@ -1751,11 +1751,46 @@ def extract_city_location(topic: str, text: str = "") -> str:
     return ""
 
 
+def clean_editorial_text(text: str) -> str:
+    """Thoroughly sanitize text by removing prompt headers, editorial metadata, URLs, and robotic boilerplate."""
+    if not text:
+        return ""
+    t = str(text)
+    # Strip metadata markers and everything that follows them
+    for marker in [
+        "editorial context:",
+        "editorial reason:",
+        "references & notes:",
+        "references and notes:",
+        "references:",
+        "notes:",
+        "discovered from",
+        "primary source:",
+    ]:
+        idx = t.lower().find(marker)
+        if idx != -1:
+            t = t[:idx]
+
+    # Remove raw URLs inside sentences
+    t = re.sub(r'https?://\S+', '', t)
+
+    # Remove robotic boilerplate sentences
+    t = re.sub(r'Across Finland,\s*the topic addresses important considerations for local communities,?\s*residents,?\s*and ongoing civic discussions\.?', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'According to published records and official reporting,\s*.*?plays a meaningful role in shaping regional standards,?\s*public services,?\s*and practical procedures\.?\s*Experts and community observers emphasize the value of reviewing confirmed details and staying informed through authoritative channels\.?', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'As implementation and monitoring continue across Finland,\s*additional updates and public guidance will provide further clarity for those affected\.?\s*Residents and interested observers are encouraged to follow official announcements as new details are confirmed\.?', '', t, flags=re.IGNORECASE)
+
+    # Clean whitespace and trailing dangling punctuation
+    t = re.sub(r'[ \t]+', ' ', t)
+    t = re.sub(r'\n{3,}', '\n\n', t)
+    t = t.strip()
+    return t
+
+
 def sanitize_editorial_instructions(instructions: str) -> str:
-    """Strip out conversational prompt commands (e.g., 'make news article on this', 'write an article', etc.)."""
+    """Strip out conversational prompt commands, context headers, reference URLs, and metadata."""
     if not instructions:
         return ""
-    text = instructions.split("Editorial Reason:")[0].strip()
+    text = clean_editorial_text(instructions)
     prompt_patterns = [
         r'^(?:please\s+)?(?:make|write|draft|create|produce|generate)\s+(?:a\s+)?(?:news\s+)?(?:article|story|post|report|update|piece)\s+(?:on|about|for)?\s*(?:this|it)?\s*[\:\.\,\-]*\s*',
         r'^(?:make|write|draft)\s+news\s+article\s+on\s+this\s*[\:\.\,\-]*\s*',
@@ -1763,7 +1798,16 @@ def sanitize_editorial_instructions(instructions: str) -> str:
     ]
     for pat in prompt_patterns:
         text = re.sub(pat, '', text, flags=re.IGNORECASE).strip()
-    return text
+
+    clean_lines = []
+    for line in text.splitlines():
+        l_str = line.strip()
+        if not l_str:
+            continue
+        if any(l_str.lower().startswith(p) for p in ["editorial context:", "references", "notes:", "discovered from", "source:", "link:"]):
+            continue
+        clean_lines.append(l_str)
+    return " ".join(clean_lines).strip()
 
 
 def _generate_custom_article_draft(
@@ -2320,7 +2364,9 @@ def _generate_custom_article_draft(
 
     # 10. UNIVERSAL TOPIC-SPECIFIC EDITORIAL SYNTHESIS (Vertical-Aware)
     headline = topic.strip()
-    clean_topic = re.sub(r'\s*[:—–-]\s*.*$', '', headline).strip()
+    clean_topic = re.sub(r'^(?:Video|Audio|Analysis|Live|Breaking|Opinion|Editorial|Report|Photos?)\s*[:—–-]\s*', '', headline, flags=re.IGNORECASE).strip()
+    if not clean_topic:
+        clean_topic = headline
     city = extract_city_location(topic, clean_angle)
     exact_addr = ""
     event_details = ""
@@ -2495,18 +2541,52 @@ def _generate_custom_article_draft(
 
     else:
         # Straight News: Domestic Finnish or International Coverage
-        is_intl = (cat_lower == "international" or "international" in combined or "global" in combined)
-        short_desc = clean_angle or f"Verified reporting and developments regarding {clean_topic} for residents and readers across Finland."
+        is_intl = (
+            cat_lower == "international"
+            or "international" in combined
+            or "global" in combined
+            or any(k in t_lower for k in ["ukraine", "russia", "crimea", "zelensky", "putin", "kremlin", "trump", "biden", "nato", "war", "bridge", "strike", "attack", "missile"])
+        )
         region = "International" if is_intl else "Finland"
-        paragraphs = [
-            f"{clean_angle if clean_angle else f'Key developments and verified updates have emerged regarding {headline}.'} Across Finland, the topic addresses important considerations for local communities, residents, and ongoing civic discussions.",
-            f"According to published records and official reporting, {clean_topic} plays a meaningful role in shaping regional standards, public services, and practical procedures. Experts and community observers emphasize the value of reviewing confirmed details and staying informed through authoritative channels.",
-            f"As implementation and monitoring continue across Finland, additional updates and public guidance will provide further clarity for those affected. Residents and interested observers are encouraged to follow official announcements as new details are confirmed.",
-        ]
-        subheadings = [
-            f"Key Facts and Developments: {clean_topic}",
-            f"Practical Impact and Official Guidance",
-        ]
+
+        if clean_angle:
+            short_desc = clean_angle
+        elif is_intl:
+            short_desc = f"Latest international reporting and strategic developments concerning {clean_topic}."
+        else:
+            short_desc = f"Verified reporting and developments concerning {clean_topic} in Finland."
+
+        if is_intl:
+            lead_para = f"{clean_angle} " if clean_angle else ""
+            if not lead_para or len(lead_para) < 50:
+                lead_para = f"Major international developments have emerged concerning {clean_topic}. "
+            lead_para += "The unfolding situation has drawn close attention from diplomatic observers, security analysts, and international agencies."
+
+            context_para = f"According to verified reports and official statements, developments around {clean_topic} carry far-reaching strategic and geopolitical significance. Observers have underscored the necessity of monitoring confirmed statements from primary sources as events continue to unfold."
+
+            outlook_para = f"As evaluations and official assessments proceed, responsible authorities and international monitoring bodies are expected to release further statements addressing regional security and key operational developments."
+
+            paragraphs = [lead_para.strip(), context_para.strip(), outlook_para.strip()]
+            subheadings = [
+                f"Strategic Overview and Developments",
+                f"Official Responses and Regional Impact",
+            ]
+        else:
+            lead_para = f"{clean_angle} " if clean_angle else ""
+            if not lead_para or len(lead_para) < 50:
+                lead_para = f"Important civic and community developments have emerged regarding {clean_topic}. "
+            lead_para += "The discussion has engaged residents, community representatives, and local decision-makers across Finland."
+
+            context_para = f"According to public announcements and reporting from primary sources, the initiatives surrounding {clean_topic} reflect key civic priorities and everyday practical considerations. Community observers emphasize the value of transparent dialogue and accessible public information."
+
+            outlook_para = f"As consultations and implementation steps move forward, responsible bodies and civic organizations will provide further guidance and updates for the public."
+
+            paragraphs = [lead_para.strip(), context_para.strip(), outlook_para.strip()]
+            subheadings = [
+                f"Key Concerns and Community Perspectives",
+                f"Next Steps and Ongoing Dialogue",
+            ]
+
         tags = ", ".join(list(dict.fromkeys(["News", "International" if is_intl else "Finland", clean_topic] + kw_tags))[:8])
         sources = []
         for l in links:
@@ -2823,6 +2903,10 @@ def audit_and_refine_article(
             parsed_subheadings = odd_headings
             raw_paras = even_paras
 
+    # 2b. Sanitize Short Description
+    if art.get("short_description"):
+        art["short_description"] = clean_editorial_text(art["short_description"])
+
     cleaned_paras = []
     seen_paras = set()
 
@@ -2830,6 +2914,7 @@ def audit_and_refine_article(
         p_clean = re.sub(r'^(?:<p>)?(?:<strong>)?(?:[A-Z\s,/]+(?:—|–|-)\s*)(?:</strong>)?', '', p).strip()
         p_clean = re.sub(r'^(?:KEY TAKEAWAYS[^\n]*\n+|WHAT YOU NEED TO KNOW[^\n]*\n+)', '', p_clean, flags=re.IGNORECASE).strip()
         p_clean = re.sub(r'^<p>|</p>$', '', p_clean).strip()
+        p_clean = clean_editorial_text(p_clean)
         if len(p_clean) < 20:
             continue
         key_words = tuple(sorted(set(re.findall(r'\w{4,}', p_clean.lower()))))
@@ -2924,8 +3009,7 @@ def audit_and_refine_article(
     if not art.get("seo_title") or len(art["seo_title"]) > 60:
         clean_seo = headline[:55].strip()
         art["seo_title"] = clean_seo
-    if not art.get("meta_description") or len(art["meta_description"]) > 155:
-        art["meta_description"] = (art.get("short_description") or intro_p)[:150].strip()
+    art["meta_description"] = clean_editorial_text(art.get("meta_description") or art.get("short_description") or intro_p)[:150].strip()
 
     current_tags = [t.strip() for t in str(art.get("tags") or "").split(",") if t.strip()]
     invalid_tag_names = set()
