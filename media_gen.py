@@ -378,6 +378,7 @@ def export_reel_project_timeline_mp4(
         "duration_sec": total_dur,
         "bg_image_path": scene_configs[0]["image_path"] if scene_configs else "",
         "logo_image_path": logo_path,
+        "logo_visible": bool(logo_config.get("visible", False)),
         "logo_x_pct": float(logo_config.get("x_pct", 50.0)),
         "logo_y_pct": float(logo_config.get("y_pct", 18.0)),
         "logo_size_px": float(logo_config.get("size_px", 76.0)),

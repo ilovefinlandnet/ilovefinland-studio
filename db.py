@@ -5438,7 +5438,7 @@ def make_default_reel_timeline(title: str = "New Reel", media_items: Optional[Li
                 }
             ],
             "logo": {
-                "visible": True,
+                "visible": False,
                 "url": "/assets/ilf-heart.png",
                 "x_pct": 50.0,
                 "y_pct": 18.0,

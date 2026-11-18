@@ -3658,7 +3658,7 @@
               </div>
               <div style="text-align:center;padding:12px 8px;background:radial-gradient(circle at center, rgba(0,163,255,0.18) 0%, rgba(3,11,28,0.95) 75%);border-radius:8px;border:1px solid #0c2146;margin-bottom:10px;">
                 <img src="/assets/ilf-heart-exact.png" alt="ILoveFinland Logo" style="width:72px;height:72px;display:block;margin:0 auto 10px;filter:drop-shadow(0 0 18px rgba(0,163,255,0.85));" />
-                <span style="background:#003882;color:#ffffff;font-size:0.72rem;font-weight:800;padding:3px 12px;border-radius:10px;display:inline-block;letter-spacing:0.04em;margin-bottom:6px;">DISCOVER MORE</span>
+                <span style="background:#003882;color:#ffffff;font-size:0.72rem;font-weight:800;padding:3px 12px;border-radius:10px;display:inline-block;letter-spacing:0.04em;margin-bottom:6px;">YOUR FINLAND DISCOVERED</span>
                 <div style="font-weight:800;font-size:0.92rem;color:#ffffff;letter-spacing:0.02em;">FALL IN LOVE WITH FINLAND.</div>
                 <div style="font-weight:800;font-size:0.84rem;color:#00A3FF;margin-top:4px;">VISIT www.ilovefinland.net</div>
                 <div style="font-size:0.75rem;font-weight:700;color:#e2e8f0;margin-top:4px;letter-spacing:0.04em;">YOUR FINLAND, DISCOVERED.</div>

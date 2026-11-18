@@ -1088,7 +1088,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/reel/export":
             proj_id = int(body.get("project_id", 0))
             from db import get_reel_project, update_reel_project
-            import media_gen
+            import importlib, media_gen
+            importlib.reload(media_gen)
             proj = get_reel_project(proj_id, db_path=db_path)
             if not proj:
                 self._send_json({"error": "Project not found"}, status=HTTPStatus.NOT_FOUND)

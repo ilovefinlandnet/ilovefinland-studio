@@ -684,6 +684,15 @@
           this.audioEl.src = music.url;
         }
 
+        // Sync Logo drawer settings with project state
+        const logo = this.currentProject.timeline?.tracks?.logo || {};
+        const chkLogo = document.getElementById("chk-logo-visible");
+        if (chkLogo) chkLogo.checked = Boolean(logo.visible);
+        const sliderLogoSize = document.getElementById("slider-logo-size");
+        if (sliderLogoSize) sliderLogoSize.value = String(logo.size_px || 76);
+        const valLogoSize = document.getElementById("val-logo-size");
+        if (valLogoSize) valLogoSize.textContent = `${logo.size_px || 76}px`;
+
         // Sync Outro drawer settings with project state
         const outro = this.currentProject.timeline?.tracks?.outro || {};
         const chkOutro = document.getElementById("chk-outro-enabled");
@@ -1174,7 +1183,7 @@
     // TEXT OVERLAYS & PRESETS
     // =========================================================================
 
-    addTextBox(text = "NEW TEXT OVERLAY", type = "custom", yPct = null, opts = {}) {
+    addTextBox(text = "NEW TEXT OVERLAY", type = "brand_stack", yPct = null, opts = {}) {
       if (!this.currentProject) return;
       const textLayers = this.currentProject.timeline.tracks.text;
       const totalDur = this.getTotalDuration();
@@ -1182,39 +1191,41 @@
       const st = round1(this.currentTime);
       const en = round1(st + Math.max(1.8, dur));
 
-      if (yPct == null) {
-        // Choose intelligent non-colliding vertical position relative to active layers
-        const activeLayers = textLayers.filter((t) => st < t.end_sec && en > t.start_sec);
-        const usedY = activeLayers.map((l) => l.y_pct ?? 50.0);
-        const candidates = type === "subtitle" ? [32.0, 68.0, 72.0] : (type === "callout" ? [24.0, 76.0] : [50.0, 48.0, 68.0, 32.0, 80.0]);
-        yPct = candidates.find((c) => !usedY.some((y) => Math.abs(y - c) < 10)) || (50.0 + (activeLayers.length * 10) % 35);
-      }
-
-      const defaultFontSize = type === "title" ? 38 : (type === "subtitle" ? 22 : (type === "callout" ? 20 : 32));
-      const defaultColor = opts.color || (type === "subtitle" ? "#38BDF8" : "#FFFFFF");
-      const defaultBg = opts.bgColor || (type === "subtitle" ? "rgba(10, 25, 47, 0.82)" : "rgba(10, 25, 47, 0.88)");
+      const isBrand = type === "brand_stack" || opts.isBrandStack;
+      const yVal = yPct != null ? yPct : (isBrand ? 68.0 : 50.0);
 
       const newText = {
         id: `txt_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`,
-        type,
-        text,
+        type: isBrand ? "brand_stack" : type,
+        badge: opts.badge ?? (isBrand ? "FINLAND" : ""),
+        line1: opts.line1 ?? (isBrand ? (text !== "NEW TEXT OVERLAY" ? text : "IS FINLAND") : text),
+        line1_color: opts.line1_color || opts.color || "#FFFFFF",
+        line2: opts.line2 ?? (isBrand ? (opts.line2 || "RUSSIA'S NEXT") : ""),
+        line2_color: opts.line2_color || "#FFFFFF",
+        line3: opts.line3 ?? (isBrand ? (opts.line3 || "SABOTAGE TARGET?") : ""),
+        line3_color: opts.line3_color || "#38BDF8",
+        subtitle: opts.subtitle || "",
+        subtitle_color: opts.subtitle_color || "#E2E8F0",
+        bg_dim: opts.bg_dim !== false,
+        align: opts.align || "left",
+        text: text,
         start_sec: st,
         end_sec: en,
         x_pct: 50.0,
-        y_pct: yPct,
+        y_pct: yVal,
         font_family: opts.fontFamily || "Inter",
-        font_size: opts.fontSize || defaultFontSize,
+        font_size: opts.fontSize || 34,
         font_weight: opts.fontWeight || "800",
         font_style: "normal",
-        text_align: "center",
-        color: defaultColor,
+        text_align: opts.align || "left",
+        color: opts.color || "#FFFFFF",
         outline_color: "#0A192F",
         outline_width: opts.outlineWidth || 3,
-        bg_color: defaultBg,
+        bg_color: opts.bgColor || "transparent",
         bg_padding: opts.bgPadding || 10,
         bg_radius: 6,
         shadow: true,
-        animation: type === "title" ? "pop" : "fade",
+        animation: "fade",
         opacity: 1.0,
         rotation: 0,
       };
@@ -2673,7 +2684,192 @@
     }
 
     drawTextLayer(ctx, txt, isSelected) {
-      if (!txt || !txt.text) return;
+      if (!txt) return;
+
+      const badgeText = (txt.badge || "").trim();
+      const l1Text = (txt.line1 !== undefined ? txt.line1 : (txt.type === "brand_stack" ? "" : (txt.text || ""))).trim();
+      const l2Text = (txt.line2 || "").trim();
+      const l3Text = (txt.line3 || "").trim();
+      const subText = (txt.subtitle || "").trim();
+      const isBrandStack = txt.type === "brand_stack" || Boolean(badgeText || l1Text || l2Text || l3Text || subText);
+
+      // If completely empty, render nothing
+      if (isBrandStack && !badgeText && !l1Text && !l2Text && !l3Text && !subText) return;
+      if (!isBrandStack && !txt.text) return;
+
+      if (isBrandStack) {
+        // 1. Contrast gradient scrim (if bg_dim is true)
+        if (txt.bg_dim !== false) {
+          ctx.save();
+          const scrim = ctx.createLinearGradient(0, CANVAS_H * 0.48, 0, CANVAS_H);
+          scrim.addColorStop(0, "rgba(10, 25, 47, 0.0)");
+          scrim.addColorStop(0.35, "rgba(10, 25, 47, 0.45)");
+          scrim.addColorStop(0.70, "rgba(10, 25, 47, 0.78)");
+          scrim.addColorStop(1.0, "rgba(10, 25, 47, 0.92)");
+          ctx.fillStyle = scrim;
+          ctx.fillRect(0, CANVAS_H * 0.45, CANVAS_W, CANVAS_H * 0.55);
+          ctx.restore();
+        }
+
+        const safeLeft = CANVAS_W * 0.082;
+        const safeRight = CANVAS_W - safeLeft;
+        const maxW = safeRight - safeLeft;
+        const isCenter = (txt.align === "center" || txt.text_align === "center");
+        const topRatio = (txt.y_pct || 68.0) / 100.0;
+        let yCur = CANVAS_H * topRatio;
+        const stackTopY = yCur;
+
+        const headlineFontSize = (txt.font_size || 34) * 2; // 68px on 1080p
+        const fontFam = txt.font_family || "Inter";
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.88)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 4;
+
+        const stackStartX = isCenter ? (CANVAS_W / 2) : safeLeft;
+
+        // 1. Pill Badge
+        if (badgeText) {
+          ctx.save();
+          const badgeFontSize = 28;
+          ctx.font = `800 ${badgeFontSize}px "${fontFam}", sans-serif`;
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          const bTextW = ctx.measureText(badgeText).width;
+          const bPadX = 24;
+          const badgeW = bTextW + bPadX * 2;
+          const badgeH = badgeFontSize + 20;
+          const bx = isCenter ? (CANVAS_W - badgeW) / 2 : safeLeft;
+          const by = yCur;
+
+          // Draw blue pill (#003882)
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = "#003882";
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(bx, by, badgeW, badgeH, 10) : ctx.rect(bx, by, badgeW, badgeH);
+          ctx.fill();
+
+          // Badge text (White)
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillText(badgeText, bx + bPadX, by + badgeH / 2);
+          ctx.restore();
+
+          yCur += badgeH + 24;
+        }
+
+        // Helper to draw bold headline line
+        const drawHeadline = (text, col) => {
+          if (!text) return;
+          ctx.font = `800 ${headlineFontSize}px "${fontFam}", sans-serif`;
+          ctx.fillStyle = col || "#FFFFFF";
+          ctx.textAlign = isCenter ? "center" : "left";
+          ctx.textBaseline = "alphabetic";
+
+          ctx.strokeStyle = "#0A192F";
+          ctx.lineWidth = 6;
+          ctx.lineJoin = "round";
+
+          const words = text.split(" ");
+          let curLine = "";
+          const lines = [];
+          for (const w of words) {
+            const test = curLine ? curLine + " " + w : w;
+            if (ctx.measureText(test).width > maxW && curLine) {
+              lines.push(curLine);
+              curLine = w;
+            } else {
+              curLine = test;
+            }
+          }
+          if (curLine) lines.push(curLine);
+
+          lines.forEach((l) => {
+            ctx.strokeText(l, stackStartX, yCur + headlineFontSize * 0.85);
+            ctx.fillText(l, stackStartX, yCur + headlineFontSize * 0.85);
+            yCur += headlineFontSize * 1.16;
+          });
+        };
+
+        if (l1Text) drawHeadline(l1Text, txt.line1_color || "#FFFFFF");
+        if (l2Text) drawHeadline(l2Text, txt.line2_color || "#FFFFFF");
+        if (l3Text) drawHeadline(l3Text, txt.line3_color || "#38BDF8");
+
+        // Subtitle
+        if (subText) {
+          yCur += 12;
+          const subFontSize = 30;
+          ctx.font = `500 ${subFontSize}px "${fontFam}", sans-serif`;
+          ctx.textAlign = isCenter ? "center" : "left";
+          ctx.textBaseline = "alphabetic";
+          const words = subText.split(" ");
+          let curLine = "";
+          const lines = [];
+          for (const w of words) {
+            const test = curLine ? curLine + " " + w : w;
+            if (ctx.measureText(test).width > maxW - 40 && curLine) {
+              lines.push(curLine);
+              curLine = w;
+            } else {
+              curLine = test;
+            }
+          }
+          if (curLine) lines.push(curLine);
+
+          const subLineH = subFontSize * 1.35;
+          const subBoxH = lines.length * subLineH + 28;
+          const subBoxW = maxW;
+          const subBoxX = safeLeft;
+          const subBoxY = yCur;
+
+          ctx.save();
+          ctx.fillStyle = "rgba(10, 25, 47, 0.78)";
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(subBoxX, subBoxY, subBoxW, subBoxH, 12) : ctx.rect(subBoxX, subBoxY, subBoxW, subBoxH);
+          ctx.fill();
+          ctx.restore();
+
+          let sy = subBoxY + subFontSize + 14;
+          ctx.fillStyle = txt.subtitle_color || "#E2E8F0";
+          lines.forEach((l) => {
+            const lx = isCenter ? (CANVAS_W / 2) : (safeLeft + 20);
+            ctx.fillText(l, lx, sy);
+            sy += subLineH;
+          });
+          yCur += subBoxH;
+        }
+
+        ctx.restore();
+
+        const selW = maxW + 24;
+        const selH = Math.max(60, yCur - stackTopY + 24);
+        const selX = safeLeft - 12;
+        const selY = stackTopY - 12;
+
+        txt._bounds = {
+          cx: selX + selW / 2,
+          cy: selY + selH / 2,
+          rotDeg: 0,
+          rotRad: 0,
+          selX: -selW / 2,
+          selY: -selH / 2,
+          selW: selW,
+          selH: selH,
+          fontSize: txt.font_size || 34
+        };
+
+        if (isSelected) {
+          ctx.save();
+          ctx.strokeStyle = "#168BFF";
+          ctx.lineWidth = 4;
+          ctx.setLineDash([8, 6]);
+          ctx.strokeRect(selX, selY, selW, selH);
+          ctx.restore();
+        }
+        return;
+      }
+
       ctx.save();
       const x = (txt.x_pct / 100.0) * CANVAS_W;
       const y = (txt.y_pct / 100.0) * CANVAS_H;
@@ -2939,94 +3135,180 @@
         const txt = this.currentProject?.timeline?.tracks?.text?.find((x) => x.id === this.selectedId);
         if (!txt) { this.renderEmptyInspector(); return; }
 
-        if (this.inspectorHeading) this.inspectorHeading.textContent = "Text Layer";
+        if (txt.line1 === undefined && txt.text) {
+          txt.line1 = txt.text;
+        }
+        if (txt.badge === undefined) txt.badge = "";
+        if (txt.line1 === undefined) txt.line1 = "";
+        if (txt.line1_color === undefined) txt.line1_color = txt.color || "#FFFFFF";
+        if (txt.line2 === undefined) txt.line2 = "";
+        if (txt.line2_color === undefined) txt.line2_color = "#FFFFFF";
+        if (txt.line3 === undefined) txt.line3 = "";
+        if (txt.line3_color === undefined) txt.line3_color = "#38BDF8";
+        if (txt.subtitle === undefined) txt.subtitle = "";
+        if (txt.subtitle_color === undefined) txt.subtitle_color = "#E2E8F0";
+        if (txt.bg_dim === undefined) txt.bg_dim = true;
+        if (txt.align === undefined) txt.align = txt.text_align || "left";
+
+        if (this.inspectorHeading) this.inspectorHeading.textContent = "Brand Text Block";
         if (this.inspectorIcon) this.inspectorIcon.textContent = "🔤";
 
         this.inspectorContent.innerHTML = `
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Wording</label>
-            <textarea id="prop-text-content" class="reel-prop-textarea" rows="2">${escapeHtml(txt.text)}</textarea>
-          </div>
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Font Family &amp; Alignment</label>
-            <select id="prop-text-font" class="reel-prop-select" style="margin-bottom:6px;">
-              <option value="Inter" ${txt.font_family === 'Inter' ? 'selected' : ''}>Inter (Brand Standard)</option>
-              <option value="Helvetica" ${txt.font_family === 'Helvetica' ? 'selected' : ''}>Helvetica Bold</option>
-              <option value="Impact" ${txt.font_family === 'Impact' ? 'selected' : ''}>Impact (Bold News)</option>
-              <option value="Georgia" ${txt.font_family === 'Georgia' ? 'selected' : ''}>Georgia (Editorial)</option>
-            </select>
-            <div style="display:flex;gap:4px;">
-              <button type="button" class="btn btn-sm btn-outline btn-text-align" data-align="left" style="flex:1;color:#fff;border-color:#303B4D;${txt.text_align === 'left' ? 'background:#003580;' : ''}">Left</button>
-              <button type="button" class="btn btn-sm btn-outline btn-text-align" data-align="center" style="flex:1;color:#fff;border-color:#303B4D;${(!txt.text_align || txt.text_align === 'center') ? 'background:#003580;' : ''}">Center</button>
-              <button type="button" class="btn btn-sm btn-outline btn-text-align" data-align="right" style="flex:1;color:#fff;border-color:#303B4D;${txt.text_align === 'right' ? 'background:#003580;' : ''}">Right</button>
+          <div class="reel-prop-group" style="background:#0F1F38;padding:10px;border-radius:8px;border:1px solid #1E3A66;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <label class="reel-prop-label" style="margin:0;font-weight:700;color:#38BDF8;">🏷️ Pill Badge</label>
+              <button type="button" id="btn-quick-badge-finland" class="btn btn-sm btn-outline" style="font-size:0.68rem;padding:2px 6px;color:#38bdf8;border-color:#38bdf8;">+ FINLAND</button>
             </div>
+            <input type="text" id="prop-text-badge" class="reel-prop-input" value="${escapeHtml(txt.badge || '')}" placeholder="e.g. FINLAND (Leave empty to hide)" style="width:100%;font-weight:700;text-transform:uppercase;" />
           </div>
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Font Size: <span id="prop-val-fontsize">${txt.font_size}px</span></label>
-            <input type="range" id="prop-slider-fontsize" min="16" max="96" value="${txt.font_size}" style="width:100%;" />
-          </div>
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Rotation: <span id="prop-val-rotation">${txt.rotation_deg || 0}°</span></label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input type="range" id="prop-slider-rotation" min="-180" max="180" value="${txt.rotation_deg || 0}" style="flex:1;" />
-              <button type="button" id="btn-reset-rotation" class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.7rem;color:#B8C4D4;border-color:#303B4D;" title="Reset to 0°">0°</button>
+
+          <div class="reel-prop-group" style="background:#0B1626;padding:10px;border-radius:8px;border:1px solid #1A2E4C;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <label class="reel-prop-label" style="margin:0;font-weight:700;color:#FFFFFF;">🔤 Line 1</label>
+              <input type="color" id="prop-line1-color" value="${txt.line1_color || '#FFFFFF'}" title="Pick Line 1 color" style="width:24px;height:24px;border:none;background:transparent;cursor:pointer;" />
             </div>
+            <input type="text" id="prop-text-line1" class="reel-prop-input" value="${escapeHtml(txt.line1 || '')}" placeholder="e.g. IS FINLAND (Leave empty to hide)" style="width:100%;font-weight:700;text-transform:uppercase;" />
           </div>
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Color &amp; Custom Hex</label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div class="reel-color-row" style="flex:1;">
-                <div class="reel-color-swatch" data-col="#FFFFFF" style="background:#FFFFFF;"></div>
-                <div class="reel-color-swatch" data-col="#38BDF8" style="background:#38BDF8;"></div>
-                <div class="reel-color-swatch" data-col="#0A192F" style="background:#0A192F;border:1px solid #475569;"></div>
-                <div class="reel-color-swatch" data-col="#003580" style="background:#003580;"></div>
-                <div class="reel-color-swatch" data-col="#EF4444" style="background:#EF4444;"></div>
-              </div>
-              <input type="color" id="prop-text-color-picker" value="${txt.color || '#FFFFFF'}" title="Pick custom color" style="width:32px;height:32px;border:none;background:transparent;cursor:pointer;" />
+
+          <div class="reel-prop-group" style="background:#0B1626;padding:10px;border-radius:8px;border:1px solid #1A2E4C;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <label class="reel-prop-label" style="margin:0;font-weight:700;color:#FFFFFF;">🔤 Line 2</label>
+              <input type="color" id="prop-line2-color" value="${txt.line2_color || '#FFFFFF'}" title="Pick Line 2 color" style="width:24px;height:24px;border:none;background:transparent;cursor:pointer;" />
             </div>
+            <input type="text" id="prop-text-line2" class="reel-prop-input" value="${escapeHtml(txt.line2 || '')}" placeholder="e.g. RUSSIA'S NEXT (Leave empty to hide)" style="width:100%;font-weight:700;text-transform:uppercase;" />
           </div>
-          <div class="reel-prop-group">
-            <label class="reel-prop-label">Background Box</label>
-            <select id="prop-text-bg" class="reel-prop-select">
-              <option value="rgba(10, 25, 47, 0.85)" ${txt.bg_color && txt.bg_color.includes('10, 25, 47') ? 'selected' : ''}>Navy Box (#0A192F)</option>
-              <option value="rgba(0, 56, 130, 0.88)" ${txt.bg_color && txt.bg_color.includes('0, 56, 130') ? 'selected' : ''}>Blue Box (#003580)</option>
-              <option value="transparent" ${txt.bg_color === 'transparent' ? 'selected' : ''}>No Background (Transparent)</option>
-            </select>
+
+          <div class="reel-prop-group" style="background:#0B1626;padding:10px;border-radius:8px;border:1px solid #1A2E4C;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <label class="reel-prop-label" style="margin:0;font-weight:700;color:#38BDF8;">✨ Line 3 (Highlight)</label>
+              <input type="color" id="prop-line3-color" value="${txt.line3_color || '#38BDF8'}" title="Pick Line 3 color" style="width:24px;height:24px;border:none;background:transparent;cursor:pointer;" />
+            </div>
+            <input type="text" id="prop-text-line3" class="reel-prop-input" value="${escapeHtml(txt.line3 || '')}" placeholder="e.g. SABOTAGE TARGET? (Leave empty to hide)" style="width:100%;font-weight:700;text-transform:uppercase;" />
           </div>
+
+          <div class="reel-prop-group" style="background:#0B1626;padding:10px;border-radius:8px;border:1px solid #1A2E4C;margin-bottom:12px;">
+            <label class="reel-prop-label" style="margin-bottom:4px;font-weight:600;color:#CBD5E1;">💬 Subtitle / Footer (Optional)</label>
+            <textarea id="prop-text-subtitle" class="reel-prop-textarea" rows="2" placeholder="Optional narrative text or callout">${escapeHtml(txt.subtitle || '')}</textarea>
+          </div>
+
           <div class="reel-prop-group">
-            <label class="reel-prop-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" id="prop-chk-text-shadow" ${txt.shadow ? 'checked' : ''} />
-              <span>Drop Shadow / Contrast Halo</span>
+            <label class="reel-prop-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#0A192F;padding:8px 12px;border-radius:6px;border:1px solid #1E293B;">
+              <input type="checkbox" id="prop-chk-bgdim" ${txt.bg_dim !== false ? 'checked' : ''} />
+              <span style="font-weight:600;color:#F1F5F9;font-size:0.8rem;">🌙 Background Dim Scrim (High contrast over snow)</span>
             </label>
           </div>
+
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Alignment</label>
+            <div style="display:flex;gap:4px;">
+              <button type="button" class="btn btn-sm btn-outline btn-brand-align" data-align="left" style="flex:1;color:#fff;border-color:#303B4D;${(txt.align === 'left' || txt.text_align === 'left') ? 'background:#003580;border-color:#38BDF8;' : ''}">Left (News)</button>
+              <button type="button" class="btn btn-sm btn-outline btn-brand-align" data-align="center" style="flex:1;color:#fff;border-color:#303B4D;${(txt.align === 'center' || txt.text_align === 'center') ? 'background:#003580;border-color:#38BDF8;' : ''}">Center (Poster)</button>
+            </div>
+          </div>
+
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Screen Position</label>
+            <div style="display:flex;gap:4px;">
+              <button type="button" class="btn btn-sm btn-outline btn-brand-pos" data-y="68" style="flex:1;font-size:0.72rem;color:#fff;border-color:#303B4D;${(txt.y_pct >= 60) ? 'background:#003580;border-color:#38BDF8;' : ''}">Lower-Third</button>
+              <button type="button" class="btn btn-sm btn-outline btn-brand-pos" data-y="45" style="flex:1;font-size:0.72rem;color:#fff;border-color:#303B4D;${(txt.y_pct >= 35 && txt.y_pct < 60) ? 'background:#003580;border-color:#38BDF8;' : ''}">Middle</button>
+              <button type="button" class="btn btn-sm btn-outline btn-brand-pos" data-y="22" style="flex:1;font-size:0.72rem;color:#fff;border-color:#303B4D;${(txt.y_pct < 35) ? 'background:#003580;border-color:#38BDF8;' : ''}">Top</button>
+            </div>
+          </div>
+
+          <div class="reel-prop-group">
+            <label class="reel-prop-label">Font Size: <span id="prop-val-fontsize">${txt.font_size || 34}px</span></label>
+            <input type="range" id="prop-slider-fontsize" min="20" max="64" value="${txt.font_size || 34}" style="width:100%;" />
+          </div>
+
           <div class="reel-prop-group">
             <label class="reel-prop-label">Timing (Start &amp; End Seconds)</label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="prop-num-text-start" min="0" max="60" step="0.5" value="${(txt.start_sec || 0).toFixed(1)}" class="reel-prop-select" style="flex:1;" />
+              <input type="number" id="prop-num-text-start" min="0" max="60" step="0.1" value="${(txt.start_sec || 0).toFixed(1)}" class="reel-prop-select" style="flex:1;" />
               <span style="color:#B8C4D4;font-size:0.8rem;">to</span>
-              <input type="number" id="prop-num-text-end" min="0.5" max="60" step="0.5" value="${(txt.end_sec || 5).toFixed(1)}" class="reel-prop-select" style="flex:1;" />
+              <input type="number" id="prop-num-text-end" min="0.5" max="60" step="0.1" value="${(txt.end_sec || 5).toFixed(1)}" class="reel-prop-select" style="flex:1;" />
             </div>
           </div>
+
           <div class="reel-prop-group">
             <button type="button" id="btn-prop-del-text" class="btn btn-sm btn-ghost" style="color:#ef4444;width:100%;margin-top:10px;">
-              🗑️ Delete Text Layer
+              🗑️ Delete Text Block
             </button>
           </div>
         `;
 
-        document.getElementById("prop-text-content")?.addEventListener("input", (e) => {
-          txt.text = e.target.value;
+        const syncSummary = () => {
+          txt.text = [txt.badge, txt.line1, txt.line2, txt.line3].filter(Boolean).join(" ");
+        };
+
+        document.getElementById("btn-quick-badge-finland")?.addEventListener("click", () => {
+          txt.badge = "FINLAND";
+          const bInput = document.getElementById("prop-text-badge");
+          if (bInput) bInput.value = "FINLAND";
+          syncSummary();
           this.render();
           this.scheduleAutosave();
         });
-        document.getElementById("prop-text-font")?.addEventListener("change", (e) => {
-          txt.font_family = e.target.value;
+        document.getElementById("prop-text-badge")?.addEventListener("input", (e) => {
+          txt.badge = e.target.value.trim().toUpperCase();
+          syncSummary();
           this.render();
           this.scheduleAutosave();
         });
-        this.inspectorContent.querySelectorAll(".btn-text-align").forEach((b) => {
+        document.getElementById("prop-text-line1")?.addEventListener("input", (e) => {
+          txt.line1 = e.target.value;
+          syncSummary();
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-line1-color")?.addEventListener("input", (e) => {
+          txt.line1_color = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-text-line2")?.addEventListener("input", (e) => {
+          txt.line2 = e.target.value;
+          syncSummary();
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-line2-color")?.addEventListener("input", (e) => {
+          txt.line2_color = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-text-line3")?.addEventListener("input", (e) => {
+          txt.line3 = e.target.value;
+          syncSummary();
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-line3-color")?.addEventListener("input", (e) => {
+          txt.line3_color = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-text-subtitle")?.addEventListener("input", (e) => {
+          txt.subtitle = e.target.value;
+          this.render();
+          this.scheduleAutosave();
+        });
+        document.getElementById("prop-chk-bgdim")?.addEventListener("change", (e) => {
+          txt.bg_dim = e.target.checked;
+          this.render();
+          this.scheduleAutosave();
+        });
+        this.inspectorContent.querySelectorAll(".btn-brand-align").forEach((b) => {
           b.addEventListener("click", () => {
+            txt.align = b.dataset.align;
             txt.text_align = b.dataset.align;
+            this.renderInspector();
+            this.render();
+            this.scheduleAutosave();
+          });
+        });
+        this.inspectorContent.querySelectorAll(".btn-brand-pos").forEach((b) => {
+          b.addEventListener("click", () => {
+            txt.y_pct = parseFloat(b.dataset.y);
             this.renderInspector();
             this.render();
             this.scheduleAutosave();
@@ -3035,42 +3317,6 @@
         document.getElementById("prop-slider-fontsize")?.addEventListener("input", (e) => {
           txt.font_size = parseInt(e.target.value, 10);
           document.getElementById("prop-val-fontsize").textContent = `${txt.font_size}px`;
-          this.render();
-          this.scheduleAutosave();
-        });
-        document.getElementById("prop-slider-rotation")?.addEventListener("input", (e) => {
-          txt.rotation_deg = parseInt(e.target.value, 10);
-          document.getElementById("prop-val-rotation").textContent = `${txt.rotation_deg}°`;
-          this.render();
-          this.scheduleAutosave();
-        });
-        document.getElementById("btn-reset-rotation")?.addEventListener("click", () => {
-          txt.rotation_deg = 0;
-          this.renderInspector();
-          this.render();
-          this.scheduleAutosave();
-        });
-        this.inspectorContent.querySelectorAll(".reel-color-swatch").forEach((s) => {
-          s.addEventListener("click", () => {
-            txt.color = s.dataset.col;
-            const cp = document.getElementById("prop-text-color-picker");
-            if (cp) cp.value = s.dataset.col;
-            this.render();
-            this.scheduleAutosave();
-          });
-        });
-        document.getElementById("prop-text-color-picker")?.addEventListener("input", (e) => {
-          txt.color = e.target.value;
-          this.render();
-          this.scheduleAutosave();
-        });
-        document.getElementById("prop-text-bg")?.addEventListener("change", (e) => {
-          txt.bg_color = e.target.value;
-          this.render();
-          this.scheduleAutosave();
-        });
-        document.getElementById("prop-chk-text-shadow")?.addEventListener("change", (e) => {
-          txt.shadow = e.target.checked;
           this.render();
           this.scheduleAutosave();
         });
