@@ -3343,63 +3343,59 @@
       const igApproved = p.ig_post_status === "approved";
 
       return `
-        <div class="article-project-card" data-id="${p.id}" style="display:flex;align-items:center;gap:16px;background:#162235;border:1px solid ${isArchived ? '#475569' : '#303B4D'};border-radius:12px;padding:14px 18px;box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:all 0.15s ease;${isArchived ? 'opacity:0.75;' : ''}">
-          <!-- 1. Thumbnail Photo -->
-          <div style="width:84px;height:84px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#0B0F16;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #303B4D;">
-            ${
-              hasThumb
-                ? `<img src="${thumbUrl}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\'text-align:center;color:#94a3b8;\'><div style=\'font-size:1.6rem;\'>📷</div><div style=\'font-size:0.55rem;font-weight:600;\'>No Image</div></div>';">`
-                : `<div style="text-align:center;color:#94a3b8;">
-                    <div style="font-size:1.6rem;line-height:1;">📷</div>
-                    <div style="font-size:0.55rem;margin-top:2px;font-weight:600;">No Image</div>
-                   </div>`
-            }
-          </div>
+        <div class="article-project-card ${isArchived ? 'is-archived' : ''}" data-id="${p.id}">
+          <div class="article-card-header-row">
+            <div class="article-card-thumb">
+              ${
+                hasThumb
+                  ? `<img src="${thumbUrl}" alt="" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'article-card-no-img\\'><div style=\\'font-size:1.3rem;line-height:1;\\'>📷</div><div style=\\'font-size:0.55rem;font-weight:700;margin-top:2px;\\'>No Image</div></div>';">`
+                  : `<div class="article-card-no-img">
+                      <div style="font-size:1.3rem;line-height:1;">📷</div>
+                      <div style="font-size:0.55rem;font-weight:700;margin-top:2px;">No Image</div>
+                     </div>`
+              }
+            </div>
 
-          <!-- 2. Middle Content Column -->
-          <div style="flex:1;min-width:0;">
-            <!-- Taxonomy and WP Badges -->
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-              <span class="badge" style="background:#003580;color:#fff;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
+            <div class="article-card-badges">
+              <span class="badge badge-sec">
                 📂 ${escapeHtml(p.section || 'News')}
               </span>
-              <span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:4px;">
+              <span class="badge badge-cat">
                 🏷️ ${escapeHtml(p.category || 'Finland')}
               </span>
-              <span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:4px;">
+              <span class="badge badge-lang">
                 🌐 ${escapeHtml(p.language || 'English')}
               </span>
               ${wpBadge}
-              ${isArchived ? '<span class="badge" style="background:#7f1d1d;color:#fca5a5;font-size:0.68rem;font-weight:700;">📦 Archived</span>' : ''}
+              ${isArchived ? '<span class="badge badge-archived">📦 Archived</span>' : ''}
             </div>
+          </div>
 
-            <!-- Headline (Clickable) -->
-            <a class="btn-open-project" data-id="${p.id}" style="font-size:1.05rem;font-weight:700;color:#FFFFFF;text-decoration:none;display:block;margin-bottom:6px;cursor:pointer;line-height:1.35;" title="${escapeHtml(p.title)}">
+          <div class="article-card-body">
+            <a class="article-card-title btn-open-project" data-id="${p.id}" title="${escapeHtml(p.title)}">
               ${escapeHtml(p.title)}
             </a>
 
-            <!-- Meta / Status row -->
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:0.78rem;color:#B8C4D4;">
+            <div class="article-card-meta">
               <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
-              <span>•</span>
+              <span class="meta-separator">•</span>
               <span>Article: <strong style="color:${artApproved ? '#10B981' : '#F59E0B'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
-              <span>•</span>
+              <span class="meta-separator">•</span>
               <span>Social Post: <strong style="color:${igApproved ? '#10B981' : '#F59E0B'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
             </div>
           </div>
 
-          <!-- 3. Actions Column -->
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
-            <button type="button" class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}" style="padding:7px 14px;font-weight:700;background:#003580;color:#fff;border:none;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+          <div class="article-card-actions">
+            <button type="button" class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}">
               <span>✏️ Edit</span>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project" style="padding:7px 10px;background:#0B0F16;border:1px solid #303B4D;color:#FFFFFF;border-radius:6px;">
+            <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project">
               <span>📋 Duplicate</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}" style="padding:7px 8px;color:#B8C4D4;">
+            <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}">
               <span>${isArchived ? '📂 Restore' : '📦 Archive'}</span>
             </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-del-project" data-id="${p.id}" title="Delete permanently" style="padding:7px 8px;color:#ef4444;">
+            <button type="button" class="btn btn-ghost btn-sm btn-del-project" data-id="${p.id}" title="Delete permanently">
               <span>🗑️</span>
             </button>
           </div>
