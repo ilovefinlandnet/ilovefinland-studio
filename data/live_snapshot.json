@@ -1,7 +1,63 @@
 {
- "fetched_at": "2026-11-17T10:38:47+00:00",
+ "fetched_at": "2026-11-19T19:49:48+00:00",
  "site": "https://ilovefinland.net",
  "posts": [
+  {
+   "id": 29286,
+   "url": "https://ilovefinland.net/us-consortium-secures-60-billion-mining-deal-in-kenya/",
+   "slug": "us-consortium-secures-60-billion-mining-deal-in-kenya",
+   "title": "US Consortium Secures $60 Billion Mining Deal in Kenya",
+   "date": "2026-11-19T19:26:53",
+   "modified": "2026-11-19T19:26:53",
+   "category_ids": [
+    10
+   ],
+   "section_ids": [
+    2
+   ]
+  },
+  {
+   "id": 29291,
+   "url": "https://ilovefinland.net/tampere-ice-rink-controversy-deepens-as-two-supervisors-receive-warnings/",
+   "slug": "tampere-ice-rink-controversy-deepens-as-two-supervisors-receive-warnings",
+   "title": "Tampere Ice Rink Controversy Deepens as Two Supervisors Receive Warnings",
+   "date": "2026-11-19T19:25:24",
+   "modified": "2026-11-19T19:25:24",
+   "category_ids": [
+    9
+   ],
+   "section_ids": [
+    2
+   ]
+  },
+  {
+   "id": 29254,
+   "url": "https://ilovefinland.net/young-people-new-political-party-finland/",
+   "slug": "young-people-new-political-party-finland",
+   "title": "Young People in Finland Seek New Political Voices",
+   "date": "2026-11-17T22:32:13",
+   "modified": "2026-11-18T15:23:28",
+   "category_ids": [
+    9
+   ],
+   "section_ids": [
+    2
+   ]
+  },
+  {
+   "id": 29256,
+   "url": "https://ilovefinland.net/crimean-bridge-attack-ukraine-november-2026/",
+   "slug": "crimean-bridge-attack-ukraine-november-2026",
+   "title": "Crimean Bridge badly damaged as Zelensky hails ‘unprecedented’ attack by Ukraine",
+   "date": "2026-11-17T22:31:36",
+   "modified": "2026-11-18T15:22:45",
+   "category_ids": [
+    10
+   ],
+   "section_ids": [
+    2
+   ]
+  },
   {
    "id": 29247,
    "url": "https://ilovefinland.net/f-secure-to-reduce-workforce-by-108-positions-globally-including-42-in-finland-as-it-embraces-ai/",
@@ -20,9 +76,9 @@
    "id": 29245,
    "url": "https://ilovefinland.net/russia-reportedly-seeks-finlands-nato-withdrawal-in-ukraine-talks/",
    "slug": "russia-reportedly-seeks-finlands-nato-withdrawal-in-ukraine-talks",
-   "title": "Russia reportedly seeks Finland’s NATO withdrawal in Ukraine talks",
+   "title": "Bild Reports Russian Demand for Finland to Leave NATO in Peace Talks",
    "date": "2026-11-16T21:50:21",
-   "modified": "2026-11-16T21:50:21",
+   "modified": "2026-11-18T15:21:22",
    "category_ids": [
     9
    ],
@@ -62,9 +118,9 @@
    "id": 29228,
    "url": "https://ilovefinland.net/one-killed-and-another-injured-in-helsinki-knife-incident/",
    "slug": "one-killed-and-another-injured-in-helsinki-knife-incident",
-   "title": "One killed and another injured in Helsinki knife incident",
+   "title": "Helsinki Police Investigate Fatal Knife Violence on Korsholmantie",
    "date": "2026-11-15T21:38:07",
-   "modified": "2026-11-15T21:38:07",
+   "modified": "2026-11-18T15:20:45",
    "category_ids": [
     9
    ],
@@ -76,9 +132,9 @@
    "id": 29222,
    "url": "https://ilovefinland.net/finland-dismisses-russian-proposal-to-withdraw-from-nato/",
    "slug": "finland-dismisses-russian-proposal-to-withdraw-from-nato",
-   "title": "Finland Dismisses Russian Proposal to Withdraw from NATO",
+   "title": "Finnish Ministers Reject Reported Russian Demand on NATO",
    "date": "2026-11-15T14:51:05",
-   "modified": "2026-11-15T14:51:05",
+   "modified": "2026-11-18T15:22:17",
    "category_ids": [
     9
    ],
@@ -90,9 +146,9 @@
    "id": 29219,
    "url": "https://ilovefinland.net/migri-introduces-fast-track-digital-residence-permits-for-tech-specialists/",
    "slug": "migri-introduces-fast-track-digital-residence-permits-for-tech-specialists",
-   "title": "Migri Introduces Fast-Track Digital Residence Permits for Tech Specialists",
+   "title": "Finland’s Fast-Track Residence Permit for Specialists: 2026 Guide",
    "date": "2026-11-15T03:22:12",
-   "modified": "2026-11-15T03:22:12",
+   "modified": "2026-11-18T15:19:14",
    "category_ids": [
     26
    ],
@@ -190,7 +246,7 @@
    "slug": "finland-permits-teslas-assisted-driving-system-on-public-roads",
    "title": "Finland Permits Tesla’s Assisted Driving System on Public Roads",
    "date": "2026-11-11T18:24:51",
-   "modified": "2026-11-11T18:24:52",
+   "modified": "2026-11-18T16:34:34",
    "category_ids": [
     33
    ],
@@ -260,7 +316,7 @@
    "slug": "finland-offers-16-singles-free-trips-for-blind-dinner-dates",
    "title": "Finland Offers 16 Singles Free Trips for Blind Dinner Dates",
    "date": "2026-11-08T20:54:07",
-   "modified": "2026-11-08T20:54:07",
+   "modified": "2026-11-18T16:37:07",
    "category_ids": [
     14
    ],
@@ -1516,7 +1572,11 @@
   "https://ilovefinland.net/traditional-finnish-salmon-soup-lohikeitto-top-spots-and-recipe-in-helsinki/",
   "https://ilovefinland.net/finland-applauds-estonias-border-closure-decision/",
   "https://ilovefinland.net/russia-reportedly-seeks-finlands-nato-withdrawal-in-ukraine-talks/",
-  "https://ilovefinland.net/f-secure-to-reduce-workforce-by-108-positions-globally-including-42-in-finland-as-it-embraces-ai/"
+  "https://ilovefinland.net/f-secure-to-reduce-workforce-by-108-positions-globally-including-42-in-finland-as-it-embraces-ai/",
+  "https://ilovefinland.net/young-people-new-political-party-finland/",
+  "https://ilovefinland.net/crimean-bridge-attack-ukraine-november-2026/",
+  "https://ilovefinland.net/us-consortium-secures-60-billion-mining-deal-in-kenya/",
+  "https://ilovefinland.net/tampere-ice-rink-controversy-deepens-as-two-supervisors-receive-warnings/"
  ],
  "sections": [
   {
@@ -1541,7 +1601,7 @@
    "id": 2,
    "name": "News",
    "slug": "news",
-   "count": 33
+   "count": 37
   },
   {
    "id": 8,
@@ -1639,7 +1699,7 @@
    "id": 9,
    "name": "Finland",
    "slug": "finland",
-   "count": 17
+   "count": 19
   },
   {
    "id": 42,
@@ -1699,7 +1759,7 @@
    "id": 10,
    "name": "International",
    "slug": "international",
-   "count": 6
+   "count": 8
   },
   {
    "id": 18,
@@ -1835,7 +1895,7 @@
   }
  ],
  "last_refresh_attempt": {
-  "at": "2026-11-17T10:38:47+00:00",
+  "at": "2026-11-19T19:49:48+00:00",
   "ok": true,
   "log": [
    {
@@ -1843,35 +1903,35 @@
     "url": "https://ilovefinland.net/wp-json/wp/v2/posts?per_page=100&page=1&_fields=id,date,modified,link,slug,title,categories,ilf_section",
     "ok": true,
     "http_status": 200,
-    "ms": 997
+    "ms": 2437
    },
    {
     "check": "WordPress REST: published posts page 2",
     "url": "https://ilovefinland.net/wp-json/wp/v2/posts?per_page=100&page=2&_fields=id,date,modified,link,slug,title,categories,ilf_section",
     "ok": true,
     "http_status": 200,
-    "ms": 508
+    "ms": 1254
    },
    {
     "check": "Public sitemap: wp-sitemap-posts-post-1.xml",
     "url": "https://ilovefinland.net/wp-sitemap-posts-post-1.xml",
     "ok": true,
     "http_status": 200,
-    "ms": 384
+    "ms": 1873
    },
    {
     "check": "WordPress REST: Website sections (ilf_section)",
     "url": "https://ilovefinland.net/wp-json/wp/v2/ilf_section?per_page=100&_fields=id,name,slug,count",
     "ok": true,
     "http_status": 200,
-    "ms": 406
+    "ms": 1365
    },
    {
     "check": "WordPress REST: Categories",
     "url": "https://ilovefinland.net/wp-json/wp/v2/categories?per_page=100&_fields=id,name,slug,count",
     "ok": true,
     "http_status": 200,
-    "ms": 493
+    "ms": 1538
    }
   ]
  }

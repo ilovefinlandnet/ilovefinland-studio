@@ -374,7 +374,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         self.send_header("X-Robots-Tag", "noindex, nofollow")
         if extra_headers:
             for k, v in extra_headers.items():
@@ -432,7 +434,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Range", extra_range)
         self.send_header("Content-Type", mime_type)
         self.send_header("Content-Length", str(len(data)))
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         self.send_header("X-Robots-Tag", "noindex, nofollow")
         self.end_headers()
         self.wfile.write(data)
