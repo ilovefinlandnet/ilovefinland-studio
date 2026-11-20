@@ -784,20 +784,19 @@ def _translate_finnish_headline_to_english(finnish_title: str) -> str:
     return finnish_title
 
 
-def fetch_live_finnish_news(max_items: int = 40, timeout: float = 2.5) -> List[Dict[str, Any]]:
-    """Fetch live Finnish breaking news and curated hot international topics with disk caching."""
+def fetch_live_finnish_news(max_items: int = 100, timeout: float = 2.5) -> List[Dict[str, Any]]:
+    """Fetch live Finnish breaking news and curated hot international topics with fast parallel caching."""
     import xml.etree.ElementTree as ET
+    from concurrent.futures import ThreadPoolExecutor
 
     items: List[Dict[str, Any]] = []
 
-    # Feed definitions: (url, outlet, category, is_intl)
-    # Domestic Finnish feeds (Police, Civic, Emergency, Capital Region) are prioritized first
     feed_targets = [
-        ("https://yle.fi/rss/t/18-34953/fi", "Yle Helsinki & Uusimaa (Police & Civic)", "Finnish News", False),
-        ("https://yle.fi/rss/t/18-34837/fi", "Yle Kotimaa (Domestic Wire)", "Finnish News", False),
-        ("https://www.is.fi/rss/kotimaa.xml", "IS Kotimaa (Emergency & Crime Wire)", "Finnish News", False),
         (YLE_RSS_URL, "Yle News (English)", "Finnish News", False),
         (HELSINKI_TIMES_RSS, "Helsinki Times", "Finnish News", False),
+        ("https://www.is.fi/rss/tuoreimmat.xml", "IS Tuoreimmat (Breaking Live)", "Finnish News", False),
+        ("https://www.is.fi/rss/kotimaa.xml", "IS Kotimaa (Emergency Wire)", "Finnish News", False),
+        ("https://yle.fi/rss/t/18-34837/fi", "Yle Kotimaa (Domestic Wire)", "Finnish News", False),
         ("https://feeds.bbci.co.uk/news/world/rss.xml", "BBC News (World)", "International", True),
         ("https://feeds.bbci.co.uk/news/technology/rss.xml", "BBC Tech / Global", "International", True),
     ]
@@ -808,7 +807,7 @@ def fetch_live_finnish_news(max_items: int = 40, timeout: float = 2.5) -> List[D
             status, body = _http_get(feed_url, timeout=feed_timeout)
             if status == 200 and body:
                 root = ET.fromstring(body)
-                max_feed = 2 if ("yle.fi" in feed_url or "is.fi" in feed_url) and not outlet.endswith("(English)") else 6
+                max_feed = 12 if not is_intl else 6
                 for it in root.findall("./channel/item")[:max_feed]:
                     title = it.find("title").text if it.find("title") is not None else ""
                     clean_title = re.sub(r"<[^>]+>", "", title).strip()
@@ -819,39 +818,54 @@ def fetch_live_finnish_news(max_items: int = 40, timeout: float = 2.5) -> List[D
                     if not clean_title or len(clean_title) < 14:
                         continue
 
-                    # Filter low-substance international blurbs
                     if is_intl and len(clean_desc) < 25:
                         continue
 
-                    display_title = clean_title
-                    source_claim = clean_desc or clean_title
                     region = None
                     if "Helsinki" in feed_url or "Helsinki" in outlet or "helsinki" in clean_title.lower() or "helsingin" in clean_title.lower():
                         region = "Helsinki"
 
-                    # Translate Finnish domestic headlines to English for editorial clarity
-                    if ("yle.fi" in feed_url or "is.fi" in feed_url) and not is_intl and not outlet.endswith("(English)"):
-                        translated = _translate_finnish_headline_to_english(clean_title)
-                        if translated and translated != clean_title:
-                            display_title = translated
-                            source_claim = f"Finnish original: {clean_title}. {clean_desc}"
-
                     items.append({
-                        "title": display_title,
+                        "title": clean_title,
+                        "raw_title": clean_title,
                         "link": link.strip(),
                         "pub_date": pub_date.strip() or "Today",
                         "description": clean_desc,
-                        "source_claim": source_claim,
+                        "source_claim": clean_desc or clean_title,
                         "outlet": outlet,
                         "category": "International" if is_intl else category,
                         "region": region,
                         "is_verified": True,
+                        "needs_translation": not is_intl and not outlet.endswith("(English)")
                     })
         except Exception:
             continue
-            continue
 
-    # Merge with curated editorial pool to guarantee a rich 20+ item selection
+    # Fast parallel translation for Finnish items needing translation (up to 8 newest)
+    untranslated = [i for i in items if i.get("needs_translation") and i["raw_title"] not in _TRANSLATION_CACHE]
+    if untranslated:
+        to_translate = untranslated[:8]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            futures = {pool.submit(_translate_finnish_headline_to_english, item["raw_title"]): item for item in to_translate}
+            for fut in futures:
+                try:
+                    item = futures[fut]
+                    res_trans = fut.result(timeout=2.0)
+                    if res_trans and res_trans != item["raw_title"]:
+                        item["title"] = res_trans
+                        item["source_claim"] = f"Finnish original: {item['raw_title']}. {item['description']}"
+                except Exception:
+                    pass
+
+    # Check cached translations for any remaining items
+    for item in items:
+        if item.get("needs_translation") and item["raw_title"] in _TRANSLATION_CACHE:
+            trans = _TRANSLATION_CACHE[item["raw_title"]]
+            if trans and trans != item["raw_title"]:
+                item["title"] = trans
+                item["source_claim"] = f"Finnish original: {item['raw_title']}. {item['description']}"
+
+    # Merge with curated editorial pool to guarantee a rich selection
     seen_titles = {i["title"].lower().strip() for i in items}
     for seed in _get_curated_seed_stories():
         if seed["title"].lower().strip() not in seen_titles:

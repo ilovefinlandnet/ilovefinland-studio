@@ -200,19 +200,51 @@ def revise_story_with_feedback(
     target: str = "both",
     key: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Apply editorial feedback to article and/or Reel using OpenAI."""
+    """Apply editorial feedback to article and/or Reel using OpenAI with full-spectrum understanding."""
     system_prompt = (
-        "You are the senior editorial assistant for ILoveFinland.net. "
-        "The editor has provided specific revision feedback. Apply the requested edits precisely while "
-        "preserving Finnish factual accuracy, neutral journalistic style, and safe-area constraints. "
-        "Output valid JSON with keys: 'article' (headline, short_description, body_paragraphs), "
-        "'reel' (caption, hashtags, scenes [line1, line2]), and 'change_summary'."
+        "You are the senior editorial assistant for ILoveFinland.net, Finland's leading English news & lifestyle publication. "
+        "The human editor has provided revision feedback. The editor can ask for ANY change:\n"
+        "• Changing or fixing photo credit (e.g. 'Photo: Name / Agency — Licence')\n"
+        "• Changing photo caption or alt text\n"
+        "• Tweaking or shortening headline or short description\n"
+        "• Rewriting article copy, adjusting tone, adding new facts, or restructuring paragraphs\n"
+        "• Updating category, website section, or city location\n"
+        "• Modifying Reel script lines, caption, or hashtags\n\n"
+        "Carefully interpret what the editor wants changed and update the respective fields precisely. "
+        "Preserve existing values for any fields not targeted by the feedback.\n"
+        "Output strictly valid JSON with this exact structure:\n"
+        "{\n"
+        '  "article": {\n'
+        '    "headline": "...",\n'
+        '    "short_description": "...",\n'
+        '    "body_paragraphs": ["...", "..."],\n'
+        '    "image_credit": "Photo: ...",\n'
+        '    "image_caption": "...",\n'
+        '    "image_alt_text": "...",\n'
+        '    "category": "...",\n'
+        '    "section": "...",\n'
+        '    "city_location": "..."\n'
+        '  },\n'
+        '  "reel": {\n'
+        '    "caption": "...",\n'
+        '    "hashtags": ["#..."],\n'
+        '    "scenes": [{"line1": "...", "line2": "..."}]\n'
+        '  },\n'
+        '  "change_summary": "Clear, concise 1-sentence summary of changes applied"\n'
+        "}"
     )
 
+    feat_img = current_article.get("featured_image") or {}
     clean_art = {
         "headline": current_article.get("headline", ""),
         "short_description": current_article.get("short_description", ""),
         "body_paragraphs": current_article.get("body_paragraphs", []),
+        "image_credit": current_article.get("image_credit") or feat_img.get("credit_string", ""),
+        "image_caption": current_article.get("image_caption") or feat_img.get("caption", ""),
+        "image_alt_text": current_article.get("image_alt_text") or feat_img.get("alt_text", ""),
+        "category": current_article.get("category", ""),
+        "section": current_article.get("section", ""),
+        "city_location": current_article.get("city_location", ""),
     }
     clean_reel = {
         "caption": current_reel.get("caption", ""),
@@ -226,12 +258,12 @@ def revise_story_with_feedback(
     user_prompt = (
         f"Target Component: {target}\n"
         f"Editor Feedback: {feedback_text}\n\n"
-        f"Current Article Copy:\n{json.dumps(clean_art, indent=1)}\n\n"
+        f"Current Article Copy & Metadata:\n{json.dumps(clean_art, indent=1)}\n\n"
         f"Current Reel Copy:\n{json.dumps(clean_reel, indent=1)}\n\n"
         "Return the revised article and reel in valid JSON."
     )
 
-    return call_openai_chat(system_prompt, user_prompt, model="gpt-4o-mini", key=key)
+    return call_openai_chat(system_prompt, user_prompt, model="gpt-4o", key=key)
 
 
 def generate_polished_caption_with_gpt(

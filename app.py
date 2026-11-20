@@ -62,6 +62,10 @@ from db import (
     update_inbox_item,
     delete_inbox_item,
     upload_featured_image,
+    add_article_additional_image,
+    utc_now_iso,
+    delete_article_additional_image,
+    set_article_featured_image_from_additional,
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -835,6 +839,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             })
             return
 
+        import base64
         try:
             body = self._read_json_body()
         except Exception:
@@ -1202,6 +1207,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             import urllib.request
             import urllib.error
             import urllib.parse
+            import base64
 
             wp_api_endpoint = f"{wp_base}/wp-json/wp/v2/posts"
             target_post_id = body.get("post_id") or art.get("wordpress_post_id") or bundle["package"].get("wordpress_post_id")
@@ -1219,6 +1225,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "everyday life": 52, "residence permits": 26, "driving": 33, "housing": 34,
                 "taxes": 31, "weather": 15, "work": 27, "banking": 30, "cost of living": 36,
                 "culture & traditions": 38, "culture & events": 14, "government services": 37,
+                "helsinki events": 40, "events": 14,
                 "healthcare": 29, "helsinki": 40, "moving to finland": 25, "public transport": 32,
                 "winter activities": 23, "summer activities": 24, "nature": 16, "study in finland": 28,
                 "finnish food": 53, "finnish language": 35, "general": 1, "finland": 9,
@@ -1398,8 +1405,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if exact_addr.lower().strip() in ["n/a", "none", "residential apartment buildings (taloyhtiöt)"]:
                 exact_addr = ""
 
+            sec_val_clean = (art.get("section") or "News").lower().strip()
             event_dt = art.get("event_datetime_venue") or art.get("event_date_time_venue") or art.get("event_start") or ""
-            if "n/a" in event_dt.lower():
+            if not sec_val_clean.startswith("event") or any(k in event_dt.lower() for k in ["n/a", "none", "not applicable", "false"]):
                 event_dt = ""
 
             # Credit & Caption (Clean, professional credit: strictly Photo: ILF for creator uploads)
@@ -1626,7 +1634,6 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/upload/media-clip":
-            import base64
             data_b64 = body.get("data_base64", "")
             fname = body.get("filename", "clip.mp4")
             media_type = body.get("media_type", "video")
@@ -1905,7 +1912,6 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             has_key = bool(openai_client.get_openai_api_key())
             audio_b64 = body.get("audio_base64") or body.get("audio")
             if audio_b64 and has_key:
-                import base64
                 try:
                     if "," in audio_b64:
                         audio_b64 = audio_b64.split(",", 1)[1]
@@ -2059,6 +2065,39 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             img_data = body.get("image_data", {})
             try:
                 bundle = upload_featured_image(pkg_id, image_data=img_data, author=user, db_path=db_path)
+                bundle["integrations"] = INTEGRATIONS_STATUS
+                self._send_json(bundle)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/package/add-article-image":
+            pkg_id = int(body.get("package_id", 0))
+            img_data = body.get("image_data", {})
+            try:
+                bundle = add_article_additional_image(pkg_id, image_data=img_data, author=user, db_path=db_path)
+                bundle["integrations"] = INTEGRATIONS_STATUS
+                self._send_json(bundle)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/package/delete-article-image":
+            pkg_id = int(body.get("package_id", 0))
+            img_id = str(body.get("image_id", ""))
+            try:
+                bundle = delete_article_additional_image(pkg_id, image_id=img_id, author=user, db_path=db_path)
+                bundle["integrations"] = INTEGRATIONS_STATUS
+                self._send_json(bundle)
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if path == "/api/package/set-featured-image":
+            pkg_id = int(body.get("package_id", 0))
+            img_id = str(body.get("image_id", ""))
+            try:
+                bundle = set_article_featured_image_from_additional(pkg_id, image_id=img_id, author=user, db_path=db_path)
                 bundle["integrations"] = INTEGRATIONS_STATUS
                 self._send_json(bundle)
             except Exception as exc:
@@ -2250,7 +2289,6 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/ai-media/upload-reference":
-            import base64
             img_b64 = body.get("image_base64", "")
             fname = body.get("filename", "reference.jpg")
             if "," in img_b64:

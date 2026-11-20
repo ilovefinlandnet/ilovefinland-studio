@@ -3503,6 +3503,7 @@ def build_wordpress_article(
         "event_datetime_venue": event_details,
         # Additional Image (< 5 MB downloads)
         "additional_image": addl_img,
+        "additional_images": [addl_img] if addl_img else [],
         "additional_image_alt_text": addl_img.get("alt_text", "") if addl_img else "",
         "additional_image_caption": addl_img.get("caption", "") if addl_img else "",
         "additional_image_credit_licence": addl_img.get("credit_string", "") if addl_img else "",

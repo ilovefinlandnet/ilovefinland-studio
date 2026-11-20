@@ -257,6 +257,7 @@
             });
             localStorage.setItem("ilf_user_saved_ending_clips", JSON.stringify(custom));
             this.renderEndingClipsSpace();
+      this.renderBrollPresets();
             alert("Uploaded and saved new ending clip to your library!");
           }
         } catch (err) {
@@ -523,17 +524,69 @@
       // Timeline Scrubbing & Dragging
       this.bindTimelineInteraction();
 
+      // Canvas Viewport Zoom / Fit
+      document.getElementById("select-reel-canvas-zoom")?.addEventListener("change", (e) => {
+        const val = e.target.value;
+        if (!this.viewport) return;
+        if (val === "fit") {
+          this.viewport.style.maxHeight = "calc(100% - 46px)";
+        } else if (val === "0.85") {
+          this.viewport.style.maxHeight = "calc((100% - 46px) * 0.85)";
+        } else if (val === "0.70") {
+          this.viewport.style.maxHeight = "calc((100% - 46px) * 0.70)";
+        } else if (val === "1.0") {
+          this.viewport.style.maxHeight = "100%";
+        }
+      });
+
+      // Keyboard shortcuts modal triggers
+      const shortcutsModal = document.getElementById("reel-shortcuts-modal");
+      document.getElementById("btn-reel-shortcuts-trigger")?.addEventListener("click", () => {
+        shortcutsModal?.classList.remove("hidden");
+      });
+      document.getElementById("btn-close-shortcuts-modal")?.addEventListener("click", () => {
+        shortcutsModal?.classList.add("hidden");
+      });
+      document.getElementById("btn-close-shortcuts-modal-footer")?.addEventListener("click", () => {
+        shortcutsModal?.classList.add("hidden");
+      });
+      shortcutsModal?.addEventListener("click", (e) => {
+        if (e.target === shortcutsModal) shortcutsModal.classList.add("hidden");
+      });
+
       // Keyboard shortcuts
       window.addEventListener("keydown", (e) => {
         if (!this.editorScreen || this.editorScreen.classList.contains("hidden")) return;
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
         if (e.code === "Space") { e.preventDefault(); this.togglePlay(); }
-        else if (e.code === "KeyS") { e.preventDefault(); this.splitAtPlayhead(); }
-        else if (e.code === "KeyD" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); this.duplicateSelected(); }
+        else if (e.code === "KeyS" && !e.metaKey && !e.ctrlKey) { e.preventDefault(); this.splitAtPlayhead(); }
+        else if (e.code === "KeyD") { e.preventDefault(); this.duplicateSelected(); }
         else if (e.code === "Delete" || e.code === "Backspace") { e.preventDefault(); this.deleteSelected(); }
         else if (e.code === "KeyZ" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
           if (e.shiftKey) this.redo(); else this.undo();
+        }
+        else if (e.code === "ArrowLeft") {
+          e.preventDefault();
+          const step = e.shiftKey ? 1.0 : 0.1;
+          this.seekTo(Math.max(0, this.currentTime - step));
+        }
+        else if (e.code === "ArrowRight") {
+          e.preventDefault();
+          const step = e.shiftKey ? 1.0 : 0.1;
+          this.seekTo(Math.min(this.getTotalDuration(), this.currentTime + step));
+        }
+        else if (e.code === "Home" || e.code === "Digit0") {
+          e.preventDefault();
+          this.seekTo(0);
+        }
+        else if (e.code === "End") {
+          e.preventDefault();
+          this.seekTo(this.getTotalDuration());
+        }
+        else if (e.key === "?" || (e.code === "Slash" && e.shiftKey)) {
+          e.preventDefault();
+          shortcutsModal?.classList.toggle("hidden");
         }
       });
 
@@ -901,6 +954,7 @@
       if (countEl) countEl.textContent = pool.length;
 
       this.renderEndingClipsSpace();
+      this.renderBrollPresets();
 
       container.innerHTML = pool.map((m, idx) => `
         <div class="reel-media-pool-card" data-idx="${idx}" draggable="true" data-id="${m.id}" title="Drag clip to timeline or click '+ Add to Reel'">
@@ -1175,6 +1229,69 @@
       this.seekTo(lastEnd);
       this.render();
       this.scheduleAutosave();
+    }
+
+    renderBrollPresets() {
+      const container = document.getElementById("reel-broll-presets-grid");
+      if (!container) return;
+
+      const presets = [
+        {
+          title: "Lapland Winter Snow",
+          url: "/assets/sample-clips/clip-2-winter-lapland.mp4",
+          thumb: "/assets/sample-clips/clip-2-winter-thumb.png",
+          type: "video",
+          duration: 4.0
+        },
+        {
+          title: "Helsinki Green Tram",
+          url: "/assets/sample-clips/clip-1-helsinki-tram.mp4",
+          thumb: "/assets/sample-clips/clip-1-tram-thumb.jpg",
+          type: "video",
+          duration: 4.0
+        },
+        {
+          title: "Winter Tyres Reel",
+          url: "/assets/sample-clips/winter-tyres-reel-1080x1920.mp4",
+          thumb: "/assets/sample-clips/tesla-clean-bg.jpg",
+          type: "video",
+          duration: 4.5
+        },
+        {
+          title: "Tesla Nordic Drive",
+          url: "/assets/sample-clips/tesla-reel.mp4",
+          thumb: "/assets/sample-clips/tesla-cover.jpg",
+          type: "video",
+          duration: 4.0
+        }
+      ];
+
+      container.innerHTML = presets.map((p, idx) => `
+        <div class="reel-broll-card" data-idx="${idx}" title="Click to append '${escapeHtml(p.title)}' to your timeline">
+          <img src="${p.thumb}" class="reel-broll-card-bg" alt="${escapeHtml(p.title)}" />
+          <div class="reel-broll-card-overlay"></div>
+          <div class="reel-broll-card-title">${escapeHtml(p.title)}</div>
+          <div class="reel-broll-card-action">+ Add to Reel</div>
+        </div>
+      `).join("");
+
+      container.querySelectorAll(".reel-broll-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const p = presets[parseInt(card.dataset.idx, 10)];
+          if (!p || !this.currentProject) return;
+          const mediaItem = {
+            id: `broll_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 4)}`,
+            filename: p.title,
+            url: p.url,
+            type: p.type,
+            duration: p.duration
+          };
+          if (!this.currentProject.timeline.media_pool) this.currentProject.timeline.media_pool = [];
+          this.currentProject.timeline.media_pool.push(mediaItem);
+          this.renderMediaPoolUI();
+          this.addMediaItemToTimeline(mediaItem);
+        });
+      });
     }
 
 
@@ -2028,6 +2145,18 @@
     // TIMELINE RENDERING & INTERACTION
     // =========================================================================
 
+    createWaveformSVG(widthPx, isVoice) {
+      const bars = Math.max(10, Math.floor(widthPx / 4));
+      let rects = "";
+      for (let i = 0; i < bars; i++) {
+        const seed = (i * 7 + (isVoice ? 13 : 5)) % 100;
+        const h = Math.max(4, Math.round((Math.sin(i * 0.3) * 0.38 + 0.62) * (seed % 16 + 6)));
+        const y = Math.round((28 - h) / 2);
+        rects += `<rect x="${i * 4}" y="${y}" width="2" height="${h}" rx="1" fill="#FFFFFF" opacity="0.38" />`;
+      }
+      return `<svg class="reel-audio-waveform-visual" width="${widthPx}" height="28" style="position:absolute;left:0;top:0;pointer-events:none;">${rects}</svg>`;
+    }
+
     renderTimeline() {
       if (!this.currentProject) return;
       const totalDur = this.getTotalDuration();
@@ -2265,7 +2394,8 @@
           block.style.width = `${Math.max(28, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;">
+            ${this.createWaveformSVG(widthPx, false)}
+            <span style="position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.85);">
               🎵 ${escapeHtml(music.filename || 'Background Music')} (Vol: ${Math.round((music.volume || 0.75) * 100)}%)
             </span>
             <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
@@ -2314,7 +2444,8 @@
           block.style.width = `${Math.max(28, widthPx)}px`;
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;">
+            ${this.createWaveformSVG(widthPx, true)}
+            <span style="position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;gap:4px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,0.85);">
               🎙️ ${escapeHtml(vo.filename || 'Voiceover')} (Vol: ${Math.round((vo.volume || 1.0) * 100)}%)
             </span>
             <div class="reel-trim-handle-right" title="Trim end / stretch duration"></div>
@@ -3821,22 +3952,92 @@
     }
 
     renderEmptyInspector() {
-      if (this.inspectorHeading) this.inspectorHeading.textContent = "Reel Settings";
+      if (this.inspectorHeading) this.inspectorHeading.textContent = "Project Dashboard";
       if (this.inspectorIcon) this.inspectorIcon.textContent = "⚙️";
-      if (!this.inspectorContent) return;
+      if (!this.inspectorContent || !this.currentProject) return;
+
+      const mediaClips = this.currentProject.timeline?.tracks?.media || [];
+      const textClips = this.currentProject.timeline?.tracks?.text || [];
+      const totalDur = this.getTotalDuration();
+
       this.inspectorContent.innerHTML = `
-        <div class="reel-prop-group">
-          <label class="reel-prop-label">Aspect Ratio</label>
-          <div style="font-weight:700;color:#fff;font-size:0.85rem;">9:16 Vertical (1080 × 1920)</div>
+        <div style="background:#0F1F38;padding:12px;border-radius:8px;border:1px solid #1E3A66;margin-bottom:14px;">
+          <div style="font-size:0.75rem;text-transform:uppercase;color:#38BDF8;font-weight:800;letter-spacing:0.05em;margin-bottom:6px;">Project Overview</div>
+          <div style="font-size:0.92rem;font-weight:700;color:#FFFFFF;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escapeHtml(this.currentProject.title || 'Untitled Reel')}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.75rem;">
+            <div style="background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:6px;">
+              <span style="color:#94a3b8;display:block;">Duration</span>
+              <strong style="color:#38bdf8;font-family:monospace;font-size:0.85rem;">${totalDur.toFixed(1)}s</strong>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:6px;">
+              <span style="color:#94a3b8;display:block;">Aspect Ratio</span>
+              <strong style="color:#fff;">9:16 (1080×1920)</strong>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:6px;">
+              <span style="color:#94a3b8;display:block;">Clips</span>
+              <strong style="color:#fff;">${mediaClips.length} Media</strong>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:6px;">
+              <span style="color:#94a3b8;display:block;">Overlays</span>
+              <strong style="color:#fff;">${textClips.length} Text Blocks</strong>
+            </div>
+          </div>
         </div>
-        <div class="reel-prop-group">
-          <label class="reel-prop-label">Total Duration</label>
-          <div style="font-weight:700;color:#38bdf8;font-size:0.85rem;font-family:monospace;">${this.getTotalDuration().toFixed(1)} seconds</div>
+
+        <div class="reel-prop-group" style="background:#0B1626;padding:10px;border-radius:8px;border:1px solid #1A2E4C;margin-bottom:12px;">
+          <label class="reel-prop-label" style="font-weight:700;color:#fff;margin-bottom:6px;">🎛️ Audio Mix & Auto-Ducking</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:0.78rem;color:#cbd5e1;">Duck music for voiceover</span>
+            <input type="checkbox" id="prop-proj-ducking" ${this.currentProject.audio_ducking !== false ? 'checked' : ''} style="cursor:pointer;" />
+          </div>
+          <p style="font-size:0.72rem;color:#94a3b8;margin:0;line-height:1.35;">
+            Automatically lowers background music volume by 60% during voiceover narration.
+          </p>
         </div>
-        <p style="font-size:0.75rem;color:var(--reel-text-muted);padding-top:10px;border-top:1px solid var(--reel-panel-border);">
-          Tip: Tap any text overlay or clip in the timeline or preview to inspect and edit its styles.
+
+        <div class="reel-prop-group" style="background:#0B1626;padding:10px;border-radius:8px;border:1px solid #1A2E4C;margin-bottom:12px;">
+          <label class="reel-prop-label" style="font-weight:700;color:#fff;margin-bottom:6px;">🖼️ Canvas Background Fill</label>
+          <select id="prop-proj-bg-mode" class="reel-prop-input" style="width:100%;cursor:pointer;">
+            <option value="blur" ${this.currentProject.bg_mode !== 'black' ? 'selected' : ''}>Blurred Video Ambient Fill</option>
+            <option value="black" ${this.currentProject.bg_mode === 'black' ? 'selected' : ''}>Deep Pitch Black</option>
+          </select>
+        </div>
+
+        <div class="reel-prop-group" style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+          <button type="button" id="btn-proj-reset-playhead" class="btn btn-sm btn-outline" style="color:#cbd5e1;border-color:#334155;text-align:left;display:flex;align-items:center;gap:6px;">
+            <span>⏪</span> <span>Jump Playhead to 0:00 (Start)</span>
+          </button>
+          <button type="button" id="btn-proj-open-shortcuts" class="btn btn-sm btn-outline" style="color:#38bdf8;border-color:#1e3a66;text-align:left;display:flex;align-items:center;gap:6px;">
+            <span>⌨️</span> <span>View Keyboard Shortcuts (Space, S, D, Z)</span>
+          </button>
+        </div>
+
+        <p style="font-size:0.72rem;color:var(--reel-text-muted);padding-top:10px;border-top:1px solid var(--reel-panel-border);margin-top:12px;">
+          💡 Tip: Click any clip, text block, or audio track in the timeline to edit its specific timing and styles.
         </p>
       `;
+
+      // Event listeners for project dashboard
+      document.getElementById("prop-proj-ducking")?.addEventListener("change", (e) => {
+        this.currentProject.audio_ducking = e.target.checked;
+        this.scheduleAutosave();
+      });
+
+      document.getElementById("prop-proj-bg-mode")?.addEventListener("change", (e) => {
+        this.currentProject.bg_mode = e.target.value;
+        this.scheduleAutosave();
+        this.render();
+      });
+
+      document.getElementById("btn-proj-reset-playhead")?.addEventListener("click", () => {
+        this.seekTo(0);
+      });
+
+      document.getElementById("btn-proj-open-shortcuts")?.addEventListener("click", () => {
+        document.getElementById("reel-shortcuts-modal")?.classList.remove("hidden");
+      });
     }
 
     // =========================================================================

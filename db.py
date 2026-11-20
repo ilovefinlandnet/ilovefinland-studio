@@ -2756,11 +2756,142 @@ def create_revision_from_comment(
         created_by = "AI Revision Engine"
         change_summary_text = ""
 
+        # Multi-Attribute Natural Language Instruction Extractor
+        # 1. Photo Credit (e.g. "change image credit to X", "photo credit: X", "photo by X", "credit = X")
+        user_specified_credit = None
+        credit_patterns = [
+            r'(?:change|update|set|switch)\s+(?:the\s+)?(?:image\s+|photo\s+)?credit\s+(?:to|as|is|=)\s*([^\n\r]+)',
+            r'(?:photo\s*credit|image\s*credit|credit)\s*(?:[:=]|to|is|should\s*be)\s*([^\n\r]+)',
+            r'(?:photo|image)\s+by\s+([^\n\r]+)',
+        ]
+        for pat in credit_patterns:
+            m = re.search(pat, comment_body, re.IGNORECASE)
+            if m:
+                raw_c = m.group(1).strip()
+                split_pts = re.split(r'(?:\s+and\s+(?:tighten|update|change|make|set|revise)|[\.\;\!]\s+)', raw_c, maxsplit=1, flags=re.IGNORECASE)
+                clean_c = split_pts[0].strip().rstrip('.,;')
+                clean_c = clean_c.strip('\'"')
+                if clean_c and len(clean_c) > 2:
+                    if not clean_c.lower().startswith("photo:"):
+                        user_specified_credit = f"Photo: {clean_c}"
+                    else:
+                        user_specified_credit = clean_c
+                    break
+
+        # 2. Headline (e.g. "change headline to X", "headline: X", "suggested headline: X", "title: X")
+        user_specified_headline = None
+        headline_patterns = [
+            r'(?:change|update|set)\s+(?:the\s+)?(?:article\s+)?headline\s+(?:to|as|is|=)\s*([^\n\r]+)',
+            r'(?:suggested\s*headline|headline|title)\s*(?:[:=]|to|is|should\s*be)\s*([^\n\r]+)',
+        ]
+        for pat in headline_patterns:
+            m = re.search(pat, comment_body, re.IGNORECASE)
+            if m:
+                raw_h = m.group(1).strip()
+                split_pts = re.split(r'\.\s+(?:You|Please|This|The|Note)\b', raw_h, maxsplit=1)
+                clean_h = split_pts[0].strip().strip('\'"')
+                if clean_h and len(clean_h) > 5:
+                    user_specified_headline = clean_h
+                    break
+
+        # 3. Photo Caption (e.g. "change photo caption to X", "caption: X")
+        user_specified_caption = None
+        caption_patterns = [
+            r'(?:change|update|set)\s+(?:the\s+)?(?:photo\s+|image\s+)?caption\s+(?:to|as|is|=)\s*([^\n\r]+)',
+            r'(?:photo\s*caption|image\s*caption|caption)\s*(?:[:=]|to|is|should\s*be)\s*([^\n\r]+)',
+        ]
+        for pat in caption_patterns:
+            m = re.search(pat, comment_body, re.IGNORECASE)
+            if m:
+                raw_cap = m.group(1).strip()
+                split_pts = re.split(r'\.\s+(?:You|Please|This|The|Note)\b', raw_cap, maxsplit=1)
+                clean_cap = split_pts[0].strip().strip('\'"')
+                if clean_cap and len(clean_cap) > 2:
+                    user_specified_caption = clean_cap
+                    break
+
+        # 4. Category (e.g. "change category to X", "category: X")
+        user_specified_category = None
+        category_patterns = [
+            r'(?:change|update|set)\s+(?:the\s+)?category\s+(?:to|as|is|=)\s*([^\n\r]+)',
+            r'category\s*(?:[:=]|to|is|should\s*be)\s*([^\n\r]+)',
+        ]
+        for pat in category_patterns:
+            m = re.search(pat, comment_body, re.IGNORECASE)
+            if m:
+                raw_cat = m.group(1).strip().split('.')[0].strip().strip('\'"')
+                if raw_cat:
+                    user_specified_category = raw_cat
+                    break
+
+        # 5. City / Location (e.g. "set city to X", "city: X", "location: X")
+        user_specified_city = None
+        city_patterns = [
+            r'(?:change|update|set)\s+(?:the\s+)?city\s+(?:to|as|is|=)\s*([^\n\r]+)',
+            r'(?:city|location)\s*(?:[:=]|to|is|should\s*be)\s*([^\n\r]+)',
+        ]
+        for pat in city_patterns:
+            m = re.search(pat, comment_body, re.IGNORECASE)
+            if m:
+                raw_city = m.group(1).strip().split('.')[0].strip().strip('\'"')
+                if raw_city and raw_city.lower() not in ("finland", "nationwide", "all finland", "none", "n/a"):
+                    user_specified_city = raw_city
+                    break
+
+        if user_specified_credit and (revise_article or revise_post):
+            article["image_credit"] = user_specified_credit
+            if isinstance(article.get("featured_image"), dict):
+                article["featured_image"]["credit_string"] = user_specified_credit
+                clean_p = re.sub(r'^(?:photo|credit|image)[:\s]*', '', user_specified_credit, flags=re.IGNORECASE).strip()
+                article["featured_image"]["photographer"] = clean_p.split('/')[0].strip()
+        if user_specified_headline and revise_article:
+            article["headline"] = user_specified_headline
+        if user_specified_caption and revise_article:
+            article["image_caption"] = user_specified_caption
+            if isinstance(article.get("featured_image"), dict):
+                article["featured_image"]["caption"] = user_specified_caption
+        if user_specified_category and revise_article:
+            article["category"] = user_specified_category
+        if user_specified_city and revise_article:
+            article["city_location"] = user_specified_city
+
         # If user attached a video clip or photo for this revision
         if attached_clip and isinstance(attached_clip, dict):
             clip_url = attached_clip.get("url")
             clip_fn = attached_clip.get("filename", "user-clip.mp4")
-            if clip_url:
+            media_t = (attached_clip.get("media_type") or "").lower()
+            is_image = media_t == "image" or any(clip_fn.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"])
+
+            # If user uploaded an image and article is a revision target
+            if clip_url and is_image and (revise_article or revise_post):
+                effective_credit = user_specified_credit or attached_clip.get("credit") or "Photo: ILF"
+                article["featured_image"] = {
+                    "id": "user-uploaded-photo",
+                    "title": clip_fn,
+                    "url": clip_url,
+                    "download_jpeg": clip_url,
+                    "download_png": clip_url,
+                    "download_webp": "",
+                    "file_size_mb": float(attached_clip.get("size_mb", 1.0)),
+                    "resolution": "High-Res Photo",
+                    "quality_score": 99,
+                    "photographer": "User Uploaded",
+                    "agency": "User Uploaded",
+                    "source_url": "https://ilovefinland.net",
+                    "licence": "Editorial Rights (ILF)",
+                    "credit_string": effective_credit,
+                    "alt_text": article.get("headline", pkg["title"]),
+                    "caption": f"Editorial visual for {article.get('headline', pkg['title'])}.",
+                    "status": "cleared",
+                    "data_label": "live_real",
+                }
+                article["image_credit"] = effective_credit
+                article["image_caption"] = article["featured_image"]["caption"]
+                article["image_alt_text"] = article["featured_image"]["alt_text"]
+                change_summary_text = f"Updated article featured photo to uploaded image '{clip_fn}'"
+
+            # If reel is a revision target (or uploaded file is video)
+            if clip_url and (revise_reel or not is_image):
                 if not isinstance(reel.get("clips"), list):
                     reel["clips"] = []
                 new_clip_entry = {
@@ -2797,8 +2928,19 @@ def create_revision_from_comment(
                 clip_note = f"Updated Reel background footage to uploaded clip '{clip_fn}'"
                 change_summary_text = clip_note
 
+        # Apply user specified photo credit even if no new clip was attached
+        if user_specified_credit and revise_article:
+            article["image_credit"] = user_specified_credit
+            if isinstance(article.get("featured_image"), dict):
+                article["featured_image"]["credit_string"] = user_specified_credit
+                article["featured_image"]["photographer"] = user_specified_credit
+                if "cc" in user_specified_credit.lower():
+                    article["featured_image"]["licence"] = "Attribution (CC)"
+
         if openai_client.get_openai_api_key() and (revise_article or revise_reel):
             try:
+                # Keep uploaded photo url before OpenAI call to prevent overwrite
+                saved_feat_photo = copy.deepcopy(article.get("featured_image"))
                 live_rev = openai_client.revise_story_with_feedback(
                     current_article=article,
                     current_reel=reel,
@@ -2807,7 +2949,22 @@ def create_revision_from_comment(
                 )
                 if isinstance(live_rev, dict):
                     if revise_article and "article" in live_rev and isinstance(live_rev["article"], dict):
-                        article.update(live_rev["article"])
+                        art_rev = live_rev["article"]
+                        article.update(art_rev)
+                        if art_rev.get("body_paragraphs"):
+                            article["body_html"] = "\n\n".join(f"<p>{p}</p>" for p in art_rev["body_paragraphs"])
+                        # If user uploaded a photo or had an authentic photo, protect its URL while applying new credit
+                        if saved_feat_photo and saved_feat_photo.get("url"):
+                            article["featured_image"] = saved_feat_photo
+                            new_cred = user_specified_credit or art_rev.get("image_credit")
+                            if new_cred:
+                                article["image_credit"] = new_cred
+                                article["featured_image"]["credit_string"] = new_cred
+                                article["featured_image"]["photographer"] = new_cred.replace("Photo:", "").strip()
+                            new_cap = user_specified_caption or art_rev.get("image_caption")
+                            if new_cap:
+                                article["image_caption"] = new_cap
+                                article["featured_image"]["caption"] = new_cap
                     if revise_reel and "reel" in live_rev and isinstance(live_rev["reel"], dict):
                         reel.update(live_rev["reel"])
                     change_summary_text = live_rev.get("change_summary", f"Revision applied: {comment_body[:80]}")
@@ -2820,9 +2977,23 @@ def create_revision_from_comment(
         import editorial_engine
 
         if revise_article:
-            # Check if user asked for a new picture / photo / image
+            # Re-apply user headline and credit if AI reset them
+            if user_specified_headline:
+                article["headline"] = user_specified_headline
+            if user_specified_credit:
+                article["image_credit"] = user_specified_credit
+                if isinstance(article.get("featured_image"), dict):
+                    article["featured_image"]["credit_string"] = user_specified_credit
+
+            feat_cur = article.get("featured_image") or {}
+            has_uploaded_photo = (
+                feat_cur.get("id") == "user-uploaded-photo" or
+                feat_cur.get("photographer") in ("User Uploaded", "Direct Creator Upload") or
+                feat_cur.get("url", "").startswith("/assets/uploads/")
+            )
+            # Check if user asked for a new picture / photo / image (ONLY if no uploaded photo exists and no credit given)
             cb_low = comment_body.lower()
-            if any(k in cb_low for k in ["picture", "photo", "image", "pic", "visual", "wrong picture", "better picture", "suitable picture", "change picture", "new picture"]):
+            if not has_uploaded_photo and not user_specified_credit and any(k in cb_low for k in ["wrong picture", "better picture", "suitable picture", "change picture", "new picture", "search picture"]):
                 new_photo = editorial_engine.search_editorial_photos(
                     article.get("headline", pkg["title"]),
                     instructions=f"{comment_body}\n{pkg['title']}",
@@ -2837,9 +3008,14 @@ def create_revision_from_comment(
             # Clean and audit article taxonomy, formatting, and subheadings
             article = editorial_engine.audit_and_refine_article(
                 article,
-                topic=pkg["title"],
+                topic=article.get("headline", pkg["title"]),
                 instructions=comment_body,
             )
+            # Final safeguard for user credit
+            if user_specified_credit:
+                article["image_credit"] = user_specified_credit
+                if isinstance(article.get("featured_image"), dict):
+                    article["featured_image"]["credit_string"] = user_specified_credit
 
         applied_changes = []
         if not change_summary_text:
@@ -2930,10 +3106,13 @@ def create_revision_from_comment(
             ig_post_status = "revision_ready"
             ig_post_approved_ver = None
 
+        new_title = article.get("headline", pkg["title"]) if (revise_article and article.get("headline")) else pkg["title"]
+
         conn.execute(
             """
             UPDATE packages
             SET current_version = ?,
+                title = ?,
                 article_status = ?,
                 article_approved_version = ?,
                 reel_status = ?,
@@ -2945,6 +3124,7 @@ def create_revision_from_comment(
             """,
             (
                 new_ver,
+                new_title,
                 article_status,
                 article_approved_ver,
                 reel_status,
@@ -3037,6 +3217,7 @@ def rewrite_with_claude(
             topic_str = article.get("headline", pkg["title"])
             existing_featured = copy.deepcopy(article.get("featured_image"))
             existing_addl = copy.deepcopy(article.get("additional_image"))
+            existing_addl_list = copy.deepcopy(article.get("additional_images") or [])
             upgraded = editorial_engine.build_wordpress_article(
                 topic=topic_str,
                 instructions=article.get("short_description", ""),
@@ -3058,6 +3239,8 @@ def rewrite_with_claude(
                 article["image_credit"] = existing_featured.get("credit_string", article.get("image_credit"))
                 article["image_caption"] = existing_featured.get("caption", article.get("image_caption"))
                 article["image_alt_text"] = existing_featured.get("alt_text", article.get("image_alt_text"))
+            if existing_addl_list:
+                article["additional_images"] = existing_addl_list
             if existing_addl:
                 article["additional_image"] = existing_addl
 
@@ -3616,8 +3799,23 @@ def update_article_fields(
         article = json.loads(ver_row["article_json"])
 
         for k, v in fields.items():
-            if k in article and v is not None:
+            if v is not None:
                 article[k] = v
+
+        # Maintain both article["additional_images"] list and backwards-compatible article["additional_image"]
+        addl_list = article.get("additional_images")
+        if isinstance(addl_list, list):
+            if len(addl_list) > 0:
+                first = addl_list[0]
+                article["additional_image"] = first
+                article["additional_image_alt_text"] = first.get("alt_text", "")
+                article["additional_image_caption"] = first.get("caption", "")
+                article["additional_image_credit_licence"] = first.get("credit_string", "")
+            else:
+                article["additional_image"] = None
+                article["additional_image_alt_text"] = ""
+                article["additional_image_caption"] = ""
+                article["additional_image_credit_licence"] = ""
 
         # Automated Pre-Flight Editorial Gatekeeper Audit
         import editorial_engine
@@ -3672,12 +3870,13 @@ def update_article_fields(
             """
             UPDATE packages
             SET current_version = ?,
+                title = ?,
                 article_status = 'pending',
                 article_approved_version = NULL,
                 updated_at = ?
             WHERE id = ?
             """,
-            (new_ver, now, package_id),
+            (new_ver, article.get("headline", pkg["title"]), now, package_id),
         )
         conn.commit()
     finally:
@@ -3753,7 +3952,12 @@ def upload_featured_image(
         feat["agency"] = image_data.get("agency") or "ILF"
         feat["source_url"] = "https://ilovefinland.net"
         feat["licence"] = image_data.get("licence") or "Editorial Rights (ILF)"
-        feat["credit_string"] = f"Photo: {clean_photog}"
+        user_c = image_data.get("credit_string") or image_data.get("credit")
+        if user_c:
+            feat["credit_string"] = user_c if user_c.lower().startswith("photo:") else f"Photo: {user_c}"
+            feat["photographer"] = user_c
+        else:
+            feat["credit_string"] = f"Photo: {clean_photog}"
         feat["status"] = "cleared"
         feat["quality_score"] = 99
         feat["data_label"] = "live_real"
@@ -4206,7 +4410,7 @@ def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
     try:
         import live_sources
         import editorial_engine
-        live_news = live_sources.fetch_live_finnish_news(max_items=40)
+        live_news = live_sources.fetch_live_finnish_news(max_items=80)
         if not live_news:
             return
         conn = get_connection(db_path)
@@ -4217,7 +4421,9 @@ def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
             for item in live_news:
                 title = item.get("title", "").strip()
                 desc = item.get("description", "").strip()
-                if not title or len(title) < 16 or len(desc) < 20:
+                if not desc or len(desc) < 10:
+                    desc = item.get("source_claim", "").strip() or title
+                if not title or len(title) < 14:
                     continue
                 if title.lower() in ["tech life", "news update", "latest news"]:
                     continue
@@ -4320,9 +4526,19 @@ def get_weekly_plan(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
         pkg_rows = conn.execute("SELECT id, title FROM packages").fetchall()
         pkg_titles_lower = {r["title"].lower().strip(): r["id"] for r in pkg_rows if r["title"]}
 
-        # Sort so that Priority 1 (Breaking Finland) & Priority 2 (Core Finland Guides, Travel, Culture) come first,
-        # and Priority 3 (International News) comes second!
-        rows = conn.execute("SELECT * FROM plan_ideas ORDER BY priority_rank ASC, id DESC").fetchall()
+        # Prioritize today's & recent stories first!
+        # Within today: Priority 1 (Breaking Finland) & Priority 2 (Core Finland) first, Priority 3 (International) second!
+        rows = conn.execute(
+            """
+            SELECT * FROM plan_ideas 
+            ORDER BY 
+              (CASE WHEN target_date_hki >= date('now') THEN 0 
+                    WHEN target_date_hki >= date('now', '-1 day') THEN 1 
+                    ELSE 2 END) ASC,
+              priority_rank ASC, 
+              id DESC
+            """
+        ).fetchall()
         results = []
         for r in rows:
             d = dict(r)
@@ -5708,13 +5924,32 @@ def import_article_to_reel_project(package_id: int, db_path: str = DB_PATH) -> D
                     "duration": float(c.get("duration") or 3.5),
                 })
 
+    if not media_items:
+        media_items.append({
+            "id": "med_default_bg",
+            "filename": "Finnish Scenic Background",
+            "url": "/assets/sample-clips/tesla-clean-bg.jpg",
+            "type": "image",
+            "duration": 5.0,
+        })
+
     timeline = make_default_reel_timeline(title=headline, media_items=media_items)
+
+    # Enable Heart Logo in top header safe area by default
+    if "tracks" in timeline and "logo" in timeline["tracks"]:
+        timeline["tracks"]["logo"]["visible"] = True
+        timeline["tracks"]["logo"]["x_pct"] = 18.0
+        timeline["tracks"]["logo"]["y_pct"] = 14.0
+        timeline["tracks"]["logo"]["size_px"] = 76
+        timeline["tracks"]["logo"]["opacity"] = 0.95
+        timeline["tracks"]["logo"]["always_on"] = True
     
     if deck:
         deck_text = deck.strip()[:85]
         scene2_layer = next((t for t in timeline["tracks"]["text"] if t["type"] == "supporting"), None)
         if scene2_layer:
             scene2_layer["text"] = deck_text
+            scene2_layer["bg_color"] = "rgba(0, 56, 130, 0.90)"
         else:
             timeline["tracks"]["text"].append({
                 "id": f"txt_deck_{secrets.token_hex(3)}",
@@ -5732,7 +5967,7 @@ def import_article_to_reel_project(package_id: int, db_path: str = DB_PATH) -> D
                 "color": "#FFFFFF",
                 "outline_color": "#0A192F",
                 "outline_width": 2,
-                "bg_color": "rgba(10, 25, 47, 0.88)",
+                "bg_color": "rgba(0, 56, 130, 0.90)",
                 "bg_padding": 10,
                 "bg_radius": 6,
                 "shadow": True,
@@ -5747,3 +5982,204 @@ def import_article_to_reel_project(package_id: int, db_path: str = DB_PATH) -> D
         timeline=timeline,
         db_path=db_path,
     )
+
+
+def add_article_additional_image(
+    package_id: int,
+    image_data: Dict[str, Any],
+    author: str = "Editor (Signed-in)",
+    db_path: str = DB_PATH,
+) -> Dict[str, Any]:
+    """Add a new photo to the article's additional images gallery."""
+    conn = get_connection(db_path)
+    try:
+        pkg = conn.execute("SELECT * FROM packages WHERE id = ?", (package_id,)).fetchone()
+        if not pkg:
+            raise ValueError("Package not found")
+
+        cur_ver = pkg["current_version"]
+        ver_row = conn.execute(
+            "SELECT * FROM package_versions WHERE package_id = ? AND version = ?",
+            (package_id, cur_ver),
+        ).fetchone()
+
+        article = json.loads(ver_row["article_json"])
+        if "additional_images" not in article or not isinstance(article["additional_images"], list):
+            article["additional_images"] = [article["additional_image"]] if article.get("additional_image") else []
+
+        image_url = image_data.get("url")
+        data_url = image_data.get("data_url") or image_data.get("data_base64")
+        if data_url and not image_url:
+            import base64
+            import re
+            header, _, encoded = data_url.partition("base64,")
+            raw_b64 = encoded if encoded else header
+            raw_bytes = base64.b64decode(raw_b64)
+            raw_filename = image_data.get("filename") or "article_photo.jpg"
+            clean_filename = re.sub(r'[^A-Za-z0-9_.-]', '_', raw_filename)
+            tok = secrets.token_hex(4)
+            saved_filename = f"photo_{tok}_{clean_filename}"
+            uploads_dir = Path(__file__).parent / "static" / "assets" / "uploads"
+            uploads_dir.mkdir(parents=True, exist_ok=True)
+            saved_path = uploads_dir / saved_filename
+            saved_path.write_bytes(raw_bytes)
+            image_url = f"/assets/uploads/{saved_filename}"
+
+        clean_credit = image_data.get("credit_string") or image_data.get("credit") or "Photo: ILF"
+        if not clean_credit.lower().startswith("photo:"):
+            clean_credit = f"Photo: {clean_credit}"
+
+        new_entry = {
+            "id": f"img_{secrets.token_hex(4)}",
+            "url": image_url or "",
+            "filename": image_data.get("filename") or "photo.jpg",
+            "alt_text": image_data.get("alt_text") or f"Visual detail for {article.get('headline', pkg['title'])}",
+            "caption": image_data.get("caption") or "",
+            "credit_string": clean_credit,
+            "photographer": image_data.get("photographer") or clean_credit.replace("Photo:", "").strip() or "ILF",
+            "licence": image_data.get("licence") or "Editorial Rights (ILF)",
+            "download_jpeg": image_url or "",
+            "download_png": image_url or "",
+            "download_webp": image_url or "",
+            "status": "cleared",
+        }
+        article["additional_images"].append(new_entry)
+
+        # Synchronize backward-compatible single additional_image
+        article["additional_image"] = article["additional_images"][0]
+        article["additional_image_alt_text"] = article["additional_images"][0].get("alt_text", "")
+        article["additional_image_caption"] = article["additional_images"][0].get("caption", "")
+        article["additional_image_credit_licence"] = article["additional_images"][0].get("credit_string", "")
+
+        conn.execute(
+            """
+            UPDATE package_versions
+            SET article_json = ?
+            WHERE package_id = ? AND version = ?
+            """,
+            (json.dumps(article), package_id, cur_ver),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    bundle = get_package_bundle(package_id, db_path=db_path)
+    assert bundle is not None
+    return bundle
+
+
+def delete_article_additional_image(
+    package_id: int,
+    image_id: str,
+    author: str = "Editor (Signed-in)",
+    db_path: str = DB_PATH,
+) -> Dict[str, Any]:
+    """Remove a photo from the article's additional images gallery."""
+    conn = get_connection(db_path)
+    try:
+        pkg = conn.execute("SELECT * FROM packages WHERE id = ?", (package_id,)).fetchone()
+        if not pkg:
+            raise ValueError("Package not found")
+
+        cur_ver = pkg["current_version"]
+        ver_row = conn.execute(
+            "SELECT * FROM package_versions WHERE package_id = ? AND version = ?",
+            (package_id, cur_ver),
+        ).fetchone()
+
+        article = json.loads(ver_row["article_json"])
+        addl_list = article.get("additional_images", [])
+        article["additional_images"] = [img for img in addl_list if img.get("id") != image_id and img.get("url") != image_id]
+
+        if article["additional_images"]:
+            article["additional_image"] = article["additional_images"][0]
+            article["additional_image_alt_text"] = article["additional_images"][0].get("alt_text", "")
+            article["additional_image_caption"] = article["additional_images"][0].get("caption", "")
+            article["additional_image_credit_licence"] = article["additional_images"][0].get("credit_string", "")
+        else:
+            article["additional_image"] = None
+            article["additional_image_alt_text"] = ""
+            article["additional_image_caption"] = ""
+            article["additional_image_credit_licence"] = ""
+
+        conn.execute(
+            """
+            UPDATE package_versions
+            SET article_json = ?
+            WHERE package_id = ? AND version = ?
+            """,
+            (json.dumps(article), package_id, cur_ver),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    bundle = get_package_bundle(package_id, db_path=db_path)
+    assert bundle is not None
+    return bundle
+
+
+def set_article_featured_image_from_additional(
+    package_id: int,
+    image_id: str,
+    author: str = "Editor (Signed-in)",
+    db_path: str = DB_PATH,
+) -> Dict[str, Any]:
+    """Swap an additional gallery image to become the article's main featured image."""
+    conn = get_connection(db_path)
+    try:
+        pkg = conn.execute("SELECT * FROM packages WHERE id = ?", (package_id,)).fetchone()
+        if not pkg:
+            raise ValueError("Package not found")
+
+        cur_ver = pkg["current_version"]
+        ver_row = conn.execute(
+            "SELECT * FROM package_versions WHERE package_id = ? AND version = ?",
+            (package_id, cur_ver),
+        ).fetchone()
+
+        article = json.loads(ver_row["article_json"])
+        ig_post = json.loads(ver_row["ig_post_json"]) if ver_row["ig_post_json"] else None
+
+        addl_list = article.get("additional_images", [])
+        chosen_idx = next((i for i, img in enumerate(addl_list) if img.get("id") == image_id or img.get("url") == image_id), -1)
+        if chosen_idx == -1:
+            raise ValueError("Target image not found in article gallery")
+
+        chosen = addl_list.pop(chosen_idx)
+        old_featured = article.get("featured_image")
+        if old_featured and old_featured.get("url"):
+            addl_list.insert(0, old_featured)
+
+        article["featured_image"] = chosen
+        article["image_credit"] = chosen.get("credit_string") or "Photo: ILF"
+        article["image_caption"] = chosen.get("caption") or ""
+        article["image_alt_text"] = chosen.get("alt_text") or ""
+        article["additional_images"] = addl_list
+        if addl_list:
+            article["additional_image"] = addl_list[0]
+            article["additional_image_alt_text"] = addl_list[0].get("alt_text", "")
+            article["additional_image_caption"] = addl_list[0].get("caption", "")
+            article["additional_image_credit_licence"] = addl_list[0].get("credit_string", "")
+        else:
+            article["additional_image"] = None
+
+        if ig_post and chosen.get("url"):
+            ig_post["photo_url"] = chosen["url"]
+            ig_post["photo_credit"] = chosen.get("credit_string") or "Photo: ILF"
+
+        conn.execute(
+            """
+            UPDATE package_versions
+            SET article_json = ?, ig_post_json = ?
+            WHERE package_id = ? AND version = ?
+            """,
+            (json.dumps(article), json.dumps(ig_post) if ig_post else None, package_id, cur_ver),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    bundle = get_package_bundle(package_id, db_path=db_path)
+    assert bundle is not None
+    return bundle

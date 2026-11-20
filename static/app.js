@@ -972,6 +972,38 @@
       capText = capText ? `${capText}\n\n${tagStr}` : tagStr;
     }
 
+    // Ensure headline lines are never empty: derive from headline or article title if needed
+    if (!ig.headline_line1 && !ig.headline_line2) {
+      const fullHl = (ig.headline || article?.headline || article?.title || "").replace(/["'“”]/g, "").trim().toUpperCase();
+      if (fullHl) {
+        if (fullHl.includes(":")) {
+          const parts = fullHl.split(":");
+          ig.headline_line1 = parts[0].trim() + ":";
+          const p2Words = parts.slice(1).join(":").trim().split(/\s+/);
+          if (p2Words.length <= 4) {
+            ig.headline_line2 = p2Words.join(" ");
+            ig.headline_line3 = "";
+          } else {
+            const mid = Math.ceil(p2Words.length / 2);
+            ig.headline_line2 = p2Words.slice(0, mid).join(" ");
+            ig.headline_line3 = p2Words.slice(mid).join(" ");
+          }
+        } else {
+          const words = fullHl.split(/\s+/);
+          if (words.length <= 3) {
+            ig.headline_line1 = words[0] || "";
+            ig.headline_line2 = words.slice(1).join(" ") || "";
+            ig.headline_line3 = "";
+          } else {
+            const mid = Math.ceil(words.length / 2);
+            ig.headline_line1 = words.slice(0, mid).join(" ");
+            ig.headline_line2 = words.slice(mid).join(" ");
+            ig.headline_line3 = "";
+          }
+        }
+      }
+    }
+
     const curFs = ig.line2_font_size || ig.line1_font_size || 32;
     if ($("static-edit-badge")) $("static-edit-badge").value = ig.badge_text || "NEWS";
     if ($("static-edit-line1")) $("static-edit-line1").value = ig.headline_line1 || "";
@@ -992,6 +1024,268 @@
     }
 
     drawStaticPostCanvases(ig);
+  }
+
+  // --- AI SUGGESTED EDITORIAL STYLE POST RENDERER ---
+  let cachedAISuggestedRender = null;
+
+  function toEditorialTitleCase(str) {
+    if (!str) return '';
+    str = str.replace(/\bOULUS\b/gi, "Oulu's");
+    str = str.replace(/\bHELSINKIS\b/gi, "Helsinki's");
+    str = str.replace(/\bTAMPERES\b/gi, "Tampere's");
+    str = str.replace(/\bROVANIEMIS\b/gi, "Rovaniemi's");
+    const minorWords = /^(a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v[.]?|via|vs[.]?)$/i;
+    return str.split(/\s+/).map((word, idx) => {
+      if (!word) return '';
+      if (idx > 0 && minorWords.test(word.toLowerCase())) {
+        return word.toLowerCase();
+      }
+      if (/^\d/.test(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const testLine = currentLine ? currentLine + ' ' + word : word;
+      const testWidth = ctx.measureText(testLine).width;
+      if (testWidth > maxWidth && i > 0) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  }
+
+  function renderAISuggestedPost(photoImg, hasPhoto, logoImg, ig) {
+    cachedAISuggestedRender = () => renderAISuggestedPost(photoImg, hasPhoto, logoImg, ig);
+    const canvas = $("ai-suggested-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const w = 1080;
+    const h = 1350;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // 1. Photo Background
+    if (hasPhoto && photoImg) {
+      const imgAspect = photoImg.width / photoImg.height;
+      const canvasAspect = w / h;
+      let drawW, drawH, drawX, drawY;
+      if (imgAspect > canvasAspect) {
+        drawH = h;
+        drawW = h * imgAspect;
+        drawX = (w - drawW) / 2;
+        drawY = 0;
+      } else {
+        drawW = w;
+        drawH = w / imgAspect;
+        drawX = 0;
+        drawY = (h - drawH) / 2;
+      }
+      ctx.drawImage(photoImg, drawX, drawY, drawW, drawH);
+
+      // Subtle, elegant cinematic vignette (unobtrusive, allows reflections & lights to shine)
+      const vig = ctx.createLinearGradient(0, 0, 0, h);
+      vig.addColorStop(0, "rgba(1, 20, 40, 0.35)");
+      vig.addColorStop(0.35, "rgba(1, 20, 40, 0.05)");
+      vig.addColorStop(0.65, "rgba(1, 20, 40, 0.25)");
+      vig.addColorStop(1, "rgba(1, 15, 30, 0.65)");
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, w, h);
+    } else {
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, "#011830");
+      bgGrad.addColorStop(1, "#062A4D");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // 2. Top-Left Brand Logo Capsule (Official Brand Logo + ILoveFinland.net)
+    ctx.save();
+    ctx.font = '800 25px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+    const brandName = "ILoveFinland.net";
+    const brandM = ctx.measureText(brandName);
+    const logoIconSize = 42;
+    const brandPadX = 18;
+    const brandPadY = 10;
+    const brandW = logoIconSize + 12 + brandM.width + brandPadX * 2;
+    const brandH = logoIconSize + brandPadY * 2;
+    const brandX = 64;
+    const brandY = 64;
+
+    ctx.fillStyle = "rgba(1, 28, 56, 0.78)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(brandX, brandY, brandW, brandH, 999);
+    } else {
+      ctx.rect(brandX, brandY, brandW, brandH);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+      ctx.drawImage(logoImg, brandX + brandPadX, brandY + brandPadY, logoIconSize, logoIconSize);
+    } else {
+      ctx.fillStyle = "#029CD8";
+      ctx.font = "26px sans-serif";
+      ctx.fillText("💙", brandX + brandPadX, brandY + brandH - brandPadY - 8);
+    }
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = '800 25px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+    ctx.fillText(brandName, brandX + brandPadX + logoIconSize + 12, brandY + brandH - brandPadY - 10);
+    ctx.restore();
+
+    // 3. Top-Right Destination Tag (📍 Location Stamp)
+    const locInput = $("ai-input-location");
+    let locationText = locInput && locInput.value.trim() ? locInput.value.trim() : "";
+    if (!locationText) {
+      const storyCity = (currentStaticPost && currentStaticPost.city) || (typeof activeStory !== "undefined" && activeStory && activeStory.city) || "Finland";
+      locationText = "📍 " + (storyCity.charAt(0).toUpperCase() + storyCity.slice(1)) + ", Finland";
+      if (locInput) locInput.value = locationText;
+    }
+    if (!locationText.startsWith("📍")) locationText = "📍 " + locationText;
+
+    ctx.save();
+    ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
+    const locM = ctx.measureText(locationText);
+    const locPadX = 22;
+    const locPadY = 12;
+    const locW = locM.width + locPadX * 2;
+    const locH = brandH; // Matches brand pill height perfectly!
+    const locX = w - 64 - locW;
+    const locY = 64;
+
+    ctx.fillStyle = "rgba(1, 28, 56, 0.75)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(locX, locY, locW, locH, 999);
+    } else {
+      ctx.rect(locX, locY, locW, locH);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(locationText, locX + locPadX, locY + locH - locPadY - 8);
+    ctx.restore();
+
+    // 4. Modern Frosted Glass Floating Card (Bottom)
+    const styleSelect = $("ai-select-card-style");
+    const cardStyle = styleSelect ? styleSelect.value : "frosted";
+
+    let rawTitle = (ig.headline_line1 || "") + " " + (ig.headline_line2 || "") + (ig.headline_line3 ? " " + ig.headline_line3 : "");
+    rawTitle = rawTitle.trim();
+    if (!rawTitle && typeof activeStory !== "undefined" && activeStory) rawTitle = activeStory.title || "";
+    const formattedTitle = toEditorialTitleCase(rawTitle);
+
+    const catText = (ig.badge_text || "EVENTS").toUpperCase();
+
+    const cardPad = 42;
+    const cardW = w - 128; // 952px wide
+    const cardX = 64;
+    const cardY = h - 420; // 930px
+    const cardH = 356;
+
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+    ctx.shadowBlur = 35;
+    ctx.shadowOffsetY = 16;
+
+    ctx.fillStyle = cardStyle === "minimal" ? "rgba(1, 37, 71, 0.92)" : "rgba(2, 24, 48, 0.84)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(cardX, cardY, cardW, cardH, 26);
+    } else {
+      ctx.rect(cardX, cardY, cardW, cardH);
+    }
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.stroke();
+    ctx.restore();
+
+    // Category Pill inside Card
+    ctx.save();
+    ctx.font = '800 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    const catM = ctx.measureText(catText);
+    const catW = catM.width + 24;
+    const catH = 36;
+    const catX = cardX + cardPad;
+    const catY = cardY + 34;
+
+    ctx.fillStyle = "#029CD8";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(catX, catY, catW, catH, 6);
+    } else {
+      ctx.rect(catX, catY, catW, catH);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(catText, catX + 12, catY + 25);
+
+    // Subtitle / Season alongside Category Pill
+    ctx.fillStyle = "#94A3B8";
+    ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    ctx.fillText(" • Finnish Highlights", catX + catW + 10, catY + 25);
+    ctx.restore();
+
+    // Multi-line Title inside Card
+    ctx.save();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = '800 46px -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif';
+    const maxTitleW = cardW - cardPad * 2;
+    const titleLines = wrapCanvasText(ctx, formattedTitle, maxTitleW);
+    let titleY = catY + catH + 46;
+    const lineH = 56;
+    for (let i = 0; i < Math.min(titleLines.length, 3); i++) {
+      ctx.fillText(titleLines[i], cardX + cardPad, titleY);
+      titleY += lineH;
+    }
+    ctx.restore();
+
+    // Footer inside Card
+    ctx.save();
+    const footY = cardY + cardH - 32;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cardX + cardPad, footY - 26);
+    ctx.lineTo(cardX + cardW - cardPad, footY - 26);
+    ctx.stroke();
+
+    if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+      ctx.drawImage(logoImg, cardX + cardPad, footY - 20, 24, 24);
+      ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      ctx.fillStyle = "#38BDF8";
+      ctx.fillText("Read full guide & route details", cardX + cardPad + 32, footY);
+    } else {
+      ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      ctx.fillStyle = "#38BDF8";
+      ctx.fillText("Read full guide & route details", cardX + cardPad, footY);
+    }
+
+    ctx.fillStyle = "#94A3B8";
+    ctx.textAlign = "right";
+    ctx.fillText("Tap link in bio →", cardX + cardW - cardPad, footY);
+    ctx.restore();
   }
 
   function fitHeadlineFontSize(ctx, text, baseSize, maxWidth) {
@@ -1318,6 +1612,9 @@
           }
           ctxFb.restore();
         }
+
+        // Render AI-suggested modern Scandinavian style post
+        renderAISuggestedPost(photoImg, hasPhoto, logoImg, ig);
       };
 
       const logoImg = new Image();
@@ -1749,7 +2046,7 @@
   let activeIdeaScope = "all";
   let activeIdeaSection = "all";
   let activeIdeaStatus = "suggested";
-  let activeIdeaSort = "relevant";
+  let activeIdeaSort = "latest";
   let activeIdeaSearch = "";
   let ideasVisibleCount = 12;
   let cachedSuggestions = [];
@@ -1873,12 +2170,19 @@
       });
     }
 
-    // 5. Sorting (Most Relevant vs Latest)
+    // 5. Sorting (Latest First vs Most Relevant)
     if (activeIdeaSort === "latest") {
       list.sort((a, b) => (b.id || 0) - (a.id || 0));
     } else {
-      // Most Relevant: Priority rank 1 first, then 2, then 3; within rank, higher id first
+      // Most Relevant: Today's stories first, then yesterday, then older; within each day group, priority_rank 1 -> 2 -> 3, then newer id
+      const todayStr = new Date().toISOString().slice(0, 10);
       list.sort((a, b) => {
+        const aDate = (a.target_date_hki || "").slice(0, 10);
+        const bDate = (b.target_date_hki || "").slice(0, 10);
+        const aIsToday = aDate >= todayStr ? 1 : 0;
+        const bIsToday = bDate >= todayStr ? 1 : 0;
+        if (aIsToday !== bIsToday) return bIsToday - aIsToday;
+
         const pDiff = (a.priority_rank || 2) - (b.priority_rank || 2);
         if (pDiff !== 0) return pDiff;
         return (b.id || 0) - (a.id || 0);
@@ -5744,6 +6048,38 @@
     });
     $("btn-dl-static-34-png")?.addEventListener("click", () => {
       downloadCanvas("static-crop-canvas", "ilovefinland-profile-grid-crop.png", "image/png");
+    });
+
+    // AI Suggested Post Event Listeners
+    $("btn-save-photos-ai")?.addEventListener("click", () => {
+      const cvs = $("ai-suggested-canvas");
+      if (!cvs) return;
+      saveImageDirectlyToMobilePhotos(cvs, "ilovefinland-ai-editorial-post.jpg", "image/jpeg", "AI Editorial Post (4:5)");
+    });
+    $("btn-dl-ai-jpg")?.addEventListener("click", () => {
+      downloadCanvas("ai-suggested-canvas", "ilovefinland-ai-editorial-post.jpg", "image/jpeg");
+    });
+    $("btn-dl-ai-png")?.addEventListener("click", () => {
+      downloadCanvas("ai-suggested-canvas", "ilovefinland-ai-editorial-post.png", "image/png");
+    });
+    $("btn-auto-titlecase")?.addEventListener("click", () => {
+      if (!currentStaticPost) return;
+      const l1 = $("static-edit-line1");
+      const l2 = $("static-edit-line2");
+      const l3 = $("static-edit-line3");
+      if (l1) l1.value = toEditorialTitleCase(l1.value);
+      if (l2) l2.value = toEditorialTitleCase(l2.value);
+      if (l3) l3.value = toEditorialTitleCase(l3.value);
+      updateStaticPostLive();
+    });
+    $("btn-refresh-ai-canvas")?.addEventListener("click", () => {
+      if (cachedAISuggestedRender) cachedAISuggestedRender();
+    });
+    $("ai-select-card-style")?.addEventListener("change", () => {
+      if (cachedAISuggestedRender) cachedAISuggestedRender();
+    });
+    $("ai-input-location")?.addEventListener("input", () => {
+      if (cachedAISuggestedRender) cachedAISuggestedRender();
     });
 
     // Static Post Live Adjustments (scales Badge, Line 1, Line 2, Line 3 together)

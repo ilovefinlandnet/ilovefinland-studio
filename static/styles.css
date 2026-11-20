@@ -1,34 +1,38 @@
 :root {
   /* Global ILoveFinland Dark Design System (Publishing Calendar Reference) */
-  --main-bg: #0B0F16;
-  --sidebar-bg: #0A192F;
-  --panel-bg: #162235;
-  --card-bg: #162235;
-  --card-hover: #1C2B42;
-  --primary-blue: #003580;
-  --brand-blue: #003580;
-  --brand-blue-hover: #0046A8;
-  --bright-blue: #168BFF;
-  --electric-blue: #168BFF;
+  /* KLM-Inspired Clean Nordic Design System */
+  --main-bg: #061224;
+  --sidebar-bg: #012547;
+  --panel-bg: #082347;
+  --card-bg: #082347;
+  --card-hover: #0D3360;
+  --primary-blue: #029CD8;
+  --brand-blue: #029CD8;
+  --brand-blue-hover: #0284B8;
+  --bright-blue: #029CD8;
+  --electric-blue: #38BDF8;
+  --secondary-blue: #015196;
+  --arctic-blue: #4B89BC;
   
   --text-primary: #FFFFFF;
-  --text-secondary: #E2E8F0;
-  --text-muted: #CBD5E1;
-  --border-subtle: #303B4D;
-  --border-color: #303B4D;
+  --text-secondary: #F1F5F9;
+  --text-muted: #94A3B8;
+  --border-subtle: rgba(75, 137, 188, 0.22);
+  --border-color: rgba(75, 137, 188, 0.28);
 
-  /* Aliases mapped directly to dark theme */
-  --navy: #0A192F;
-  --navy-dark: #050E1B;
-  --navy-surface: #162235;
-  --icy-bg: #0B0F16;
-  --card: #162235;
-  --card-hover: #1C2B42;
+  /* Aliases mapped directly to KLM theme */
+  --navy: #012547;
+  --navy-dark: #061224;
+  --navy-surface: #082347;
+  --icy-bg: #061224;
+  --card: #082347;
+  --card-hover: #0D3360;
   --ink: #FFFFFF;
-  --ink-secondary: #E2E8F0;
-  --muted: #CBD5E1;
-  --border: #303B4D;
-  --border-focus: #168BFF;
+  --ink-secondary: #F1F5F9;
+  --muted: #94A3B8;
+  --border: rgba(75, 137, 188, 0.25);
+  --border-focus: #029CD8;
+  --accent: #029CD8;
 
   /* Semantic status tokens */
   --sky: #168BFF;
@@ -319,7 +323,7 @@ html, body {
   width: 260px;
   box-sizing: border-box;
   flex-shrink: 0;
-  background: #0A192F;
+  background: #012547;
   color: #fff;
   padding: 18px 12px 14px;
   flex-direction: column;
@@ -411,9 +415,10 @@ html, body {
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, #003580 0%, #0046A8 100%);
+  background: #015196;
   color: #FFFFFF;
-  box-shadow: 0 2px 10px rgba(0, 53, 128, 0.35);
+  border-left: 3px solid #029CD8;
+  box-shadow: 0 4px 14px rgba(2, 156, 216, 0.3);
   font-weight: 700;
 }
 
@@ -715,13 +720,15 @@ html, body {
 .btn-sm { min-height: 32px; padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; }
 .btn-full { width: 100%; }
 .btn-primary { 
-  background: linear-gradient(135deg, #003580 0%, #002255 100%); 
+  background: #029CD8; 
   color: #fff; 
-  box-shadow: 0 2px 8px rgba(0, 53, 128, 0.28);
+  border: none;
+  box-shadow: 0 3px 12px rgba(2, 156, 216, 0.35);
+  font-weight: 700;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #0046A8 0%, #003580 100%);
-  box-shadow: 0 4px 14px rgba(0, 53, 128, 0.38);
+  background: #0284B8;
+  box-shadow: 0 5px 18px rgba(2, 156, 216, 0.45);
   transform: translateY(-1px);
 }
 .btn-secondary { 
@@ -1022,7 +1029,28 @@ html, body {
 /* Voice Note & Forms */
 .voice-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
 .quick-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.chip-btn { border: 1px dashed #94a3b8; background: #f8fafc; border-radius: 999px; padding: 5px 10px; font-size: 0.76rem; cursor: pointer; }
+.chip-btn {
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  background: rgba(11, 19, 41, 0.85) !important;
+  color: #e2e8f0 !important;
+  border-radius: 999px !important;
+  padding: 6px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.15s ease !important;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.chip-btn:hover {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+}
 .comment-form, .stack-form { display: flex; flex-direction: column; gap: 8px; }
 textarea, input[type="text"], input[type="datetime-local"], select {
   width: 100%;
@@ -1034,9 +1062,60 @@ textarea, input[type="text"], input[type="datetime-local"], select {
 }
 .form-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .schedule-grid { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: end; }
-.comment-history { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-.comment-item { padding: 10px; border-radius: 10px; background: #f8fafc; border: 1px solid var(--border); font-size: 0.82rem; }
-.comment-changes { margin: 4px 0 0; padding-left: 16px; color: #0f766e; }
+.comment-history { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+
+/* Editorial AI Co-Pilot & Revision Desk */
+.feedback-copilot-card {
+  background: #162235 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45) !important;
+  position: relative;
+  overflow: hidden;
+}
+.feedback-copilot-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0284c7 0%, #38bdf8 50%, #10b981 100%);
+}
+.rev-target-pill {
+  transition: all 0.18s ease;
+}
+.rev-target-pill:hover {
+  transform: translateY(-1px);
+}
+.rev-target-pill.active {
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+}
+#comment-input:focus {
+  border-color: #38bdf8 !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), inset 0 2px 4px rgba(0,0,0,0.4) !important;
+}
+
+.comment-item {
+  padding: 14px 16px !important;
+  border-radius: 10px !important;
+  background: #0B0F16 !important;
+  border: 1px solid #303B4D !important;
+  font-size: 0.84rem !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+  transition: border-color 0.15s ease;
+}
+.comment-item:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+.comment-item strong { color: #f8fafc; font-weight: 600; }
+.comment-item p { color: #cbd5e1; line-height: 1.45; }
+.comment-item .hint-text { color: #94a3b8; font-size: 0.78rem; }
+.comment-changes { margin: 4px 0 0; padding-left: 16px; color: #34d399; }
 
 /* Calendar, Inbox, Research, Performance, Connections */
 .cal-views { display: flex; gap: 4px; }
@@ -2928,7 +3007,72 @@ textarea:focus-visible {
   background: #1C2B42;
   color: #FFFFFF;
 }
-  color: #0f172a;
+
+/* Multi-Image Article Gallery Cards */
+.article-addl-img-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(11, 19, 41, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.article-addl-img-card:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+}
+@media (min-width: 768px) {
+  .article-addl-img-card {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+.article-addl-thumb-wrap {
+  width: 100%;
+  max-width: 170px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.article-addl-thumb {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #000;
+  cursor: pointer;
+}
+.article-addl-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.article-addl-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.article-addl-field-row label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.article-addl-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .btn-copy-field.copied {
@@ -4666,3 +4810,334 @@ textarea:focus-visible {
   }
 }
 
+/* Studio Pipeline KPI Stats Bar */
+.studio-pipeline-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .studio-pipeline-kpi-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .studio-pipeline-kpi-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.studio-kpi-card {
+  background: #162235;
+  border: 1px solid #303B4D;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.studio-kpi-card:hover {
+  border-color: #168BFF;
+  background: #1C2B42;
+  transform: translateY(-1px);
+}
+
+.studio-kpi-card .kpi-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.studio-kpi-card .kpi-label {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.studio-kpi-card .kpi-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+/* Project Card Hover & Border Styling */
+.article-project-card {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.article-project-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Sticky Action Bar for Article Package Editor */
+#panel-article .panel-header {
+  position: sticky;
+  top: 10px;
+  z-index: 50;
+  background: rgba(22, 34, 53, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(48, 59, 77, 0.7);
+  margin-bottom: 14px;
+}
+
+.kbd-shortcut-hint {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.65rem;
+  color: #94A3B8;
+  margin-left: 4px;
+  font-family: monospace;
+}
+
+
+
+
+/* =========================================================================
+   EXECUTIVE APPLE / AIRLINE OPERATIONS DESK DESIGN SUITE (KLM HARMONY)
+   ========================================================================= */
+body {
+  background: radial-gradient(ellipse at 50% -10%, #082852 0%, #031429 45%, #010A17 100%) !important;
+  color: #FFFFFF !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif !important;
+  min-height: 100vh;
+}
+
+/* Glassmorphism Frosted Cards */
+.card, .panel, .article-project-card, .editorial-feedback-card {
+  background: linear-gradient(145deg, rgba(8, 35, 71, 0.75) 0%, rgba(3, 20, 41, 0.90) 100%) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(75, 137, 188, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Cockpit Telemetry Bar */
+.cockpit-telemetry-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 10px 16px;
+  background: rgba(1, 37, 71, 0.70);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(75, 137, 188, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.telemetry-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(8, 35, 71, 0.85);
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #E2E8F0;
+  letter-spacing: 0.02em;
+}
+
+.telemetry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.telemetry-dot.live {
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+.telemetry-dot.nominal {
+  background: #029CD8;
+  box-shadow: 0 0 8px #029CD8;
+}
+.telemetry-dot.cyan {
+  background: #38BDF8;
+  box-shadow: 0 0 8px #38BDF8;
+}
+.telemetry-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+}
+.telemetry-value {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.telemetry-clock {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Sidebar Flight Deck Rail */
+.sidebar {
+  background: rgba(1, 37, 71, 0.94) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border-right: 1px solid rgba(75, 137, 188, 0.25) !important;
+  box-shadow: 6px 0 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.nav-section-label {
+  font-size: 0.64rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  color: #4B89BC !important;
+  padding: 14px 12px 6px !important;
+}
+
+.nav-item {
+  color: #CBD5E1 !important;
+  border-radius: 10px !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.nav-item:hover {
+  background: rgba(75, 137, 188, 0.16) !important;
+  color: #FFFFFF !important;
+  transform: translateX(2px) !important;
+}
+.nav-item.active {
+  background: linear-gradient(90deg, rgba(2, 156, 216, 0.22) 0%, rgba(1, 81, 150, 0.3) 100%) !important;
+  color: #FFFFFF !important;
+  border-left: 3px solid #029CD8 !important;
+  box-shadow: 0 4px 16px rgba(2, 156, 216, 0.28) !important;
+  font-weight: 700 !important;
+}
+
+/* Cockpit KPI Cards */
+.studio-kpi-card {
+  background: linear-gradient(135deg, rgba(8, 35, 71, 0.85) 0%, rgba(3, 20, 41, 0.95) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(75, 137, 188, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+.studio-kpi-card:hover {
+  border-color: #029CD8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 28px rgba(2, 156, 216, 0.25) !important;
+}
+.studio-kpi-card .kpi-value {
+  color: #FFFFFF !important;
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+.studio-kpi-card .kpi-label {
+  color: #94A3B8 !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Buttons - Illuminated Aviation Controls */
+.btn-primary, #btn-create-new-article-post, #btn-scan-now {
+  background: linear-gradient(135deg, #029CD8 0%, #017BB0 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 18px rgba(2, 156, 216, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-primary:hover, #btn-create-new-article-post:hover, #btn-scan-now:hover {
+  background: linear-gradient(135deg, #02aef5 0%, #028fc8 100%) !important;
+  box-shadow: 0 6px 24px rgba(2, 156, 216, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-secondary, #btn-goto-ideas {
+  background: rgba(1, 81, 150, 0.35) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(75, 137, 188, 0.35) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #FFFFFF !important;
+  border-radius: 10px !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-secondary:hover, #btn-goto-ideas:hover {
+  background: rgba(1, 81, 150, 0.65) !important;
+  border-color: #029CD8 !important;
+  transform: translateY(-1px) !important;
+}
+
+
+/* =========================================================================
+   EXECUTIVE APPLE SF PRO & COCKPIT TABULAR TYPOGRAPHY
+   ========================================================================= */
+body, input, select, textarea, button {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Executive Punchy Headlines (Apple Keynote & Campaign Tracking) */
+h1, h2, h3, .panel-title, .brand-title, .modal-title {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.035em !important;
+}
+
+/* Cockpit Aviation Telemetry & Tabular Numerals (Flight Desk Precision) */
+.kpi-value, 
+.telemetry-value, 
+.telemetry-clock, 
+#clock-helsinki-val, 
+.badge, 
+.articles-count-total, 
+#btn-ideas-count-inline, 
+#badge-ideas-count,
+.kpi-card-value {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1, "zero" 1 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Micro Tactical Labels (Aviation Instruments) */
+.nav-section-label, 
+.kpi-label, 
+.telemetry-label, 
+.badge-sec {
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+}
