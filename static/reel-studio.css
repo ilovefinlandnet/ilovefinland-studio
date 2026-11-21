@@ -1526,12 +1526,12 @@
 
   .reel-canvas-viewport {
     width: auto !important;
-    height: 360px !important;
-    max-height: 48vh !important;
+    height: 220px !important;
+    max-height: 28vh !important;
     aspect-ratio: 9 / 16 !important;
-    margin: 0 auto !important;
-    border-radius: 12px !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75) !important;
+    margin: 2px auto !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75) !important;
     border: 1px solid rgba(75, 137, 188, 0.35) !important;
     position: relative !important;
     display: flex !important;
@@ -1552,23 +1552,23 @@
   .reel-transport-bar {
     width: auto !important;
     max-width: 95% !important;
-    margin: 10px auto 0 !important;
+    margin: 4px auto 6px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
-    padding: 6px 14px !important;
-    background: rgba(8, 35, 71, 0.85) !important;
+    gap: 6px !important;
+    padding: 3px 10px !important;
+    background: rgba(8, 35, 71, 0.9) !important;
     border: 1px solid rgba(75, 137, 188, 0.28) !important;
-    border-radius: 30px !important;
+    border-radius: 24px !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
   }
 
   .reel-transport-btn {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
     border-radius: 50% !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -1580,9 +1580,9 @@
   }
 
   .reel-transport-btn.btn-play {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
     background: #029CD8 !important;
     border-color: #168BFF !important;
     box-shadow: 0 4px 14px rgba(2, 156, 216, 0.4) !important;
@@ -1590,9 +1590,78 @@
 
   .reel-timecode {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace !important;
-    font-size: 0.75rem !important;
+    font-size: 0.68rem !important;
     color: #B8C4D4 !important;
+    padding: 2px 4px !important;
+  }
+
+  /* TIMELINE CONTAINER & MULTI-TRACKS */
+  .reel-bottom-timeline {
+    height: 155px !important;
+    max-height: 24vh !important;
+    background: #08101e !important;
+    border-top: 1px solid rgba(75, 137, 188, 0.3) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .reel-timeline-header {
+    height: 32px !important;
+    padding: 0 6px !important;
+    background: #060c18 !important;
+    border-bottom: 1px solid rgba(75, 137, 188, 0.25) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .reel-timeline-tools {
+    display: flex !important;
+    gap: 4px !important;
+    align-items: center !important;
+  }
+
+  .reel-tool-btn {
     padding: 2px 6px !important;
+    font-size: 0.68rem !important;
+    min-height: 24px !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Compact Track Headers: 36px wide, centered emoji icons */
+  .reel-track-headers {
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    background: #08101e !important;
+    border-right: 1px solid rgba(75, 137, 188, 0.25) !important;
+    overflow: hidden !important;
+  }
+
+  .reel-track-header-item {
+    font-size: 0.85rem !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+    height: 28px !important;
+  }
+
+  .reel-track-lane {
+    height: 28px !important;
+  }
+
+  /* Playhead handle touch sizing */
+  .reel-playhead-handle {
+    width: 14px !important;
+    height: 16px !important;
+    border-radius: 2px !important;
   }
 
   /* MOBILE TOOL DOCK BAR */
@@ -1603,7 +1672,7 @@
     width: 100% !important;
     background: #040D1A !important;
     border-top: 1px solid rgba(75, 137, 188, 0.28) !important;
-    padding: 6px 4px !important;
+    padding: 4px 2px !important;
     box-sizing: border-box !important;
   }
 
@@ -1616,9 +1685,9 @@
     color: #94A3B8 !important;
     font-size: 0.68rem !important;
     font-weight: 700 !important;
-    padding: 4px 6px !important;
+    padding: 3px 4px !important;
     min-width: 42px !important;
-    min-height: 44px !important;
+    min-height: 42px !important;
     background: transparent !important;
     border: none !important;
     cursor: pointer !important;

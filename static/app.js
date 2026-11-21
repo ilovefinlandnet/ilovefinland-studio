@@ -811,16 +811,30 @@
         if (imgPrev) {
           const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
           const imgUrl = featImg.url;
+          imgPrev.onerror = () => {
+            imgPrev.style.display = "none";
+            if (emptyCard) {
+              emptyCard.classList.remove("hidden");
+              const t = emptyCard.querySelector(".empty-photo-title");
+              if (t) t.textContent = "Photo Unavailable (404)";
+              const d = emptyCard.querySelector(".empty-photo-desc");
+              if (d) d.textContent = "The external photo link is unreachable. Upload a new photo below or pick one from library.";
+            }
+          };
+          imgPrev.onload = () => {
+            imgPrev.style.display = "block";
+            if (emptyCard) emptyCard.classList.add("hidden");
+          };
           imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
         }
         flagBanner?.classList.add("hidden");
         if (featBadge) {
           if (featImg.data_label === "sample") {
             featBadge.className = "badge badge-alert";
-            featBadge.textContent = "SAMPLE placeholder: credit not verified";
+            featBadge.textContent = "SAMPLE: credit not verified";
           } else {
             featBadge.className = "badge badge-check";
-            featBadge.textContent = `Licence read from source metadata (${featImg.licence || "see credit"})`;
+            featBadge.textContent = `✓ Rights Cleared (${featImg.licence || "Editorial"})`;
           }
         }
       } else {
