@@ -5990,3 +5990,89 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     font-size: 0.7rem !important;
   }
 }
+
+
+/* =========================================================================
+   v53 — UNIFIED DARK THEME FOR ALL SECONDARY SCREENS (phone + PC)
+   Fixes white cards with invisible text (Inbox, Stats, Connections, Review
+   checks, Refresh buttons) and horizontal overflow (AI Media, Stats table).
+   ========================================================================= */
+.inbox-card, .research-card, .conn-card, .conn-card-new, .kpi-card,
+.perf-digest-box, .digest-box, .check-item, .cal-event {
+  background: linear-gradient(145deg, rgba(8, 35, 71, 0.78) 0%, rgba(3, 20, 41, 0.92) 100%) !important;
+  border: 1px solid rgba(75, 137, 188, 0.28) !important;
+  color: #E2E8F0 !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+}
+.inbox-card *, .research-card *, .conn-card-new *, .kpi-card *, .perf-digest-box *,
+.digest-box *, .check-item * { color: inherit; }
+.inbox-card h1, .inbox-card h2, .inbox-card h3, .inbox-card strong, .inbox-card p,
+.inbox-card .inbox-quote, .conn-card-new h3, .conn-card-new h4, .conn-card-new strong,
+.kpi-card-value, .kpi-value, .check-item-label, .perf-digest-box strong { color: #FFFFFF !important; }
+.hint-text, .kpi-label, .check-item-desc, .check-item .hint-text,
+.inbox-card .hint-text, .conn-card-new .hint-text, .perf-digest-box .digest-row span { color: #B8C4D4 !important; }
+.inbox-card a, .perf-digest-box a, .check-item a { color: #38BDF8 !important; }
+.inbox-card textarea, .inbox-card .reply-box { background: #061224 !important; color: #FFFFFF !important; border: 1px solid rgba(75,137,188,.35) !important; }
+.digest-tag { color: #0B192E !important; }
+
+/* Ghost / light buttons were white-on-white */
+.btn-ghost, .btn-secondary:not(.btn-primary) {
+  background: rgba(8, 35, 71, 0.75) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(75, 137, 188, 0.4) !important;
+}
+.btn-ghost:hover { background: rgba(2, 156, 216, 0.25) !important; }
+.btn-ghost:disabled { opacity: .5 !important; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
+.table-wrap table { width: 100%; min-width: 560px; color: #E2E8F0; }
+.table-wrap th { color: #94A3B8 !important; }
+.table-wrap td { color: #E2E8F0 !important; border-color: rgba(75,137,188,.2) !important; }
+
+/* Pills never clip */
+.pill, .badge { max-width: 100%; white-space: normal; }
+
+@media (max-width: 767px) {
+  /* Nothing may ever push the page sideways */
+  .view, .view > *, .card, .panel { max-width: 100% !important; box-sizing: border-box !important; }
+  .view { overflow-x: hidden !important; }
+  .view .panel-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+
+  /* AI Media Studio: stack all form grids, scroll tabs */
+  #view-ai-media *[style*="grid-template-columns"],
+  #view-ai-media .ai-form-grid, #view-ai-media .ai-row { grid-template-columns: 1fr !important; }
+  #view-ai-media .ai-tabs, #view-ai-media [role="tablist"] { display:flex !important; overflow-x:auto !important; gap:6px !important; flex-wrap:nowrap !important; }
+  #view-ai-media select, #view-ai-media input, #view-ai-media textarea, #view-ai-media button { max-width: 100% !important; width: 100% !important; box-sizing: border-box !important; font-size: 16px; }
+  #view-ai-media .ai-tabs button, #view-ai-media [role="tablist"] button { width:auto !important; flex-shrink:0; }
+  #view-ai-media > * { padding-left: 4px; padding-right: 4px; }
+
+  /* Connections: badges wrap, cards 1 column, buttons full width */
+  #view-connections .conn-grid, #view-connections [class*="grid"] { grid-template-columns: 1fr !important; }
+  #view-connections .btn, #view-connections button { max-width: 100%; }
+  #view-connections .pill { white-space: normal !important; }
+  #view-inbox .inbox-card button, #view-inbox .inbox-card .btn { flex: 1 1 100%; min-height: 44px; justify-content: center; }
+  .kpi-card { padding: 12px 14px !important; }
+}
+
+/* v53b — remaining light elements + AI Media overflow */
+.perf-warning-callout { background: rgba(245,158,11,.12) !important; border-color: rgba(245,158,11,.5) !important; }
+.perf-warning-callout, .perf-warning-callout * { color: #FCD34D !important; }
+.demand-card { background: linear-gradient(145deg, rgba(8,35,71,.78), rgba(3,20,41,.92)) !important; border: 1px solid rgba(75,137,188,.28) !important; }
+.demand-card, .demand-card *:not(.demand-delta):not([class*="up"]) { color: #E2E8F0; }
+.demand-query-row { border-color: rgba(75,137,188,.2) !important; }
+.conn-card-new code, .probe-guard-panel code, code.env-secret { background: #061224 !important; color: #7DD3FC !important; border: 1px solid rgba(75,137,188,.35); padding: 2px 8px; border-radius: 6px; }
+
+@media (max-width: 767px) {
+  #view-ai-media, #view-ai-media * { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  #view-ai-media .ai-media-grid { display: flex !important; flex-direction: column !important; grid-template-columns: 1fr !important; width: 100% !important; gap: 14px !important; }
+  #view-ai-media .ai-controls-card, #view-ai-media .ai-output-card, #view-ai-media .ai-media-grid > * { width: 100% !important; }
+  #view-ai-media .ai-mode-tabs { display: flex !important; overflow-x: auto !important; flex-wrap: nowrap !important; gap: 6px; padding-bottom: 6px; }
+  #view-ai-media .ai-mode-tab { flex: 0 0 auto !important; width: auto !important; white-space: nowrap; }
+  #view-ai-media .ai-form-row, #view-ai-media .form-row { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+  #view-ai-media .btn, #view-ai-media button.btn-primary { white-space: normal !important; }
+}
+.perf-digest-box .digest-tag, .digest-box .digest-tag { color: #064E3B !important; font-weight: 800; }
+.perf-digest-box .digest-tag.warn, .perf-digest-box .digest-tag.under { color: #78350F !important; }
+.perf-digest-box .digest-tag.next { color: #1E3A8A !important; }
+.demand-card [class*="delta"], .demand-card .demand-pct, .demand-query-row > span:last-child { color: #065F46 !important; font-weight: 800; }
