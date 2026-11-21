@@ -812,17 +812,19 @@
           const vNum = selectedVersion || (bundle && bundle.package && bundle.package.current_version) || 1;
           const imgUrl = featImg.url;
           imgPrev.onerror = () => {
-            imgPrev.style.display = "none";
+            imgPrev.classList.add("hidden");
+            imgPrev.style.setProperty("display", "none", "important");
             if (emptyCard) {
               emptyCard.classList.remove("hidden");
               const t = emptyCard.querySelector(".empty-photo-title");
               if (t) t.textContent = "Photo Unavailable (404)";
               const d = emptyCard.querySelector(".empty-photo-desc");
-              if (d) d.textContent = "The external photo link is unreachable. Upload a new photo below or pick one from library.";
+              if (d) d.textContent = "External photo link is unreachable. Upload a new photo below or pick one from library.";
             }
           };
           imgPrev.onload = () => {
-            imgPrev.style.display = "block";
+            imgPrev.classList.remove("hidden");
+            imgPrev.style.removeProperty("display");
             if (emptyCard) emptyCard.classList.add("hidden");
           };
           imgPrev.src = imgUrl.startsWith("data:") ? imgUrl : (imgUrl.includes("?") ? imgUrl : `${imgUrl}?v=${vNum}`);
@@ -834,7 +836,7 @@
             featBadge.textContent = "SAMPLE: credit not verified";
           } else {
             featBadge.className = "badge badge-check";
-            featBadge.textContent = `✓ Rights Cleared (${featImg.licence || "Editorial"})`;
+            featBadge.textContent = "✓ Rights Cleared";
           }
         }
       } else {
@@ -3358,18 +3360,7 @@
 
       return `
         <div class="article-project-card ${isArchived ? 'is-archived' : ''}" data-id="${p.id}">
-          <div class="article-card-header-row">
-            <div class="article-card-thumb">
-              ${
-                hasThumb
-                  ? `<img src="${thumbUrl}" alt="" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'article-card-no-img\\'><div style=\\'font-size:1.3rem;line-height:1;\\'>📷</div><div style=\\'font-size:0.55rem;font-weight:700;margin-top:2px;\\'>No Image</div></div>';">`
-                  : `<div class="article-card-no-img">
-                      <div style="font-size:1.3rem;line-height:1;">📷</div>
-                      <div style="font-size:0.55rem;font-weight:700;margin-top:2px;">No Image</div>
-                     </div>`
-              }
-            </div>
-
+          <div class="article-card-badges-row">
             <div class="article-card-badges">
               <span class="badge badge-sec">
                 📂 ${escapeHtml(p.section || 'News')}
@@ -3385,17 +3376,30 @@
             </div>
           </div>
 
-          <div class="article-card-body">
-            <a class="article-card-title btn-open-project" data-id="${p.id}" title="${escapeHtml(p.title)}">
-              ${escapeHtml(p.title)}
-            </a>
+          <div class="article-card-content-row">
+            <div class="article-card-thumb">
+              ${
+                hasThumb
+                  ? `<img src="${thumbUrl}" alt="" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'article-card-no-img\\'><div style=\\'font-size:1.3rem;line-height:1;\\'>📷</div><div style=\\'font-size:0.55rem;font-weight:700;margin-top:2px;\\'>No Image</div></div>';">`
+                  : `<div class="article-card-no-img">
+                      <div style="font-size:1.3rem;line-height:1;">📷</div>
+                      <div style="font-size:0.55rem;font-weight:700;margin-top:2px;">No Image</div>
+                     </div>`
+              }
+            </div>
 
-            <div class="article-card-meta">
-              <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
-              <span class="meta-separator">•</span>
-              <span>Article: <strong style="color:${artApproved ? '#10B981' : '#F59E0B'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
-              <span class="meta-separator">•</span>
-              <span>Social Post: <strong style="color:${igApproved ? '#10B981' : '#F59E0B'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
+            <div class="article-card-body">
+              <a class="article-card-title btn-open-project" data-id="${p.id}" title="${escapeHtml(p.title)}">
+                ${escapeHtml(p.title)}
+              </a>
+
+              <div class="article-card-meta">
+                <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
+                <span class="meta-separator">•</span>
+                <span>Article: <strong style="color:${artApproved ? '#10B981' : '#F59E0B'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
+                <span class="meta-separator">•</span>
+                <span>Social Post: <strong style="color:${igApproved ? '#10B981' : '#F59E0B'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
+              </div>
             </div>
           </div>
 

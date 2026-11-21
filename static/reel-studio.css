@@ -1436,10 +1436,33 @@
     box-shadow: 0 4px 14px rgba(2, 156, 216, 0.4) !important;
   }
 
+  #btn-reel-undo,
+  #btn-reel-redo {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(75, 137, 188, 0.35) !important;
+    background: rgba(8, 35, 71, 0.7) !important;
+    color: #FFFFFF !important;
+    margin: 0 !important;
+  }
+
   #btn-toggle-safe-area,
   #btn-toggle-shortcuts,
+  #btn-reel-shortcuts-trigger,
+  .reel-zoom-picker,
   .reel-topbar-btn-group,
   #btn-save-reel-manual {
+    display: none !important;
+  }
+
+  .track-text,
+  .kbd-hint {
     display: none !important;
   }
 

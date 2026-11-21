@@ -5149,8 +5149,8 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 /* Desktop Baseline for Article Cards */
 .article-project-card {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   background: linear-gradient(145deg, rgba(8, 35, 71, 0.75) 0%, rgba(3, 20, 41, 0.90) 100%);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -5169,8 +5169,26 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   border-color: #475569;
 }
 
-.article-card-header-row {
-  display: contents;
+.article-card-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.article-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.article-card-content-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
 }
 
 .article-card-thumb {
@@ -5198,21 +5216,13 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   color: #94a3b8;
 }
 
-.article-card-badges {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 6px;
-}
-
 .article-card-body {
   flex: 1;
   min-width: 0;
 }
 
 .article-card-title {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: #FFFFFF;
   text-decoration: none;
@@ -5222,6 +5232,7 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   line-height: 1.35;
   letter-spacing: -0.015em;
   transition: color 0.15s ease;
+  word-break: break-word;
 }
 
 .article-card-title:hover {
@@ -5240,9 +5251,10 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 .article-card-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid rgba(75, 137, 188, 0.18);
   justify-content: flex-end;
 }
 
@@ -5418,9 +5430,27 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     border-radius: 12px !important;
   }
 
-  .article-card-header-row {
+  .article-card-badges-row {
     display: flex !important;
     align-items: center !important;
+    width: 100% !important;
+  }
+
+  .article-card-badges {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+
+  .article-card-badges .badge {
+    font-size: 0.68rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .article-card-content-row {
+    display: flex !important;
+    align-items: flex-start !important;
     gap: 10px !important;
     width: 100% !important;
   }
@@ -5432,31 +5462,18 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     flex-shrink: 0 !important;
   }
 
-  .article-card-badges {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
+  .article-card-body {
     flex: 1 !important;
     min-width: 0 !important;
   }
 
-  .article-card-badges .badge {
-    font-size: 0.68rem !important;
-    padding: 2px 6px !important;
-  }
-
-  .article-card-body {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
   .article-card-title {
-    font-size: 1.05rem !important;
+    font-size: 0.98rem !important;
     font-weight: 700 !important;
     line-height: 1.35 !important;
     color: #FFFFFF !important;
     display: block !important;
-    margin: 4px 0 6px !important;
+    margin: 0 0 6px !important;
     word-break: break-word !important;
     white-space: normal !important;
   }
@@ -5465,13 +5482,13 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     display: flex !important;
     flex-wrap: wrap !important;
     gap: 6px !important;
-    font-size: 0.76rem !important;
+    font-size: 0.74rem !important;
     color: #B8C4D4 !important;
   }
 
   .article-card-actions {
     display: grid !important;
-    grid-template-columns: 2fr 1.6fr 1.4fr auto !important;
+    grid-template-columns: 2fr 1.6fr 1.4fr 42px !important;
     gap: 6px !important;
     width: 100% !important;
     padding-top: 10px !important;
@@ -5763,12 +5780,20 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     margin-bottom: 12px !important;
   }
 
+  .wp-label-title-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
   .wp-field-label-row {
     display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
     justify-content: space-between !important;
-    gap: 4px 8px !important;
+    gap: 8px !important;
     margin-bottom: 6px !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -5776,19 +5801,17 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 
   .wp-field-label-row label,
   .wp-field-label-row .label-sm {
-    flex: 1 1 auto !important;
-    max-width: calc(100% - 75px) !important;
-    font-size: 0.78rem !important;
+    font-size: 0.8rem !important;
     line-height: 1.35 !important;
     color: #e2e8f0 !important;
     word-break: break-word !important;
+    margin: 0 !important;
   }
 
   .wp-field-label-row .btn-copy-field,
   .wp-field-label-row .btn-copy-field-mini {
     flex-shrink: 0 !important;
-    margin-left: auto !important;
-    padding: 4px 9px !important;
+    padding: 5px 10px !important;
     font-size: 0.72rem !important;
     min-height: 28px !important;
     line-height: 1 !important;
@@ -5796,15 +5819,28 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   }
 
   .wp-field-label-row .badge {
-    flex-basis: 100% !important;
     width: fit-content !important;
     max-width: 100% !important;
-    margin-top: 2px !important;
     font-size: 0.68rem !important;
     padding: 2px 6px !important;
     border-radius: 4px !important;
     white-space: normal !important;
     word-break: break-word !important;
+  }
+
+  .additional-photos-header-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .btn-upload-multi-touch {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+    display: inline-flex !important;
   }
 
   /* Featured Image Card on Mobile */
@@ -5826,7 +5862,10 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     border-radius: 10px !important;
     background: #061224 !important;
     border: 1px solid rgba(75, 137, 188, 0.3) !important;
-    display: block !important;
+  }
+
+  .wp-feat-img.hidden {
+    display: none !important;
   }
 
   .wp-empty-photo-card {
@@ -5878,5 +5917,76 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     width: 100% !important;
     box-sizing: border-box !important;
     font-size: 16px !important;
+  }
+
+  /* PUBLISHING CALENDAR (MONTH VIEW) — APPLE / AIRLINE TOUCH POLISH */
+  .cal-weekdays-header {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    margin-bottom: 4px !important;
+    width: 100% !important;
+  }
+
+  .cal-weekday-label {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+  }
+
+  .cal-month-grid-dark {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .cal-dark-cell {
+    min-height: 48px !important;
+    height: 52px !important;
+    padding: 2px 3px !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .cal-cell-day-num {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .cal-event-pill {
+    font-size: 0.58rem !important;
+    padding: 1px 3px !important;
+    line-height: 1.1 !important;
+    border-radius: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* COCKPIT TELEMETRY BAR ON MOBILE — ULTRA COMPACT SINGLE ROW */
+  .cockpit-telemetry-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 4px 10px !important;
+    margin-bottom: 10px !important;
+    min-height: 32px !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
+    border-radius: 8px !important;
+  }
+
+  .cockpit-telemetry-bar .telemetry-pill:not(:first-child):not(.telemetry-clock) {
+    display: none !important;
+  }
+
+  .cockpit-telemetry-bar .telemetry-pill {
+    padding: 3px 8px !important;
+    font-size: 0.7rem !important;
   }
 }

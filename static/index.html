@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=51.0" />
-  <link rel="stylesheet" href="/reel-studio.css?v=51.0" />
+  <link rel="stylesheet" href="/styles.css?v=52.0" />
+  <link rel="stylesheet" href="/reel-studio.css?v=52.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -872,13 +872,13 @@
                 <div class="reel-timeline-header">
                   <div class="reel-timeline-tools">
                     <button type="button" id="btn-timeline-split" class="reel-tool-btn" title="Split clip at playhead (S)">
-                      ✂️ Split (S)
+                      ✂️ Split <span class="kbd-hint">(S)</span>
                     </button>
                     <button type="button" id="btn-timeline-duplicate" class="reel-tool-btn" title="Duplicate selected clip (D)">
-                      📋 Duplicate (D)
+                      📋 Dup <span class="kbd-hint">(D)</span>
                     </button>
                     <button type="button" id="btn-timeline-delete" class="reel-tool-btn" title="Delete selected clip (Del)">
-                      🗑️ Delete (Del)
+                      🗑️ Del <span class="kbd-hint">(Del)</span>
                     </button>
                   </div>
                   <div style="display:flex;align-items:center;gap:12px;">
@@ -893,12 +893,12 @@
                 <div class="reel-timeline-body" id="reel-timeline-scroll-body">
                   <!-- Track Headers -->
                   <div class="reel-track-headers">
-                    <div class="reel-track-header-item" style="height:24px;">⏱️ Ruler</div>
-                    <div class="reel-track-header-item" id="header-media">📹 Media</div>
-                    <div class="reel-track-header-item" id="header-text">🔤 Text</div>
-                    <div class="reel-track-header-item" id="header-logo">💙 Logo</div>
-                    <div class="reel-track-header-item" id="header-audio">🎵 Music</div>
-                    <div class="reel-track-header-item" id="header-voiceover">🎙️ Voice</div>
+                    <div class="reel-track-header-item" style="height:24px;"><span class="track-icon">⏱️</span><span class="track-text"> Ruler</span></div>
+                    <div class="reel-track-header-item" id="header-media"><span class="track-icon">📹</span><span class="track-text"> Media</span></div>
+                    <div class="reel-track-header-item" id="header-text"><span class="track-icon">🔤</span><span class="track-text"> Text</span></div>
+                    <div class="reel-track-header-item" id="header-logo"><span class="track-icon">💙</span><span class="track-text"> Logo</span></div>
+                    <div class="reel-track-header-item" id="header-audio"><span class="track-icon">🎵</span><span class="track-text"> Music</span></div>
+                    <div class="reel-track-header-item" id="header-voiceover"><span class="track-icon">🎙️</span><span class="track-text"> Voice</span></div>
                   </div>
 
                   <!-- Timeline Tracks Viewport -->
@@ -1425,26 +1425,31 @@
                 </div>
 
                 <!-- Location & Events Rules Cheat Sheet -->
-                <div style="background:#0F172A;border:1px solid #1E293B;border-left:4px solid #38BDF8;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                    <div style="font-size:0.84rem;font-weight:700;color:#38BDF8;">💡 Location &amp; Event Rules (Quick Cheat Sheet)</div>
-                    <button type="button" id="btn-copy-ai-prompt" class="btn btn-sm" style="background:#003882;color:#ffffff;border:none;padding:5px 12px;font-size:0.75rem;font-weight:700;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" title="Copy foolproof prompt for ChatGPT, Claude or other AI">
-                      <span>🤖 Copy Prompt for ChatGPT / Claude</span>
-                    </button>
-                  </div>
-                  <div style="font-size:0.78rem;color:#94A3B8;margin-top:8px;line-height:1.55;">
+                <details class="location-rules-accordion" style="background:#0F172A;border:1px solid #1E293B;border-left:4px solid #38BDF8;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+                  <summary style="font-size:0.84rem;font-weight:700;color:#38BDF8;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+                    <span>💡 Location &amp; Event Rules (Cheat Sheet)</span>
+                    <span style="font-size:0.75rem;color:#94A3B8;font-weight:normal;">Tap to expand ▾</span>
+                  </summary>
+                  <div style="font-size:0.78rem;color:#94A3B8;margin-top:10px;line-height:1.55;">
                     • <strong>📰 General News &amp; National Stories:</strong> Leave City, Address, and Event <strong>completely empty</strong>.<br/>
                     • <strong>🏙️ City Guides:</strong> Only type the City name (e.g. <em>Helsinki</em> or <em>Tampere</em>). Leave Address empty.<br/>
                     • <strong>🏛️ Venue Reviews:</strong> Only type street address if reviewing an exact restaurant, sauna, or museum.<br/>
                     • <strong>🎟️ Events Section:</strong> Only fill Event date &amp; venue if writing about an upcoming concert or festival.
+                    <div style="margin-top:10px;">
+                      <button type="button" id="btn-copy-ai-prompt" class="btn btn-sm" style="background:#003882;color:#ffffff;border:none;padding:6px 12px;font-size:0.75rem;font-weight:700;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" title="Copy foolproof prompt for ChatGPT, Claude or other AI">
+                        <span>🤖 Copy Prompt for ChatGPT / Claude</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </details>
 
                 <!-- 1. Region -->
                 <div class="wp-field-wrap">
                   <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-region">Region</label>
-                    <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Default: Finland</span>
+                    <div class="wp-label-title-group">
+                      <label class="label-sm" for="wp-field-region">Region</label>
+                      <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Default: Finland</span>
+                    </div>
                     <button type="button" class="btn-copy-field" data-copy-target="wp-field-region">📋 Copy</button>
                   </div>
                   <input type="text" id="wp-field-region" class="wp-input" placeholder="e.g. Finland (Default) or Lapland, Uusimaa" />
@@ -1453,8 +1458,10 @@
                 <!-- 2. City / Location (required for location-specific articles) -->
                 <div class="wp-field-wrap">
                   <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-city">City / Location <span class="hint-inline">(required for location-specific articles)</span></label>
-                    <span class="badge" style="background:#1e293b;color:#38bdf8;font-size:0.7rem;padding:2px 6px;">Only for city stories (else blank)</span>
+                    <div class="wp-label-title-group">
+                      <label class="label-sm" for="wp-field-city">City / Location <span class="hint-inline">(for city stories)</span></label>
+                      <span class="badge" style="background:#1e293b;color:#38bdf8;font-size:0.7rem;padding:2px 6px;">Only for city stories (else blank)</span>
+                    </div>
                     <button type="button" class="btn-copy-field" data-copy-target="wp-field-city">📋 Copy</button>
                   </div>
                   <input type="text" id="wp-field-city" class="wp-input" placeholder="Leave empty for national news / general guides" />
@@ -1463,8 +1470,10 @@
                 <!-- 3. Exact place or address, where applicable -->
                 <div class="wp-field-wrap">
                   <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-address">Exact place or address, where applicable</label>
-                    <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Leave empty for 95% of articles</span>
+                    <div class="wp-label-title-group">
+                      <label class="label-sm" for="wp-field-address">Exact Place / Address</label>
+                      <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Leave empty for 95% of articles</span>
+                    </div>
                     <button type="button" class="btn-copy-field" data-copy-target="wp-field-address">📋 Copy</button>
                   </div>
                   <input type="text" id="wp-field-address" class="wp-input" placeholder="Leave empty unless reviewing a specific restaurant or museum" />
@@ -1473,8 +1482,10 @@
                 <!-- 4. Event date, time and venue (for Events) -->
                 <div class="wp-field-wrap">
                   <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-event">Event date, time and venue (for Events)</label>
-                    <span class="badge" style="background:#1e293b;color:#f59e0b;font-size:0.7rem;padding:2px 6px;">Only for 'Events' section</span>
+                    <div class="wp-label-title-group">
+                      <label class="label-sm" for="wp-field-event">Event Date, Time &amp; Venue</label>
+                      <span class="badge" style="background:#1e293b;color:#f59e0b;font-size:0.7rem;padding:2px 6px;">Only for 'Events' section</span>
+                    </div>
                     <button type="button" class="btn-copy-field" data-copy-target="wp-field-event">📋 Copy</button>
                   </div>
                   <input type="text" id="wp-field-event" class="wp-input" placeholder="Leave empty unless writing about a scheduled festival or concert" />
@@ -1482,7 +1493,7 @@
 
                 <!-- 5. Additional Article Images (Multiple Photos Supported) -->
                 <div class="wp-field-wrap" id="article-additional-images-section" style="background:rgba(15, 23, 42, 0.65);border:1px solid rgba(56, 189, 248, 0.2);border-radius:10px;padding:14px;margin:16px 0;">
-                  <div class="wp-field-label-row" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                  <div class="additional-photos-header-row" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                     <div>
                       <label class="label-sm" style="font-weight:700;color:#38bdf8;font-size:0.86rem;display:flex;align-items:center;gap:6px;margin:0;">
                         <span>📸</span> Additional Article Images (<span id="article-additional-count">0</span>)
@@ -1491,9 +1502,9 @@
                         Upload multiple photos for galleries or inline story visuals. Supports JPG, PNG, WebP (Max 10 MB each).
                       </div>
                     </div>
-                    <div style="display:flex;gap:6px;align-items:center;">
-                      <label class="btn btn-primary btn-sm" style="cursor:pointer;padding:6px 14px;font-size:0.76rem;display:inline-flex;align-items:center;gap:6px;background:#0284c7;color:#fff;border-radius:6px;font-weight:700;">
-                        <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <div style="display:flex;gap:6px;align-items:center;width:auto;">
+                      <label class="btn btn-primary btn-sm btn-upload-multi-touch" style="cursor:pointer;padding:8px 16px;font-size:0.8rem;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#0284c7;color:#fff;border-radius:6px;font-weight:700;min-height:38px;">
+                        <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span>+ Upload Photos</span>
                         <input type="file" id="input-upload-additional-multi" multiple accept="image/jpeg,image/png,image/webp,image/avif" style="display:none;" />
                       </label>
@@ -2963,9 +2974,9 @@
     </div>
   </div>
 
-  <script src="/reel-player.js?v=51.0"></script>
-  <script src="/reel-studio.js?v=51.0"></script>
-  <script src="/app.js?v=51.0"></script>
+  <script src="/reel-player.js?v=52.0"></script>
+  <script src="/reel-studio.js?v=52.0"></script>
+  <script src="/app.js?v=52.0"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');
