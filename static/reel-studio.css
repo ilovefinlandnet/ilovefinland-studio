@@ -206,6 +206,10 @@
   gap: 8px;
 }
 
+.export-btn-mobile {
+  display: none;
+}
+
 /* WORKSPACE 3-PANE BODY (LEFT TOOLS | CENTER PREVIEW | RIGHT INSPECTOR) */
 .reel-workspace-body {
   display: grid;
@@ -1389,44 +1393,46 @@
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
-    flex: 1 !important;
-    min-width: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   #btn-close-reel-editor {
-    min-height: 38px !important;
-    padding: 6px 12px !important;
-    font-size: 0.8rem !important;
-    font-weight: 700 !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     border-radius: 8px !important;
-    white-space: nowrap !important;
     background: rgba(1, 81, 150, 0.4) !important;
     color: #FFFFFF !important;
     border: 1px solid rgba(75, 137, 188, 0.35) !important;
   }
 
-  .reel-topbar-title-input {
-    max-width: 140px !important;
-    font-size: 0.82rem !important;
-    height: 36px !important;
-    border-radius: 8px !important;
-    background: #061224 !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(75, 137, 188, 0.28) !important;
-    padding: 4px 8px !important;
+  #btn-close-reel-editor span {
+    display: none !important;
+  }
+
+  .reel-topbar-title-input,
+  .reel-autosave-badge {
+    display: none !important;
   }
 
   .reel-topbar-right {
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
+    margin-left: auto !important;
     flex-shrink: 0 !important;
   }
 
   #btn-export-reel-trigger {
-    min-height: 38px !important;
-    padding: 6px 14px !important;
-    font-size: 0.8rem !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
     background: #029CD8 !important;
@@ -1434,6 +1440,14 @@
     border-radius: 8px !important;
     border: none !important;
     box-shadow: 0 4px 14px rgba(2, 156, 216, 0.4) !important;
+  }
+
+  .export-btn-full {
+    display: none !important;
+  }
+
+  .export-btn-mobile {
+    display: inline !important;
   }
 
   #btn-reel-undo,
