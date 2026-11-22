@@ -779,6 +779,21 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 })
                 return
 
+            # Isolated Finnish Learning Lab GET endpoints
+            if path == "/api/finnish-lab/status":
+                import finnish_lab_engine
+                force = qs.get("refresh", ["0"])[0] in ("1", "true")
+                if force:
+                    finnish_lab_engine.discover_gemini_models(force_refresh=True)
+                self._send_json(finnish_lab_engine.get_status())
+                return
+
+            if path == "/api/finnish-lab/sync":
+                import finnish_lab_engine
+                user = self._require_auth() or ALLOWED_EMAIL
+                self._send_json(finnish_lab_engine.load_user_sync_snapshot(user))
+                return
+
             self._send_json({"error": "Unknown API endpoint"}, status=HTTPStatus.NOT_FOUND)
             return
 
@@ -787,7 +802,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if not self._require_auth():
                 return
 
-        if path == "/" or path == "/index.html":
+        if path == "/" or path == "/index.html" or path == "/finnish-lab" or path.startswith("/finnish-lab/"):
             self._send_file(os.path.join(STATIC_DIR, "index.html"))
             return
 
@@ -2313,6 +2328,59 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 })
             except Exception as ex:
                 self._send_json({"error": f"Upload failed: {ex}"}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        # Isolated Finnish Learning Lab POST endpoints (protected by Studio auth)
+        if path.startswith("/api/finnish-lab/"):
+            user = self._require_auth()
+            if not user:
+                return
+            length = int(self.headers.get("Content-Length", "0"))
+            if length > 26 * 1024 * 1024:
+                self._send_json(
+                    {"error": "PAYLOAD_TOO_LARGE", "message": "Upload exceeds 26 MB safety limit. Please use a shorter recording or smaller image."},
+                    status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+                )
+                return
+            try:
+                body = self._read_json_body()
+            except Exception:
+                self._send_json({"error": "INVALID_JSON", "message": "Invalid JSON request body."}, status=HTTPStatus.BAD_REQUEST)
+                return
+
+            import finnish_lab_engine
+
+            if path == "/api/finnish-lab/ask":
+                res, status_code = finnish_lab_engine.handle_ask(body)
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/word-anatomy":
+                res, status_code = finnish_lab_engine.handle_word_anatomy(body)
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/writing-check":
+                res, status_code = finnish_lab_engine.handle_writing_check(body)
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/generate-exercise":
+                res, status_code = finnish_lab_engine.handle_generate_exercise(body)
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/settings/limit":
+                new_lim = finnish_lab_engine.set_daily_limit(body.get("daily_limit", 60))
+                self._send_json({"ok": True, "daily_limit": new_lim, "usage": finnish_lab_engine.get_usage_stats()})
+                return
+
+            if path == "/api/finnish-lab/sync":
+                res = finnish_lab_engine.save_user_sync_snapshot(user, body.get("snapshot") or body)
+                self._send_json(res, status=200 if res.get("ok") else 400)
+                return
+
+            self._send_json({"error": "Unknown Finnish Lab endpoint"}, status=HTTPStatus.NOT_FOUND)
             return
 
         self.send_error(HTTPStatus.NOT_FOUND, "Not Found")

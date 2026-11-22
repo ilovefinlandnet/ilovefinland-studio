@@ -237,6 +237,12 @@
   function switchView(viewName, isBack = false, replace = false) {
     if (!viewName) return;
 
+    // Protect an active Finnish Lab microphone recording from accidental navigation
+    if (viewName !== "finnish-lab" && window.FinnishLab?.isRecording?.()) {
+      alert("🎙️ A Finnish Lab microphone recording is currently active. Please stop or save your recording before switching views.");
+      return;
+    }
+
     // If inside Reel Studio editor and navigating to another view, close editor
     const reelEditor = $("reel-editor-screen");
     if (reelEditor && !reelEditor.classList.contains("hidden") && viewName !== "reel-studio" && viewName !== "reel-editor") {
@@ -255,13 +261,14 @@
       }
     }
 
-    // Update browser URL hash & state
+    // Update browser URL path/hash & state
     if (!isNavigatingHistory) {
       try {
+        const targetUrl = viewName === "finnish-lab" ? "/finnish-lab" : `/#${viewName}`;
         if (replace) {
-          history.replaceState({ view: viewName }, "", `#${viewName}`);
+          history.replaceState({ view: viewName }, "", targetUrl);
         } else {
-          history.pushState({ view: viewName }, "", `#${viewName}`);
+          history.pushState({ view: viewName }, "", targetUrl);
         }
       } catch (e) {}
     }
@@ -288,7 +295,11 @@
     if (viewName === "reel-studio" && window.ReelStudio) {
       window.ReelStudio.loadHubProjects();
     }
+    if (viewName === "finnish-lab" && window.FinnishLab) {
+      window.FinnishLab.render();
+    }
   }
+  window.openFinnishLabView = () => switchView("finnish-lab");
 
   function goBack() {
     // 1. If inside Reel Studio editor, close editor to return to Reel Projects Hub
@@ -5145,7 +5156,9 @@
 
     // Initial hash routing (e.g. #calendar, #reel-studio, #ideas, #review)
     const initialHash = window.location.hash.replace("#", "");
-    if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments"].includes(initialHash)) {
+    if (window.location.pathname === "/finnish-lab" || window.location.pathname.startsWith("/finnish-lab/")) {
+      switchView("finnish-lab", false, true);
+    } else if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments", "finnish-lab"].includes(initialHash)) {
       switchView(initialHash, false, true);
     }
 
