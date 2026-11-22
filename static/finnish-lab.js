@@ -53,7 +53,39 @@
     roleLoaded: false,
     studentEnabled: true,
     inviteCode: "suomi2026",
+    mistakeStreak: 0,
   };
+
+  /* ---------- FUN ROAST MODE (ESCALATING MISTAKE SIGNATURE) ---------- */
+  function isRoastEnabled() {
+    return DB.getSettings().roastMode !== false; // ON by default for everyone
+  }
+
+  function getRoastLine(isMistake) {
+    if (!isMistake) {
+      state.mistakeStreak = 0;
+      return "";
+    }
+    if (!isRoastEnabled()) return "";
+    state.mistakeStreak = (state.mistakeStreak || 0) + 1;
+    if (state.mistakeStreak === 1) return "😈 Muji Chutiya, you are wrong! 😂";
+    if (state.mistakeStreak === 2) return "😈 Idiot! Muji Chutiya, wrong again! 🤦‍♂️";
+    if (state.mistakeStreak === 3) return "🔥 Vittu! Muji Chutiya, concentrate idiot! 😂";
+    return "🔥 Vittu perkele! Muji Chutiya, idiot focus on Finnish! 💀😂";
+  }
+
+  function detectMistakeInReply(replyText, mode) {
+    const low = String(replyText || "").toLowerCase();
+    const isMistakeMode = mode === "homework_check" || mode === "practice" || mode === "quick_answer" || mode === "teach_me";
+    if (!isMistakeMode) return false;
+    const mistakeRe = /\b(not quite|incorrect|wrong|mistake|mistakes|should be|instead of|correction:|almost right|small error|grammar error|väärin)\b/i;
+    const praiseOnlyRe = /\b(perfect!|100% correct|spot on|exact match|no mistakes|oikein!)\b/i;
+    if (praiseOnlyRe.test(low) && !mistakeRe.test(low)) {
+      state.mistakeStreak = 0;
+      return false;
+    }
+    return mistakeRe.test(low);
+  }
 
   /* ---------- WALK & LISTEN PODCAST EPISODES ---------- */
   const PODCAST_EPISODES = [
@@ -663,10 +695,12 @@
         }),
       });
 
+      const roastBanner = detectMistakeInReply(resp.reply, mode) ? getRoastLine(true) : "";
       conv.messages.push({
         id: DB.uid("msg"),
         role: "assistant",
         text: resp.reply,
+        roastBanner,
         finnishTts: resp.finnish_tts || "",
         at: new Date().toISOString(),
       });
@@ -845,7 +879,7 @@
             <button type="button" class="fl-seg-btn ${state.mode === "study" ? "active" : ""}" data-fl-mode="study">Study</button>
           </div>
 
-          <button type="button" class="fl-icon-circle" id="fl-new-chat-top" title="Start a new chat">+</button>
+          <button type="button" class="fl-new-chat-pill" id="fl-new-chat-top" title="Start a new chat">+ New Chat</button>
         </header>
 
         ${state.mode === "chat" ? renderChatMode() : renderStudyMode(prog)}
@@ -976,8 +1010,10 @@
             <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">💾 Save</button>
           </div>`
         : "";
+    const roastHtml = m.roastBanner ? `<div class="fl-roast-banner">${esc(m.roastBanner)}</div>` : "";
     return `
       <div class="fl-msg ${m.role === "user" ? "user" : "assistant"}">
+        ${roastHtml}
         ${attHtml}
         <div>${renderMarkdownLite(m.text)}</div>
         ${actionsHtml}
@@ -1382,6 +1418,9 @@
                         </div>`
                       : ""
                   }
+                  <button type="button" id="fl-roast-toggle" class="fl-btn sm ${isRoastEnabled() ? "active" : ""}">
+                    ${isRoastEnabled() ? "😈 Fun Roast Mode: ON" : "😇 Fun Roast Mode: OFF"}
+                  </button>
                   <div style="font-size:0.72rem;color:#94a3b8;line-height:1.45;">
                     💾 <strong>Smart Phone Storage:</strong> Photos auto-compress (~120 KB) &amp; audio clips auto-clear after reply — your chats stay tiny on your phone (€0 server space).
                   </div>
@@ -1605,7 +1644,17 @@
       b.onclick = () => {
         const ok = b.getAttribute("data-fl-quiz-ans") === "1";
         const out = document.getElementById("fl-quiz-out");
-        if (out) { out.style.color = ok ? "#6ee7b7" : "#fca5a5"; out.textContent = (ok ? "✅ Oikein! " : "❌ Try again — ") + (b.getAttribute("data-fl-quiz-exp") || ""); }
+        if (out) {
+          if (ok) {
+            getRoastLine(false);
+            out.style.color = "#6ee7b7";
+            out.innerHTML = `✅ Oikein! ${esc(b.getAttribute("data-fl-quiz-exp") || "")}`;
+          } else {
+            const roast = getRoastLine(true);
+            out.style.color = "#fca5a5";
+            out.innerHTML = `${roast ? `<div class="fl-roast-banner">${esc(roast)}</div>` : ""}❌ Try again — ${esc(b.getAttribute("data-fl-quiz-exp") || "")}`;
+          }
+        }
       };
     });
 
@@ -1619,7 +1668,9 @@
       try {
         const res = await flApi("/api/finnish-lab/writing-check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: txt, level: DB.getSettings().level }) });
         const fb = res.feedback || {};
-        out.innerHTML = `<div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;font-size:0.86rem;"><div style="color:#6ee7b7;font-weight:700;">✅ ${esc(fb.corrected || "")}</div><div style="color:#7dd3fc;margin-top:4px;">🇬🇧 ${esc(fb.english_meaning || "")}</div>${(fb.mistakes || []).map((m) => `<div style="margin-top:5px;">• <span style="color:#fca5a5;">${esc(m.wrong)}</span> → <strong>${esc(m.right)}</strong>: ${esc(m.why_en)}</div>`).join("")}</div>`;
+        const hasMistakes = (fb.mistakes || []).length > 0;
+        const roast = getRoastLine(hasMistakes);
+        out.innerHTML = `<div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;font-size:0.86rem;">${roast ? `<div class="fl-roast-banner">${esc(roast)}</div>` : ""}<div style="color:#6ee7b7;font-weight:700;">✅ ${esc(fb.corrected || "")}</div><div style="color:#7dd3fc;margin-top:4px;">🇬🇧 ${esc(fb.english_meaning || "")}</div>${(fb.mistakes || []).map((m) => `<div style="margin-top:5px;">• <span style="color:#fca5a5;">${esc(m.wrong)}</span> → <strong>${esc(m.right)}</strong>: ${esc(m.why_en)}</div>`).join("")}</div>`;
       } catch (err) { out.innerHTML = `<div style="color:#fca5a5;">⚠️ ${esc(err.message)}</div>`; }
     });
     root.querySelectorAll("[data-fl-start-roleplay]").forEach((b) => {
@@ -1684,6 +1735,12 @@
       b.onclick = async () => { await DB.deleteNote(b.getAttribute("data-fl-del-note")); state.notes = await DB.listNotes(); renderActiveView(); };
     });
     root.querySelector("#fl-level-select")?.addEventListener("change", (e) => { DB.saveSettings({ level: e.target.value }); renderActiveView(); });
+    root.querySelector("#fl-roast-toggle")?.addEventListener("click", () => {
+      const next = !isRoastEnabled();
+      DB.saveSettings({ roastMode: next });
+      toast(next ? "😈 Fun Roast Mode ON!" : "😇 Fun Roast Mode OFF", "info");
+      renderActiveView();
+    });
     root.querySelector("#fl-focus-toggle")?.addEventListener("click", () => { state.focusMode = !state.focusMode; document.body.classList.toggle("fl-focus-mode", state.focusMode); renderActiveView(); });
     root.querySelector("#fl-copy-student-url")?.addEventListener("click", async () => {
       const url = window.location.origin + "/finnish-student";

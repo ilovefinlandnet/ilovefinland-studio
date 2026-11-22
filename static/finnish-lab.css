@@ -8,7 +8,8 @@
   display: none !important;
 }
 body:has(#view-finnish-lab:not(.hidden)) .fl-floating-launcher,
-body:has(#view-finnish-lab:not(.hidden)) #btn-mobile-finnish-lab {
+body:has(#view-finnish-lab:not(.hidden)) #btn-mobile-finnish-lab,
+body:has(#view-finnish-lab:not(.hidden)) .bottom-nav {
   display: none !important;
 }
 
@@ -64,6 +65,41 @@ body.fl-focus-mode .workspace {
 .fl-icon-circle:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(56, 189, 248, 0.45);
+}
+
+.fl-new-chat-pill {
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.12);
+  color: #e0f2fe;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.fl-new-chat-pill:hover {
+  background: rgba(56, 189, 248, 0.24);
+  border-color: rgba(56, 189, 248, 0.65);
+}
+
+.fl-roast-banner {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  line-height: 1.35;
 }
 
 /* 2-Pill Apple Segmented Switch */
@@ -672,10 +708,10 @@ body.fl-focus-mode .workspace {
 /* Mobile & iPad Precision Polish (Zero Clipping!) */
 @media (max-width: 768px) {
   .workspace:has(#view-finnish-lab:not(.hidden)) {
-    padding: 62px 10px 76px !important;
+    padding: 62px 10px 18px !important;
   }
   .fl-app {
-    min-height: calc(100vh - 140px);
+    min-height: calc(100vh - 82px);
   }
   .fl-study-grid {
     grid-template-columns: 1fr;
@@ -684,11 +720,14 @@ body.fl-focus-mode .workspace {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: 66px; /* Sits cleanly above Studio bottom nav */
+    bottom: 12px; /* Bottom Studio nav is hidden inside Finnish Lab for full-screen chat */
     z-index: 900;
   }
   .fl-chat-stage {
-    padding-bottom: 155px;
+    padding-bottom: 118px;
+  }
+  body:not(.fl-student-only) .fl-drawer-panel {
+    padding-top: 66px; /* Sit cleanly below Studio mobile header */
   }
   .fl-floating-launcher {
     bottom: 72px;
