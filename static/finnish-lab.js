@@ -1861,6 +1861,20 @@
     const root = document.getElementById("finnish-lab-root");
     if (!root) return;
 
+    // iOS Safari Keyboard Fix: keep the entire chat capsule cleanly ABOVE the keyboard (zero clipping!)
+    if (window.visualViewport && !window.__flViewportBound) {
+      window.__flViewportBound = true;
+      const syncKeyboardDock = () => {
+        const dock = document.querySelector("#view-finnish-lab .fl-dock");
+        if (!dock || window.innerWidth > 768) return;
+        const vv = window.visualViewport;
+        const kbInset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+        dock.style.bottom = kbInset > 40 ? `${kbInset + 10}px` : "";
+      };
+      window.visualViewport.addEventListener("resize", syncKeyboardDock);
+      window.visualViewport.addEventListener("scroll", syncKeyboardDock);
+    }
+
     // Top bar
     root.querySelector("#fl-open-drawer")?.addEventListener("click", () => { state.drawerOpen = true; renderActiveView(); });
     root.querySelectorAll("[data-fl-mode]").forEach((b) => {

@@ -752,8 +752,9 @@ body.fl-focus-mode .workspace {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: 12px; /* Bottom Studio nav is hidden inside Finnish Lab for full-screen chat */
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     z-index: 900;
+    transition: bottom 0.08s ease-out;
   }
   .fl-chat-stage {
     padding-bottom: 118px;
