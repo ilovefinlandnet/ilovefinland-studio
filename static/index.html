@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=55.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=55.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=55.2" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -167,6 +167,7 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;">
+          <button type="button" id="btn-mobile-finnish-lab" onclick="window.openFinnishLabView && window.openFinnishLabView()" class="btn btn-sm" style="padding:5px 8px;font-size:0.72rem;min-height:30px;background:#003580;border:1px solid rgba(125,211,252,0.5);color:#fff;font-weight:700;border-radius:7px;white-space:nowrap;" title="Open Finnish Learning Lab">🇫🇮 Lab</button>
           <button type="button" id="mobile-cloud-pill" class="pill pill-approved" style="font-size:0.68rem;padding:4px 8px;font-weight:700;border:none;cursor:pointer;" title="Click to sync laptop to cloud">☁️ Synced 🟢</button>
           <button type="button" id="btn-mobile-new-story" class="btn btn-primary btn-sm" style="padding:6px 10px;font-size:0.75rem;min-height:34px;white-space:nowrap;">+ Story</button>
         </div>
@@ -3143,9 +3144,9 @@
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
   <script src="/app.js?v=55.0"></script>
-  <script src="/finnish-lab-db.js?v=55.1"></script>
-  <script src="/finnish-lab-curriculum.js?v=55.1"></script>
-  <script src="/finnish-lab.js?v=55.1"></script>
+  <script src="/finnish-lab-db.js?v=55.2"></script>
+  <script src="/finnish-lab-curriculum.js?v=55.2"></script>
+  <script src="/finnish-lab.js?v=55.2"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');
