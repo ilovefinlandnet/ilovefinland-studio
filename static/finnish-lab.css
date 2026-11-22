@@ -341,7 +341,8 @@ body.fl-focus-mode .workspace {
   position: relative;
 }
 
-.fl-capsule-input {
+.fl-capsule-input,
+.fl-capsule-input:focus {
   width: 100%;
   box-sizing: border-box;
   background: transparent !important;
@@ -752,9 +753,12 @@ body.fl-focus-mode .workspace {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     z-index: 900;
     transition: bottom 0.08s ease-out;
+  }
+  body.fl-kb-open .fl-dock {
+    bottom: 22px; /* Lifts capsule cleanly above iOS Safari URL bar when typing */
   }
   .fl-chat-stage {
     padding-bottom: 118px;

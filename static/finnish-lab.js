@@ -1924,6 +1924,8 @@
     if (chatInputEl) {
       autoResizeChatInput(chatInputEl);
       chatInputEl.addEventListener("input", () => autoResizeChatInput(chatInputEl));
+      chatInputEl.addEventListener("focus", () => document.body.classList.add("fl-kb-open"));
+      chatInputEl.addEventListener("blur", () => document.body.classList.remove("fl-kb-open"));
       chatInputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSend(); }
       });
