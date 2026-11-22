@@ -7088,12 +7088,12 @@ ${content}`;
       });
 
       $("btn-quick-jump-top")?.addEventListener("click", () => {
-        const topEl = $("article-subnav") || $("panel-article");
-        if (topEl) {
-          const targetY = topEl.getBoundingClientRect().top + window.pageYOffset - 80;
-          window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (document.documentElement) document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+        if (document.body) document.body.scrollTo({ top: 0, behavior: "smooth" });
+        const topEl = $("view-review") || $("article-subnav") || $("panel-article");
+        if (topEl && typeof topEl.scrollIntoView === "function") {
+          topEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       });
     }
