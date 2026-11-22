@@ -21,7 +21,77 @@ body.fl-focus-mode .workspace {
   max-width: 100% !important;
   padding: 14px 20px 60px !important;
 }
-body.fl-focus-mode #view-finnish-lab {
+body.fl-focus-mode /* Minimal 3-Action Hero Grid & Clean Details Drawers */
+.fl-hero-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .fl-hero-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .fl-hero-grid-3 .fl-hero-btn {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 13px 14px !important;
+  }
+}
+
+.fl-drawer {
+  background: rgba(8, 28, 56, 0.72);
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 12px;
+}
+
+.fl-drawer > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.fl-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fl-drawer[open] > summary {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #7dd3fc;
+}
+
+/* Full-width ChatGPT-style Tutor */
+.fl-chat-full {
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 18, 36, 0.94);
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.fl-chats-popover {
+  background: #061428;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 10px 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+#view-finnish-lab {
   max-width: 1440px !important;
 }
 
@@ -102,6 +172,76 @@ body.fl-focus-mode #view-finnish-lab {
   .fl-hero-sub {
     font-size: 0.72rem !important;
   }
+}
+
+/* Minimal 3-Action Hero Grid & Clean Details Drawers */
+.fl-hero-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .fl-hero-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .fl-hero-grid-3 .fl-hero-btn {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 13px 14px !important;
+  }
+}
+
+.fl-drawer {
+  background: rgba(8, 28, 56, 0.72);
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 12px;
+}
+
+.fl-drawer > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.fl-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fl-drawer[open] > summary {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #7dd3fc;
+}
+
+/* Full-width ChatGPT-style Tutor */
+.fl-chat-full {
+  display: flex;
+  flex-direction: column;
+  background: rgba(6, 18, 36, 0.94);
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.fl-chats-popover {
+  background: #061428;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 10px 12px;
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 #view-finnish-lab {

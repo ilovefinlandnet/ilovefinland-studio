@@ -12,8 +12,12 @@
   const state = {
     activeTab: "home", // home | class | tutor | learn | review
     classSubTab: "live", // live | homework
-    learnSubTab: "daily", // daily | grammar | anatomy | reading | writing | listening | speaking
-    reviewSubTab: "flashcards", // flashcards | notes | progress
+    learnSubTab: "daily", // daily | reference | practice
+    practiceSkill: "reading", // reading | writing | listening | speaking
+    reviewSubTab: "flashcards", // flashcards | notes
+    settingsOpen: false,
+    chatsDrawerOpen: false,
+    homeworkDrawerOpen: false,
     focusMode: false,
     sidePanelOpen: false,
     status: null,
@@ -657,7 +661,7 @@
     return added;
   }
 
-  /* ---------- RENDER: MAIN SHELL ---------- */
+  /* ---------- RENDER: MAIN SHELL (MINIMAL, CALM TOP BAR) ---------- */
   function renderActiveView() {
     const root = document.getElementById("finnish-lab-root");
     if (!root) return;
@@ -671,23 +675,16 @@
           <div class="fl-brand">
             <div class="fl-brand-flag">🇫🇮</div>
             <div>
-              <h1 class="fl-brand-title">Finnish Lab</h1>
-              <div class="fl-brand-sub">Tervetuloa! • 🔥 ${prog.streakDays || 0}d streak • 🃏 ${dueCount} due</div>
+              <h1 class="fl-brand-title">Finnish Lab <span style="font-size:0.74rem;font-weight:700;color:#7dd3fc;">${esc(settings.level)}</span></h1>
+              <div class="fl-brand-sub">🔥 ${prog.streakDays || 0}d streak • 🃏 ${dueCount} due</div>
             </div>
           </div>
           <div class="fl-topbar-right">
-            ${state.isRecording ? `<span class="fl-rec-indicator"><span class="fl-rec-dot"></span> Recording <span class="fl-rec-timer">00:00</span> <button type="button" class="fl-btn danger sm" id="fl-top-stop-rec">⏹ Stop</button></span>` : ""}
-            <select id="fl-level-select" class="fl-select" style="width:auto;padding:4px 8px;font-size:0.76rem;font-weight:700;" title="Learning level">
-              <option value="A1" ${settings.level === "A1" ? "selected" : ""}>A1</option>
-              <option value="A2" ${settings.level === "A2" ? "selected" : ""}>A2</option>
-            </select>
+            ${state.isRecording ? `<span class="fl-rec-indicator"><span class="fl-rec-dot"></span> <span class="fl-rec-timer">00:00</span> <button type="button" class="fl-btn danger sm" id="fl-top-stop-rec">⏹ Stop</button></span>` : ""}
             <button type="button" id="fl-quick-class-toggle" class="fl-btn sm ${settings.quickClassMode ? "active" : ""}" title="Fast 4-line responses for live Finnish class">
-              ⚡ Quick: ${settings.quickClassMode ? "ON" : "OFF"}
+              ⚡ Quick Class${settings.quickClassMode ? ": ON" : ""}
             </button>
-            <button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}" title="Toggle full-screen focus mode (hide Studio sidebar)">
-              ${state.focusMode ? "↙ Exit Focus" : "⛶ Focus"}
-            </button>
-            <span class="fl-pill fl-quota-badge ok">AI: ready</span>
+            <button type="button" id="fl-settings-open" class="fl-btn sm" title="Settings, Focus Mode, Quota & Backup">⚙️ Settings</button>
           </div>
         </div>
 
@@ -704,10 +701,76 @@
           ${renderTabBody(settings, prog, dueCount)}
         </div>
       </div>
+      ${state.settingsOpen ? renderSettingsModal(settings, prog) : ""}
     `;
 
     updateQuotaBadges();
     bindMainEvents();
+  }
+
+  function renderSettingsModal(settings, prog) {
+    const u = (state.status && state.status.usage) || { used: 0, limit: 60, remaining: 60, cache_hits: 0 };
+    return `
+      <div class="fl-modal-backdrop" id="fl-settings-modal">
+        <div class="fl-modal-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <strong style="color:#fff;font-size:1rem;">⚙️ Finnish Lab Settings &amp; Progress</strong>
+            <button type="button" class="fl-btn sm" id="fl-settings-close">✕</button>
+          </div>
+
+          <div class="fl-grid-2" style="gap:10px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:0.76rem;color:#94a3b8;display:block;margin-bottom:4px;">Learning Level</label>
+              <select id="fl-level-select" class="fl-select">
+                <option value="A1" ${settings.level === "A1" ? "selected" : ""}>A1 (Beginner)</option>
+                <option value="A2" ${settings.level === "A2" ? "selected" : ""}>A2 (Elementary)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.76rem;color:#94a3b8;display:block;margin-bottom:4px;">Daily Study Target</label>
+              <select id="fl-daily-target" class="fl-select">
+                <option value="5" ${settings.dailyTargetMinutes == 5 ? "selected" : ""}>5 minutes / day</option>
+                <option value="10" ${settings.dailyTargetMinutes == 10 ? "selected" : ""}>10 minutes / day</option>
+                <option value="20" ${settings.dailyTargetMinutes == 20 ? "selected" : ""}>20 minutes / day</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}">
+              ${state.focusMode ? "↙ Exit Full-Screen Focus" : "⛶ Full-Screen Focus Mode"}
+            </button>
+            <select id="fl-voice-lang" class="fl-select" style="width:auto;padding:5px 10px;font-size:0.78rem;">
+              <option value="fi-FI" ${settings.voiceLang === "fi-FI" ? "selected" : ""}>Voice Input: Finnish (FI)</option>
+              <option value="en-US" ${settings.voiceLang === "en-US" ? "selected" : ""}>Voice Input: English (EN)</option>
+            </select>
+          </div>
+
+          <!-- Progress Snapshot -->
+          <div class="fl-grid-3" style="margin-bottom:12px;">
+            <div style="background:#061428;padding:8px;border-radius:9px;text-align:center;"><div style="font-size:1.15rem;font-weight:800;color:#6ee7b7;">${prog.streakDays || 0}</div><div style="font-size:0.7rem;color:#94a3b8;">Day Streak</div></div>
+            <div style="background:#061428;padding:8px;border-radius:9px;text-align:center;"><div style="font-size:1.15rem;font-weight:800;color:#7dd3fc;">${state.flashcards.length}</div><div style="font-size:0.7rem;color:#94a3b8;">Saved Words</div></div>
+            <div style="background:#061428;padding:8px;border-radius:9px;text-align:center;"><div style="font-size:1.15rem;font-weight:800;color:#fcd34d;">${u.remaining}/${u.limit}</div><div style="font-size:0.7rem;color:#94a3b8;">AI Left Today</div></div>
+          </div>
+
+          <!-- Quota Limit & Device Backup -->
+          <div style="padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);font-size:0.78rem;color:#cbd5e1;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+              <span>Daily free-tier AI limit:</span>
+              <input type="number" id="fl-daily-limit-inp" class="fl-input" style="width:80px;padding:4px 8px;" min="5" max="500" value="${u.limit}" />
+              <button type="button" class="fl-btn sm" id="fl-save-limit">Save</button>
+            </div>
+            <div style="font-size:0.74rem;color:#94a3b8;margin-bottom:8px;">Private Device Storage (IndexedDB) — isolated from Studio articles.</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="fl-btn primary sm" id="fl-export-backup">⬇️ Export Backup</button>
+              <label class="fl-btn sm" style="cursor:pointer;">⬆️ Import Backup<input type="file" id="fl-import-backup" accept="application/json" style="display:none;" /></label>
+              <button type="button" class="fl-btn sm" id="fl-cloud-push">☁️ Sync Save</button>
+              <button type="button" class="fl-btn sm" id="fl-cloud-pull">☁️ Sync Load</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function renderTabBody(settings, prog, dueCount) {
@@ -718,253 +781,175 @@
     return renderReviewTab(settings, prog, dueCount);
   }
 
-  /* ---------- TAB 1: HOME (CLEAN, ABOVE-THE-FOLD FIRST) ---------- */
+  /* ---------- TAB 1: HOME (3 BIG OBVIOUS ACTIONS + TODAY'S 5-MIN STUDY) ---------- */
   function renderHomeTab(settings, prog, dueCount) {
     const vocabPack = CURR.getTodayVocabPack();
     const todayGrammar = CURR.getTodayGrammarTopic();
     const recentConv = state.conversations[0];
 
     return `
-      <!-- Four Large Primary Buttons Right at the Top -->
-      <div class="fl-grid-4" style="margin-bottom:14px;">
+      <!-- 3 Big Clear Actions -->
+      <div class="fl-hero-grid-3" style="margin-bottom:14px;">
         <button type="button" class="fl-hero-btn primary" data-fl-action="goto-record">
           <span class="fl-hero-icon">🎙️</span>
-          <span class="fl-hero-label">Record Teacher</span>
-          <span class="fl-hero-sub">Record class audio → simple FI + EN</span>
+          <div>
+            <div class="fl-hero-label">Record Teacher</div>
+            <div class="fl-hero-sub">Live class audio → simple FI + EN</div>
+          </div>
         </button>
         <button type="button" class="fl-hero-btn" data-fl-action="goto-scan">
           <span class="fl-hero-icon">📸</span>
-          <span class="fl-hero-label">Scan &amp; Ask</span>
-          <span class="fl-hero-sub">Snap worksheet, board, or PDF</span>
+          <div>
+            <div class="fl-hero-label">Photo &amp; Homework</div>
+            <div class="fl-hero-sub">Snap worksheet, board, or PDF</div>
+          </div>
         </button>
         <button type="button" class="fl-hero-btn" data-fl-action="goto-tutor">
           <span class="fl-hero-icon">💬</span>
-          <span class="fl-hero-label">Talk to Tutor</span>
-          <span class="fl-hero-sub">Ask anything by voice or text</span>
-        </button>
-        <button type="button" class="fl-hero-btn" data-fl-action="goto-learn">
-          <span class="fl-hero-icon">📚</span>
-          <span class="fl-hero-label">Learn &amp; Practise</span>
-          <span class="fl-hero-sub">Daily lesson, grammar &amp; roleplay</span>
+          <div>
+            <div class="fl-hero-label">Ask Finnish Tutor</div>
+            <div class="fl-hero-sub">Chat or speak about anything</div>
+          </div>
         </button>
       </div>
 
-      <div class="fl-grid-2">
-        <!-- Today's 5 Daily Vocabulary Words -->
-        <div class="fl-card">
-          <h2 class="fl-card-title">📖 5 Daily Words — ${esc(vocabPack.topic)}</h2>
-          ${vocabPack.words
-            .map(
-              (w, idx) => `
-            <div class="fl-vocab-row">
-              <div>
-                <strong style="color:#fff;font-size:0.95rem;">${esc(w.fi)}</strong>
-                <span style="color:#7dd3fc;font-size:0.82rem;"> — ${esc(w.en)}</span>
-                <div style="font-size:0.74rem;color:#94a3b8;">${esc(w.exFi)} <em>(${esc(w.exEn)})</em></div>
-              </div>
-              <div style="display:flex;gap:4px;flex-shrink:0;">
-                <button type="button" class="fl-btn sm" data-fl-speak="${esc(w.fi + ". " + w.exFi)}">🔊</button>
-                <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(w.fi)}">🐢</button>
-                <button type="button" class="fl-btn sm" data-fl-save-vocab="${idx}" title="Save to Flashcards">⭐</button>
-              </div>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-
-        <!-- Today's Lesson + Continue Session + Flashcards Due -->
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <div class="fl-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
-              <h2 class="fl-card-title" style="margin:0;">✨ Today's Lesson (${settings.dailyTargetMinutes} min)</h2>
-              <span class="fl-pill ok">🔥 ${prog.streakDays || 0} day streak</span>
-            </div>
-            <div style="font-size:0.9rem;font-weight:700;color:#7dd3fc;margin-bottom:4px;">${esc(todayGrammar.title)}</div>
-            <p style="margin:0 0 10px;font-size:0.82rem;color:#cbd5e1;line-height:1.45;">${esc(todayGrammar.en)}</p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="fl-btn primary sm" data-fl-open-grammar="${todayGrammar.id}">Start Grammar Lesson →</button>
-              <button type="button" class="fl-btn sm" data-fl-action="goto-daily">Open Full Daily Plan</button>
-            </div>
-          </div>
-
-          <div class="fl-card">
-            <h2 class="fl-card-title">🕒 Continue Studying</h2>
-            ${
-              recentConv
-                ? `<div style="margin-bottom:10px;padding:10px;background:#061428;border-radius:9px;border:1px solid rgba(56,189,248,0.25);">
-                    <div style="font-size:0.85rem;font-weight:700;color:#fff;">${esc(recentConv.title)}</div>
-                    <div style="font-size:0.74rem;color:#94a3b8;">${(recentConv.messages || []).length} messages • ${esc((recentConv.updatedAt || "").slice(0, 10))}</div>
-                    <button type="button" class="fl-btn primary sm" style="margin-top:8px;" data-fl-open-conv="${recentConv.id}">Continue Conversation →</button>
-                  </div>`
-                : `<p style="font-size:0.82rem;color:#94a3b8;margin:0 0 10px;">No saved classroom or tutor conversation yet. Start by recording your teacher or asking a question!</p>`
-            }
-            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
-              <span style="font-size:0.82rem;color:#cbd5e1;">Flashcards due for review: <strong>${dueCount}</strong></span>
-              <button type="button" class="fl-btn sm" data-fl-action="goto-flashcards">Review Cards →</button>
-            </div>
+      <!-- Today's 5-Minute Study (Single Calm Card) -->
+      <div class="fl-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <h2 class="fl-card-title" style="margin:0;">📖 Today's 5 Words — ${esc(vocabPack.topic)}</h2>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="fl-btn primary sm" data-fl-open-grammar="${todayGrammar.id}">✨ Today's Lesson →</button>
+            ${dueCount ? `<button type="button" class="fl-btn sm" data-fl-action="goto-flashcards">🃏 Review (${dueCount})</button>` : ""}
+            ${recentConv ? `<button type="button" class="fl-btn sm" data-fl-open-conv="${recentConv.id}">🕒 Continue Chat</button>` : ""}
           </div>
         </div>
+        ${vocabPack.words
+          .map(
+            (w, idx) => `
+          <div class="fl-vocab-row">
+            <div>
+              <strong style="color:#fff;font-size:0.95rem;">${esc(w.fi)}</strong>
+              <span style="color:#7dd3fc;font-size:0.84rem;"> — ${esc(w.en)}</span>
+              <div style="font-size:0.74rem;color:#94a3b8;">${esc(w.exFi)} <em>(${esc(w.exEn)})</em></div>
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button type="button" class="fl-btn sm" data-fl-speak="${esc(w.fi + ". " + w.exFi)}" title="Listen">🔊</button>
+              <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(w.fi)}" title="Slow">🐢</button>
+              <button type="button" class="fl-btn sm" data-fl-save-vocab="${idx}" title="Save to Flashcards">⭐</button>
+            </div>
+          </div>
+        `
+          )
+          .join("")}
       </div>
     `;
   }
 
-  /* ---------- TAB 2: CLASS (SIMPLE 2-MODE SWITCH: LIVE CLASS | HOMEWORK) ---------- */
+  /* ---------- TAB 2: CLASS (DEAD-SIMPLE 3-BUTTON LIVE CLASS + COLLAPSIBLE HOMEWORK) ---------- */
   function renderClassTab(settings) {
-    const isLive = state.classSubTab !== "homework";
     return `
       <div class="fl-privacy-slim" style="margin-bottom:10px;">
-        <span>🔒 Manual recording only — please ask permission before recording teachers or classmates.</span>
+        <span>🔒 Manual recording only — please ask permission before recording class.</span>
       </div>
 
-      <div class="fl-subtabs">
-        <button type="button" class="fl-btn sm ${isLive ? "active" : ""}" data-fl-class-sub="live">🎙️ Live Class (Record + Photo)</button>
-        <button type="button" class="fl-btn sm ${!isLive ? "active" : ""}" data-fl-class-sub="homework">📚 Homework Assistant (4 Modes)</button>
-      </div>
+      <div class="fl-card">
+        <h2 class="fl-card-title">🎙️ Live Classroom Assistant</h2>
 
-      ${
-        isLive
-          ? `<div class="fl-card">
-              <h2 class="fl-card-title">🎙️ Record Teacher &amp; Combine with Classroom Photo</h2>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-                ${
-                  state.isRecording && state.recordingTarget === "class"
-                    ? `<button type="button" class="fl-btn danger" id="fl-class-stop-rec" style="padding:12px 18px;font-size:0.95rem;">⏹ Stop Recording (<span class="fl-rec-timer">00:00</span>)</button>`
-                    : `<button type="button" class="fl-btn danger" id="fl-class-start-rec" style="padding:12px 18px;font-size:0.95rem;">🎙️ Record Teacher</button>`
-                }
-                <label class="fl-btn primary" style="cursor:pointer;padding:11px 14px;">
-                  📷 Snap Board / Photo
-                  <input type="file" id="fl-class-camera" accept="image/*" capture="environment" style="display:none;" />
-                </label>
-                <label class="fl-btn" style="cursor:pointer;">
-                  📎 Photo / PDF
-                  <input type="file" id="fl-class-files" accept="image/*,application/pdf" multiple style="display:none;" />
-                </label>
-                <label class="fl-btn" style="cursor:pointer;">
-                  📁 Audio File
-                  <input type="file" id="fl-class-audio-file" accept="audio/*" style="display:none;" />
-                </label>
-              </div>
+        <!-- 3 Simple Primary Controls -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+          ${
+            state.isRecording && state.recordingTarget === "class"
+              ? `<button type="button" class="fl-btn danger" id="fl-class-stop-rec" style="flex:1;min-width:150px;padding:13px 16px;font-size:0.95rem;">⏹ Stop (<span class="fl-rec-timer">00:00</span>)</button>`
+              : `<button type="button" class="fl-btn danger" id="fl-class-start-rec" style="flex:1;min-width:150px;padding:13px 16px;font-size:0.95rem;">🎙️ Record Teacher</button>`
+          }
+          <label class="fl-btn" style="flex:1;min-width:140px;padding:13px 14px;cursor:pointer;font-size:0.9rem;">
+            📷 Add Photo / PDF
+            <input type="file" id="fl-class-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
+          </label>
+        </div>
 
-              ${
-                state.recordedAudio
-                  ? `<div style="background:#061428;border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:10px;margin-bottom:10px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                        <span style="font-size:0.8rem;font-weight:700;color:#7dd3fc;">🎧 Preview Recording (${state.recordedAudio.durationSec}s)</span>
-                        <button type="button" class="fl-btn sm" id="fl-class-clear-audio">🗑️ Remove</button>
-                      </div>
-                      <audio controls src="${state.recordedAudio.blobUrl}" style="width:100%;height:36px;"></audio>
-                    </div>`
-                  : ""
-              }
-
-              ${
-                state.classPhotoAttachments.length
-                  ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                      ${state.classPhotoAttachments
-                        .map(
-                          (p, i) => `
-                        <div class="fl-att-chip">
-                          ${p.previewUrl ? `<img src="${p.previewUrl}" class="fl-att-thumb" alt="" />` : "📄"}
-                          <span>${esc(p.name.slice(0, 18))}</span>
-                          ${p.previewUrl ? `<button type="button" class="fl-btn sm" style="padding:2px 6px;" data-fl-crop-class="${i}" title="Rotate / Crop">✂️</button>` : ""}
-                          <button type="button" class="fl-btn sm" style="padding:2px 6px;" data-fl-rm-class-photo="${i}">✕</button>
-                        </div>
-                      `
-                        )
-                        .join("")}
-                      <button type="button" class="fl-btn sm" id="fl-class-clear-photos">Clear Photos</button>
-                    </div>`
-                  : ""
-              }
-
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                <input type="text" id="fl-class-extra-q" class="fl-input" style="flex:1;min-width:200px;" placeholder="Optional note (e.g. 'Answer the teacher's question using the picture')" />
-                <button type="button" class="fl-btn primary" id="fl-class-transcribe" ${state.isSending ? "disabled" : ""} style="padding:11px 18px;">
-                  ${state.isSending ? "⏳ Listening & Explaining..." : "✨ Transcribe & Explain"}
-                </button>
-              </div>
-
-              <!-- 1-Tap Classroom Survival Phrases -->
-              <div style="padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
-                <div style="font-size:0.75rem;font-weight:700;color:#7dd3fc;">💬 Quick Classroom Phrases (tap to hear Finnish):</div>
-                <div class="fl-survival-strip">
-                  ${SURVIVAL_PHRASES.map(
-                    (p) => `<button type="button" class="fl-survival-btn" data-fl-speak="${esc(p.fi)}">🔊 <strong>${esc(p.fi)}</strong> <em>(${esc(p.en)})</em></button>`
-                  ).join("")}
+        ${
+          state.recordedAudio
+            ? `<div style="background:#061428;border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:10px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="font-size:0.8rem;font-weight:700;color:#7dd3fc;">🎧 Preview (${state.recordedAudio.durationSec}s)</span>
+                  <button type="button" class="fl-btn sm" id="fl-class-clear-audio">🗑️ Remove</button>
                 </div>
-              </div>
-            </div>`
-          : `<div class="fl-card">
-              <h2 class="fl-card-title">📚 Homework &amp; Worksheet Assistant</h2>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                <label class="fl-btn primary" style="cursor:pointer;">
-                  📷 Camera
-                  <input type="file" id="fl-class-camera" accept="image/*" capture="environment" style="display:none;" />
-                </label>
-                <label class="fl-btn" style="cursor:pointer;">
-                  📎 Upload Photos / PDF
-                  <input type="file" id="fl-class-files" accept="image/*,application/pdf" multiple style="display:none;" />
-                </label>
-                ${state.classPhotoAttachments.length ? `<button type="button" class="fl-btn sm" id="fl-class-clear-photos">Clear (${state.classPhotoAttachments.length})</button>` : ""}
-              </div>
+                <audio controls src="${state.recordedAudio.blobUrl}" style="width:100%;height:36px;"></audio>
+              </div>`
+            : ""
+        }
 
-              ${
-                state.classPhotoAttachments.length
-                  ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                      ${state.classPhotoAttachments
-                        .map(
-                          (p, i) => `
-                        <div class="fl-att-chip">
-                          ${p.previewUrl ? `<img src="${p.previewUrl}" class="fl-att-thumb" alt="" />` : "📄"}
-                          <span>${esc(p.name.slice(0, 18))}</span>
-                          ${p.previewUrl ? `<button type="button" class="fl-btn sm" style="padding:2px 6px;" data-fl-crop-class="${i}" title="Rotate / Crop">✂️</button>` : ""}
-                          <button type="button" class="fl-btn sm" style="padding:2px 6px;" data-fl-rm-class-photo="${i}">✕</button>
-                        </div>
-                      `
-                        )
-                        .join("")}
-                    </div>`
-                  : ""
-              }
+        ${
+          state.classPhotoAttachments.length
+            ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                ${state.classPhotoAttachments
+                  .map(
+                    (p, i) => `
+                  <div class="fl-att-chip">
+                    ${p.previewUrl ? `<img src="${p.previewUrl}" class="fl-att-thumb" alt="" />` : "📄"}
+                    <span>${esc(p.name.slice(0, 18))}</span>
+                    ${p.previewUrl ? `<button type="button" class="fl-btn sm" style="padding:2px 6px;" data-fl-crop-class="${i}" title="Rotate / Crop">✂️</button>` : ""}
+                    <button type="button" class="fl-btn sm" style="padding:2px 6px;" data-fl-rm-class-photo="${i}">✕</button>
+                  </div>
+                `
+                  )
+                  .join("")}
+                <button type="button" class="fl-btn sm" id="fl-class-clear-photos">Clear</button>
+              </div>`
+            : ""
+        }
 
-              <div class="fl-grid-2" style="gap:8px;margin-bottom:8px;">
-                <input type="text" id="fl-hw-exercise" class="fl-input" placeholder="Exercise # (e.g. Question 4)" />
-                <input type="text" id="fl-hw-question" class="fl-input" placeholder="Ask (e.g. Explain exercise 3)" />
-              </div>
-              <textarea id="fl-hw-answer" class="fl-textarea" rows="3" style="margin-bottom:10px;" placeholder="Write your own Finnish answer here to check it..."></textarea>
+        <input type="text" id="fl-class-extra-q" class="fl-input" style="margin-bottom:10px;" placeholder="Optional question (e.g. 'Answer using the photo')" />
 
-              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-                <button type="button" class="fl-btn" data-fl-hw="hint" ${state.isSending ? "disabled" : ""}>💡 Hint First</button>
-                <button type="button" class="fl-btn" data-fl-hw="explain" ${state.isSending ? "disabled" : ""}>📖 Explain</button>
-                <button type="button" class="fl-btn success" data-fl-hw="check" ${state.isSending ? "disabled" : ""}>✅ Check My Answer</button>
-                <button type="button" class="fl-btn primary" data-fl-hw="answer" ${state.isSending ? "disabled" : ""}>👁️ Show Answer</button>
-              </div>
-            </div>`
-      }
+        <button type="button" class="fl-btn primary" id="fl-class-transcribe" ${state.isSending ? "disabled" : ""} style="width:100%;padding:13px 16px;font-size:0.95rem;">
+          ${state.isSending ? "⏳ Listening & Explaining..." : "✨ Transcribe & Explain"}
+        </button>
+      </div>
+
+      <!-- Collapsible Homework Drawer (Only open when doing homework) -->
+      <details class="fl-drawer" ${state.homeworkDrawerOpen ? "open" : ""}>
+        <summary><span>📚 Doing Homework? (Hint, Explain, Check Answer)</span><span style="font-size:0.74rem;color:#94a3b8;">Tap ▾</span></summary>
+        <div class="fl-grid-2" style="gap:8px;margin-bottom:8px;">
+          <input type="text" id="fl-hw-exercise" class="fl-input" placeholder="Exercise # (e.g. Question 4)" />
+          <input type="text" id="fl-hw-question" class="fl-input" placeholder="Ask (e.g. Explain exercise 3)" />
+        </div>
+        <textarea id="fl-hw-answer" class="fl-textarea" rows="2" style="margin-bottom:10px;" placeholder="Write your Finnish answer here to check it..."></textarea>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+          <button type="button" class="fl-btn" data-fl-hw="hint" ${state.isSending ? "disabled" : ""}>💡 Hint First</button>
+          <button type="button" class="fl-btn" data-fl-hw="explain" ${state.isSending ? "disabled" : ""}>📖 Explain</button>
+          <button type="button" class="fl-btn success" data-fl-hw="check" ${state.isSending ? "disabled" : ""}>✅ Check My Answer</button>
+          <button type="button" class="fl-btn primary" data-fl-hw="answer" ${state.isSending ? "disabled" : ""}>👁️ Show Answer</button>
+        </div>
+      </details>
+
+      <!-- Collapsible Classroom Survival Phrases -->
+      <details class="fl-drawer">
+        <summary><span>💬 Classroom Survival Phrases (Tap to Hear)</span><span style="font-size:0.74rem;color:#94a3b8;">Tap ▾</span></summary>
+        <div class="fl-survival-strip">
+          ${SURVIVAL_PHRASES.map(
+            (p) => `<button type="button" class="fl-survival-btn" data-fl-speak="${esc(p.fi)}">🔊 <strong>${esc(p.fi)}</strong> <em>(${esc(p.en)})</em></button>`
+          ).join("")}
+        </div>
+      </details>
 
       ${
         state.classResult
           ? `<div class="fl-card" style="margin-top:14px;border-color:rgba(56,189,248,0.45);">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-                <h2 class="fl-card-title" style="margin:0;">🎓 Teacher Explanation Result</h2>
+                <h2 class="fl-card-title" style="margin:0;">🎓 Teacher Explanation</h2>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
                   <button type="button" class="fl-btn sm" id="fl-res-speak">🔊 Listen</button>
                   <button type="button" class="fl-btn sm" id="fl-res-slow">🐢 Slow</button>
-                  <button type="button" class="fl-btn sm" id="fl-res-stop">⏹ Stop</button>
-                  <button type="button" class="fl-btn primary sm" id="fl-res-save-all-vocab">⭐ Save All Words</button>
+                  <button type="button" class="fl-btn primary sm" id="fl-res-save-all-vocab">⭐ Save Words</button>
                   <button type="button" class="fl-btn success sm" id="fl-res-save-note">💾 Save Note</button>
-                  <button type="button" class="fl-btn sm" id="fl-res-export">⬇️ Export .txt</button>
                   <button type="button" class="fl-btn sm" id="fl-res-followup">💬 Follow-up →</button>
                 </div>
               </div>
               <div class="fl-msg assistant" style="max-width:100%;">${renderMarkdownLite(state.classResult.reply)}</div>
-              <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
-                <label style="font-size:0.78rem;color:#94a3b8;display:block;margin-bottom:4px;">✏️ Manually correct transcript or select a sentence to re-explain:</label>
-                <div style="display:flex;gap:8px;">
-                  <input type="text" id="fl-res-edit-transcript" class="fl-input" value="${esc(state.classTranscriptEditable)}" placeholder="Type or correct a Finnish sentence..." />
-                  <button type="button" class="fl-btn primary sm" id="fl-res-reexplain">Explain Sentence</button>
-                </div>
+              <div style="margin-top:10px;display:flex;gap:8px;">
+                <input type="text" id="fl-res-edit-transcript" class="fl-input" value="${esc(state.classTranscriptEditable)}" placeholder="Fix transcript or type a sentence to re-explain..." />
+                <button type="button" class="fl-btn primary sm" id="fl-res-reexplain">Explain</button>
               </div>
             </div>`
           : ""
@@ -972,120 +957,106 @@
     `;
   }
 
-  /* ---------- TAB 3: TUTOR (ONE UNIVERSAL MULTIMODAL ASK AI INTERFACE) ---------- */
+  /* ---------- TAB 3: TUTOR (CLEAN WHATSAPP / CHATGPT-STYLE INTERFACE) ---------- */
   function renderTutorTab(settings) {
     const conv = getActiveConv();
     const msgs = conv ? conv.messages || [] : [];
 
     return `
-      <div class="fl-chat-layout">
-        <!-- Conversations Sidebar -->
-        <aside class="fl-conv-sidebar">
-          <div style="display:flex;gap:6px;margin-bottom:8px;">
-            <button type="button" class="fl-btn primary sm" id="fl-new-conv" style="flex:1;">+ New Chat</button>
+      <div class="fl-chat-full">
+        <div class="fl-chat-header">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <button type="button" class="fl-btn sm ${state.chatsDrawerOpen ? "active" : ""}" id="fl-toggle-chats" title="Saved conversations">🕒 Chats (${state.conversations.length})</button>
+            <strong style="color:#fff;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(conv ? conv.title : "Finnish Tutor")}</strong>
           </div>
-          <input type="text" id="fl-conv-search" class="fl-input" style="padding:6px 9px;font-size:0.78rem;margin-bottom:8px;" placeholder="Search chats..." />
-          <div id="fl-conv-list">
-            ${
-              state.conversations.length
-                ? state.conversations
-                    .map(
-                      (c) => `
-                <div class="fl-conv-item ${c.id === state.activeConvId ? "active" : ""}" data-fl-select-conv="${c.id}">
-                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.title)}</span>
-                  <span style="display:flex;gap:3px;flex-shrink:0;">
-                    <button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-rename-conv="${c.id}" title="Rename">✏️</button>
-                    <button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-del-conv="${c.id}" title="Delete">🗑️</button>
-                  </span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <select id="fl-ans-mode-select" class="fl-select" style="width:auto;padding:4px 8px;font-size:0.76rem;font-weight:700;" title="Answer style">
+              <option value="teach_me" ${settings.answerMode === "teach_me" ? "selected" : ""}>📖 Teach Me</option>
+              <option value="quick_answer" ${settings.answerMode === "quick_answer" ? "selected" : ""}>⚡ Quick Answer</option>
+              <option value="practice" ${settings.answerMode === "practice" ? "selected" : ""}>🗣️ Practice</option>
+            </select>
+            <button type="button" class="fl-btn primary sm" id="fl-new-conv" title="Start new chat">+ New</button>
+          </div>
+        </div>
+
+        ${
+          state.chatsDrawerOpen
+            ? `<div class="fl-chats-popover">
+                <input type="text" id="fl-conv-search" class="fl-input" style="padding:6px 9px;font-size:0.78rem;margin-bottom:8px;" placeholder="Search saved chats..." />
+                <div id="fl-conv-list">
+                  ${
+                    state.conversations.length
+                      ? state.conversations
+                          .map(
+                            (c) => `
+                      <div class="fl-conv-item ${c.id === state.activeConvId ? "active" : ""}" data-fl-select-conv="${c.id}">
+                        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.title)}</span>
+                        <span style="display:flex;gap:3px;flex-shrink:0;">
+                          <button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-rename-conv="${c.id}" title="Rename">✏️</button>
+                          <button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-del-conv="${c.id}" title="Delete">🗑️</button>
+                        </span>
+                      </div>
+                    `
+                          )
+                          .join("")
+                      : `<div style="font-size:0.76rem;color:#94a3b8;padding:4px;">No saved chats yet.</div>`
+                  }
                 </div>
-              `
-                    )
-                    .join("")
-                : `<div style="font-size:0.76rem;color:#94a3b8;padding:8px;">Start your first Finnish conversation!</div>`
-            }
-          </div>
-        </aside>
+              </div>`
+            : ""
+        }
 
-        <!-- Main Multimodal Chat Box -->
-        <div class="fl-chat-box">
-          <div class="fl-chat-header">
-            <div>
-              <strong style="color:#fff;font-size:0.92rem;">${esc(conv ? conv.title : "Personal AI Finnish Teacher")}</strong>
-              <div style="font-size:0.72rem;color:#94a3b8;">Context preserved across messages, photos, PDFs &amp; audio</div>
-            </div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap;">
-              <button type="button" class="fl-btn sm ${settings.answerMode === "quick_answer" ? "active" : ""}" data-fl-ans-mode="quick_answer">⚡ Quick Answer</button>
-              <button type="button" class="fl-btn sm ${settings.answerMode === "teach_me" ? "active" : ""}" data-fl-ans-mode="teach_me">📖 Teach Me</button>
-              <button type="button" class="fl-btn sm ${settings.answerMode === "practice" ? "active" : ""}" data-fl-ans-mode="practice">🗣️ Practice With Me</button>
-            </div>
-          </div>
-
-          <div class="fl-chat-messages" id="fl-tutor-messages">
-            ${
-              msgs.length
-                ? msgs.map((m, idx) => renderChatMessage(m, idx)).join("")
-                : `<div class="fl-msg assistant">
-                    <strong>Hei! Olen sinun suomen opettajasi. 🇫🇮</strong><br/>
-                    Ask me anything about Finnish — type in English or beginner Finnish, tap 🎙️ to record audio, or tap 📷 to upload a worksheet photo or PDF!
-                  </div>`
-            }
-            ${state.isSending ? `<div class="fl-msg assistant">⏳ Thinking like your Finnish teacher...</div>` : ""}
-          </div>
-
-          <!-- Quick Starter Prompts -->
-          <div class="fl-quick-chips">
-            <button type="button" class="fl-chip" data-fl-chip="Can you explain that in simple Finnish?">Selitys suomeksi</button>
-            <button type="button" class="fl-chip" data-fl-chip="Why is that answer correct?">Why is it correct?</button>
-            <button type="button" class="fl-chip" data-fl-chip="Give me another simple A1 example.">Another example</button>
-            <button type="button" class="fl-chip" data-fl-chip="How would a Finnish person normally say this in spoken Finnish (puhekieli)?">Spoken Finnish</button>
-            <button type="button" class="fl-chip" data-fl-chip="Break the key Finnish words into syllables and explain pronunciation.">Syllables</button>
-          </div>
-
+        <div class="fl-chat-messages" id="fl-tutor-messages">
           ${
-            state.pendingAttachments.length
-              ? `<div class="fl-att-strip">
-                  ${state.pendingAttachments
-                    .map(
-                      (a, i) => `
-                    <div class="fl-att-chip">
-                      ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" class="fl-att-thumb" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
-                      <span>${esc(a.name.slice(0, 20))}</span>
-                      ${a.previewUrl && a.mime_type.startsWith("image/") ? `<button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-crop-pending="${i}">✂️</button>` : ""}
-                      <button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-rm-pending="${i}">✕</button>
-                    </div>
-                  `
-                    )
-                    .join("")}
+            msgs.length
+              ? msgs.map((m, idx) => renderChatMessage(m, idx)).join("")
+              : `<div class="fl-msg assistant">
+                  <strong>Hei! Olen sinun suomen opettajasi. 🇫🇮</strong><br/>
+                  Ask me anything in English or beginner Finnish — or tap 📷 to snap a photo or 🎙️ to record audio.
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+                    <button type="button" class="fl-chip" data-fl-chip="Mitä kuuluu?">Mitä kuuluu?</button>
+                    <button type="button" class="fl-chip" data-fl-chip="Explain how to order coffee in simple Finnish.">Order coffee</button>
+                    <button type="button" class="fl-chip" data-fl-chip="Ask me a simple A1 Finnish question to practise.">Practise with me</button>
+                  </div>
                 </div>`
-              : ""
           }
+          ${state.isSending ? `<div class="fl-msg assistant">⏳ Thinking...</div>` : ""}
+        </div>
 
-          <!-- Unified Multimodal Composer -->
-          <div class="fl-composer">
-            <div class="fl-composer-tools">
-              <label class="fl-btn sm" style="cursor:pointer;" title="Take a photo">
-                📷 Camera
-                <input type="file" id="fl-tutor-camera" accept="image/*" capture="environment" style="display:none;" />
-              </label>
-              <label class="fl-btn sm" style="cursor:pointer;" title="Upload image or PDF">
-                📎 Image/PDF
-                <input type="file" id="fl-tutor-file" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
-              </label>
-              ${
-                state.isRecording && state.recordingTarget === "tutor"
-                  ? `<button type="button" class="fl-btn danger sm" id="fl-tutor-stop-rec">⏹ Stop (<span class="fl-rec-timer">00:00</span>)</button>`
-                  : `<button type="button" class="fl-btn sm" id="fl-tutor-start-rec">🎙️ Record Audio</button>`
-              }
-              <button type="button" class="fl-btn sm" id="fl-tutor-dictate" title="Voice-to-text question">🗣️ Speak</button>
-              <select id="fl-voice-lang" class="fl-select" style="width:auto;padding:4px 8px;font-size:0.74rem;" title="Voice recognition language">
-                <option value="fi-FI" ${settings.voiceLang === "fi-FI" ? "selected" : ""}>Voice: FI</option>
-                <option value="en-US" ${settings.voiceLang === "en-US" ? "selected" : ""}>Voice: EN</option>
-              </select>
-            </div>
-            <div class="fl-composer-row">
-              <textarea id="fl-tutor-input" class="fl-textarea" rows="2" placeholder="Ask anything about Finnish, or explain what you attached..."></textarea>
-              <button type="button" class="fl-btn primary" id="fl-tutor-send" ${state.isSending ? "disabled" : ""} style="padding:12px 18px;">Send ➤</button>
-            </div>
+        ${
+          state.pendingAttachments.length
+            ? `<div class="fl-att-strip">
+                ${state.pendingAttachments
+                  .map(
+                    (a, i) => `
+                  <div class="fl-att-chip">
+                    ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" class="fl-att-thumb" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
+                    <span>${esc(a.name.slice(0, 18))}</span>
+                    ${a.previewUrl && a.mime_type.startsWith("image/") ? `<button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-crop-pending="${i}">✂️</button>` : ""}
+                    <button type="button" class="fl-btn sm" style="padding:2px 5px;" data-fl-rm-pending="${i}">✕</button>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>`
+            : ""
+        }
+
+        <!-- Minimal 3-Icon Composer -->
+        <div class="fl-composer">
+          <div class="fl-composer-row" style="align-items:center;">
+            <label class="fl-btn sm" style="cursor:pointer;padding:10px;" title="Add Photo, Camera, or PDF">
+              📷
+              <input type="file" id="fl-tutor-file" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
+            </label>
+            ${
+              state.isRecording && state.recordingTarget === "tutor"
+                ? `<button type="button" class="fl-btn danger sm" id="fl-tutor-stop-rec" style="padding:10px;">⏹ <span class="fl-rec-timer">00:00</span></button>`
+                : `<button type="button" class="fl-btn sm" id="fl-tutor-start-rec" style="padding:10px;" title="Record Audio">🎙️</button>`
+            }
+            <button type="button" class="fl-btn sm" id="fl-tutor-dictate" style="padding:10px;" title="Speak Question (Voice-to-Text)">🗣️</button>
+            <input type="text" id="fl-tutor-input" class="fl-input" style="flex:1;padding:10px 12px;" placeholder="Ask anything about Finnish..." />
+            <button type="button" class="fl-btn primary" id="fl-tutor-send" ${state.isSending ? "disabled" : ""} style="padding:10px 16px;">Send ➤</button>
           </div>
         </div>
       </div>
@@ -1110,8 +1081,8 @@
             <button type="button" class="fl-btn sm" data-fl-speak="${esc(m.finnishTts || m.text.slice(0, 220))}">🔊 Listen</button>
             <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(m.finnishTts || m.text.slice(0, 220))}">🐢 Slow</button>
             <button type="button" class="fl-btn sm" data-fl-stop-speak="1">⏹ Stop</button>
-            <button type="button" class="fl-btn sm" data-fl-save-msg-note="${idx}">📝 Save Note</button>
-            <button type="button" class="fl-btn sm" data-fl-save-msg-card="${idx}">⭐ Save Card</button>
+            <button type="button" class="fl-btn sm" data-fl-save-msg-note="${idx}">📝 Note</button>
+            <button type="button" class="fl-btn sm" data-fl-save-msg-card="${idx}">⭐ Card</button>
           </div>`
         : "";
     return `
@@ -1123,33 +1094,40 @@
     `;
   }
 
-  /* ---------- TAB 4: LEARN (DAILY, GRAMMAR, ANATOMY, READING, WRITING, LISTENING, SPEAKING) ---------- */
+  /* ---------- TAB 4: LEARN (SIMPLIFIED TO 3 CLEAR PATHS) ---------- */
   function renderLearnTab(settings) {
-    const sub = state.learnSubTab;
+    const sub = state.learnSubTab === "grammar" || state.learnSubTab === "anatomy" ? "reference"
+      : ["reading", "writing", "listening", "speaking"].includes(state.learnSubTab) ? "practice"
+      : state.learnSubTab;
+
     return `
       <div class="fl-subtabs">
-        <button type="button" class="fl-btn sm ${sub === "daily" ? "active" : ""}" data-fl-learn="daily">📅 Daily Plan</button>
-        <button type="button" class="fl-btn sm ${sub === "grammar" ? "active" : ""}" data-fl-learn="grammar">📐 Grammar (17)</button>
-        <button type="button" class="fl-btn sm ${sub === "anatomy" ? "active" : ""}" data-fl-learn="anatomy">🔎 Word Anatomy</button>
-        <button type="button" class="fl-btn sm ${sub === "reading" ? "active" : ""}" data-fl-learn="reading">📰 Reading</button>
-        <button type="button" class="fl-btn sm ${sub === "writing" ? "active" : ""}" data-fl-learn="writing">✍️ Writing</button>
-        <button type="button" class="fl-btn sm ${sub === "listening" ? "active" : ""}" data-fl-learn="listening">🎧 Listening</button>
-        <button type="button" class="fl-btn sm ${sub === "speaking" ? "active" : ""}" data-fl-learn="speaking">🗣️ Speaking &amp; Roleplay</button>
+        <button type="button" class="fl-btn sm ${sub === "daily" ? "active" : ""}" data-fl-learn="daily">📅 Today (5 min)</button>
+        <button type="button" class="fl-btn sm ${sub === "reference" ? "active" : ""}" data-fl-learn="reference">🔎 Words &amp; Grammar</button>
+        <button type="button" class="fl-btn sm ${sub === "practice" ? "active" : ""}" data-fl-learn="practice">🎯 Practise Skills</button>
       </div>
       ${
         sub === "daily"
           ? renderLearnDaily(settings)
-          : sub === "grammar"
-          ? renderLearnGrammar()
-          : sub === "anatomy"
-          ? renderLearnAnatomy()
-          : sub === "reading"
-          ? renderLearnReading()
-          : sub === "writing"
-          ? renderLearnWriting()
-          : sub === "listening"
-          ? renderLearnListening()
-          : renderLearnSpeaking()
+          : sub === "reference"
+          ? `${renderLearnAnatomy()}<div style="margin-top:14px;">${renderLearnGrammar()}</div>`
+          : `
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+              <button type="button" class="fl-chip ${state.practiceSkill === "reading" ? "active" : ""}" style="${state.practiceSkill === "reading" ? "border-color:#38bdf8;color:#fff;background:rgba(56,189,248,0.2);" : ""}" data-fl-skill="reading">📰 Reading</button>
+              <button type="button" class="fl-chip ${state.practiceSkill === "writing" ? "active" : ""}" style="${state.practiceSkill === "writing" ? "border-color:#38bdf8;color:#fff;background:rgba(56,189,248,0.2);" : ""}" data-fl-skill="writing">✍️ Writing</button>
+              <button type="button" class="fl-chip ${state.practiceSkill === "listening" ? "active" : ""}" style="${state.practiceSkill === "listening" ? "border-color:#38bdf8;color:#fff;background:rgba(56,189,248,0.2);" : ""}" data-fl-skill="listening">🎧 Listening</button>
+              <button type="button" class="fl-chip ${state.practiceSkill === "speaking" ? "active" : ""}" style="${state.practiceSkill === "speaking" ? "border-color:#38bdf8;color:#fff;background:rgba(56,189,248,0.2);" : ""}" data-fl-skill="speaking">🗣️ Speaking &amp; Roleplay</button>
+            </div>
+            ${
+              state.practiceSkill === "reading"
+                ? renderLearnReading()
+                : state.practiceSkill === "writing"
+                ? renderLearnWriting()
+                : state.practiceSkill === "listening"
+                ? renderLearnListening()
+                : renderLearnSpeaking()
+            }
+          `
       }
     `;
   }
@@ -1446,16 +1424,15 @@
     `;
   }
 
-  /* ---------- TAB 5: REVIEW (FLASHCARDS, NOTES, PROGRESS & BACKUP) ---------- */
+  /* ---------- TAB 5: REVIEW (FOCUSED ON 2 THINGS: FLASHCARDS & SAVED NOTES) ---------- */
   function renderReviewTab(settings, prog, dueCount) {
-    const sub = state.reviewSubTab;
+    const sub = state.reviewSubTab === "notes" ? "notes" : "flashcards";
     return `
       <div class="fl-subtabs">
-        <button type="button" class="fl-btn sm ${sub === "flashcards" ? "active" : ""}" data-fl-rev="flashcards">🃏 Flashcards (${state.flashcards.length} / ${dueCount} due)</button>
-        <button type="button" class="fl-btn sm ${sub === "notes" ? "active" : ""}" data-fl-rev="notes">📝 Class Notes &amp; History (${state.notes.length})</button>
-        <button type="button" class="fl-btn sm ${sub === "progress" ? "active" : ""}" data-fl-rev="progress">📊 Progress, Privacy &amp; Backup</button>
+        <button type="button" class="fl-btn sm ${sub === "flashcards" ? "active" : ""}" data-fl-rev="flashcards">🃏 Flashcards (${dueCount} due)</button>
+        <button type="button" class="fl-btn sm ${sub === "notes" ? "active" : ""}" data-fl-rev="notes">📝 Saved Notes (${state.notes.length})</button>
       </div>
-      ${sub === "flashcards" ? renderReviewFlashcards() : sub === "notes" ? renderReviewNotes() : renderReviewProgress(settings, prog)}
+      ${sub === "flashcards" ? renderReviewFlashcards() : renderReviewNotes()}
     `;
   }
 
@@ -1737,12 +1714,28 @@
       renderActiveView();
     });
 
+    // Settings Modal open/close
+    root.querySelector("#fl-settings-open")?.addEventListener("click", () => { state.settingsOpen = true; renderActiveView(); });
+    root.querySelector("#fl-settings-close")?.addEventListener("click", () => { state.settingsOpen = false; renderActiveView(); });
+    root.querySelector("#fl-settings-modal")?.addEventListener("click", (e) => {
+      if (e.target && e.target.id === "fl-settings-modal") { state.settingsOpen = false; renderActiveView(); }
+    });
+
+    // Tutor Chats popover & Answer Mode dropdown
+    root.querySelector("#fl-toggle-chats")?.addEventListener("click", () => { state.chatsDrawerOpen = !state.chatsDrawerOpen; renderActiveView(); });
+    root.querySelector("#fl-ans-mode-select")?.addEventListener("change", (e) => { DB.saveSettings({ answerMode: e.target.value }); renderActiveView(); });
+
+    // Learn Practise skill switcher
+    root.querySelectorAll("[data-fl-skill]").forEach((b) => {
+      b.onclick = () => { state.practiceSkill = b.getAttribute("data-fl-skill"); renderActiveView(); };
+    });
+
     // Home hero actions
     root.querySelectorAll("[data-fl-action]").forEach((btn) => {
       btn.onclick = () => {
         const act = btn.getAttribute("data-fl-action");
-        if (act === "goto-record") { state.activeTab = "class"; state.classSubTab = "live"; }
-        if (act === "goto-scan") { state.activeTab = "class"; state.classSubTab = "homework"; }
+        if (act === "goto-record") { state.activeTab = "class"; state.homeworkDrawerOpen = false; }
+        if (act === "goto-scan") { state.activeTab = "class"; state.homeworkDrawerOpen = true; }
         if (act === "goto-tutor") state.activeTab = "tutor";
         if (act === "goto-learn" || act === "goto-daily") { state.activeTab = "learn"; state.learnSubTab = "daily"; }
         if (act === "goto-flashcards") { state.activeTab = "review"; state.reviewSubTab = "flashcards"; }
@@ -1808,7 +1801,12 @@
     const handleClassPhotoInput = async (e) => {
       for (const f of Array.from(e.target.files || [])) {
         const att = await fileToAttachment(f);
-        if (att) state.classPhotoAttachments.push(att);
+        if (!att) continue;
+        if ((att.mime_type || "").startsWith("audio/")) {
+          state.recordedAudio = { blobUrl: URL.createObjectURL(f), mime_type: att.mime_type, data_base64: att.data_base64, durationSec: 0 };
+        } else {
+          state.classPhotoAttachments.push(att);
+        }
       }
       e.target.value = "";
       renderActiveView();
