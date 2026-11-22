@@ -850,11 +850,17 @@
   min-width: 100%;
 }
 
-/* TIME RULER */
+/* CAPCUT PRECISION TIME RULER WITH TICK MARKS */
 .reel-time-ruler {
   height: 24px;
-  background: #1e293b;
-  border-bottom: 1px solid var(--reel-panel-border);
+  background: #0b1329;
+  background-image: 
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0, rgba(255, 255, 255, 0.22) 1px, transparent 1px, transparent 10px),
+    repeating-linear-gradient(90deg, rgba(0, 242, 254, 0.7) 0, rgba(0, 242, 254, 0.7) 1.5px, transparent 1.5px, transparent 50px);
+  background-position: 0 bottom;
+  background-size: 100% 6px, 100% 12px;
+  background-repeat: no-repeat;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   position: relative;
 }
 

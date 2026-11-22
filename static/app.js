@@ -3356,15 +3356,26 @@
       const data = await api("/api/projects?archived=1");
       projectsData = data.projects || [];
 
-      if ($("articles-count-total")) $("articles-count-total").textContent = projectsData.length;
-      if ($("chip-count-total")) $("chip-count-total").textContent = data.counts.total;
-      if ($("active-work-count")) $("active-work-count").textContent = data.counts.total;
-
+      updatePipelineKpis();
       loadIdeasPool();
       renderArticlesPostsList();
     } catch (err) {
       console.error("Failed to load projects:", err);
     }
+  }
+
+  function updatePipelineKpis() {
+    if (!projectsData) return;
+    const total = projectsData.filter((p) => !p.is_archived).length;
+    const drafts = projectsData.filter((p) => !p.is_archived && p.article_status !== "approved" && p.ig_post_status !== "approved").length;
+    const wp = projectsData.filter((p) => !p.is_archived && (Boolean(p.wordpress_post_id) || p.article_status === "approved" || p.ig_post_status === "approved")).length;
+    const archived = projectsData.filter((p) => Boolean(p.is_archived)).length;
+
+    if ($("kpi-val-total")) $("kpi-val-total").textContent = total;
+    if ($("kpi-val-drafts")) $("kpi-val-drafts").textContent = drafts;
+    if ($("kpi-val-wp")) $("kpi-val-wp").textContent = wp;
+    if ($("kpi-val-archived")) $("kpi-val-archived").textContent = archived;
+    if ($("articles-count-total")) $("articles-count-total").textContent = total;
   }
 
   function renderArticlesPostsList() {
@@ -3427,13 +3438,13 @@
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center;padding:48px 20px;background:#162235;border-radius:12px;border:1px dashed #303B4D;">
+        <div style="text-align:center;padding:48px 20px;background:rgba(8,35,71,0.5);border-radius:14px;border:1px dashed rgba(75,137,188,0.35);">
           <div style="font-size:2.2rem;margin-bottom:8px;">📰</div>
           <h3 style="font-size:1.1rem;font-weight:700;color:#FFFFFF;margin-bottom:4px;">No Articles &amp; Posts Found</h3>
           <p style="font-size:0.85rem;color:#B8C4D4;max-width:440px;margin:0 auto 16px;">
-            ${query || sectionFilter !== 'all' || statusFilter !== 'all' ? 'No projects match your current filters. Try resetting search or filter dropdowns.' : 'Start your first article and social post project now.'}
+            ${query || sectionFilter !== 'all' || statusFilter !== 'all' ? 'No projects match your current filters. Try resetting search or clicking Total Projects.' : 'Start your first article and social post project now.'}
           </p>
-          <button type="button" class="btn btn-primary" onclick="document.getElementById('btn-create-new-article-post').click()" style="background:#003580;color:#fff;font-weight:700;">
+          <button type="button" class="btn btn-primary" onclick="document.getElementById('btn-create-new-article-post').click()" style="background:#029CD8;color:#fff;font-weight:700;border:none;">
             + Create New Article &amp; Post
           </button>
         </div>
@@ -3448,72 +3459,64 @@
       const isWpPushed = Boolean(p.wordpress_post_id);
       const wpBase = "https://ilovefinland.net";
       const wpBadge = isWpPushed
-        ? `<a href="${wpBase}/wp-admin/post.php?post=${p.wordpress_post_id}&action=edit" target="_blank" rel="noopener" class="badge" style="background:rgba(16,185,129,0.18);color:#10B981;border:1px solid rgba(16,185,129,0.4);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:3px;" title="Open draft in WordPress Admin">
+        ? `<a href="${wpBase}/wp-admin/post.php?post=${p.wordpress_post_id}&action=edit" target="_blank" rel="noopener" class="badge badge-wp-pushed" title="Open draft in WordPress Admin">
             <span>✓ WP Draft #${p.wordpress_post_id}</span> <span style="font-size:0.65rem;">↗</span>
            </a>`
-        : `<span class="badge" style="background:#0B0F16;color:#B8C4D4;border:1px solid #303B4D;">WP: Not Pushed</span>`;
+        : `<span class="badge badge-wp-pending">WP: Not Pushed</span>`;
 
       const artApproved = p.article_status === "approved";
       const igApproved = p.ig_post_status === "approved";
 
       return `
         <div class="article-project-card ${isArchived ? 'is-archived' : ''}" data-id="${p.id}">
-          <div class="article-card-badges-row">
-            <div class="article-card-badges">
-              <span class="badge badge-sec">
-                📂 ${escapeHtml(p.section || 'News')}
-              </span>
-              <span class="badge badge-cat">
-                🏷️ ${escapeHtml(p.category || 'Finland')}
-              </span>
-              <span class="badge badge-lang">
-                🌐 ${escapeHtml(p.language || 'English')}
-              </span>
-              ${wpBadge}
-              ${isArchived ? '<span class="badge badge-archived">📦 Archived</span>' : ''}
-            </div>
-          </div>
-
-          <div class="article-card-content-row">
+          <div class="article-card-thumb-wrap">
             <div class="article-card-thumb">
               ${
                 hasThumb
-                  ? `<img src="${thumbUrl}" alt="" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'article-card-no-img\\'><div style=\\'font-size:1.3rem;line-height:1;\\'>📷</div><div style=\\'font-size:0.55rem;font-weight:700;margin-top:2px;\\'>No Image</div></div>';">`
-                  : `<div class="article-card-no-img">
-                      <div style="font-size:1.3rem;line-height:1;">📷</div>
-                      <div style="font-size:0.55rem;font-weight:700;margin-top:2px;">No Image</div>
-                     </div>`
+                  ? `<img src="${thumbUrl}" alt="" loading="lazy" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'article-card-no-img\\'><span>📰</span><small>No Image</small></div>';">`
+                  : `<div class="article-card-no-img"><span>📰</span><small>No Image</small></div>`
               }
+              <span class="card-format-pill">📝 Story</span>
+            </div>
+          </div>
+
+          <div class="article-card-body">
+            <div class="article-card-badges">
+              <span class="badge badge-sec">📂 ${escapeHtml(p.section || 'News')}</span>
+              <span class="badge badge-cat">🇫🇮 ${escapeHtml(p.category || 'Finland')}</span>
+              <span class="badge badge-lang">🌐 ${escapeHtml(p.language || 'English')}</span>
+              ${wpBadge}
+              ${isArchived ? '<span class="badge badge-archived">📦 Archived</span>' : ''}
             </div>
 
-            <div class="article-card-body">
-              <a class="article-card-title btn-open-project" data-id="${p.id}" title="${escapeHtml(p.title)}">
-                ${escapeHtml(p.title)}
-              </a>
+            <a class="article-card-title btn-open-project" data-id="${p.id}" title="${escapeHtml(p.title)}">
+              ${escapeHtml(p.title)}
+            </a>
 
-              <div class="article-card-meta">
-                <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
-                <span class="meta-separator">•</span>
-                <span>Article: <strong style="color:${artApproved ? '#10B981' : '#F59E0B'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
-                <span class="meta-separator">•</span>
-                <span>Social Post: <strong style="color:${igApproved ? '#10B981' : '#F59E0B'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
-              </div>
+            <div class="article-card-meta">
+              <span>🕒 Updated: <strong>${p.updated_at ? p.updated_at.slice(0, 10) : 'Recent'}</strong></span>
+              <span class="meta-separator">•</span>
+              <span>Article: <strong style="color:${artApproved ? '#10B981' : '#F59E0B'};">${artApproved ? '✓ Approved' : 'Draft'}</strong></span>
+              <span class="meta-separator">•</span>
+              <span>Social Post: <strong style="color:${igApproved ? '#10B981' : '#F59E0B'};">${igApproved ? '✓ Approved' : 'Draft'}</strong></span>
             </div>
           </div>
 
           <div class="article-card-actions">
-            <button type="button" class="btn btn-primary btn-sm btn-open-project" data-id="${p.id}">
-              <span>✏️ Edit</span>
+            <button type="button" class="btn btn-primary btn-sm btn-open-project btn-card-primary" data-id="${p.id}">
+              <span>✏️ Edit &amp; Review</span>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project">
-              <span>📋 Duplicate</span>
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}">
-              <span>${isArchived ? '📂 Restore' : '📦 Archive'}</span>
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm btn-del-project" data-id="${p.id}" title="Delete permanently">
-              <span>🗑️</span>
-            </button>
+            <div class="card-secondary-actions">
+              <button type="button" class="btn btn-secondary btn-sm btn-dup-project" data-id="${p.id}" title="Duplicate this project">
+                <span>📋 Duplicate</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm btn-archive-project" data-id="${p.id}" title="${isArchived ? 'Restore Story to Active' : 'Archive Story'}">
+                <span>${isArchived ? '📂 Restore' : '📦 Archive'}</span>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm btn-del-project" data-id="${p.id}" title="Delete permanently">
+                <span>🗑️</span>
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -6823,10 +6826,43 @@ ${content}`;
     // Search and filters for Articles & Posts
     $("articles-search-input")?.addEventListener("input", renderArticlesPostsList);
     $("articles-section-filter")?.addEventListener("change", renderArticlesPostsList);
-    $("articles-status-filter")?.addEventListener("change", renderArticlesPostsList);
+    $("articles-status-filter")?.addEventListener("change", (e) => {
+      document.querySelectorAll(".studio-kpi-card").forEach((c) => c.classList.remove("active"));
+      if (e.target.value === "all") $("kpi-card-total")?.classList.add("active");
+      else if (e.target.value === "draft") $("kpi-card-drafts")?.classList.add("active");
+      else if (e.target.value === "approved") $("kpi-card-wp")?.classList.add("active");
+      else if (e.target.value === "archived") $("kpi-card-archived")?.classList.add("active");
+      renderArticlesPostsList();
+    });
     $("articles-lang-filter")?.addEventListener("change", renderArticlesPostsList);
     $("articles-sort-filter")?.addEventListener("change", renderArticlesPostsList);
     $("btn-refresh-articles-posts")?.addEventListener("click", loadProjects);
+
+    // Pipeline KPI Card Quick Filters
+    $("kpi-card-total")?.addEventListener("click", () => {
+      document.querySelectorAll(".studio-kpi-card").forEach((c) => c.classList.remove("active"));
+      $("kpi-card-total")?.classList.add("active");
+      if ($("articles-status-filter")) $("articles-status-filter").value = "all";
+      renderArticlesPostsList();
+    });
+    $("kpi-card-drafts")?.addEventListener("click", () => {
+      document.querySelectorAll(".studio-kpi-card").forEach((c) => c.classList.remove("active"));
+      $("kpi-card-drafts")?.classList.add("active");
+      if ($("articles-status-filter")) $("articles-status-filter").value = "draft";
+      renderArticlesPostsList();
+    });
+    $("kpi-card-wp")?.addEventListener("click", () => {
+      document.querySelectorAll(".studio-kpi-card").forEach((c) => c.classList.remove("active"));
+      $("kpi-card-wp")?.classList.add("active");
+      if ($("articles-status-filter")) $("articles-status-filter").value = "approved";
+      renderArticlesPostsList();
+    });
+    $("kpi-card-archived")?.addEventListener("click", () => {
+      document.querySelectorAll(".studio-kpi-card").forEach((c) => c.classList.remove("active"));
+      $("kpi-card-archived")?.classList.add("active");
+      if ($("articles-status-filter")) $("articles-status-filter").value = "archived";
+      renderArticlesPostsList();
+    });
 
     // Suggestions & Ideas Pool Wiring
     $("tab-btn-active-pipeline")?.addEventListener("click", () => switchView("projects"));
