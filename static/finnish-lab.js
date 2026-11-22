@@ -980,7 +980,7 @@
               : ""
           }
 
-          <textarea id="fl-chat-input" class="fl-capsule-input" rows="1" placeholder="Ask anything, attach photo/PDF, or record audio..."></textarea>
+          <textarea id="fl-chat-input" class="fl-capsule-input" rows="1" placeholder="Ask anything in Finnish or English..."></textarea>
 
           <div class="fl-capsule-bar">
             <div class="fl-capsule-left">
@@ -1564,18 +1564,32 @@
     root.querySelector("#fl-live-btn")?.addEventListener("click", toggleLiveTranslation);
     root.querySelector("#fl-stop-live")?.addEventListener("click", stopLiveTranslation);
 
+    const autoResizeChatInput = (el) => {
+      if (!el) return;
+      el.style.height = "auto";
+      const maxH = 168;
+      const nextH = Math.min(el.scrollHeight, maxH);
+      el.style.height = nextH + "px";
+      el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+    };
+    const chatInputEl = root.querySelector("#fl-chat-input");
+    if (chatInputEl) {
+      autoResizeChatInput(chatInputEl);
+      chatInputEl.addEventListener("input", () => autoResizeChatInput(chatInputEl));
+      chatInputEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSend(); }
+      });
+    }
     const doSend = () => {
       const inp = document.getElementById("fl-chat-input");
       if (!inp) return;
       const v = inp.value.trim();
       inp.value = "";
+      autoResizeChatInput(inp);
       state.plusMenuOpen = false;
       sendMessage(v);
     };
     root.querySelector("#fl-chat-send")?.addEventListener("click", doSend);
-    root.querySelector("#fl-chat-input")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSend(); }
-    });
     root.querySelectorAll("[data-fl-starter]").forEach((b) => {
       b.onclick = () => sendMessage(b.getAttribute("data-fl-starter"));
     });

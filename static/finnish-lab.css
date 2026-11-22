@@ -316,16 +316,20 @@ body.fl-focus-mode .workspace {
 .fl-capsule-input {
   width: 100%;
   box-sizing: border-box;
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: #ffffff;
   font-family: inherit;
-  font-size: 0.96rem;
-  line-height: 1.4;
+  font-size: 16px; /* Prevents iOS Safari zoom on tap */
+  line-height: 1.45;
   resize: none;
-  outline: none;
+  outline: none !important;
   padding: 2px 4px 8px;
-  max-height: 120px;
+  min-height: 30px;
+  max-height: 168px; /* Expands smoothly up to ~6-7 lines like ChatGPT & WhatsApp */
+  overflow-y: hidden;
+  display: block;
 }
 
 .fl-capsule-input::placeholder {
