@@ -57,8 +57,20 @@ body.fl-focus-mode .workspace {
 }
 
 @media (max-width: 768px) {
-  body:not(.fl-student-only) .fl-header {
-    top: 54px; /* Pinned right below the Studio mobile header */
+  .fl-header {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 54px; /* Pinned right below the Studio mobile header — immune to ancestor overflow */
+    margin: 0;
+    padding: 8px 12px 10px;
+    z-index: 880;
+  }
+  body.fl-student-only .fl-header {
+    top: 0;
+  }
+  .fl-app {
+    padding-top: 58px;
   }
 }
 
