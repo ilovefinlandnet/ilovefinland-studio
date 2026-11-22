@@ -737,6 +737,9 @@
         // Switch to editor screen
         if (this.hubScreen) this.hubScreen.classList.add("hidden");
         if (this.editorScreen) this.editorScreen.classList.remove("hidden");
+        try {
+          history.pushState({ view: "reel-editor", projectId: id }, "", "#reel-editor");
+        } catch(e) {}
 
         // Set title
         if (this.titleInput) this.titleInput.value = this.currentProject.title || "Untitled Reel";
@@ -787,6 +790,11 @@
       if (this.editorScreen) this.editorScreen.classList.add("hidden");
       if (this.hubScreen) this.hubScreen.classList.remove("hidden");
       this.loadHubProjects();
+      try {
+        if (window.location.hash === "#reel-editor") {
+          history.replaceState({ view: "reel-studio" }, "", "#reel-studio");
+        }
+      } catch (e) {}
     }
 
     async saveProject(showFeedback = false) {

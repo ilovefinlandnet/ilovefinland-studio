@@ -197,12 +197,81 @@
     await checkAuth();
   }
 
-  /* ---------- NAVIGATION ---------- */
-  function switchView(viewName) {
+  /* ---------- NAVIGATION & BACK SYSTEM ---------- */
+  const viewHistory = ["projects"];
+  let isNavigatingHistory = false;
+
+  function updateBackButtonVisibility(viewName) {
+    const isRoot = viewName === "projects" && viewHistory.length <= 1;
+    const mobileBack = $("btn-mobile-back");
+    const desktopBack = $("btn-desktop-back");
+    if (mobileBack) {
+      mobileBack.classList.toggle("hidden", isRoot);
+      const prevView = viewHistory.length > 1 ? viewHistory[viewHistory.length - 2] : "projects";
+      mobileBack.setAttribute("title", `Back to ${formatViewName(prevView)}`);
+    }
+    if (desktopBack) {
+      desktopBack.classList.toggle("hidden", isRoot);
+      const prevView = viewHistory.length > 1 ? viewHistory[viewHistory.length - 2] : "projects";
+      desktopBack.setAttribute("title", `Back to ${formatViewName(prevView)}`);
+    }
+  }
+
+  function formatViewName(v) {
+    const names = {
+      projects: "Articles",
+      ideas: "Suggestions",
+      calendar: "Calendar",
+      review: "Review",
+      assignments: "Articles",
+      "reel-studio": "Reel Studio",
+      inbox: "Inbox",
+      research: "Sources",
+      performance: "Stats",
+      connections: "Connections",
+      "ai-media": "AI Media",
+    };
+    return names[v] || v;
+  }
+
+  function switchView(viewName, isBack = false, replace = false) {
+    if (!viewName) return;
+
+    // If inside Reel Studio editor and navigating to another view, close editor
+    const reelEditor = $("reel-editor-screen");
+    if (reelEditor && !reelEditor.classList.contains("hidden") && viewName !== "reel-studio" && viewName !== "reel-editor") {
+      window.ReelStudio?.closeEditor();
+    }
+
+    // Maintain in-app history stack
+    if (isBack) {
+      // Stack already popped
+    } else if (replace) {
+      if (viewHistory.length > 0) viewHistory[viewHistory.length - 1] = viewName;
+      else viewHistory.push(viewName);
+    } else {
+      if (viewHistory[viewHistory.length - 1] !== viewName) {
+        viewHistory.push(viewName);
+      }
+    }
+
+    // Update browser URL hash & state
+    if (!isNavigatingHistory) {
+      try {
+        if (replace) {
+          history.replaceState({ view: viewName }, "", `#${viewName}`);
+        } else {
+          history.pushState({ view: viewName }, "", `#${viewName}`);
+        }
+      } catch (e) {}
+    }
+
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === viewName));
     document.querySelectorAll(".bnav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === viewName));
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== `view-${viewName}`));
     $("approve-bar")?.classList.toggle("hidden", viewName !== "review");
+
+    updateBackButtonVisibility(viewName);
 
     if (viewName === "projects") loadProjects();
     if (viewName === "ideas") loadIdeasPool();
@@ -216,6 +285,35 @@
       window.ReelStudio.loadHubProjects();
     }
   }
+
+  function goBack() {
+    // 1. If inside Reel Studio editor, close editor to return to Reel Projects Hub
+    const reelEditorScreen = $("reel-editor-screen");
+    if (reelEditorScreen && !reelEditorScreen.classList.contains("hidden")) {
+      if (window.ReelStudio) {
+        window.ReelStudio.closeEditor();
+        return;
+      }
+    }
+
+    // 2. If viewHistory has previous views, pop and switch back
+    if (viewHistory.length > 1) {
+      viewHistory.pop(); // Pop current
+      const prevView = viewHistory[viewHistory.length - 1];
+      isNavigatingHistory = true;
+      switchView(prevView, true);
+      isNavigatingHistory = false;
+      try {
+        history.replaceState({ view: prevView }, "", `#${prevView}`);
+      } catch(e) {}
+    } else {
+      // Root fallback
+      switchView("projects", true);
+    }
+  }
+
+  window.switchView = switchView;
+  window.goBack = goBack;
 
   /* ---------- PLAYER WIRING ---------- */
   function initPlayer() {
@@ -5007,6 +5105,43 @@
       });
     });
 
+    // Unified Mobile & Desktop Back Buttons
+    $("btn-mobile-back")?.addEventListener("click", () => goBack());
+    $("btn-desktop-back")?.addEventListener("click", () => goBack());
+    document.querySelectorAll(".btn-view-back").forEach((btn) => {
+      btn.addEventListener("click", () => goBack());
+    });
+
+    // Browser back/forward button support (popstate)
+    window.addEventListener("popstate", (e) => {
+      isNavigatingHistory = true;
+      if (e.state && e.state.view) {
+        if (e.state.view === "reel-editor") {
+          // Inside reel editor
+        } else {
+          const reelEditor = $("reel-editor-screen");
+          if (reelEditor && !reelEditor.classList.contains("hidden")) {
+            window.ReelStudio?.closeEditor();
+          }
+          switchView(e.state.view, true);
+        }
+      } else {
+        const reelEditor = $("reel-editor-screen");
+        if (reelEditor && !reelEditor.classList.contains("hidden")) {
+          window.ReelStudio?.closeEditor();
+        } else {
+          goBack();
+        }
+      }
+      isNavigatingHistory = false;
+    });
+
+    // Initial hash routing (e.g. #calendar, #reel-studio, #ideas, #review)
+    const initialHash = window.location.hash.replace("#", "");
+    if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments"].includes(initialHash)) {
+      switchView(initialHash, false, true);
+    }
+
     // Review Workspace Tabs (Article vs Social Post - Clean In-Place Tab Switch)
     $("tab-btn-article")?.addEventListener("click", (e) => {
       e.preventDefault();
@@ -6496,7 +6631,7 @@ ${content}`;
     });
 
     // Projects Hub wiring
-    $("btn-back-to-projects")?.addEventListener("click", () => switchView("projects"));
+    $("btn-back-to-projects")?.addEventListener("click", () => goBack());
     $("btn-proj-new")?.addEventListener("click", () => switchView("assignments"));
 
     // Filter chips
@@ -6697,7 +6832,7 @@ ${content}`;
     $("tab-btn-active-pipeline")?.addEventListener("click", () => switchView("projects"));
     $("tab-btn-suggestions-pool")?.addEventListener("click", () => switchView("ideas"));
     $("btn-goto-ideas")?.addEventListener("click", () => switchView("ideas"));
-    $("btn-back-to-projects")?.addEventListener("click", () => switchView("projects"));
+    $("btn-back-to-projects")?.addEventListener("click", () => goBack());
     $("btn-scan-now")?.addEventListener("click", triggerScanNow);
 
     // Scope filter buttons (All, Finland, International)

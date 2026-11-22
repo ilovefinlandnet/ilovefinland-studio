@@ -5842,6 +5842,77 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     word-break: keep-all !important;
   }
 
+  /* =========================================================================
+     BACK BUTTON SYSTEM (MOBILE & DESKTOP)
+     ========================================================================= */
+  .btn-mobile-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #FFFFFF;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 4px;
+    transition: all 0.15s ease;
+  }
+  .btn-mobile-back:hover,
+  .btn-mobile-back:active {
+    background: rgba(2, 132, 199, 0.35);
+    border-color: #38bdf8;
+    color: #38bdf8;
+  }
+
+  .btn-desktop-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(8, 35, 71, 0.9);
+    border: 1px solid rgba(75, 137, 188, 0.4);
+    color: #FFFFFF;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-desktop-back:hover {
+    background: rgba(2, 156, 216, 0.3);
+    border-color: #38bdf8;
+    color: #38bdf8;
+  }
+
+  .btn-view-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #94A3B8;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(15, 23, 42, 0.5);
+    transition: all 0.15s ease;
+  }
+  .btn-view-back:hover {
+    color: #FFFFFF;
+    border-color: #38bdf8;
+    background: rgba(2, 132, 199, 0.25);
+  }
+
+  .btn-mobile-back.hidden,
+  .btn-desktop-back.hidden,
+  .btn-view-back.hidden {
+    display: none !important;
+  }
+
   /* Featured Image Card on Mobile */
   .wp-image-card {
     display: flex !important;
