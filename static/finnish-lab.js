@@ -54,6 +54,7 @@
     studentEnabled: true,
     inviteCode: "suomi2026",
     mistakeStreak: 0,
+    sessionMediaMap: {}, // In-memory RAM cache: att.id -> { mime_type, data_base64, refLabel }
   };
 
   /* ---------- FUN ROAST MODE (ESCALATING MISTAKE SIGNATURE) ---------- */
@@ -601,15 +602,15 @@
       const m = a.mime_type || "";
       if (m.startsWith("audio/")) {
         // Never bloat phone storage with raw audio clips after Gemini replies
-        return { id: a.id, name: a.name || "Audio clip", mime_type: m };
+        return { id: a.id, name: a.name || "Audio clip", mime_type: m, refLabel: a.refLabel || "" };
       }
       if (m.startsWith("image/")) {
         // Keep only a lightweight ~25 KB thumbnail in IndexedDB history
         const thumb = a.thumbUrl || a.previewUrl || null;
-        return { id: a.id, name: a.name || "Photo", mime_type: "image/jpeg", previewUrl: thumb };
+        return { id: a.id, name: a.name || "Photo", mime_type: "image/jpeg", previewUrl: thumb, refLabel: a.refLabel || "" };
       }
       // PDFs / other docs: keep metadata badge only in local history
-      return { id: a.id, name: a.name || "Document", mime_type: m };
+      return { id: a.id, name: a.name || "Document", mime_type: m, refLabel: a.refLabel || "" };
     });
   }
 
@@ -670,13 +671,71 @@
     const conv = await ensureActiveConv(msgText ? msgText.slice(0, 42) : hasAudio ? "Audio & Questions" : "Photo Question");
     const settings = DB.getSettings();
 
+    // Assign sequential labels (Picture #1, Picture #2, PDF #1, Audio #1) & cache in RAM for follow-ups
+    let picCount = 0, pdfCount = 0, audCount = 0;
+    for (const m of conv.messages || []) {
+      for (const a of m.attachments || []) {
+        const mt = a.mime_type || "";
+        if (mt.startsWith("image/")) picCount++;
+        else if (mt === "application/pdf") pdfCount++;
+        else if (mt.startsWith("audio/")) audCount++;
+      }
+    }
+    const newRefLabels = [];
+    for (const a of atts) {
+      const mt = a.mime_type || "";
+      if (mt.startsWith("image/")) {
+        picCount++;
+        a.refLabel = `Picture #${picCount}`;
+      } else if (mt === "application/pdf") {
+        pdfCount++;
+        a.refLabel = `PDF #${pdfCount}`;
+      } else if (mt.startsWith("audio/")) {
+        audCount++;
+        a.refLabel = `Audio #${audCount}`;
+      } else {
+        a.refLabel = a.name || "File";
+      }
+      newRefLabels.push(a.refLabel);
+      if ((mt.startsWith("image/") || mt === "application/pdf") && a.data_base64) {
+        state.sessionMediaMap[a.id] = { mime_type: mt, data_base64: a.data_base64, refLabel: a.refLabel };
+      }
+    }
+
+    const aiPromptWithRefs = newRefLabels.length
+      ? `[Attached: ${newRefLabels.join(", ")}]\n${aiPrompt}`
+      : aiPrompt;
+
+    // Build history and re-attach earlier photos/PDFs from RAM cache (or saved thumbnail fallback) so Gemini sees "1st picture" etc.!
+    let historyMediaAttached = 0;
     const history = options.silentLive
       ? []
-      : (conv.messages || []).slice(-10).map((m) => ({
-          role: m.role,
-          text: m.text,
-          attachments: (m.attachments || []).slice(0, 2).map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
-        }));
+      : (conv.messages || []).slice(-10).map((m) => {
+          const histAtts = [];
+          const labels = [];
+          for (const a of (m.attachments || []).slice(0, 2)) {
+            if (a.refLabel) labels.push(a.refLabel);
+            const mt = a.mime_type || "";
+            if (historyMediaAttached >= 4) continue;
+            const cached = a.id ? state.sessionMediaMap[a.id] : null;
+            if (cached && cached.data_base64) {
+              histAtts.push({ mime_type: cached.mime_type, data_base64: cached.data_base64 });
+              historyMediaAttached++;
+            } else if (mt.startsWith("image/") && a.previewUrl && a.previewUrl.startsWith("data:image/")) {
+              const b64 = a.previewUrl.includes(",") ? a.previewUrl.split(",")[1] : "";
+              if (b64) {
+                histAtts.push({ mime_type: "image/jpeg", data_base64: b64 });
+                historyMediaAttached++;
+              }
+            }
+          }
+          const prefix = labels.length ? `[Attached: ${labels.join(", ")}]\n` : "";
+          return {
+            role: m.role,
+            text: prefix + (m.text || ""),
+            attachments: histAtts,
+          };
+        });
 
     const userMsg = {
       id: DB.uid("msg"),
@@ -700,7 +759,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: aiPrompt,
+          message: aiPromptWithRefs,
           mode,
           level: settings.level || "A1",
           roast_mode: isRoastEnabled(),
@@ -1009,8 +1068,11 @@
           ${m.attachments
             .map((a) =>
               a.previewUrl && (a.mime_type || "").startsWith("image/")
-                ? `<img src="${a.previewUrl}" style="max-width:150px;max-height:115px;border-radius:10px;" alt="" />`
-                : `<span class="fl-att-chip">${(a.mime_type || "").startsWith("audio/") ? "🎙️" : "📄"} ${esc(a.name || "File")}</span>`
+                ? `<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;">
+                    <img src="${a.previewUrl}" style="max-width:150px;max-height:115px;border-radius:10px;" alt="" />
+                    ${a.refLabel ? `<span style="font-size:0.68rem;color:#cbd5e1;font-weight:700;">📷 ${esc(a.refLabel)}</span>` : ""}
+                  </div>`
+                : `<span class="fl-att-chip">${(a.mime_type || "").startsWith("audio/") ? "🎙️" : "📄"} ${esc(a.refLabel || a.name || "File")}</span>`
             )
             .join("")}
         </div>`
