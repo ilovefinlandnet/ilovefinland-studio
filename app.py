@@ -1055,12 +1055,17 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(err or {"ok": False, "message": "Login failed"}, status=status_code)
                 return
             secure = "; Secure" if self._is_https() else ""
-            max_age = 2592000 if acc["role"] == "admin" else 31536000
+            remember = payload.get("remember", True)
+            if isinstance(remember, str):
+                remember = remember.lower() not in ("0", "false", "no")
+            cookie_val = (
+                f"ilf_user_session={token}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax{secure}"
+                if remember
+                else f"ilf_user_session={token}; HttpOnly; Path=/; SameSite=Lax{secure}"
+            )
             self._send_json(
-                {"ok": True, "authenticated": True, **acc},
-                extra_headers={
-                    "Set-Cookie": f"ilf_user_session={token}; HttpOnly; Path=/; Max-Age={max_age}; SameSite=Lax{secure}"
-                },
+                {"ok": True, "authenticated": True, "remember": bool(remember), **acc},
+                extra_headers={"Set-Cookie": cookie_val},
             )
             return
 

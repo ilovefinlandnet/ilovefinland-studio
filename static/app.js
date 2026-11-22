@@ -195,13 +195,14 @@
       clearAuthMessages();
       const email = ($("auth-login-email")?.value || "").trim();
       const password = $("auth-login-pass")?.value || "";
+      const remember = $("auth-keep-signed-in") ? Boolean($("auth-keep-signed-in").checked) : true;
       const btn = $("btn-auth-signin");
       if (btn) { btn.disabled = true; btn.textContent = "Signing in..."; }
       try {
         const res = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, remember }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
