@@ -809,7 +809,7 @@ html, body {
   font-weight: 600;
 }
 
-.pkg-title { margin: 0; font-size: 1.15rem; color: var(--navy); }
+.pkg-title { margin: 0; font-size: 1.15rem; color: #FFFFFF !important; }
 
 .revision-banner {
   margin-top: 10px;
@@ -5697,10 +5697,17 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   }
 
   .claude-actions {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 6px !important;
     width: 100% !important;
+  }
+
+  .claude-actions .btn-claude {
+    width: 100% !important;
+    white-space: normal !important;
+    text-align: center !important;
+    justify-content: center !important;
   }
 
   .claude-actions .btn {
@@ -5838,6 +5845,7 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     word-break: break-word !important;
     width: 100% !important;
     margin: 4px 0 !important;
+    color: #FFFFFF !important;
   }
 
   .eyebrow {
@@ -6412,6 +6420,18 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 }
 
 @media (max-width: 768px) {
+  /* Strict mobile viewport bounds */
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  .app-shell, .workspace, #view-review {
+    max-width: 100vw !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
   /* Pin Mobile Header permanently at top */
   .mobile-header {
     position: fixed !important;
