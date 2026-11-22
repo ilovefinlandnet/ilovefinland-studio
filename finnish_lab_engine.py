@@ -529,6 +529,16 @@ def _build_system_prompt(mode: str, level: str) -> str:
         "- Keep examples short and beginner-friendly before giving deeper grammar details.\n"
     )
 
+    if mode == "live_translate":
+        return base + (
+            "\nSILENT LIVE TRANSLATION MODE. The learner is listening in class and needs an instant, silent WRITTEN translation right in the chat.\n"
+            "Format your reply ultra-cleanly (zero fluff, no intro):\n"
+            "🇫🇮 **Finnish:** <exact Finnish heard/written>\n"
+            "🇬🇧 **English:** <clear, natural English translation>\n"
+            "If it is a question or instruction directed at the student, add ONE short line:\n"
+            "💬 **You can reply:** <short A1 Finnish answer> (*<English meaning>*)"
+        )
+
     if mode == "quick_class":
         return base + (
             "\nQUICK CLASSROOM MODE IS ON. The learner is in a live Finnish class and needs an ultra-fast, scannable response.\n"
@@ -733,6 +743,10 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
 def _extract_primary_finnish(reply: str, mode: str) -> str:
     """Extract the most useful Finnish sentence from a response for 1-click Listen / Slow playback."""
     lines = [ln.strip() for ln in reply.splitlines() if ln.strip()]
+    if mode == "live_translate":
+        for ln in lines:
+            if "finnish:" in ln.lower() or ln.startswith("🇫🇮"):
+                return ln.split(":", 1)[-1].replace("**", "").strip()[:260]
     if mode == "quick_class":
         for ln in lines:
             if ln.startswith("🇫🇮 Answer:") or ln.lower().startswith("answer:"):
