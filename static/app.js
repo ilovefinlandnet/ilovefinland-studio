@@ -268,7 +268,11 @@
 
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === viewName));
     document.querySelectorAll(".bnav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === viewName));
-    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== `view-${viewName}`));
+    document.querySelectorAll(".view").forEach((v) => {
+      const isTarget = v.id === `view-${viewName}`;
+      v.classList.toggle("hidden", !isTarget);
+      v.classList.toggle("active-view", isTarget);
+    });
     $("approve-bar")?.classList.toggle("hidden", viewName !== "review");
 
     updateBackButtonVisibility(viewName);

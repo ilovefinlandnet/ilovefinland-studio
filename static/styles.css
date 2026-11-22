@@ -6412,12 +6412,40 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 }
 
 @media (max-width: 768px) {
+  /* Pin Mobile Header permanently at top */
+  .mobile-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 999 !important;
+    height: 52px !important;
+  }
+  .workspace {
+    padding-top: 56px !important;
+  }
+
+  /* When back button is visible on mobile, hide hamburger to prevent cramming */
+  .mobile-header:has(#btn-mobile-back:not(.hidden)) .btn-hamburger {
+    display: none !important;
+  }
+  @media (max-width: 420px) {
+    .mobile-header:has(#btn-mobile-back:not(.hidden)) #btn-mobile-new-story {
+      display: none !important;
+    }
+    #mobile-cloud-pill {
+      font-size: 0.65rem !important;
+      padding: 3px 6px !important;
+    }
+  }
+
   .article-subnav-capsule {
     top: 54px;
     padding: 5px;
     margin-bottom: 12px;
     border-radius: 10px;
     gap: 4px;
+    z-index: 900;
   }
   .article-subnav-btn {
     padding: 6px 10px;
@@ -6427,13 +6455,14 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     font-size: 0.74rem;
   }
   .article-section-anchor {
-    scroll-margin-top: 105px;
+    scroll-margin-top: 110px;
   }
 
+  #view-review:not(.hidden) .article-mobile-quickbar,
   #view-review.active-view .article-mobile-quickbar {
     display: flex !important;
     position: fixed;
-    bottom: 12px;
+    bottom: 58px !important; /* Floats above bottom-nav (which is at bottom: 0) */
     left: 10px;
     right: 10px;
     z-index: 1000;
@@ -6484,8 +6513,8 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     transform: scale(0.96);
   }
 
-  /* Padding at bottom of #view-review so content is never hidden behind floating bar */
+  /* Padding at bottom of #view-review so content is never hidden behind floating bar & bottom nav */
   #view-review {
-    padding-bottom: 70px !important;
+    padding-bottom: 125px !important;
   }
 }
