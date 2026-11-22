@@ -70,7 +70,7 @@ from db import (
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-ALLOWED_EMAIL = os.environ.get("ILF_ALLOWED_EMAIL", "editor@ilovefinland.net").lower()
+ALLOWED_EMAIL = os.environ.get("ILF_ADMIN_EMAIL", os.environ.get("ILF_ALLOWED_EMAIL", "binodoli721@gmail.com")).lower()
 GOOGLE_CLIENT_ID = os.environ.get("ILF_GOOGLE_CLIENT_ID", "").strip()
 ACCESS_KEY = os.environ.get("ILF_ACCESS_KEY", "suomi-studio-x9k4-7q2m").strip()
 
@@ -338,22 +338,49 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         )
         return host in ("localhost", "127.0.0.1") and not forwarded and self.client_address[0] in ("127.0.0.1", "::1")
 
-    def _current_fl_student(self) -> bool:
+    def _current_fl_account(self) -> Optional[Dict[str, Any]]:
         cookie_hdr = self.headers.get("Cookie", "")
         if not cookie_hdr:
-            return False
+            return None
         cookie = SimpleCookie()
         try:
             cookie.load(cookie_hdr)
         except Exception:
-            return False
+            return None
+        morsel = cookie.get("ilf_user_session")
+        if morsel and morsel.value:
+            import finnish_lab_engine
+            acc = finnish_lab_engine.get_session_user(morsel.value)
+            if acc:
+                return acc
+        return None
+
+    def _current_fl_student_account(self) -> Optional[Dict[str, Any]]:
+        acc = self._current_fl_account()
+        if acc and acc.get("role") == "student":
+            return acc
+        cookie_hdr = self.headers.get("Cookie", "")
+        if not cookie_hdr:
+            return None
+        cookie = SimpleCookie()
+        try:
+            cookie.load(cookie_hdr)
+        except Exception:
+            return None
         morsel = cookie.get("ilf_fl_student_session")
-        if not morsel or not morsel.value:
-            return False
-        import finnish_lab_engine
-        return finnish_lab_engine.is_valid_student_token(morsel.value)
+        if morsel and morsel.value:
+            import finnish_lab_engine
+            if finnish_lab_engine.is_valid_student_token(morsel.value):
+                return {"email": "student@finnish-lab", "name": "Student", "role": "student"}
+        return None
+
+    def _current_fl_student(self) -> bool:
+        return bool(self._current_fl_student_account())
 
     def _current_user(self) -> Optional[str]:
+        acc = self._current_fl_account()
+        if acc and acc.get("role") == "admin":
+            return acc["email"]
         cookie_hdr = self.headers.get("Cookie", "")
         if not cookie_hdr:
             return None
@@ -464,7 +491,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
     def _require_auth(self) -> Optional[str]:
         user = self._current_user()
         if not user:
-            user = ALLOWED_EMAIL
+            self._send_json({"error": "Authentication required", "authenticated": False}, status=HTTPStatus.UNAUTHORIZED)
+            return None
         return user
 
     def do_HEAD(self) -> None:  # noqa: N802
@@ -503,25 +531,87 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/auth/me":
-            user = self._current_user() or ALLOWED_EMAIL
-            token = secrets.token_urlsafe(24)
-            self._sessions()[token] = user
-            try:
-                from db import save_persistent_session
-                save_persistent_session(token, user, db_path=db_path)
-            except Exception:
-                pass
-            secure = "; Secure" if self._is_https() else ""
-            self._send_json(
-                {
+            admin_email = self._current_user()
+            if admin_email:
+                self._send_json({
                     "authenticated": True,
-                    "email": user,
-                    "role": "Managing Editor",
-                },
-                extra_headers={
-                    "Set-Cookie": f"ilf_studio_session={token}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax{secure}"
-                },
-            )
+                    "email": admin_email,
+                    "name": "Binod (Admin)",
+                    "role": "admin",
+                })
+                return
+            stu = self._current_fl_student_account()
+            if stu:
+                self._send_json({
+                    "authenticated": True,
+                    "email": stu["email"],
+                    "name": stu.get("name") or "Student",
+                    "role": "student",
+                })
+                return
+            self._send_json({
+                "authenticated": False,
+                "role": "guest",
+            })
+            return
+
+        # Finnish Learning Lab GET endpoints (accessible to approved Students & Admin, isolated from Studio!)
+        if path == "/api/finnish-lab/role":
+            import finnish_lab_engine
+            admin_email = self._current_user()
+            stu = self._current_fl_student_account()
+            cfg = finnish_lab_engine.get_student_access_config()
+            if admin_email:
+                self._send_json({
+                    "role": "admin",
+                    "email": admin_email,
+                    "name": "Binod (Admin)",
+                    "student_enabled": cfg["student_enabled"],
+                    "invite_code": cfg["invite_code"],
+                    "email_delivery_configured": finnish_lab_engine.is_email_delivery_configured(),
+                })
+            elif stu:
+                self._send_json({
+                    "role": "student",
+                    "email": stu["email"],
+                    "name": stu.get("name") or "Student",
+                    "student_enabled": cfg["student_enabled"],
+                })
+            else:
+                self._send_json({
+                    "role": "guest",
+                    "student_enabled": cfg["student_enabled"],
+                })
+            return
+
+        if path == "/api/finnish-lab/status":
+            if not self._current_user() and not self._current_fl_student():
+                self._send_json({"error": "Authentication required"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            import finnish_lab_engine
+            force = qs.get("refresh", ["0"])[0] in ("1", "true")
+            if force:
+                finnish_lab_engine.discover_gemini_models(force_refresh=True)
+            self._send_json(finnish_lab_engine.get_status())
+            return
+
+        if path == "/api/finnish-lab/sync":
+            admin_email = self._current_user()
+            stu = self._current_fl_student_account()
+            user_email = admin_email or (stu["email"] if stu else None)
+            if not user_email:
+                self._send_json({"error": "Authentication required"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            import finnish_lab_engine
+            self._send_json(finnish_lab_engine.load_user_sync_snapshot(user_email))
+            return
+
+        if path == "/api/finnish-lab/admin/users":
+            if not self._current_user():
+                self._send_json({"ok": False, "error": "ADMIN_REQUIRED", "message": "Admin access required."}, status=HTTPStatus.FORBIDDEN)
+                return
+            import finnish_lab_engine
+            self._send_json(finnish_lab_engine.list_all_users_for_admin())
             return
 
         # Protected API routes
@@ -954,11 +1044,102 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             )
             return
 
+        if path == "/api/auth/login":
+            import finnish_lab_engine
+            payload = body or {}
+            acc, token, err, status_code = finnish_lab_engine.login_user(
+                email=payload.get("email", ""),
+                password=payload.get("password", ""),
+            )
+            if err or not acc or not token:
+                self._send_json(err or {"ok": False, "message": "Login failed"}, status=status_code)
+                return
+            secure = "; Secure" if self._is_https() else ""
+            max_age = 2592000 if acc["role"] == "admin" else 31536000
+            self._send_json(
+                {"ok": True, "authenticated": True, **acc},
+                extra_headers={
+                    "Set-Cookie": f"ilf_user_session={token}; HttpOnly; Path=/; Max-Age={max_age}; SameSite=Lax{secure}"
+                },
+            )
+            return
+
+        if path == "/api/auth/signup":
+            import finnish_lab_engine
+            payload = body or {}
+            res, status_code = finnish_lab_engine.signup_user(
+                name=payload.get("name", ""),
+                email=payload.get("email", ""),
+                password=payload.get("password", ""),
+            )
+            self._send_json(res, status=status_code)
+            return
+
+        if path == "/api/auth/verify-email":
+            import finnish_lab_engine
+            payload = body or {}
+            res, status_code = finnish_lab_engine.verify_user_email(
+                email=payload.get("email", ""),
+                code=payload.get("code", ""),
+            )
+            self._send_json(res, status=status_code)
+            return
+
+        if path == "/api/auth/resend-verify":
+            import finnish_lab_engine
+            payload = body or {}
+            res, status_code = finnish_lab_engine.resend_verification_code(
+                email=payload.get("email", ""),
+            )
+            self._send_json(res, status=status_code)
+            return
+
+        if path == "/api/auth/forgot-password":
+            import finnish_lab_engine
+            payload = body or {}
+            res, status_code = finnish_lab_engine.request_password_reset(
+                email=payload.get("email", ""),
+            )
+            self._send_json(res, status=status_code)
+            return
+
+        if path == "/api/auth/reset-password":
+            import finnish_lab_engine
+            payload = body or {}
+            res, status_code = finnish_lab_engine.confirm_password_reset(
+                email=payload.get("email", ""),
+                code=payload.get("code", ""),
+                new_password=payload.get("new_password", ""),
+            )
+            self._send_json(res, status=status_code)
+            return
+
+        if path == "/api/auth/change-password":
+            import finnish_lab_engine
+            admin_email = self._current_user()
+            stu = self._current_fl_student_account()
+            cur_email = admin_email or (stu["email"] if stu else None)
+            if not cur_email or cur_email == "student@finnish-lab":
+                self._send_json({"ok": False, "message": "Please sign in with your email account first."}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            payload = body or {}
+            res, status_code = finnish_lab_engine.change_user_password(
+                email=cur_email,
+                current_password=payload.get("current_password", ""),
+                new_password=payload.get("new_password", ""),
+            )
+            self._send_json(res, status=status_code)
+            return
+
         if path == "/api/auth/logout":
+            import finnish_lab_engine
             cookie_hdr = self.headers.get("Cookie", "")
             if cookie_hdr:
                 c = SimpleCookie()
-                c.load(cookie_hdr)
+                try:
+                    c.load(cookie_hdr)
+                except Exception:
+                    pass
                 if "ilf_studio_session" in c:
                     sess_token = c["ilf_studio_session"].value
                     self._sessions().pop(sess_token, None)
@@ -967,16 +1148,25 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                         delete_persistent_session(sess_token, db_path=db_path)
                     except Exception:
                         pass
-            self._send_json(
-                {"authenticated": False},
-                extra_headers={"Set-Cookie": "ilf_studio_session=; HttpOnly; Path=/; Max-Age=0"},
-            )
+                if "ilf_user_session" in c:
+                    finnish_lab_engine.logout_session_token(c["ilf_user_session"].value)
+            body_bytes = json.dumps({"authenticated": False}).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body_bytes)))
+            self.send_header("Set-Cookie", "ilf_studio_session=; HttpOnly; Path=/; Max-Age=0")
+            self.send_header("Set-Cookie", "ilf_user_session=; HttpOnly; Path=/; Max-Age=0")
+            self.send_header("Set-Cookie", "ilf_fl_student_session=; HttpOnly; Path=/; Max-Age=0")
+            self.end_headers()
+            self.wfile.write(body_bytes)
             return
 
-        # All other POST endpoints require auth
-        user = self._require_auth()
-        if not user:
-            return
+        # All other Studio POST endpoints require Admin auth (Finnish Lab has its own Admin-or-Student guard below)
+        user = None
+        if not path.startswith("/api/finnish-lab/"):
+            user = self._require_auth()
+            if not user:
+                return
 
         if path == "/api/package/approve":
             pkg_id = int(body.get("package_id", 1))
@@ -2404,14 +2594,25 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, **cfg})
                 return
 
-            is_admin = bool(self._current_user())
-            is_student = self._current_fl_student()
-            if not is_admin and not is_student:
-                user = self._require_auth()
-                if not user:
+            # Admin-only user approval & management
+            if path == "/api/finnish-lab/admin/users":
+                if not self._current_user():
+                    self._send_json({"ok": False, "error": "ADMIN_REQUIRED", "message": "Only Admin can manage users."}, status=HTTPStatus.FORBIDDEN)
                     return
-            else:
-                user = self._current_user() or "student@finnish-lab"
+                payload = body or {}
+                res, status_code = finnish_lab_engine.admin_update_user_status(
+                    target_email=payload.get("email", ""),
+                    action=payload.get("action", ""),
+                )
+                self._send_json(res, status=status_code)
+                return
+
+            admin_email = self._current_user()
+            stu_acc = self._current_fl_student_account()
+            if not admin_email and not stu_acc:
+                self._send_json({"error": "Authentication required", "authenticated": False}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            user = admin_email or (stu_acc["email"] if stu_acc else "student@finnish-lab")
 
             length = int(self.headers.get("Content-Length", "0"))
             if length > 26 * 1024 * 1024:

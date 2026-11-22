@@ -132,9 +132,38 @@ def init_finnish_lab_db(db_path: str = FINNISH_LAB_DB_PATH) -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fl_users (
+                email TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'student',
+                status TEXT NOT NULL DEFAULT 'pending',
+                email_verified INTEGER NOT NULL DEFAULT 0,
+                verify_code TEXT DEFAULT '',
+                verify_expires REAL DEFAULT 0,
+                reset_code TEXT DEFAULT '',
+                reset_expires REAL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fl_user_sessions (
+                token TEXT PRIMARY KEY,
+                email TEXT NOT NULL,
+                role TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
         conn.commit()
     finally:
         conn.close()
+    _ensure_admin_account(db_path)
 
 
 def _get_daily_limit(db_path: str = FINNISH_LAB_DB_PATH) -> int:
@@ -1316,5 +1345,459 @@ def is_valid_student_token(token: str, db_path: str = FINNISH_LAB_DB_PATH) -> bo
         return bool(row)
     finally:
         conn.close()
+
+
+# ---------- UNIFIED ACCOUNTS, EMAIL VERIFICATION, PASSWORD RESET & ADMIN APPROVAL ----------
+ADMIN_EMAIL = os.environ.get("ILF_ADMIN_EMAIL", "binodoli721@gmail.com").strip().lower()
+DEFAULT_ADMIN_PASSWORD = os.environ.get("ILF_ADMIN_PASSWORD", "Binod@721")
+
+
+def _hash_password(password: str, salt: Optional[str] = None) -> str:
+    s = salt or secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), s.encode("utf-8"), 120000).hex()
+    return f"pbkdf2_sha256${s}${dk}"
+
+
+def _verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        parts = (stored_hash or "").split("$")
+        if len(parts) != 3 or parts[0] != "pbkdf2_sha256":
+            return False
+        _, salt, expected = parts
+        actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120000).hex()
+        return secrets.compare_digest(actual, expected)
+    except Exception:
+        return False
+
+
+def _ensure_admin_account(db_path: str = FINNISH_LAB_DB_PATH) -> None:
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT email FROM fl_users WHERE email=?", (ADMIN_EMAIL,)).fetchone()
+        if not row:
+            now = _utc_now_iso()
+            conn.execute(
+                """
+                INSERT INTO fl_users (email, name, password_hash, role, status, email_verified, created_at, updated_at)
+                VALUES (?, ?, ?, 'admin', 'approved', 1, ?, ?)
+                """,
+                (ADMIN_EMAIL, "Binod (Admin)", _hash_password(DEFAULT_ADMIN_PASSWORD), now, now),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def is_email_delivery_configured() -> bool:
+    return bool(
+        os.environ.get("RESEND_API_KEY", "").strip()
+        or (os.environ.get("SMTP_HOST", "").strip() and os.environ.get("SMTP_USER", "").strip() and os.environ.get("SMTP_PASS", "").strip())
+    )
+
+
+def _send_auth_email(to_email: str, subject: str, body_text: str) -> Tuple[bool, str]:
+    """Send verification/reset email via Resend API or SMTP (e.g. Gmail App Password)."""
+    resend_key = os.environ.get("RESEND_API_KEY", "").strip()
+    from_addr = os.environ.get("SMTP_FROM", "").strip() or os.environ.get("SMTP_USER", "").strip() or "onboarding@resend.dev"
+    if resend_key:
+        try:
+            payload = json.dumps({
+                "from": from_addr,
+                "to": [to_email],
+                "subject": subject,
+                "text": body_text,
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                "https://api.resend.com/emails",
+                data=payload,
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                if 200 <= resp.status < 300:
+                    return True, "sent_resend"
+        except Exception as exc:
+            return False, f"resend_error: {str(exc)[:100]}"
+
+    smtp_host = os.environ.get("SMTP_HOST", "").strip()
+    smtp_port = int(os.environ.get("SMTP_PORT", "587") or 587)
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+    if smtp_host and smtp_user and smtp_pass:
+        try:
+            import smtplib
+            from email.message import EmailMessage
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = from_addr
+            msg["To"] = to_email
+            msg.set_content(body_text)
+            if smtp_port == 465:
+                with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=12) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+            else:
+                with smtplib.SMTP(smtp_host, smtp_port, timeout=12) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+            return True, "sent_smtp"
+        except Exception as exc:
+            return False, f"smtp_error: {str(exc)[:100]}"
+
+    return False, "not_configured"
+
+
+def _gen_6digit_code() -> str:
+    return f"{secrets.randbelow(900000) + 100000}"
+
+
+def signup_user(name: str, email: str, password: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    clean_name = (name or "").strip()[:60] or clean_email.split("@")[0]
+    if not clean_email or "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        return {"ok": False, "error": "INVALID_EMAIL", "message": "Please enter a valid email address."}, 400
+    if len(password or "") < 6:
+        return {"ok": False, "error": "WEAK_PASSWORD", "message": "Password must be at least 6 characters."}, 400
+    if clean_email == ADMIN_EMAIL:
+        return {"ok": False, "error": "EMAIL_EXISTS", "message": "This is the Admin email. Please Sign In instead."}, 409
+
+    code = _gen_6digit_code()
+    expires = time.time() + 1800  # 30 minutes
+    now = _utc_now_iso()
+
+    conn = sqlite3.connect(db_path)
+    try:
+        existing = conn.execute("SELECT email, email_verified, status FROM fl_users WHERE email=?", (clean_email,)).fetchone()
+        if existing:
+            return {"ok": False, "error": "EMAIL_EXISTS", "message": "An account with this email already exists. Please Sign In or use Forgot Password."}, 409
+        conn.execute(
+            """
+            INSERT INTO fl_users (email, name, password_hash, role, status, email_verified, verify_code, verify_expires, created_at, updated_at)
+            VALUES (?, ?, ?, 'student', 'pending', 0, ?, ?, ?, ?)
+            """,
+            (clean_email, clean_name, _hash_password(password), code, expires, now, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    sent, info = _send_auth_email(
+        clean_email,
+        "Verify your Finnish Learning Lab account",
+        f"Hei {clean_name}!\n\nYour Finnish Learning Lab verification code is: {code}\n\nThis code expires in 30 minutes.\nAfter verifying, wait for the Admin (Binod) to approve your access.",
+    )
+    return {
+        "ok": True,
+        "email": clean_email,
+        "email_sent": sent,
+        "needs_verification": True,
+        "message": (
+            f"We sent a 6-digit verification code to {clean_email}."
+            if sent
+            else "Account created! Ask Admin (Binod) for your 6-digit verification code or approval."
+        ),
+    }, 200
+
+
+def verify_user_email(email: str, code: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    clean_code = (code or "").strip()
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT verify_code, verify_expires, status, email_verified FROM fl_users WHERE email=?",
+            (clean_email,),
+        ).fetchone()
+        if not row:
+            return {"ok": False, "error": "NOT_FOUND", "message": "Account not found."}, 404
+        saved_code, expires, status, verified = row
+        if verified:
+            return {"ok": True, "status": status, "message": "Email already verified!"}, 200
+        if not saved_code or clean_code != saved_code:
+            return {"ok": False, "error": "INVALID_CODE", "message": "Incorrect verification code."}, 400
+        if expires and time.time() > float(expires):
+            return {"ok": False, "error": "CODE_EXPIRED", "message": "Verification code expired. Request a new one."}, 400
+        conn.execute(
+            "UPDATE fl_users SET email_verified=1, verify_code='', verify_expires=0, updated_at=? WHERE email=?",
+            (_utc_now_iso(), clean_email),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {
+        "ok": True,
+        "status": status,
+        "message": (
+            "Email verified! You can Sign In now."
+            if status == "approved"
+            else "Email verified! Waiting for Admin (Binod) to approve your account."
+        ),
+    }, 200
+
+
+def resend_verification_code(email: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    code = _gen_6digit_code()
+    expires = time.time() + 1800
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT name, email_verified FROM fl_users WHERE email=?", (clean_email,)).fetchone()
+        if not row:
+            return {"ok": False, "error": "NOT_FOUND", "message": "Account not found."}, 404
+        if row[1]:
+            return {"ok": True, "email_sent": False, "message": "Email is already verified."}, 200
+        conn.execute(
+            "UPDATE fl_users SET verify_code=?, verify_expires=?, updated_at=? WHERE email=?",
+            (code, expires, _utc_now_iso(), clean_email),
+        )
+        conn.commit()
+        name = row[0]
+    finally:
+        conn.close()
+    sent, _ = _send_auth_email(
+        clean_email,
+        "Your new Finnish Learning Lab verification code",
+        f"Hei {name}!\n\nYour new verification code is: {code}\n\nThis code expires in 30 minutes.",
+    )
+    return {
+        "ok": True,
+        "email_sent": sent,
+        "message": f"New code sent to {clean_email}." if sent else "New code generated — check with Admin (Binod).",
+    }, 200
+
+
+def login_user(email: str, password: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[Dict[str, Any]], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT email, name, password_hash, role, status, email_verified FROM fl_users WHERE email=?",
+            (clean_email,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not row or not _verify_password(password or "", row[2]):
+        return None, None, {"ok": False, "error": "INVALID_CREDENTIALS", "message": "Incorrect email or password."}, 401
+
+    u_email, u_name, _, u_role, u_status, u_verified = row
+    if u_role != "admin":
+        if not u_verified:
+            return None, None, {
+                "ok": False,
+                "error": "EMAIL_NOT_VERIFIED",
+                "email": u_email,
+                "message": "Please verify your email with the 6-digit code first.",
+            }, 403
+        if u_status == "pending":
+            return None, None, {
+                "ok": False,
+                "error": "PENDING_APPROVAL",
+                "message": "Your email is verified! Waiting for Admin (Binod) to approve your access.",
+            }, 403
+        if u_status != "approved":
+            return None, None, {
+                "ok": False,
+                "error": "ACCESS_REVOKED",
+                "message": "Your access has been disabled by the Admin.",
+            }, 403
+
+    token = secrets.token_urlsafe(32)
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO fl_user_sessions (token, email, role, created_at) VALUES (?, ?, ?, ?)",
+            (token, u_email, u_role, _utc_now_iso()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {"email": u_email, "name": u_name, "role": u_role, "status": u_status}, token, None, 200
+
+
+def get_session_user(token: str, db_path: str = FINNISH_LAB_DB_PATH) -> Optional[Dict[str, Any]]:
+    if not token:
+        return None
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            """
+            SELECT u.email, u.name, u.role, u.status, u.email_verified
+            FROM fl_user_sessions s
+            JOIN fl_users u ON u.email = s.email
+            WHERE s.token = ?
+            """,
+            (token,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    u_email, u_name, u_role, u_status, u_verified = row
+    if u_role != "admin" and (u_status != "approved" or not u_verified):
+        return None
+    return {"email": u_email, "name": u_name, "role": u_role, "status": u_status}
+
+
+def logout_session_token(token: str, db_path: str = FINNISH_LAB_DB_PATH) -> None:
+    if not token:
+        return
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute("DELETE FROM fl_user_sessions WHERE token=?", (token,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def request_password_reset(email: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    code = _gen_6digit_code()
+    expires = time.time() + 900  # 15 minutes
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT name FROM fl_users WHERE email=?", (clean_email,)).fetchone()
+        if not row:
+            return {"ok": False, "error": "NOT_FOUND", "message": "No account found with that email."}, 404
+        name = row[0]
+        conn.execute(
+            "UPDATE fl_users SET reset_code=?, reset_expires=?, updated_at=? WHERE email=?",
+            (code, expires, _utc_now_iso(), clean_email),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    sent, _ = _send_auth_email(
+        clean_email,
+        "Reset your Finnish Learning Lab password",
+        f"Hei {name}!\n\nYour password reset code is: {code}\n\nThis code expires in 15 minutes.",
+    )
+    return {
+        "ok": True,
+        "email_sent": sent,
+        "message": (
+            f"We sent a 6-digit password reset code to {clean_email}."
+            if sent
+            else "Reset code generated! Ask Admin (Binod) for your 6-digit reset code."
+        ),
+    }, 200
+
+
+def confirm_password_reset(email: str, code: str, new_password: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    clean_code = (code or "").strip()
+    if len(new_password or "") < 6:
+        return {"ok": False, "error": "WEAK_PASSWORD", "message": "New password must be at least 6 characters."}, 400
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT reset_code, reset_expires FROM fl_users WHERE email=?", (clean_email,)).fetchone()
+        if not row:
+            return {"ok": False, "error": "NOT_FOUND", "message": "Account not found."}, 404
+        saved_code, expires = row
+        if not saved_code or clean_code != saved_code:
+            return {"ok": False, "error": "INVALID_CODE", "message": "Incorrect reset code."}, 400
+        if expires and time.time() > float(expires):
+            return {"ok": False, "error": "CODE_EXPIRED", "message": "Reset code expired. Please request a new one."}, 400
+        conn.execute(
+            "UPDATE fl_users SET password_hash=?, reset_code='', reset_expires=0, updated_at=? WHERE email=?",
+            (_hash_password(new_password), _utc_now_iso(), clean_email),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "message": "Password updated! You can Sign In with your new password."}, 200
+
+
+def change_user_password(email: str, current_password: str, new_password: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (email or "").strip().lower()
+    if len(new_password or "") < 6:
+        return {"ok": False, "error": "WEAK_PASSWORD", "message": "New password must be at least 6 characters."}, 400
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT password_hash FROM fl_users WHERE email=?", (clean_email,)).fetchone()
+        if not row or not _verify_password(current_password or "", row[0]):
+            return {"ok": False, "error": "INVALID_PASSWORD", "message": "Current password is incorrect."}, 401
+        conn.execute(
+            "UPDATE fl_users SET password_hash=?, updated_at=? WHERE email=?",
+            (_hash_password(new_password), _utc_now_iso(), clean_email),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True, "message": "Password changed successfully!"}, 200
+
+
+def list_all_users_for_admin(db_path: str = FINNISH_LAB_DB_PATH) -> Dict[str, Any]:
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = conn.execute(
+            """
+            SELECT email, name, role, status, email_verified, verify_code, reset_code, created_at
+            FROM fl_users
+            WHERE role != 'admin'
+            ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, created_at DESC
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+    users = [
+        {
+            "email": r[0],
+            "name": r[1],
+            "role": r[2],
+            "status": r[3],
+            "email_verified": bool(r[4]),
+            "verify_code": r[5] or "",
+            "reset_code": r[6] or "",
+            "created_at": r[7],
+        }
+        for r in rows
+    ]
+    return {
+        "ok": True,
+        "admin_email": ADMIN_EMAIL,
+        "email_delivery_configured": is_email_delivery_configured(),
+        "users": users,
+    }
+
+
+def admin_update_user_status(target_email: str, action: str, db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    init_finnish_lab_db(db_path)
+    clean_email = (target_email or "").strip().lower()
+    if not clean_email or clean_email == ADMIN_EMAIL:
+        return {"ok": False, "error": "INVALID_TARGET", "message": "Cannot modify Admin account."}, 400
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT email FROM fl_users WHERE email=?", (clean_email,)).fetchone()
+        if not row:
+            return {"ok": False, "error": "NOT_FOUND", "message": "User not found."}, 404
+        now = _utc_now_iso()
+        if action == "approve":
+            conn.execute("UPDATE fl_users SET status='approved', email_verified=1, verify_code='', updated_at=? WHERE email=?", (now, clean_email))
+        elif action == "deny" or action == "revoke":
+            conn.execute("UPDATE fl_users SET status='revoked', updated_at=? WHERE email=?", (now, clean_email))
+            conn.execute("DELETE FROM fl_user_sessions WHERE email=?", (clean_email,))
+        elif action == "delete":
+            conn.execute("DELETE FROM fl_user_sessions WHERE email=?", (clean_email,))
+            conn.execute("DELETE FROM fl_users WHERE email=?", (clean_email,))
+        else:
+            return {"ok": False, "error": "INVALID_ACTION", "message": "Unknown action."}, 400
+        conn.commit()
+    finally:
+        conn.close()
+    return list_all_users_for_admin(db_path), 200
+
 
 

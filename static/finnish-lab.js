@@ -55,6 +55,11 @@
     inviteCode: "suomi2026",
     mistakeStreak: 0,
     sessionMediaMap: {}, // In-memory RAM cache: att.id -> { mime_type, data_base64, refLabel }
+    userEmail: "",
+    userName: "",
+    adminUsers: [],
+    emailDeliveryConfigured: false,
+    autoSyncTimer: null,
   };
 
   /* ---------- FUN ROAST MODE (ESCALATING MISTAKE SIGNATURE) ---------- */
@@ -385,14 +390,71 @@
   async function refreshRole() {
     try {
       const r = await flApi("/api/finnish-lab/role");
-      state.role = r.role || (state.isStudentRoute ? "guest" : "admin");
+      state.role = r.role || "guest";
+      state.userEmail = r.email || "";
+      state.userName = r.name || "";
       state.studentEnabled = r.student_enabled !== false;
+      state.emailDeliveryConfigured = Boolean(r.email_delivery_configured);
       if (r.invite_code) state.inviteCode = r.invite_code;
+      if (state.role === "admin") {
+        await refreshAdminUsers();
+      }
     } catch (_) {
-      state.role = state.isStudentRoute ? "guest" : "admin";
+      state.role = "guest";
     } finally {
       state.roleLoaded = true;
     }
+  }
+
+  async function refreshAdminUsers() {
+    if (state.role !== "admin") return;
+    try {
+      const res = await flApi("/api/finnish-lab/admin/users");
+      state.adminUsers = res.users || [];
+      state.emailDeliveryConfigured = Boolean(res.email_delivery_configured);
+    } catch (_) {}
+  }
+
+  async function autoPullSync() {
+    if (state.role === "guest" || !state.userEmail) return;
+    try {
+      const r = await flApi("/api/finnish-lab/sync");
+      if (r && r.has_snapshot && r.snapshot) {
+        const cloudConvs = (r.snapshot.conversations || []).length;
+        const localConvs = (state.conversations || []).length;
+        // Import if cloud has conversations or local is empty
+        if (cloudConvs > 0 && cloudConvs >= localConvs) {
+          await DB.importAllData(r.snapshot);
+          await loadAllData();
+          renderActiveView();
+        } else if (localConvs > cloudConvs) {
+          scheduleAutoSync();
+        }
+      }
+    } catch (_) {}
+  }
+
+  function scheduleAutoSync() {
+    if (state.role === "guest" || !state.userEmail) return;
+    if (state.autoSyncTimer) clearTimeout(state.autoSyncTimer);
+    state.autoSyncTimer = setTimeout(async () => {
+      try {
+        const snap = await DB.exportAllData();
+        await flApi("/api/finnish-lab/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snapshot: snap }),
+        });
+      } catch (_) {}
+    }, 1800);
+  }
+
+  async function refreshAuthAndSync() {
+    await refreshRole();
+    if (state.role !== "guest") {
+      await Promise.all([refreshStatus(), autoPullSync()]);
+    }
+    renderActiveView();
   }
 
   /* ---------- AUDIO RECORDING (ATTACHES CLEANLY INTO INPUT BAR) ---------- */
@@ -779,6 +841,7 @@
       });
       await DB.saveConversation(conv);
       DB.touchStudyStreak();
+      scheduleAutoSync();
     } catch (err) {
       conv.messages.push({
         id: DB.uid("msg"),
@@ -1463,6 +1526,14 @@
                   }
                 </div>`
               : `<div style="display:flex;flex-direction:column;gap:10px;font-size:0.82rem;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;background:rgba(255,255,255,0.05);padding:8px 10px;border-radius:10px;">
+                    <div style="min-width:0;">
+                      <div style="font-size:0.76rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">👤 ${esc(state.userEmail || "Signed In")}</div>
+                      <div style="font-size:0.68rem;color:#6ee7b7;">${state.role === "admin" ? "👑 Admin • Auto-Sync ON" : "🎓 Student • Auto-Sync ON"}</div>
+                    </div>
+                    <button type="button" class="fl-btn danger sm" id="fl-signout-btn" style="padding:5px 9px;font-size:0.72rem;">Sign Out</button>
+                  </div>
+
                   <div>
                     <label style="color:#94a3b8;font-size:0.74rem;">Level</label>
                     <select id="fl-level-select" class="fl-select">
@@ -1471,36 +1542,63 @@
                     </select>
                   </div>
                   ${
-                    state.role === "admin" && !state.isStudentRoute
+                    state.role === "admin"
                       ? `<div class="fl-admin-share-card">
                           <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                            <strong style="color:#fff;font-size:0.84rem;">👥 Share With Family &amp; Friends</strong>
-                            <span style="font-size:0.7rem;color:${state.studentEnabled ? "#6ee7b7" : "#fca5a5"};font-weight:700;">${state.studentEnabled ? "● Active" : "● Paused"}</span>
+                            <strong style="color:#fff;font-size:0.84rem;">👥 Access Requests &amp; Users</strong>
+                            <button type="button" class="fl-mini-btn" id="fl-refresh-users-btn" title="Refresh list">↻</button>
                           </div>
-                          <div style="font-size:0.74rem;color:#cbd5e1;line-height:1.4;">
-                            They see <strong>only</strong> Finnish Learning Lab (no Studio articles or WordPress).
+                          <div style="font-size:0.73rem;color:#cbd5e1;line-height:1.4;">
+                            Share this single link — friends Sign Up, then you approve them here. They see <strong>only</strong> Finnish Lab.
                           </div>
                           <div style="display:flex;gap:6px;">
-                            <input type="text" readonly id="fl-student-share-url" class="fl-input" value="${esc(window.location.origin + "/finnish-student")}" style="font-size:0.74rem;padding:7px 9px;" />
+                            <input type="text" readonly id="fl-student-share-url" class="fl-input" value="${esc(window.location.origin + "/")}" style="font-size:0.74rem;padding:7px 9px;" />
                             <button type="button" class="fl-btn primary sm" id="fl-copy-student-url">📋 Copy</button>
                           </div>
-                          <div style="display:flex;gap:6px;align-items:center;">
-                            <input type="text" id="fl-admin-invite-code" class="fl-input" value="${esc(state.inviteCode)}" placeholder="Invite code" style="font-size:0.78rem;padding:7px 9px;" />
-                            <button type="button" class="fl-btn sm" id="fl-save-invite-code">Save</button>
-                          </div>
-                          <button type="button" class="fl-btn sm ${state.studentEnabled ? "" : "danger"}" id="fl-toggle-student-access">
-                            ${state.studentEnabled ? "🔒 Pause Student Access" : "✅ Enable Student Access"}
-                          </button>
+                          ${
+                            state.adminUsers.length
+                              ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+                                  ${state.adminUsers
+                                    .map(
+                                      (usr) => `
+                                    <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:5px;">
+                                      <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;">
+                                        <strong style="font-size:0.78rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(usr.name)}</strong>
+                                        <span style="font-size:0.68rem;font-weight:700;color:${usr.status === "approved" ? "#6ee7b7" : usr.status === "pending" ? "#fde047" : "#fca5a5"};">
+                                          ${usr.status === "approved" ? "✅ Approved" : usr.status === "pending" ? "⏳ Pending" : "🚫 Revoked"}
+                                        </span>
+                                      </div>
+                                      <div style="font-size:0.71rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;">${esc(usr.email)} ${usr.email_verified ? "• ✉️ Verified" : "• Unverified"}</div>
+                                      ${usr.verify_code ? `<div style="font-size:0.71rem;color:#7dd3fc;">Verify code: <strong>${esc(usr.verify_code)}</strong></div>` : ""}
+                                      ${usr.reset_code ? `<div style="font-size:0.71rem;color:#fde047;">Reset code: <strong>${esc(usr.reset_code)}</strong></div>` : ""}
+                                      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                                        ${usr.status !== "approved" ? `<button type="button" class="fl-btn success sm" data-fl-user-act="approve" data-fl-user-email="${esc(usr.email)}" style="padding:4px 8px;font-size:0.72rem;">✅ Approve</button>` : ""}
+                                        ${usr.status === "approved" ? `<button type="button" class="fl-btn danger sm" data-fl-user-act="revoke" data-fl-user-email="${esc(usr.email)}" style="padding:4px 8px;font-size:0.72rem;">🚫 Revoke</button>` : ""}
+                                        <button type="button" class="fl-mini-btn" data-fl-user-act="delete" data-fl-user-email="${esc(usr.email)}" title="Delete user">🗑️</button>
+                                      </div>
+                                    </div>
+                                  `
+                                    )
+                                    .join("")}
+                                </div>`
+                              : `<div style="font-size:0.74rem;color:#94a3b8;padding:4px 0;">No friends signed up yet. Share your link above!</div>`
+                          }
                         </div>`
                       : ""
                   }
                   <button type="button" id="fl-roast-toggle" class="fl-btn sm ${isRoastEnabled() ? "active" : ""}">
                     ${isRoastEnabled() ? "😈 Fun Roast Mode: ON" : "😇 Fun Roast Mode: OFF"}
                   </button>
-                  <div style="font-size:0.72rem;color:#94a3b8;line-height:1.45;">
-                    💾 <strong>Smart Phone Storage:</strong> Photos auto-compress (~120 KB) &amp; audio clips auto-clear after reply — your chats stay tiny on your phone (€0 server space).
+                  <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px;display:flex;flex-direction:column;gap:6px;">
+                    <strong style="font-size:0.76rem;color:#e2e8f0;">🔑 Change Password</strong>
+                    <input type="password" id="fl-cur-pass" class="fl-input" placeholder="Current password" style="font-size:0.76rem;padding:6px 8px;" />
+                    <input type="password" id="fl-new-pass" class="fl-input" placeholder="New password (min 6 chars)" style="font-size:0.76rem;padding:6px 8px;" />
+                    <button type="button" class="fl-btn sm" id="fl-change-pass-btn">Update Password</button>
                   </div>
-                  ${!state.isStudentRoute ? `<button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}">${state.focusMode ? "↙ Show Studio Sidebar" : "⛶ Full-Screen Focus Mode"}</button>` : ""}
+                  <div style="font-size:0.72rem;color:#94a3b8;line-height:1.45;">
+                    💾 <strong>Smart Storage &amp; Sync:</strong> Photos auto-compress (~120 KB), audio auto-clears, and your chats auto-sync across phone, iPad &amp; laptop.
+                  </div>
+                  ${state.role === "admin" ? `<button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}">${state.focusMode ? "↙ Show Studio Sidebar" : "⛶ Full-Screen Focus Mode"}</button>` : ""}
                   <div style="color:#94a3b8;">🔥 Streak: ${prog.streakDays || 0}d • AI left today: ${u.remaining}/${u.limit}</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
                     <button type="button" class="fl-btn primary sm" id="fl-export-backup">⬇️ Export</button>
@@ -1833,36 +1931,55 @@
     });
     root.querySelector("#fl-focus-toggle")?.addEventListener("click", () => { state.focusMode = !state.focusMode; document.body.classList.toggle("fl-focus-mode", state.focusMode); renderActiveView(); });
     root.querySelector("#fl-copy-student-url")?.addEventListener("click", async () => {
-      const url = window.location.origin + "/finnish-student";
-      try { await navigator.clipboard.writeText(url); toast("Student link copied! Share with your wife or friends.", "success"); }
-      catch (_) { const inp = document.getElementById("fl-student-share-url"); inp?.select(); document.execCommand("copy"); toast("Student link copied!", "success"); }
+      const url = window.location.origin + "/";
+      try { await navigator.clipboard.writeText(url); toast("Link copied! Send to your wife or friends to Sign Up.", "success"); }
+      catch (_) { const inp = document.getElementById("fl-student-share-url"); inp?.select(); document.execCommand("copy"); toast("Link copied!", "success"); }
     });
-    root.querySelector("#fl-save-invite-code")?.addEventListener("click", async () => {
-      const code = (document.getElementById("fl-admin-invite-code")?.value || "").trim();
-      if (code.length < 3) { toast("Code must be at least 3 characters.", "warning"); return; }
+    root.querySelector("#fl-refresh-users-btn")?.addEventListener("click", async () => {
+      await refreshAdminUsers();
+      renderActiveView();
+      toast("Users list refreshed!", "info");
+    });
+    root.querySelectorAll("[data-fl-user-act]").forEach((b) => {
+      b.onclick = async () => {
+        const email = b.getAttribute("data-fl-user-email");
+        const action = b.getAttribute("data-fl-user-act");
+        if (!email || !action) return;
+        try {
+          const res = await flApi("/api/finnish-lab/admin/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, action }),
+          });
+          state.adminUsers = res.users || [];
+          toast(action === "approve" ? `Approved ${email}! ✅` : action === "revoke" ? `Revoked ${email}.` : `Deleted ${email}.`, "success");
+          renderActiveView();
+        } catch (err) { toast(err.message, "error"); }
+      };
+    });
+    root.querySelector("#fl-change-pass-btn")?.addEventListener("click", async () => {
+      const current_password = document.getElementById("fl-cur-pass")?.value || "";
+      const new_password = document.getElementById("fl-new-pass")?.value || "";
+      if (!current_password || new_password.length < 6) {
+        toast("Enter current password and a new password (min 6 chars).", "warning");
+        return;
+      }
       try {
-        const res = await flApi("/api/finnish-lab/admin/student-access", {
+        const res = await flApi("/api/auth/change-password", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invite_code: code, enabled: state.studentEnabled }),
+          body: JSON.stringify({ current_password, new_password }),
         });
-        state.inviteCode = res.invite_code || code;
-        toast(`Invite code updated to "${state.inviteCode}"!`, "success");
-        renderActiveView();
+        toast(res.message || "Password updated!", "success");
+        const cEl = document.getElementById("fl-cur-pass");
+        const nEl = document.getElementById("fl-new-pass");
+        if (cEl) cEl.value = "";
+        if (nEl) nEl.value = "";
       } catch (err) { toast(err.message, "error"); }
     });
-    root.querySelector("#fl-toggle-student-access")?.addEventListener("click", async () => {
-      try {
-        const next = !state.studentEnabled;
-        const res = await flApi("/api/finnish-lab/admin/student-access", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ enabled: next }),
-        });
-        state.studentEnabled = res.enabled !== false;
-        toast(state.studentEnabled ? "Student access enabled!" : "Student access paused.", "info");
-        renderActiveView();
-      } catch (err) { toast(err.message, "error"); }
+    root.querySelector("#fl-signout-btn")?.addEventListener("click", async () => {
+      try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) {}
+      window.location.href = "/";
     });
     root.querySelector("#fl-export-backup")?.addEventListener("click", async () => { downloadTextFile(`finnish-lab-backup-${DB.todayStr()}.json`, JSON.stringify(await DB.exportAllData(), null, 2)); toast("Backup exported!", "success"); });
     root.querySelector("#fl-import-backup")?.addEventListener("change", async (e) => {
@@ -1917,12 +2034,16 @@
     await Promise.all([loadAllData(), refreshRole()]);
     mountFloatingAndSidePanel();
     renderActiveView();
-    if (state.role !== "guest") refreshStatus();
+    if (state.role !== "guest") {
+      refreshStatus();
+      autoPullSync();
+    }
   }
 
   window.FinnishLab = {
     init: initFinnishLab,
     render: renderActiveView,
+    refreshAuth: refreshAuthAndSync,
     toggleSidePanel,
     handleBack,
     isRecording: () => state.isRecording || state.isLiveTranslating,

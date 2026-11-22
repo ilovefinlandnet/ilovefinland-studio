@@ -121,34 +121,241 @@
     return data;
   }
 
-  /* ---------- AUTH: DIRECT AUTO-LOGIN ---------- */
-  async function checkAuth() {
-    if (window.location.pathname === "/finnish-student" || window.location.pathname.startsWith("/finnish-student/")) {
-      document.body.classList.add("fl-student-only");
-      $("signin-gate")?.classList.add("hidden");
-      ($("studio-shell") || $("app"))?.classList.remove("hidden");
-      switchView("finnish-lab", false, true);
-      return;
-    }
-    try {
-      const me = await api("/api/auth/me");
-      $("signin-gate")?.classList.add("hidden");
-      ($("studio-shell") || $("app"))?.classList.remove("hidden");
-      if ($("user-pill")) $("user-pill").textContent = me.email || "editor@ilovefinland.net";
-      await loadAll();
-    } catch (e) {
-      console.warn("Direct login fallback:", e);
-      $("signin-gate")?.classList.add("hidden");
-      ($("studio-shell") || $("app"))?.classList.remove("hidden");
-      if ($("user-pill")) $("user-pill").textContent = "editor@ilovefinland.net";
-      await loadAll();
+  /* ---------- AUTH: UNIFIED ADMIN & STUDENT ACCOUNTS ---------- */
+  function showAuthError(msg) {
+    const errEl = $("signin-error");
+    const infoEl = $("signin-info");
+    if (infoEl) infoEl.classList.add("hidden");
+    if (errEl) {
+      errEl.textContent = msg;
+      errEl.classList.remove("hidden");
     }
   }
 
-  function showAuthError(msg) {
-    const el = $("signin-error");
-    el.textContent = msg;
-    el.classList.remove("hidden");
+  function showAuthInfo(msg) {
+    const errEl = $("signin-error");
+    const infoEl = $("signin-info");
+    if (errEl) errEl.classList.add("hidden");
+    if (infoEl) {
+      infoEl.textContent = msg;
+      infoEl.classList.remove("hidden");
+    }
+  }
+
+  function clearAuthMessages() {
+    $("signin-error")?.classList.add("hidden");
+    $("signin-info")?.classList.add("hidden");
+  }
+
+  function showAuthMode(mode) {
+    clearAuthMessages();
+    const forms = ["signin", "signup", "verify", "forgot"];
+    forms.forEach((f) => $(`auth-form-${f}`)?.classList.toggle("hidden", f !== mode));
+    const tabBar = $("auth-tab-bar");
+    if (tabBar) tabBar.classList.toggle("hidden", mode === "verify" || mode === "forgot");
+    const tIn = $("auth-tab-signin");
+    const tUp = $("auth-tab-signup");
+    if (tIn && tUp) {
+      tIn.className = mode === "signin" ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm";
+      tUp.className = mode === "signup" ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm";
+    }
+  }
+
+  function wireUnifiedAuthUI() {
+    if (window.__ilfAuthWired) return;
+    window.__ilfAuthWired = true;
+
+    $("auth-tab-signin")?.addEventListener("click", () => showAuthMode("signin"));
+    $("auth-tab-signup")?.addEventListener("click", () => showAuthMode("signup"));
+    $("btn-open-forgot")?.addEventListener("click", () => {
+      const em = ($("auth-login-email")?.value || "").trim();
+      if (em && $("auth-reset-email")) $("auth-reset-email").value = em;
+      showAuthMode("forgot");
+    });
+    $("btn-open-verify")?.addEventListener("click", () => {
+      const em = ($("auth-login-email")?.value || "").trim();
+      if (em && $("auth-verify-email")) $("auth-verify-email").value = em;
+      showAuthMode("verify");
+    });
+    $("btn-back-to-signin-1")?.addEventListener("click", () => showAuthMode("signin"));
+    $("btn-back-to-signin-2")?.addEventListener("click", () => showAuthMode("signin"));
+
+    $("auth-form-signin")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthMessages();
+      const email = ($("auth-login-email")?.value || "").trim();
+      const password = $("auth-login-pass")?.value || "";
+      const btn = $("btn-auth-signin");
+      if (btn) { btn.disabled = true; btn.textContent = "Signing in..."; }
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (data.error === "EMAIL_NOT_VERIFIED") {
+            if ($("auth-verify-email")) $("auth-verify-email").value = data.email || email;
+            showAuthMode("verify");
+            showAuthError(data.message || "Please verify your email first.");
+          } else {
+            showAuthError(data.message || data.error || "Sign in failed.");
+          }
+          return;
+        }
+        await checkAuth();
+      } catch (err) {
+        showAuthError(err.message || "Network error.");
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Sign In →"; }
+      }
+    });
+
+    $("auth-form-signup")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthMessages();
+      const name = ($("auth-signup-name")?.value || "").trim();
+      const email = ($("auth-signup-email")?.value || "").trim();
+      const password = $("auth-signup-pass")?.value || "";
+      const btn = $("btn-auth-signup");
+      if (btn) { btn.disabled = true; btn.textContent = "Creating account..."; }
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showAuthError(data.message || data.error || "Sign up failed.");
+          return;
+        }
+        if ($("auth-verify-email")) $("auth-verify-email").value = data.email || email;
+        showAuthMode("verify");
+        showAuthInfo(data.message || "Check your email for your 6-digit verification code.");
+      } catch (err) {
+        showAuthError(err.message || "Network error.");
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Create Account →"; }
+      }
+    });
+
+    $("auth-form-verify")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthMessages();
+      const email = ($("auth-verify-email")?.value || "").trim();
+      const code = ($("auth-verify-code")?.value || "").trim();
+      try {
+        const res = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showAuthError(data.message || "Invalid code.");
+          return;
+        }
+        if ($("auth-login-email")) $("auth-login-email").value = email;
+        showAuthMode("signin");
+        showAuthInfo(data.message || "Email verified! Waiting for Admin approval.");
+      } catch (err) {
+        showAuthError(err.message || "Network error.");
+      }
+    });
+
+    $("btn-resend-verify")?.addEventListener("click", async () => {
+      const email = ($("auth-verify-email")?.value || "").trim();
+      if (!email) { showAuthError("Enter your email first."); return; }
+      try {
+        const res = await fetch("/api/auth/resend-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) showAuthError(data.message || "Could not resend code.");
+        else showAuthInfo(data.message || "New code sent!");
+      } catch (err) {
+        showAuthError(err.message || "Network error.");
+      }
+    });
+
+    $("btn-send-reset-code")?.addEventListener("click", async () => {
+      const email = ($("auth-reset-email")?.value || "").trim();
+      if (!email) { showAuthError("Enter your email first."); return; }
+      try {
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) showAuthError(data.message || "Could not send reset code.");
+        else showAuthInfo(data.message || "6-digit reset code sent!");
+      } catch (err) {
+        showAuthError(err.message || "Network error.");
+      }
+    });
+
+    $("auth-form-forgot")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthMessages();
+      const email = ($("auth-reset-email")?.value || "").trim();
+      const code = ($("auth-reset-code")?.value || "").trim();
+      const new_password = $("auth-reset-newpass")?.value || "";
+      if (!code || !new_password) { showAuthError("Enter the 6-digit reset code and new password."); return; }
+      try {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code, new_password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showAuthError(data.message || "Reset failed.");
+          return;
+        }
+        if ($("auth-login-email")) $("auth-login-email").value = email;
+        showAuthMode("signin");
+        showAuthInfo(data.message || "Password updated! Sign in now.");
+      } catch (err) {
+        showAuthError(err.message || "Network error.");
+      }
+    });
+  }
+
+  async function checkAuth() {
+    wireUnifiedAuthUI();
+    try {
+      const me = await api("/api/auth/me");
+      if (!me || !me.authenticated) {
+        document.body.classList.remove("fl-student-only");
+        ($("studio-shell") || $("app"))?.classList.add("hidden");
+        $("signin-gate")?.classList.remove("hidden");
+        return;
+      }
+
+      $("signin-gate")?.classList.add("hidden");
+      ($("studio-shell") || $("app"))?.classList.remove("hidden");
+      if ($("user-pill")) $("user-pill").textContent = me.email || "binodoli721@gmail.com";
+
+      if (me.role === "student" || window.location.pathname === "/finnish-student" || window.location.pathname.startsWith("/finnish-student/")) {
+        document.body.classList.add("fl-student-only");
+        switchView("finnish-lab", false, true);
+        window.FinnishLab?.refreshAuth?.();
+        return;
+      }
+
+      document.body.classList.remove("fl-student-only");
+      await loadAll();
+      window.FinnishLab?.refreshAuth?.();
+    } catch (e) {
+      console.warn("Auth check error:", e);
+      ($("studio-shell") || $("app"))?.classList.add("hidden");
+      $("signin-gate")?.classList.remove("hidden");
+    }
   }
 
   async function setupSignInUI() {

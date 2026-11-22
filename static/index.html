@@ -14,48 +14,92 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=55.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=62.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=64.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
-  <!-- SIGN-IN SCREEN (Direct Login Enabled: Hidden by default) -->
-  <div id="signin-gate" class="signin-gate hidden">
-    <div class="signin-card">
+  <!-- UNIFIED SIGN-IN / SIGN-UP GATE (Admin = Full Studio, Approved Students = Finnish Lab Only) -->
+  <div id="signin-gate" class="signin-gate">
+    <div class="signin-card" style="max-width:410px;width:92%;">
       <div class="signin-logo-wrap">
-        <img src="/assets/ilf-heart.png" alt="ILoveFinland Logo" class="brand-heart-lg" width="68" height="68" style="width:68px;height:68px;object-fit:contain;" />
+        <img src="/assets/ilf-heart.png" alt="ILoveFinland Logo" class="brand-heart-lg" width="60" height="60" style="width:60px;height:60px;object-fit:contain;" />
       </div>
-      <h1 class="signin-title">ILoveFinland Studio</h1>
-      <p class="signin-sub">Private editorial workbench for story assignments, AI research, multi-clip Reel production, and scheduled publishing in Europe/Helsinki.</p>
+      <h1 class="signin-title" style="margin-bottom:4px;">🇫🇮 ILoveFinland</h1>
+      <p class="signin-sub" style="margin-bottom:14px;">Sign in to your account, or sign up for Finnish Learning Lab (Admin approval required).</p>
 
-      <div class="security-banner">
-        <span class="badge badge-sec">Private Access</span>
-        <p class="hint-text" style="margin:4px 0 0;">Authorized access only: <code>editor@ilovefinland.net</code>. Previews &amp; media links protected.</p>
-      </div>
-
-      <div id="google-btn-container" class="google-btn-wrap">
-        <button id="btn-google-signin" class="btn btn-google">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          Sign in with Google
-        </button>
+      <!-- Tab Switch: Sign In | Sign Up -->
+      <div id="auth-tab-bar" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(15,23,42,0.08);padding:4px;border-radius:12px;margin-bottom:14px;">
+        <button type="button" id="auth-tab-signin" class="btn btn-primary btn-sm" style="border-radius:9px;">Sign In</button>
+        <button type="button" id="auth-tab-signup" class="btn btn-ghost btn-sm" style="border-radius:9px;">Sign Up</button>
       </div>
 
-      <div class="signin-divider"><span>or use private preview key</span></div>
-
-      <form id="key-signin-form" class="key-signin-form">
-        <label for="access-key-input" class="label-sm">Preview Access Key</label>
-        <div class="key-input-row">
-          <input id="access-key-input" type="password" placeholder="Enter private access key" autocomplete="current-password" />
-          <button id="btn-key-signin" type="button" class="btn btn-primary">Enter Studio</button>
+      <!-- 1. SIGN IN FORM -->
+      <form id="auth-form-signin" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <div>
+          <label for="auth-login-email" class="label-sm">Email</label>
+          <input id="auth-login-email" type="email" placeholder="you@gmail.com" autocomplete="email" required style="width:100%;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label for="auth-login-pass" class="label-sm">Password</label>
+          <input id="auth-login-pass" type="password" placeholder="Enter your password" autocomplete="current-password" required style="width:100%;box-sizing:border-box;" />
+        </div>
+        <button id="btn-auth-signin" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Sign In →</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;margin-top:2px;">
+          <button type="button" id="btn-open-forgot" style="background:none;border:none;color:#0284c7;cursor:pointer;padding:0;font-weight:600;">Forgot password?</button>
+          <button type="button" id="btn-open-verify" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-weight:600;">Have a 6-digit code?</button>
         </div>
       </form>
 
-      <div id="signin-error" class="signin-error hidden"></div>
-      <p class="hint-text signin-foot">Milestone 2 • Live WordPress, email &amp; social publishing disconnected.</p>
+      <!-- 2. SIGN UP FORM -->
+      <form id="auth-form-signup" class="hidden" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <div>
+          <label for="auth-signup-name" class="label-sm">Your Name</label>
+          <input id="auth-signup-name" type="text" placeholder="e.g. Sita / Alex" autocomplete="name" required style="width:100%;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label for="auth-signup-email" class="label-sm">Email</label>
+          <input id="auth-signup-email" type="email" placeholder="you@gmail.com" autocomplete="email" required style="width:100%;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label for="auth-signup-pass" class="label-sm">Create Password (min 6 chars)</label>
+          <input id="auth-signup-pass" type="password" placeholder="Create a password" autocomplete="new-password" minlength="6" required style="width:100%;box-sizing:border-box;" />
+        </div>
+        <button id="btn-auth-signup" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Create Account →</button>
+      </form>
+
+      <!-- 3. EMAIL VERIFICATION FORM -->
+      <form id="auth-form-verify" class="hidden" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <div style="font-size:0.82rem;color:#334155;">Enter your email and the 6-digit verification code.</div>
+        <input id="auth-verify-email" type="email" placeholder="you@gmail.com" required style="width:100%;box-sizing:border-box;" />
+        <input id="auth-verify-code" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code (e.g. 123456)" required style="width:100%;box-sizing:border-box;text-align:center;letter-spacing:0.18em;font-size:1.05rem;font-weight:700;" />
+        <button id="btn-auth-verify" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Verify Email</button>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
+          <button type="button" id="btn-resend-verify" style="background:none;border:none;color:#0284c7;cursor:pointer;padding:0;font-weight:600;">Resend code</button>
+          <button type="button" id="btn-back-to-signin-1" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-weight:600;">← Back to Sign In</button>
+        </div>
+      </form>
+
+      <!-- 4. FORGOT / RESET PASSWORD FORM -->
+      <form id="auth-form-forgot" class="hidden" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <div style="font-size:0.82rem;color:#334155;">Reset your password via email code:</div>
+        <div style="display:flex;gap:6px;">
+          <input id="auth-reset-email" type="email" placeholder="you@gmail.com" required style="flex:1;box-sizing:border-box;" />
+          <button type="button" id="btn-send-reset-code" class="btn btn-ghost btn-sm" style="white-space:nowrap;">Send Code</button>
+        </div>
+        <input id="auth-reset-code" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit reset code" style="width:100%;box-sizing:border-box;text-align:center;letter-spacing:0.16em;font-weight:700;" />
+        <input id="auth-reset-newpass" type="password" placeholder="New password (min 6 chars)" minlength="6" style="width:100%;box-sizing:border-box;" />
+        <button id="btn-auth-reset-submit" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Set New Password</button>
+        <button type="button" id="btn-back-to-signin-2" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-size:0.78rem;font-weight:600;text-align:left;">← Back to Sign In</button>
+      </form>
+
+      <div id="signin-info" class="hidden" style="margin-top:10px;padding:9px 11px;border-radius:10px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:0.8rem;text-align:left;"></div>
+      <div id="signin-error" class="signin-error hidden" style="margin-top:10px;"></div>
+      <p class="hint-text signin-foot" style="margin-top:14px;">Private Family &amp; Friends Access • Your Finnish chats sync across phone, iPad &amp; laptop.</p>
     </div>
   </div>
 
-  <!-- MAIN APP WRAPPER -->
-  <div id="studio-shell" class="studio-shell">
+  <!-- MAIN APP WRAPPER (Hidden until signed in!) -->
+  <div id="studio-shell" class="studio-shell hidden">
     <!-- Mobile Drawer Overlay Backdrop -->
     <div id="sidebar-backdrop" class="sidebar-backdrop hidden"></div>
 
@@ -3142,10 +3186,10 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=59.0"></script>
-  <script src="/finnish-lab-db.js?v=63.0"></script>
-  <script src="/finnish-lab-curriculum.js?v=63.0"></script>
-  <script src="/finnish-lab.js?v=63.0"></script>
+  <script src="/app.js?v=64.0"></script>
+  <script src="/finnish-lab-db.js?v=64.0"></script>
+  <script src="/finnish-lab-curriculum.js?v=64.0"></script>
+  <script src="/finnish-lab.js?v=64.0"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');
