@@ -14,87 +14,93 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=55.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=64.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=65.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
-  <!-- UNIFIED SIGN-IN / SIGN-UP GATE (Admin = Full Studio, Approved Students = Finnish Lab Only) -->
+  <!-- UNIFIED SIGN-IN / SIGN-UP GATE (Nordic Dark-Glass Design) -->
   <div id="signin-gate" class="signin-gate">
-    <div class="signin-card" style="max-width:410px;width:92%;">
-      <div class="signin-logo-wrap">
-        <img src="/assets/ilf-heart.png" alt="ILoveFinland Logo" class="brand-heart-lg" width="60" height="60" style="width:60px;height:60px;object-fit:contain;" />
+    <div class="signin-card">
+      <div class="auth-logo-badge">
+        <img src="/assets/ilf-heart.png" alt="ILoveFinland Logo" width="46" height="46" style="width:46px;height:46px;object-fit:contain;" />
       </div>
-      <h1 class="signin-title" style="margin-bottom:4px;">🇫🇮 ILoveFinland</h1>
-      <p class="signin-sub" style="margin-bottom:14px;">Sign in to your account, or sign up for Finnish Learning Lab (Admin approval required).</p>
+      <h1 class="signin-title">ILoveFinland</h1>
+      <p class="signin-sub">🇫🇮 Studio &amp; Personal Finnish AI Lab</p>
 
-      <!-- Tab Switch: Sign In | Sign Up -->
-      <div id="auth-tab-bar" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(15,23,42,0.08);padding:4px;border-radius:12px;margin-bottom:14px;">
-        <button type="button" id="auth-tab-signin" class="btn btn-primary btn-sm" style="border-radius:9px;">Sign In</button>
-        <button type="button" id="auth-tab-signup" class="btn btn-ghost btn-sm" style="border-radius:9px;">Sign Up</button>
+      <!-- Apple-Style Segmented Switch: Sign In | Sign Up -->
+      <div id="auth-tab-bar" class="auth-segment">
+        <button type="button" id="auth-tab-signin" class="auth-seg-btn active">Sign In</button>
+        <button type="button" id="auth-tab-signup" class="auth-seg-btn">Sign Up</button>
       </div>
 
       <!-- 1. SIGN IN FORM -->
-      <form id="auth-form-signin" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
-        <div>
-          <label for="auth-login-email" class="label-sm">Email</label>
-          <input id="auth-login-email" type="email" placeholder="you@gmail.com" autocomplete="email" required style="width:100%;box-sizing:border-box;" />
+      <form id="auth-form-signin" style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+        <div class="auth-field">
+          <label for="auth-login-email" class="auth-label">Email</label>
+          <input id="auth-login-email" class="auth-input" type="email" placeholder="you@gmail.com" autocomplete="email" required />
         </div>
-        <div>
-          <label for="auth-login-pass" class="label-sm">Password</label>
-          <input id="auth-login-pass" type="password" placeholder="Enter your password" autocomplete="current-password" required style="width:100%;box-sizing:border-box;" />
+        <div class="auth-field">
+          <label for="auth-login-pass" class="auth-label">Password</label>
+          <div class="auth-input-wrap">
+            <input id="auth-login-pass" class="auth-input" type="password" placeholder="Enter your password" autocomplete="current-password" required style="padding-right:42px !important;" />
+            <button type="button" class="auth-pass-toggle" data-toggle-pass="auth-login-pass" aria-label="Show password">👁️</button>
+          </div>
         </div>
-        <button id="btn-auth-signin" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Sign In →</button>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;margin-top:2px;">
-          <button type="button" id="btn-open-forgot" style="background:none;border:none;color:#0284c7;cursor:pointer;padding:0;font-weight:600;">Forgot password?</button>
-          <button type="button" id="btn-open-verify" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-weight:600;">Have a 6-digit code?</button>
+        <button id="btn-auth-signin" type="submit" class="auth-submit-btn">Sign In →</button>
+        <div class="auth-link-row">
+          <button type="button" id="btn-open-forgot" class="auth-link-btn">Forgot password?</button>
+          <button type="button" id="btn-open-verify" class="auth-link-btn muted">Have a 6-digit code?</button>
         </div>
       </form>
 
       <!-- 2. SIGN UP FORM -->
-      <form id="auth-form-signup" class="hidden" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
-        <div>
-          <label for="auth-signup-name" class="label-sm">Your Name</label>
-          <input id="auth-signup-name" type="text" placeholder="e.g. Sita / Alex" autocomplete="name" required style="width:100%;box-sizing:border-box;" />
+      <form id="auth-form-signup" class="hidden" style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+        <div class="auth-field">
+          <label for="auth-signup-name" class="auth-label">Your Name</label>
+          <input id="auth-signup-name" class="auth-input" type="text" placeholder="e.g. Sita / Alex" autocomplete="name" required />
         </div>
-        <div>
-          <label for="auth-signup-email" class="label-sm">Email</label>
-          <input id="auth-signup-email" type="email" placeholder="you@gmail.com" autocomplete="email" required style="width:100%;box-sizing:border-box;" />
+        <div class="auth-field">
+          <label for="auth-signup-email" class="auth-label">Email</label>
+          <input id="auth-signup-email" class="auth-input" type="email" placeholder="you@gmail.com" autocomplete="email" required />
         </div>
-        <div>
-          <label for="auth-signup-pass" class="label-sm">Create Password (min 6 chars)</label>
-          <input id="auth-signup-pass" type="password" placeholder="Create a password" autocomplete="new-password" minlength="6" required style="width:100%;box-sizing:border-box;" />
+        <div class="auth-field">
+          <label for="auth-signup-pass" class="auth-label">Create Password</label>
+          <div class="auth-input-wrap">
+            <input id="auth-signup-pass" class="auth-input" type="password" placeholder="Minimum 6 characters" autocomplete="new-password" minlength="6" required style="padding-right:42px !important;" />
+            <button type="button" class="auth-pass-toggle" data-toggle-pass="auth-signup-pass" aria-label="Show password">👁️</button>
+          </div>
         </div>
-        <button id="btn-auth-signup" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Create Account →</button>
+        <button id="btn-auth-signup" type="submit" class="auth-submit-btn">Create Account →</button>
       </form>
 
       <!-- 3. EMAIL VERIFICATION FORM -->
-      <form id="auth-form-verify" class="hidden" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
-        <div style="font-size:0.82rem;color:#334155;">Enter your email and the 6-digit verification code.</div>
-        <input id="auth-verify-email" type="email" placeholder="you@gmail.com" required style="width:100%;box-sizing:border-box;" />
-        <input id="auth-verify-code" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code (e.g. 123456)" required style="width:100%;box-sizing:border-box;text-align:center;letter-spacing:0.18em;font-size:1.05rem;font-weight:700;" />
-        <button id="btn-auth-verify" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Verify Email</button>
-        <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
-          <button type="button" id="btn-resend-verify" style="background:none;border:none;color:#0284c7;cursor:pointer;padding:0;font-weight:600;">Resend code</button>
-          <button type="button" id="btn-back-to-signin-1" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-weight:600;">← Back to Sign In</button>
+      <form id="auth-form-verify" class="hidden" style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+        <div style="font-size:0.84rem;color:#cbd5e1;">Enter your email and 6-digit verification code.</div>
+        <input id="auth-verify-email" class="auth-input" type="email" placeholder="you@gmail.com" required />
+        <input id="auth-verify-code" class="auth-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" required style="text-align:center;letter-spacing:0.25em;font-size:1.15rem !important;font-weight:800;" />
+        <button id="btn-auth-verify" type="submit" class="auth-submit-btn">Verify Email →</button>
+        <div class="auth-link-row">
+          <button type="button" id="btn-resend-verify" class="auth-link-btn">Resend code</button>
+          <button type="button" id="btn-back-to-signin-1" class="auth-link-btn muted">← Back to Sign In</button>
         </div>
       </form>
 
       <!-- 4. FORGOT / RESET PASSWORD FORM -->
-      <form id="auth-form-forgot" class="hidden" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
-        <div style="font-size:0.82rem;color:#334155;">Reset your password via email code:</div>
-        <div style="display:flex;gap:6px;">
-          <input id="auth-reset-email" type="email" placeholder="you@gmail.com" required style="flex:1;box-sizing:border-box;" />
-          <button type="button" id="btn-send-reset-code" class="btn btn-ghost btn-sm" style="white-space:nowrap;">Send Code</button>
+      <form id="auth-form-forgot" class="hidden" style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+        <div style="font-size:0.84rem;color:#cbd5e1;">Reset your password via 6-digit email code:</div>
+        <div style="display:flex;gap:8px;">
+          <input id="auth-reset-email" class="auth-input" type="email" placeholder="you@gmail.com" required style="flex:1;" />
+          <button type="button" id="btn-send-reset-code" class="auth-seg-btn active" style="padding:0 14px;white-space:nowrap;">Send Code</button>
         </div>
-        <input id="auth-reset-code" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit reset code" style="width:100%;box-sizing:border-box;text-align:center;letter-spacing:0.16em;font-weight:700;" />
-        <input id="auth-reset-newpass" type="password" placeholder="New password (min 6 chars)" minlength="6" style="width:100%;box-sizing:border-box;" />
-        <button id="btn-auth-reset-submit" type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-weight:700;">Set New Password</button>
-        <button type="button" id="btn-back-to-signin-2" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0;font-size:0.78rem;font-weight:600;text-align:left;">← Back to Sign In</button>
+        <input id="auth-reset-code" class="auth-input" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit reset code" style="text-align:center;letter-spacing:0.2em;font-weight:800;" />
+        <input id="auth-reset-newpass" class="auth-input" type="password" placeholder="New password (min 6 chars)" minlength="6" />
+        <button id="btn-auth-reset-submit" type="submit" class="auth-submit-btn">Set New Password →</button>
+        <button type="button" id="btn-back-to-signin-2" class="auth-link-btn muted" style="text-align:left;">← Back to Sign In</button>
       </form>
 
-      <div id="signin-info" class="hidden" style="margin-top:10px;padding:9px 11px;border-radius:10px;background:#ecfdf5;border:1px solid #86efac;color:#166534;font-size:0.8rem;text-align:left;"></div>
-      <div id="signin-error" class="signin-error hidden" style="margin-top:10px;"></div>
-      <p class="hint-text signin-foot" style="margin-top:14px;">Private Family &amp; Friends Access • Your Finnish chats sync across phone, iPad &amp; laptop.</p>
+      <div id="signin-info" class="auth-alert-info hidden"></div>
+      <div id="signin-error" class="signin-error hidden"></div>
+      <p class="signin-foot">Private Access • Syncs automatically across Phone, iPad &amp; Laptop</p>
     </div>
   </div>
 
@@ -3186,7 +3192,7 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=64.0"></script>
+  <script src="/app.js?v=65.0"></script>
   <script src="/finnish-lab-db.js?v=64.0"></script>
   <script src="/finnish-lab-curriculum.js?v=64.0"></script>
   <script src="/finnish-lab.js?v=64.0"></script>

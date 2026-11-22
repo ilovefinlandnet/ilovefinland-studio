@@ -156,14 +156,24 @@
     const tIn = $("auth-tab-signin");
     const tUp = $("auth-tab-signup");
     if (tIn && tUp) {
-      tIn.className = mode === "signin" ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm";
-      tUp.className = mode === "signup" ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm";
+      tIn.classList.toggle("active", mode === "signin");
+      tUp.classList.toggle("active", mode === "signup");
     }
   }
 
   function wireUnifiedAuthUI() {
     if (window.__ilfAuthWired) return;
     window.__ilfAuthWired = true;
+
+    document.querySelectorAll("[data-toggle-pass]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const inp = $(btn.getAttribute("data-toggle-pass"));
+        if (!inp) return;
+        const showing = inp.type === "text";
+        inp.type = showing ? "password" : "text";
+        btn.textContent = showing ? "👁️" : "🙈";
+      });
+    });
 
     $("auth-tab-signin")?.addEventListener("click", () => showAuthMode("signin"));
     $("auth-tab-signup")?.addEventListener("click", () => showAuthMode("signup"));
