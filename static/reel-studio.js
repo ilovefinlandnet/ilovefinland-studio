@@ -507,6 +507,16 @@
 
       // Transport controls
       document.getElementById("btn-transport-play")?.addEventListener("click", () => this.togglePlay());
+      document.getElementById("btn-fullscreen-toggle")?.addEventListener("click", () => {
+        const vp = document.getElementById("reel-canvas-viewport") || document.getElementById("reel-editor-screen");
+        if (!vp) return;
+        if (!document.fullscreenElement) {
+          if (vp.requestFullscreen) vp.requestFullscreen();
+          else if (vp.webkitRequestFullscreen) vp.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+        }
+      });
       document.getElementById("btn-transport-rewind")?.addEventListener("click", () => this.seekTo(0));
       document.getElementById("btn-transport-step-back")?.addEventListener("click", () => this.seekTo(Math.max(0, this.currentTime - 1.0)));
       document.getElementById("btn-transport-step-fwd")?.addEventListener("click", () => this.seekTo(Math.min(this.getTotalDuration(), this.currentTime + 1.0)));
@@ -1618,12 +1628,25 @@
     // =========================================================================
 
     openMobileDrawer(drawerName) {
+      if (drawerName === "edit") {
+        const mediaClips = this.currentProject?.timeline?.tracks?.media || [];
+        if (!this.selectedId && mediaClips.length > 0) {
+          this.selectedTrack = "media";
+          this.selectedId = mediaClips[0].id;
+          this.renderTimeline();
+          this.renderInspector();
+        }
+        this.openMobileInspector();
+        return;
+      }
+
       const leftDrawer = document.getElementById("reel-left-drawer");
       const backdrop = document.getElementById("reel-mobile-backdrop");
       const titleEl = document.getElementById("mobile-drawer-title");
 
       const titles = {
         media: "📁 Media Pool (Photos & Videos)",
+        effects: "⭐ Visual Effects & Filters",
         text: "🔤 Add Text Overlays",
         audio: "🎵 Background Music & Audio",
         logo: "❤️ ILoveFinland Logo",
@@ -2148,11 +2171,12 @@
     createWaveformSVG(widthPx, isVoice) {
       const bars = Math.max(10, Math.floor(widthPx / 4));
       let rects = "";
+      const barColor = isVoice ? "#C084FC" : "#00F2FE";
       for (let i = 0; i < bars; i++) {
         const seed = (i * 7 + (isVoice ? 13 : 5)) % 100;
         const h = Math.max(4, Math.round((Math.sin(i * 0.3) * 0.38 + 0.62) * (seed % 16 + 6)));
         const y = Math.round((28 - h) / 2);
-        rects += `<rect x="${i * 4}" y="${y}" width="2" height="${h}" rx="1" fill="#FFFFFF" opacity="0.38" />`;
+        rects += `<rect x="${i * 4}" y="${y}" width="2.5" height="${h}" rx="1" fill="${barColor}" opacity="0.85" />`;
       }
       return `<svg class="reel-audio-waveform-visual" width="${widthPx}" height="28" style="position:absolute;left:0;top:0;pointer-events:none;">${rects}</svg>`;
     }
@@ -2199,10 +2223,15 @@
             ? `<span style="background:rgba(22,139,255,0.3);border:1px solid #168BFF;color:#38bdf8;font-size:0.6rem;padding:1px 4px;border-radius:3px;margin-right:4px;">⚡${c.transition_in}</span>`
             : "";
 
+          const filmstripBg = (c.url)
+            ? `<div class="reel-clip-filmstrip" style="background-image:url('${c.url}');"></div>`
+            : "";
+
           block.innerHTML = `
             <div class="reel-trim-handle-left" title="Trim start"></div>
-            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;">
-              ${transBadge} ${c.type === 'video' ? '🎬' : '📷'} ${escapeHtml(c.filename)}
+            ${filmstripBg}
+            <span class="reel-clip-title" style="position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.68rem;display:flex;align-items:center;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.9);">
+              ${transBadge} <span style="margin-right:3px;">${c.type === 'video' ? '🎬' : '📷'}</span> ${escapeHtml(c.filename)}
             </span>
             <div class="reel-trim-handle-right" title="Trim end / duration"></div>
           `;
@@ -2218,7 +2247,7 @@
             transBtn.className = `reel-timeline-trans-btn ${this.selectedTrack === 'transition' && this.selectedId === c.id ? 'active' : ''}`;
             transBtn.style.left = `${Math.max(0, leftPx - 11)}px`;
             transBtn.title = `Transition: ${c.transition_in || 'cut'}`;
-            transBtn.innerHTML = `⚡`;
+            transBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="4 4 12 12 4 20 4 4"></polygon><polygon points="20 4 12 12 20 20 20 4"></polygon></svg>`;
             transBtn.addEventListener("click", (e) => {
               e.stopPropagation();
               this.selectedTrack = "transition";
@@ -2242,6 +2271,25 @@
           });
           this.laneMedia.appendChild(block);
         });
+
+        // CapCut-style quick add clip button at the end of the media track
+        const lastClip = mediaClips[mediaClips.length - 1];
+        const nextStartSec = lastClip ? (lastClip.start_sec + lastClip.duration) : 0;
+        const addBtnLeftPx = nextStartSec * this.zoomPxPerSec + 6;
+
+        const addClipBtn = document.createElement("button");
+        addClipBtn.type = "button";
+        addClipBtn.className = "reel-timeline-add-clip-btn";
+        addClipBtn.title = "Add photo or video clip";
+        addClipBtn.style.left = `${addBtnLeftPx}px`;
+        addClipBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+        addClipBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.openDrawer("media");
+          this.openMobileDrawer("media");
+          document.getElementById("reel-media-file-input")?.click();
+        });
+        this.laneMedia.appendChild(addClipBtn);
       }
 
       // 3. Render Text Layers (Multi-row dynamic stacking for overlapping text clips)

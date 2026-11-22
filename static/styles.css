@@ -5739,17 +5739,11 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     font-size: 16px !important; /* Prevents iOS auto-zoom */
   }
 
-  /* Calendar Grid on Mobile: Clean Vertical Day Cards */
-  .calendar-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-  }
-
-  .cal-day-cell {
-    min-height: auto !important;
-    padding: 10px !important;
-    border-radius: 10px !important;
+  /* Clean Calendar Container on Mobile */
+  #calendar-body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
   }
 
   /* =========================================================================
@@ -5841,6 +5835,11 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     min-height: 42px !important;
     justify-content: center !important;
     display: inline-flex !important;
+    white-space: nowrap !important;
+  }
+  .btn-upload-multi-touch span {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
   }
 
   /* Featured Image Card on Mobile */

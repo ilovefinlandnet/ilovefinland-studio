@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=53.2" />
-  <link rel="stylesheet" href="/reel-studio.css?v=53.2" />
+  <link rel="stylesheet" href="/styles.css?v=54.0" />
+  <link rel="stylesheet" href="/reel-studio.css?v=54.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -431,12 +431,11 @@
           <!-- SCREEN 2: MODERN FULLSCREEN VIDEO EDITOR -->
           <div id="reel-editor-screen" class="hidden">
             <div class="reel-editor-container">
-              <!-- Top Toolbar -->
-              <div class="reel-topbar">
+              <!-- Top Toolbar (CapCut Standard Minimalist Bar) -->
+              <div class="reel-topbar capcut-topbar">
                 <div class="reel-topbar-left">
-                  <button type="button" id="btn-close-reel-editor" class="btn btn-sm" style="display:flex;align-items:center;gap:6px;" title="Back to Reel Projects">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    <span>Projects</span>
+                  <button type="button" id="btn-close-reel-editor" class="capcut-topbar-close-btn" title="Back to Reel Projects">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                   </button>
                   <input type="text" id="reel-title-input" class="reel-topbar-title-input" value="Untitled Reel" placeholder="Project Title" title="Click to rename project" />
                   <div id="reel-autosave-status" class="reel-autosave-badge">
@@ -445,34 +444,26 @@
                 </div>
 
                 <div class="reel-topbar-right">
-                  <button type="button" id="btn-reel-undo" class="btn btn-sm" title="Undo (Ctrl+Z)">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
-                  </button>
-                  <button type="button" id="btn-reel-redo" class="btn btn-sm" title="Redo (Ctrl+Y)">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
-                  </button>
-                  <div class="reel-zoom-picker" style="display:inline-flex;align-items:center;background:#0d1829;border:1px solid #334155;border-radius:6px;padding:2px 6px;">
-                    <span style="font-size:0.75rem;margin-right:3px;">🔍</span>
-                    <select id="select-reel-canvas-zoom" style="background:transparent;color:#f1f5f9;border:none;font-size:0.75rem;padding:2px 2px;outline:none;cursor:pointer;">
-                      <option value="fit" selected>Fit Screen</option>
+                  <div class="capcut-res-pill">
+                    <select id="select-reel-canvas-zoom" class="capcut-res-select" title="Canvas Resolution & Zoom">
+                      <option value="fit" selected>1080p ▾</option>
                       <option value="0.85">85%</option>
                       <option value="0.70">70%</option>
                       <option value="1.0">100%</option>
                     </select>
                   </div>
-                  <button type="button" id="btn-reel-shortcuts-trigger" class="btn btn-sm" title="Keyboard Shortcuts Cheat Sheet">
+                  <button type="button" id="btn-reel-shortcuts-trigger" class="btn btn-sm desktop-only-btn" title="Keyboard Shortcuts Cheat Sheet">
                     ⌨️ Shortcuts
                   </button>
-                  <button type="button" id="btn-save-reel-manual" class="btn btn-sm">
+                  <button type="button" id="btn-save-reel-manual" class="btn btn-sm desktop-only-btn" title="Manual Save">
                     💾 Save
                   </button>
-                  <button type="button" id="btn-toggle-safe-area" class="btn btn-sm" title="Toggle Instagram 4:5 Safe Area overlay">
+                  <button type="button" id="btn-toggle-safe-area" class="btn btn-sm desktop-only-btn" title="Toggle Instagram 4:5 Safe Area overlay">
                     📐 Safe Area
                   </button>
-                  <button type="button" id="btn-export-reel-trigger" class="btn btn-sm btn-primary" style="display:flex;align-items:center;gap:6px;">
-                    <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    <span class="export-btn-full">Export 1080×1920 MP4</span>
-                    <span class="export-btn-mobile">Export MP4</span>
+                  <button type="button" id="btn-export-reel-trigger" class="capcut-export-btn" title="Export 1080×1920 MP4 Video">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Export</span>
                   </button>
                 </div>
               </div>
@@ -828,23 +819,40 @@
                     </div>
                   </div>
 
-                  <!-- Floating Transport Bar -->
-                  <div class="reel-transport-bar">
-                    <button type="button" id="btn-transport-rewind" class="reel-transport-btn" title="Rewind to start (Home)">
-                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
-                    </button>
-                    <button type="button" id="btn-transport-step-back" class="reel-transport-btn" title="Back 1 sec">
-                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 19 2 12 11 5 11 19"></polygon><polygon points="22 19 13 12 22 5 22 19"></polygon></svg>
-                    </button>
-                    <button type="button" id="btn-transport-play" class="reel-transport-btn btn-play" title="Play / Pause (Space)">
-                      <svg id="icon-play" class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                      <svg id="icon-pause" class="lucide hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                    </button>
-                    <button type="button" id="btn-transport-step-fwd" class="reel-transport-btn" title="Forward 1 sec">
-                      <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
-                    </button>
-                    <div class="reel-timecode">
-                      <span id="reel-timecode-cur">00:00.0</span> / <span id="reel-timecode-total">00:10.0</span>
+                  <!-- CapCut Unified Transport Bar Directly Beneath Canvas -->
+                  <div class="capcut-transport-bar">
+                    <div class="capcut-transport-left">
+                      <button type="button" id="btn-fullscreen-toggle" class="capcut-icon-btn" title="Toggle Fullscreen Preview">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                      </button>
+                      <div class="capcut-timecode">
+                        <span id="reel-timecode-cur">00:00.0</span> <span style="opacity:0.4;">/</span> <span id="reel-timecode-total">00:10.0</span>
+                      </div>
+                    </div>
+
+                    <div class="capcut-transport-center">
+                      <button type="button" id="btn-transport-step-back" class="capcut-icon-btn desktop-transport-btn" title="Back 1s">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 19 2 12 11 5 11 19"></polygon><polygon points="22 19 13 12 22 5 22 19"></polygon></svg>
+                      </button>
+                      <button type="button" id="btn-transport-play" class="capcut-play-btn" title="Play / Pause (Space)">
+                        <svg id="icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+                        <svg id="icon-pause" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                      </button>
+                      <button type="button" id="btn-transport-step-fwd" class="capcut-icon-btn desktop-transport-btn" title="Forward 1s">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
+                      </button>
+                    </div>
+
+                    <div class="capcut-transport-right">
+                      <button type="button" id="btn-reel-undo" class="capcut-icon-btn" title="Undo (Ctrl+Z)">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                      </button>
+                      <button type="button" id="btn-reel-redo" class="capcut-icon-btn" title="Redo (Ctrl+Y)">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+                      </button>
+                      <button type="button" id="btn-transport-rewind" class="capcut-icon-btn desktop-transport-btn" title="Rewind to start (Home)" style="display:none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -922,30 +930,38 @@
                 </div>
               </div>
 
-              <!-- 5. MOBILE QUICK DOCK TABS (< 900px) -->
+              <!-- 5. MOBILE QUICK DOCK TABS (< 900px) - CapCut Style -->
               <div class="reel-mobile-dock-tabs" id="reel-mobile-dock">
-                <button type="button" class="reel-mobile-dock-btn" data-dock="media">
-                  <span style="font-size:1.1rem;">📁</span>
-                  <span>Media</span>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="edit" id="btn-dock-edit">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                  <span>Edit</span>
                 </button>
-                <button type="button" class="reel-mobile-dock-btn" data-dock="text">
-                  <span style="font-size:1.1rem;">🔤</span>
-                  <span>Text</span>
-                </button>
-                <button type="button" class="reel-mobile-dock-btn" data-dock="audio">
-                  <span style="font-size:1.1rem;">🎵</span>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="audio" id="btn-dock-audio">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                   <span>Audio</span>
                 </button>
-                <button type="button" class="reel-mobile-dock-btn" data-dock="logo">
-                  <span style="font-size:1.1rem;">❤️</span>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="text" id="btn-dock-text">
+                  <span style="font-size:1.15rem;font-weight:700;font-family:serif;line-height:1;">T</span>
+                  <span>Text</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="effects" id="btn-dock-effects">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  <span>Effects</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="media" id="btn-dock-media">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span>Media</span>
+                </button>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="logo" id="btn-dock-logo">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                   <span>Logo</span>
                 </button>
-                <button type="button" class="reel-mobile-dock-btn" data-dock="outro">
-                  <span style="font-size:1.1rem;">🎬</span>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="outro" id="btn-dock-outro">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                   <span>Outro</span>
                 </button>
-                <button type="button" class="reel-mobile-dock-btn" data-dock="ai">
-                  <span style="font-size:1.1rem;">✨</span>
+                <button type="button" class="reel-mobile-dock-btn" data-dock="ai" id="btn-dock-ai">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
                   <span>AI</span>
                 </button>
               </div>
@@ -1503,10 +1519,10 @@
                         Upload multiple photos for galleries or inline story visuals. Supports JPG, PNG, WebP (Max 10 MB each).
                       </div>
                     </div>
-                    <div style="display:flex;gap:6px;align-items:center;width:auto;">
-                      <label class="btn btn-primary btn-sm btn-upload-multi-touch" style="cursor:pointer;padding:8px 16px;font-size:0.8rem;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#0284c7;color:#fff;border-radius:6px;font-weight:700;min-height:38px;">
+                    <div class="additional-photos-btn-wrap" style="display:flex;gap:6px;align-items:center;width:auto;max-width:100%;">
+                      <label class="btn btn-primary btn-sm btn-upload-multi-touch" style="cursor:pointer;padding:8px 18px;font-size:0.82rem;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#0284c7;color:#fff;border-radius:6px;font-weight:700;min-height:38px;white-space:nowrap;">
                         <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        <span>+ Upload Photos</span>
+                        <span style="white-space:nowrap;">+ Upload Photos</span>
                         <input type="file" id="input-upload-additional-multi" multiple accept="image/jpeg,image/png,image/webp,image/avif" style="display:none;" />
                       </label>
                     </div>
@@ -2977,7 +2993,7 @@
 
   <script src="/reel-player.js?v=53.2"></script>
   <script src="/reel-studio.js?v=53.2"></script>
-  <script src="/app.js?v=53.2"></script>
+  <script src="/app.js?v=54.0"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');

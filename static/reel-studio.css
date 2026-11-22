@@ -13,7 +13,7 @@
   --reel-brand-blue: #003580;
   --reel-timeline-ruler: #162235;
   --reel-track-bg: rgba(11, 15, 22, 0.7);
-  --reel-playhead-color: #EF4444;
+  --reel-playhead-color: #FFFFFF;
 }
 
 /* REEL HUB (PROJECT SELECTION & CARDS) */
@@ -208,6 +208,165 @@
 
 .export-btn-mobile {
   display: none;
+}
+
+/* =========================================================================
+   CAPCUT GLOBAL TOPBAR & TRANSPORT BAR ARCHITECTURE
+   ========================================================================= */
+
+.capcut-topbar {
+  background: #000000 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  height: 50px !important;
+  padding: 0 16px !important;
+}
+
+.capcut-topbar-close-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  padding: 0;
+}
+.capcut-topbar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.capcut-res-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.capcut-res-select {
+  background: transparent;
+  color: #FFFFFF;
+  border: none;
+  font-size: 0.76rem;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+.capcut-res-select option {
+  background: #18181b;
+  color: #FFFFFF;
+}
+
+.capcut-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #00d2d3 0%, #00f2fe 100%) !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  font-size: 0.82rem !important;
+  padding: 7px 16px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 210, 211, 0.4) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.capcut-export-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 210, 211, 0.6) !important;
+}
+
+/* CapCut Single-Line Transport Bar */
+.capcut-transport-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 440px;
+  margin: 6px auto;
+  padding: 4px 12px;
+  box-sizing: border-box;
+}
+
+.capcut-transport-left,
+.capcut-transport-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.capcut-transport-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.capcut-icon-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  padding: 0;
+}
+.capcut-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+.capcut-icon-btn:active {
+  transform: scale(0.92);
+}
+
+.capcut-play-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: #000000;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+  padding: 0;
+}
+.capcut-play-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.5);
+}
+.capcut-play-btn:active {
+  transform: scale(0.95);
+}
+.capcut-play-btn svg {
+  color: #000000;
+  fill: #000000;
+}
+
+.capcut-timecode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 /* WORKSPACE 3-PANE BODY (LEFT TOOLS | CENTER PREVIEW | RIGHT INSPECTOR) */
@@ -699,13 +858,14 @@
   position: relative;
 }
 
-/* PLAYHEAD */
+/* CAPCUT WHITE NEEDLE PLAYHEAD */
 .reel-playhead {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--reel-playhead-color);
+  background: #FFFFFF;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.95), 0 0 12px rgba(255, 255, 255, 0.4);
   z-index: 30;
   pointer-events: none;
   transform: translateX(-1px);
@@ -716,14 +876,14 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 18px;
-  height: 20px;
-  background: var(--reel-playhead-color);
-  border-radius: 3px 3px 6px 6px;
+  width: 14px;
+  height: 18px;
+  background: #FFFFFF;
+  border-radius: 2px 2px 5px 5px;
   pointer-events: auto;
   cursor: ew-resize;
   touch-action: none;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .reel-playhead-handle::before {
@@ -767,40 +927,114 @@
 }
 
 .reel-clip-block.active {
-  border: 2px solid #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6) !important;
+}
+
+.reel-clip-filmstrip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: 34px 100%;
+  background-repeat: repeat-x;
+  background-position: left center;
+  opacity: 0.62;
+  border-radius: 6px;
+  pointer-events: none;
+  filter: brightness(0.85);
 }
 
 .reel-clip-block.type-text {
   background: #0284c7;
 }
 
+/* CapCut Cyan Audio Waveform Track */
 .reel-clip-block.type-audio {
-  background: linear-gradient(180deg, #065f46 0%, #047857 50%, #064e3b 100%);
-  border: 1px solid #10b981;
+  background: #02384a !important;
+  border: 1px solid #00d2d3 !important;
   position: relative;
   overflow: hidden;
 }
+.reel-clip-block.type-audio.active {
+  border: 2px solid #00f2fe !important;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.6) !important;
+}
 
+/* CapCut Purple Voiceover Track */
 .reel-clip-block.type-voiceover {
-  background: linear-gradient(180deg, #6d28d9 0%, #7c3aed 50%, #5b21b6 100%);
-  border: 1px solid #a78bfa;
+  background: #2e1065 !important;
+  border: 1px solid #a855f7 !important;
   position: relative;
   overflow: hidden;
+}
+.reel-clip-block.type-voiceover.active {
+  border: 2px solid #c084fc !important;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.6) !important;
 }
 
 .reel-audio-waveform-visual {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 4px;
-  bottom: 4px;
+  left: 6px;
+  right: 6px;
+  top: 2px;
+  bottom: 2px;
   pointer-events: none;
-  opacity: 0.38;
-  display: flex;
-  align-items: center;
-  gap: 2px;
   overflow: hidden;
+}
+
+/* CapCut Bowtie Transition Marker */
+.reel-timeline-trans-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 12;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.reel-timeline-trans-btn:hover,
+.reel-timeline-trans-btn.active {
+  background: #FFFFFF;
+  color: #000000;
+  border-color: #FFFFFF;
+  transform: translateY(-50%) scale(1.15);
+}
+
+/* CapCut Quick Add Clip Button on Media Track */
+.reel-timeline-add-clip-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.reel-timeline-add-clip-btn:hover {
+  background: #334155;
+  border-color: #FFFFFF;
+  transform: translateY(-50%) scale(1.1);
 }
 
 .reel-broll-card {
@@ -1376,17 +1610,19 @@
     box-shadow: none !important;
   }
 
-  /* Reel Topbar */
-  .reel-topbar {
+  /* CapCut Minimalist Topbar on Mobile */
+  .reel-topbar,
+  .capcut-topbar {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 8px 10px !important;
-    background: rgba(8, 35, 71, 0.95) !important;
-    border-bottom: 1px solid rgba(75, 137, 188, 0.28) !important;
+    padding: 6px 12px !important;
+    background: #000000 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
     gap: 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    height: 48px !important;
   }
 
   .reel-topbar-left {
@@ -1396,19 +1632,20 @@
     flex-shrink: 0 !important;
   }
 
+  .capcut-topbar-close-btn,
   #btn-close-reel-editor {
-    width: 36px !important;
-    min-width: 36px !important;
-    height: 36px !important;
-    min-height: 36px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
     padding: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border-radius: 8px !important;
-    background: rgba(1, 81, 150, 0.4) !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.1) !important;
     color: #FFFFFF !important;
-    border: 1px solid rgba(75, 137, 188, 0.35) !important;
+    border: none !important;
   }
 
   #btn-close-reel-editor span {
@@ -1423,23 +1660,38 @@
   .reel-topbar-right {
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
     margin-left: auto !important;
     flex-shrink: 0 !important;
   }
 
+  .capcut-res-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #18181b !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    padding: 2px 8px !important;
+  }
+
+  .capcut-res-select {
+    font-size: 0.72rem !important;
+    color: #FFFFFF !important;
+  }
+
+  .capcut-export-btn,
   #btn-export-reel-trigger {
-    min-height: 36px !important;
-    height: 36px !important;
-    padding: 6px 12px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 4px 14px !important;
     font-size: 0.78rem !important;
     font-weight: 800 !important;
     white-space: nowrap !important;
-    background: #029CD8 !important;
-    color: #FFFFFF !important;
-    border-radius: 8px !important;
+    background: linear-gradient(135deg, #00d2d3 0%, #00f2fe 100%) !important;
+    color: #000000 !important;
+    border-radius: 6px !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(2, 156, 216, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(0, 210, 211, 0.35) !important;
   }
 
   .export-btn-full {
@@ -1450,22 +1702,8 @@
     display: inline !important;
   }
 
-  #btn-reel-undo,
-  #btn-reel-redo {
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    padding: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(75, 137, 188, 0.35) !important;
-    background: rgba(8, 35, 71, 0.7) !important;
-    color: #FFFFFF !important;
-    margin: 0 !important;
-  }
-
+  .desktop-only-btn,
+  .desktop-transport-btn,
   #btn-toggle-safe-area,
   #btn-toggle-shortcuts,
   #btn-reel-shortcuts-trigger,
@@ -1585,51 +1823,76 @@
     display: block !important;
   }
 
-  /* TRANSPORT CONTROLS BAR: CENTERED DIRECTLY UNDER VIDEO */
-  .reel-transport-bar {
-    width: auto !important;
-    max-width: 95% !important;
+  /* CAPCUT TRANSPORT STRIP ON MOBILE */
+  .capcut-transport-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 100% !important;
     margin: 4px auto 6px !important;
+    padding: 0 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .capcut-transport-bar .desktop-transport-btn,
+  .desktop-transport-btn {
+    display: none !important;
+  }
+
+  .capcut-transport-left,
+  .capcut-transport-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .capcut-transport-center {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
-    padding: 3px 10px !important;
-    background: rgba(8, 35, 71, 0.9) !important;
-    border: 1px solid rgba(75, 137, 188, 0.28) !important;
-    border-radius: 24px !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
   }
 
-  .reel-transport-btn {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
+  .capcut-icon-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
     border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: none !important;
+    color: #FFFFFF !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: rgba(1, 81, 150, 0.35) !important;
-    border: 1px solid rgba(75, 137, 188, 0.3) !important;
-    color: #FFFFFF !important;
+    cursor: pointer !important;
     padding: 0 !important;
   }
 
-  .reel-transport-btn.btn-play {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    background: #029CD8 !important;
-    border-color: #168BFF !important;
-    box-shadow: 0 4px 14px rgba(2, 156, 216, 0.4) !important;
+  .capcut-play-btn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    border-radius: 50% !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(255, 255, 255, 0.4) !important;
+    padding: 0 !important;
+  }
+  .capcut-play-btn svg {
+    color: #000000 !important;
+    fill: #000000 !important;
   }
 
-  .reel-timecode {
+  .capcut-timecode {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace !important;
     font-size: 0.68rem !important;
-    color: #B8C4D4 !important;
-    padding: 2px 4px !important;
+    color: #E2E8F0 !important;
+    white-space: nowrap !important;
   }
 
   /* TIMELINE CONTAINER & MULTI-TRACKS */
@@ -1695,22 +1958,34 @@
   }
 
   /* Playhead handle touch sizing */
+  .reel-playhead {
+    background: #FFFFFF !important;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.95) !important;
+    width: 2px !important;
+  }
+
   .reel-playhead-handle {
     width: 14px !important;
     height: 16px !important;
     border-radius: 2px !important;
+    background: #FFFFFF !important;
   }
 
-  /* MOBILE TOOL DOCK BAR */
+  /* CAPCUT MOBILE BOTTOM TOOL DOCK BAR */
   .reel-mobile-dock-tabs {
     display: flex !important;
     align-items: center !important;
     justify-content: space-around !important;
     width: 100% !important;
-    background: #040D1A !important;
-    border-top: 1px solid rgba(75, 137, 188, 0.28) !important;
-    padding: 4px 2px !important;
+    background: #000000 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+    padding: 6px 2px 8px !important;
     box-sizing: border-box !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  .reel-mobile-dock-tabs::-webkit-scrollbar {
+    display: none !important;
   }
 
   .reel-mobile-dock-btn {
@@ -1718,20 +1993,27 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 2px !important;
-    color: #94A3B8 !important;
-    font-size: 0.68rem !important;
-    font-weight: 700 !important;
-    padding: 3px 4px !important;
-    min-width: 42px !important;
+    gap: 3px !important;
+    color: #A1A1AA !important;
+    font-size: 0.65rem !important;
+    font-weight: 600 !important;
+    padding: 2px 4px !important;
+    min-width: 38px !important;
     min-height: 42px !important;
     background: transparent !important;
     border: none !important;
     cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: color 0.15s ease;
+  }
+
+  .reel-mobile-dock-btn svg {
+    color: inherit !important;
   }
 
   .reel-mobile-dock-btn:hover,
+  .reel-mobile-dock-btn.active,
   .reel-mobile-dock-btn:active {
-    color: #029CD8 !important;
+    color: #00F2FE !important;
   }
 }
