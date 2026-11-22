@@ -340,31 +340,50 @@ body.fl-focus-mode /* Minimal 3-Action Hero Grid & Clean Details Drawers */
   color: #fca5a5;
 }
 
-/* Exactly 5 Main Navigation Tabs */
+/* Exactly 3 Simple Student Navigation Tabs */
 .fl-tabs {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   padding: 6px;
-  background: rgba(6, 18, 36, 0.9);
+  background: rgba(6, 18, 36, 0.92);
   border: 1px solid rgba(75, 137, 188, 0.28);
-  border-radius: 12px;
+  border-radius: 13px;
 }
 
 .fl-tab-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 8px;
+  gap: 7px;
+  padding: 11px 10px;
   border-radius: 9px;
   border: 1px solid transparent;
   background: transparent;
   color: #94a3b8;
-  font-weight: 700;
-  font-size: 0.84rem;
+  font-weight: 800;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.18s ease;
+}
+
+.fl-study-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .fl-study-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .fl-tab-btn {
+    flex-direction: row !important;
+    font-size: 0.8rem !important;
+    padding: 10px 6px !important;
+    gap: 5px !important;
+  }
 }
 
 .fl-tab-btn:hover {
