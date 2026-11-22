@@ -123,6 +123,13 @@
 
   /* ---------- AUTH: DIRECT AUTO-LOGIN ---------- */
   async function checkAuth() {
+    if (window.location.pathname === "/finnish-student" || window.location.pathname.startsWith("/finnish-student/")) {
+      document.body.classList.add("fl-student-only");
+      $("signin-gate")?.classList.add("hidden");
+      ($("studio-shell") || $("app"))?.classList.remove("hidden");
+      switchView("finnish-lab", false, true);
+      return;
+    }
     try {
       const me = await api("/api/auth/me");
       $("signin-gate")?.classList.add("hidden");
@@ -302,6 +309,12 @@
   window.openFinnishLabView = () => switchView("finnish-lab");
 
   function goBack() {
+    // 0. If inside Finnish Learning Lab, let it step back cleanly (Drawer -> Study Tool -> Chat) before leaving!
+    const flView = $("view-finnish-lab");
+    if (flView && !flView.classList.contains("hidden") && window.FinnishLab?.handleBack?.()) {
+      return;
+    }
+
     // 1. If inside Reel Studio editor, close editor to return to Reel Projects Hub
     const reelEditorScreen = $("reel-editor-screen");
     if (reelEditorScreen && !reelEditorScreen.classList.contains("hidden")) {
@@ -319,11 +332,15 @@
       switchView(prevView, true);
       isNavigatingHistory = false;
       try {
-        history.replaceState({ view: prevView }, "", `#${prevView}`);
+        const targetUrl = prevView === "finnish-lab" ? "/finnish-lab" : `/#${prevView}`;
+        history.replaceState({ view: prevView }, "", targetUrl);
       } catch(e) {}
     } else {
       // Root fallback
       switchView("projects", true);
+      try {
+        history.replaceState({ view: "projects" }, "", "/#projects");
+      } catch(e) {}
     }
   }
 
@@ -5156,7 +5173,10 @@
 
     // Initial hash routing (e.g. #calendar, #reel-studio, #ideas, #review)
     const initialHash = window.location.hash.replace("#", "");
-    if (window.location.pathname === "/finnish-lab" || window.location.pathname.startsWith("/finnish-lab/")) {
+    if (window.location.pathname === "/finnish-student" || window.location.pathname.startsWith("/finnish-student/")) {
+      document.body.classList.add("fl-student-only");
+      switchView("finnish-lab", false, true);
+    } else if (window.location.pathname === "/finnish-lab" || window.location.pathname.startsWith("/finnish-lab/")) {
       switchView("finnish-lab", false, true);
     } else if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments", "finnish-lab"].includes(initialHash)) {
       switchView(initialHash, false, true);

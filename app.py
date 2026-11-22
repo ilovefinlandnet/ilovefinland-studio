@@ -338,6 +338,21 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         )
         return host in ("localhost", "127.0.0.1") and not forwarded and self.client_address[0] in ("127.0.0.1", "::1")
 
+    def _current_fl_student(self) -> bool:
+        cookie_hdr = self.headers.get("Cookie", "")
+        if not cookie_hdr:
+            return False
+        cookie = SimpleCookie()
+        try:
+            cookie.load(cookie_hdr)
+        except Exception:
+            return False
+        morsel = cookie.get("ilf_fl_student_session")
+        if not morsel or not morsel.value:
+            return False
+        import finnish_lab_engine
+        return finnish_lab_engine.is_valid_student_token(morsel.value)
+
     def _current_user(self) -> Optional[str]:
         cookie_hdr = self.headers.get("Cookie", "")
         if not cookie_hdr:
@@ -780,6 +795,29 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
 
             # Isolated Finnish Learning Lab GET endpoints
+            if path == "/api/finnish-lab/role":
+                import finnish_lab_engine
+                is_admin = bool(self._current_user())
+                is_student = self._current_fl_student()
+                cfg = finnish_lab_engine.get_student_access_config()
+                if is_admin:
+                    self._send_json({
+                        "role": "admin",
+                        "student_enabled": cfg["student_enabled"],
+                        "invite_code": cfg["invite_code"],
+                    })
+                elif is_student:
+                    self._send_json({
+                        "role": "student",
+                        "student_enabled": cfg["student_enabled"],
+                    })
+                else:
+                    self._send_json({
+                        "role": "guest",
+                        "student_enabled": cfg["student_enabled"],
+                    })
+                return
+
             if path == "/api/finnish-lab/status":
                 import finnish_lab_engine
                 force = qs.get("refresh", ["0"])[0] in ("1", "true")
@@ -802,7 +840,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if not self._require_auth():
                 return
 
-        if path == "/" or path == "/index.html" or path == "/finnish-lab" or path.startswith("/finnish-lab/"):
+        if path == "/" or path == "/index.html" or path == "/finnish-lab" or path.startswith("/finnish-lab/") or path == "/finnish-student" or path.startswith("/finnish-student/"):
             self._send_file(os.path.join(STATIC_DIR, "index.html"))
             return
 
@@ -2330,11 +2368,51 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": f"Upload failed: {ex}"}, status=HTTPStatus.BAD_REQUEST)
             return
 
-        # Isolated Finnish Learning Lab POST endpoints (protected by Studio auth)
+        # Isolated Finnish Learning Lab POST endpoints (Admin or authorized Student)
         if path.startswith("/api/finnish-lab/"):
-            user = self._require_auth()
-            if not user:
+            import finnish_lab_engine
+
+            # Public student invite-code login (does NOT grant Studio Admin access!)
+            if path == "/api/finnish-lab/student/login":
+                payload = body or {}
+                token, err = finnish_lab_engine.verify_student_invite_and_issue_token(
+                    code=payload.get("code", ""),
+                    label=payload.get("name", "Student"),
+                )
+                if err or not token:
+                    self._send_json({"ok": False, "error": "INVALID_INVITE", "message": err or "Invalid invite code."}, status=HTTPStatus.UNAUTHORIZED)
+                    return
+                secure = "; Secure" if self._is_https() else ""
+                self._send_json(
+                    {"ok": True, "role": "student"},
+                    extra_headers={
+                        "Set-Cookie": f"ilf_fl_student_session={token}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax{secure}"
+                    },
+                )
                 return
+
+            # Admin-only student invite management
+            if path == "/api/finnish-lab/admin/student-access":
+                if not self._current_user():
+                    self._send_json({"ok": False, "error": "ADMIN_REQUIRED", "message": "Only Admin can manage student access."}, status=HTTPStatus.FORBIDDEN)
+                    return
+                payload = body or {}
+                cfg = finnish_lab_engine.update_student_access_config(
+                    invite_code=payload.get("invite_code"),
+                    student_enabled=payload.get("student_enabled"),
+                )
+                self._send_json({"ok": True, **cfg})
+                return
+
+            is_admin = bool(self._current_user())
+            is_student = self._current_fl_student()
+            if not is_admin and not is_student:
+                user = self._require_auth()
+                if not user:
+                    return
+            else:
+                user = self._current_user() or "student@finnish-lab"
+
             length = int(self.headers.get("Content-Length", "0"))
             if length > 26 * 1024 * 1024:
                 self._send_json(
@@ -2342,8 +2420,6 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
                 )
                 return
-
-            import finnish_lab_engine
 
             if path == "/api/finnish-lab/ask":
                 res, status_code = finnish_lab_engine.handle_ask(body or {})

@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import os
+import secrets
 import sqlite3
 import threading
 import time
@@ -118,6 +119,15 @@ def init_finnish_lab_db(db_path: str = FINNISH_LAB_DB_PATH) -> None:
                 mime_type TEXT NOT NULL,
                 audio_base64 TEXT NOT NULL,
                 model_id TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fl_student_sessions (
+                token TEXT PRIMARY KEY,
+                label TEXT NOT NULL,
                 created_at TEXT NOT NULL
             )
             """
@@ -1208,4 +1218,86 @@ def handle_tts(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
             last_err = {"error": "TTS_ERROR", "message": str(exc).replace(key, "***")[:140]}
 
     return last_err, 503
+
+
+# ---------- ADMIN & STUDENT INVITE-CODE ACCESS ----------
+DEFAULT_STUDENT_CODE = os.environ.get("FINNISH_LAB_STUDENT_CODE", "suomi2026")
+
+
+def get_student_access_config(db_path: str = FINNISH_LAB_DB_PATH) -> Dict[str, Any]:
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = dict(conn.execute("SELECT key, value FROM fl_settings WHERE key IN ('student_invite_code', 'student_access_enabled')").fetchall())
+    finally:
+        conn.close()
+    code = (rows.get("student_invite_code") or DEFAULT_STUDENT_CODE).strip()
+    enabled = rows.get("student_access_enabled", "1") != "0"
+    return {"invite_code": code, "student_enabled": enabled}
+
+
+def update_student_access_config(
+    invite_code: Optional[str] = None,
+    student_enabled: Optional[bool] = None,
+    db_path: str = FINNISH_LAB_DB_PATH,
+) -> Dict[str, Any]:
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        if invite_code is not None and invite_code.strip():
+            conn.execute(
+                "INSERT OR REPLACE INTO fl_settings (key, value) VALUES ('student_invite_code', ?)",
+                (invite_code.strip()[:40],),
+            )
+        if student_enabled is not None:
+            conn.execute(
+                "INSERT OR REPLACE INTO fl_settings (key, value) VALUES ('student_access_enabled', ?)",
+                ("1" if student_enabled else "0",),
+            )
+            if not student_enabled:
+                conn.execute("DELETE FROM fl_student_sessions")
+        conn.commit()
+    finally:
+        conn.close()
+    return get_student_access_config(db_path)
+
+
+def verify_student_invite_and_issue_token(
+    code: str,
+    label: str = "Family/Friend Student",
+    db_path: str = FINNISH_LAB_DB_PATH,
+) -> Tuple[Optional[str], Optional[str]]:
+    cfg = get_student_access_config(db_path)
+    if not cfg["student_enabled"]:
+        return None, "Student access is currently paused by the Admin."
+    if (code or "").strip().lower() != cfg["invite_code"].strip().lower():
+        return None, "Incorrect invite code. Please ask the Admin for the current code."
+    token = secrets.token_urlsafe(24)
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO fl_student_sessions (token, label, created_at) VALUES (?, ?, ?)",
+            (token, (label or "Student")[:40], _utc_now_iso()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return token, None
+
+
+def is_valid_student_token(token: str, db_path: str = FINNISH_LAB_DB_PATH) -> bool:
+    if not token:
+        return False
+    cfg = get_student_access_config(db_path)
+    if not cfg["student_enabled"]:
+        return False
+    init_finnish_lab_db(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT 1 FROM fl_student_sessions WHERE token=?", (token,)).fetchone()
+        return bool(row)
+    finally:
+        conn.close()
+
 

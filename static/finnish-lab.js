@@ -48,6 +48,11 @@
     flashcardFlipped: false,
     notes: [],
     cropTarget: null,
+    isStudentRoute: window.location.pathname === "/finnish-student" || window.location.pathname.startsWith("/finnish-student/"),
+    role: "admin", // admin | student | guest
+    roleLoaded: false,
+    studentEnabled: true,
+    inviteCode: "suomi2026",
   };
 
   /* ---------- WALK & LISTEN PODCAST EPISODES ---------- */
@@ -331,6 +336,19 @@
     }
   }
 
+  async function refreshRole() {
+    try {
+      const r = await flApi("/api/finnish-lab/role");
+      state.role = r.role || (state.isStudentRoute ? "guest" : "admin");
+      state.studentEnabled = r.student_enabled !== false;
+      if (r.invite_code) state.inviteCode = r.invite_code;
+    } catch (_) {
+      state.role = state.isStudentRoute ? "guest" : "admin";
+    } finally {
+      state.roleLoaded = true;
+    }
+  }
+
   /* ---------- AUDIO RECORDING (ATTACHES CLEANLY INTO INPUT BAR) ---------- */
   async function startRecording() {
     if (state.isRecording) return;
@@ -479,16 +497,75 @@
     });
   }
 
+  function compressImageDataUrl(dataUrl, maxDim, quality) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let w = img.width || 1;
+          let h = img.height || 1;
+          if (w > maxDim || h > maxDim) {
+            const scale = maxDim / Math.max(w, h);
+            w = Math.max(1, Math.round(w * scale));
+            h = Math.max(1, Math.round(h * scale));
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const out = canvas.toDataURL("image/jpeg", quality);
+          resolve(out);
+        } catch (_) {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
   async function fileToAttachment(file) {
     if (!file) return null;
     if (file.size > 18 * 1024 * 1024) {
       toast("File exceeds 18 MB limit.", "error");
       return null;
     }
-    const b64 = await blobToBase64(file);
-    const mime = file.type || "image/jpeg";
-    const previewUrl = mime.startsWith("image/") ? `data:${mime};base64,${b64}` : null;
-    return { id: DB.uid("att"), name: file.name || "file", mime_type: mime, data_base64: b64, previewUrl };
+    const rawB64 = await blobToBase64(file);
+    let mime = file.type || "image/jpeg";
+    if (mime.startsWith("image/")) {
+      // Auto-compress camera photos to ~100-150 KB JPEG for fast 4G upload & tiny phone storage
+      const rawUrl = `data:${mime};base64,${rawB64}`;
+      const compressedUrl = await compressImageDataUrl(rawUrl, 1280, 0.78);
+      const thumbUrl = await compressImageDataUrl(compressedUrl, 320, 0.65);
+      const compB64 = compressedUrl.includes(",") ? compressedUrl.split(",")[1] : rawB64;
+      return {
+        id: DB.uid("att"),
+        name: file.name || "photo.jpg",
+        mime_type: "image/jpeg",
+        data_base64: compB64,
+        previewUrl: compressedUrl,
+        thumbUrl,
+      };
+    }
+    return { id: DB.uid("att"), name: file.name || "file", mime_type: mime, data_base64: rawB64, previewUrl: null };
+  }
+
+  function compactAttachmentsForStorage(atts) {
+    return (atts || []).map((a) => {
+      const m = a.mime_type || "";
+      if (m.startsWith("audio/")) {
+        // Never bloat phone storage with raw audio clips after Gemini replies
+        return { id: a.id, name: a.name || "Audio clip", mime_type: m };
+      }
+      if (m.startsWith("image/")) {
+        // Keep only a lightweight ~25 KB thumbnail in IndexedDB history
+        const thumb = a.thumbUrl || a.previewUrl || null;
+        return { id: a.id, name: a.name || "Photo", mime_type: "image/jpeg", previewUrl: thumb };
+      }
+      // PDFs / other docs: keep metadata badge only in local history
+      return { id: a.id, name: a.name || "Document", mime_type: m };
+    });
   }
 
   /* ---------- DATA & CONVERSATION ---------- */
@@ -556,13 +633,14 @@
           attachments: (m.attachments || []).slice(0, 2).map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
         }));
 
-    conv.messages.push({
+    const userMsg = {
       id: DB.uid("msg"),
       role: "user",
       text: options.silentLive ? `🌐 ${msgText}` : (msgText || (hasAudio && hasImageOrPdf ? "🎙️ Audio + 📄 Question Paper" : hasAudio ? "🎙️ Audio Clip" : "📷 Photo / PDF")),
-      attachments: atts,
+      attachments: compactAttachmentsForStorage(atts),
       at: new Date().toISOString(),
-    });
+    };
+    conv.messages.push(userMsg);
     if (conv.messages.length === 1 && msgText) conv.title = msgText.slice(0, 44);
     if (!options.keepAttachments) state.pendingAttachments = [];
     await DB.saveConversation(conv);
@@ -698,9 +776,60 @@
   }
 
   /* ---------- MAIN RENDER (EXACT SCREENSHOT-1 CALM STYLE) ---------- */
+  function renderStudentGate() {
+    return `
+      <div class="fl-student-gate">
+        <div style="font-size:2.4rem;">🇫🇮</div>
+        <h1 style="margin:0;font-size:1.35rem;color:#fff;">Finnish Learning Lab</h1>
+        <p style="margin:0;font-size:0.86rem;color:#94a3b8;line-height:1.5;">
+          Enter your family &amp; friends invite code once to start learning Finnish. Your phone will remember you automatically.
+        </p>
+        <input type="text" id="fl-student-code-input" class="fl-input" placeholder="Invite code (e.g. suomi2026)" autocomplete="off" style="text-align:center;font-size:1rem;letter-spacing:0.04em;" />
+        <button type="button" id="fl-student-login-btn" class="fl-btn primary" style="width:100%;padding:11px;">Unlock Finnish Lab →</button>
+        <div id="fl-student-gate-err" style="font-size:0.8rem;color:#fca5a5;min-height:18px;"></div>
+      </div>
+    `;
+  }
+
   function renderActiveView() {
     const root = document.getElementById("finnish-lab-root");
     if (!root) return;
+
+    if (state.isStudentRoute) {
+      if (!state.roleLoaded) {
+        root.innerHTML = `<div class="fl-student-gate"><div style="font-size:2rem;">🇫🇮</div><div style="color:#94a3b8;">Loading Finnish Learning Lab...</div></div>`;
+        return;
+      }
+      if (state.role === "guest") {
+        root.innerHTML = renderStudentGate();
+        const doUnlock = async () => {
+          const inp = document.getElementById("fl-student-code-input");
+          const errEl = document.getElementById("fl-student-gate-err");
+          const btn = document.getElementById("fl-student-login-btn");
+          const code = (inp?.value || "").trim();
+          if (!code) { if (errEl) errEl.textContent = "Please enter the invite code."; return; }
+          if (btn) { btn.disabled = true; btn.textContent = "Checking..."; }
+          if (errEl) errEl.textContent = "";
+          try {
+            await flApi("/api/finnish-lab/student/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code }),
+            });
+            await refreshRole();
+            await refreshStatus();
+            renderActiveView();
+          } catch (err) {
+            if (errEl) errEl.textContent = err.message || "Invalid invite code.";
+            if (btn) { btn.disabled = false; btn.textContent = "Unlock Finnish Lab →"; }
+          }
+        };
+        root.querySelector("#fl-student-login-btn")?.addEventListener("click", doUnlock);
+        root.querySelector("#fl-student-code-input")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doUnlock(); } });
+        return;
+      }
+    }
+
     const settings = DB.getSettings();
     const prog = DB.getProgress();
     const dueCount = state.flashcards.filter((c) => (c.dueAt || 0) <= Date.now()).length;
@@ -1229,7 +1358,34 @@
                       <option value="A2" ${settings.level === "A2" ? "selected" : ""}>A2 (Elementary)</option>
                     </select>
                   </div>
-                  <button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}">${state.focusMode ? "↙ Show Studio Sidebar" : "⛶ Full-Screen Focus Mode"}</button>
+                  ${
+                    state.role === "admin" && !state.isStudentRoute
+                      ? `<div class="fl-admin-share-card">
+                          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                            <strong style="color:#fff;font-size:0.84rem;">👥 Share With Family &amp; Friends</strong>
+                            <span style="font-size:0.7rem;color:${state.studentEnabled ? "#6ee7b7" : "#fca5a5"};font-weight:700;">${state.studentEnabled ? "● Active" : "● Paused"}</span>
+                          </div>
+                          <div style="font-size:0.74rem;color:#cbd5e1;line-height:1.4;">
+                            They see <strong>only</strong> Finnish Learning Lab (no Studio articles or WordPress).
+                          </div>
+                          <div style="display:flex;gap:6px;">
+                            <input type="text" readonly id="fl-student-share-url" class="fl-input" value="${esc(window.location.origin + "/finnish-student")}" style="font-size:0.74rem;padding:7px 9px;" />
+                            <button type="button" class="fl-btn primary sm" id="fl-copy-student-url">📋 Copy</button>
+                          </div>
+                          <div style="display:flex;gap:6px;align-items:center;">
+                            <input type="text" id="fl-admin-invite-code" class="fl-input" value="${esc(state.inviteCode)}" placeholder="Invite code" style="font-size:0.78rem;padding:7px 9px;" />
+                            <button type="button" class="fl-btn sm" id="fl-save-invite-code">Save</button>
+                          </div>
+                          <button type="button" class="fl-btn sm ${state.studentEnabled ? "" : "danger"}" id="fl-toggle-student-access">
+                            ${state.studentEnabled ? "🔒 Pause Student Access" : "✅ Enable Student Access"}
+                          </button>
+                        </div>`
+                      : ""
+                  }
+                  <div style="font-size:0.72rem;color:#94a3b8;line-height:1.45;">
+                    💾 <strong>Smart Phone Storage:</strong> Photos auto-compress (~120 KB) &amp; audio clips auto-clear after reply — your chats stay tiny on your phone (€0 server space).
+                  </div>
+                  ${!state.isStudentRoute ? `<button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}">${state.focusMode ? "↙ Show Studio Sidebar" : "⛶ Full-Screen Focus Mode"}</button>` : ""}
                   <div style="color:#94a3b8;">🔥 Streak: ${prog.streakDays || 0}d • AI left today: ${u.remaining}/${u.limit}</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
                     <button type="button" class="fl-btn primary sm" id="fl-export-backup">⬇️ Export</button>
@@ -1246,6 +1402,7 @@
 
   /* ---------- FLOATING TUTOR & SIDE PANEL (OUTSIDE FINNISH LAB) ---------- */
   function mountFloatingAndSidePanel() {
+    if (state.isStudentRoute) return;
     if (document.getElementById("fl-floating-launcher")) return;
     const launcher = document.createElement("button");
     launcher.id = "fl-floating-launcher";
@@ -1528,6 +1685,38 @@
     });
     root.querySelector("#fl-level-select")?.addEventListener("change", (e) => { DB.saveSettings({ level: e.target.value }); renderActiveView(); });
     root.querySelector("#fl-focus-toggle")?.addEventListener("click", () => { state.focusMode = !state.focusMode; document.body.classList.toggle("fl-focus-mode", state.focusMode); renderActiveView(); });
+    root.querySelector("#fl-copy-student-url")?.addEventListener("click", async () => {
+      const url = window.location.origin + "/finnish-student";
+      try { await navigator.clipboard.writeText(url); toast("Student link copied! Share with your wife or friends.", "success"); }
+      catch (_) { const inp = document.getElementById("fl-student-share-url"); inp?.select(); document.execCommand("copy"); toast("Student link copied!", "success"); }
+    });
+    root.querySelector("#fl-save-invite-code")?.addEventListener("click", async () => {
+      const code = (document.getElementById("fl-admin-invite-code")?.value || "").trim();
+      if (code.length < 3) { toast("Code must be at least 3 characters.", "warning"); return; }
+      try {
+        const res = await flApi("/api/finnish-lab/admin/student-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invite_code: code, enabled: state.studentEnabled }),
+        });
+        state.inviteCode = res.invite_code || code;
+        toast(`Invite code updated to "${state.inviteCode}"!`, "success");
+        renderActiveView();
+      } catch (err) { toast(err.message, "error"); }
+    });
+    root.querySelector("#fl-toggle-student-access")?.addEventListener("click", async () => {
+      try {
+        const next = !state.studentEnabled;
+        const res = await flApi("/api/finnish-lab/admin/student-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: next }),
+        });
+        state.studentEnabled = res.enabled !== false;
+        toast(state.studentEnabled ? "Student access enabled!" : "Student access paused.", "info");
+        renderActiveView();
+      } catch (err) { toast(err.message, "error"); }
+    });
     root.querySelector("#fl-export-backup")?.addEventListener("click", async () => { downloadTextFile(`finnish-lab-backup-${DB.todayStr()}.json`, JSON.stringify(await DB.exportAllData(), null, 2)); toast("Backup exported!", "success"); });
     root.querySelector("#fl-import-backup")?.addEventListener("change", async (e) => {
       const f = e.target.files[0]; if (!f) return;
@@ -1543,18 +1732,52 @@
     bindCommonMessageButtons(root);
   }
 
+  /* ---------- SMART BACK BUTTON HANDLER ---------- */
+  function handleBack() {
+    const cropModal = document.getElementById("fl-crop-modal");
+    if (cropModal) {
+      cropModal.remove();
+      return true;
+    }
+    if (state.drawerOpen) {
+      state.drawerOpen = false;
+      renderActiveView();
+      return true;
+    }
+    if (state.plusMenuOpen) {
+      state.plusMenuOpen = false;
+      renderActiveView();
+      return true;
+    }
+    if (state.mode === "study" && state.studyTool) {
+      state.studyTool = null;
+      renderActiveView();
+      return true;
+    }
+    if (state.mode === "study") {
+      state.mode = "chat";
+      renderActiveView();
+      return true;
+    }
+    if (state.isStudentRoute) {
+      return true; // Never leave Finnish Lab in student-only view
+    }
+    return false; // Let Studio goBack() return to previous Studio tab
+  }
+
   /* ---------- INIT ---------- */
   async function initFinnishLab() {
-    await loadAllData();
+    await Promise.all([loadAllData(), refreshRole()]);
     mountFloatingAndSidePanel();
     renderActiveView();
-    refreshStatus();
+    if (state.role !== "guest") refreshStatus();
   }
 
   window.FinnishLab = {
     init: initFinnishLab,
     render: renderActiveView,
     toggleSidePanel,
+    handleBack,
     isRecording: () => state.isRecording || state.isLiveTranslating,
   };
 
