@@ -6274,3 +6274,218 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 .perf-digest-box .digest-tag.warn, .perf-digest-box .digest-tag.under { color: #78350F !important; }
 .perf-digest-box .digest-tag.next { color: #1E3A8A !important; }
 .demand-card [class*="delta"], .demand-card .demand-pct, .demand-query-row > span:last-child { color: #065F46 !important; font-weight: 800; }
+
+/* =========================================================================
+   ARTICLE REVIEW SUITE: EXECUTIVE SUB-NAV, 2-COLUMN GRID & MOBILE QUICKBAR
+   ========================================================================= */
+
+/* Sub-Nav Fast Jump Capsule */
+.article-subnav-capsule {
+  position: sticky;
+  top: 68px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  margin: 0 0 16px 0;
+  background: rgba(10, 24, 46, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.article-subnav-capsule::-webkit-scrollbar {
+  display: none;
+}
+
+.article-subnav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94A3B8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.article-subnav-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.article-subnav-btn.active {
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+}
+
+.article-subnav-btn .subnav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: inherit;
+}
+
+.article-subnav-btn.active .subnav-badge {
+  background: #0284C7;
+  color: #FFFFFF;
+}
+
+/* Section Anchor Spacing for Native Smooth Scroll */
+.article-section-anchor {
+  scroll-margin-top: 135px;
+  display: block;
+  width: 100%;
+}
+
+/* Responsive 2-Column Grid for Article Form Fields */
+.wp-field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .wp-field-grid-2 {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+}
+
+/* Refined Polish on Section Blocks */
+.wp-section-block {
+  background: rgba(8, 20, 38, 0.8) !important;
+  border: 1px solid rgba(56, 189, 248, 0.18) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  margin-bottom: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.wp-section-title {
+  color: #FFFFFF !important;
+  font-size: 0.95rem !important;
+  border-bottom: 1px solid rgba(75, 137, 188, 0.25) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 14px !important;
+}
+
+.wp-step-num {
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Mobile Floating Quick Action Bar */
+.article-mobile-quickbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .article-subnav-capsule {
+    top: 54px;
+    padding: 5px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    gap: 4px;
+  }
+  .article-subnav-btn {
+    padding: 6px 10px;
+    font-size: 0.74rem;
+  }
+  .article-subnav-btn .subnav-label {
+    font-size: 0.74rem;
+  }
+  .article-section-anchor {
+    scroll-margin-top: 105px;
+  }
+
+  #view-review.active-view .article-mobile-quickbar {
+    display: flex !important;
+    position: fixed;
+    bottom: 12px;
+    left: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: rgba(8, 20, 36, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(56, 189, 248, 0.35);
+    border-radius: 14px;
+    padding: 7px 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .article-mobile-quickbar .btn-quick-pill {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: #E2E8F0;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .article-mobile-quickbar .btn-quick-pill.primary {
+    background: #0284C7;
+    border-color: #38BDF8;
+    color: #FFFFFF;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.45);
+  }
+
+  .article-mobile-quickbar .btn-quick-pill.ghost {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: rgba(75, 137, 188, 0.28);
+    color: #94A3B8;
+  }
+
+  .article-mobile-quickbar .btn-quick-pill:active {
+    transform: scale(0.96);
+  }
+
+  /* Padding at bottom of #view-review so content is never hidden behind floating bar */
+  #view-review {
+    padding-bottom: 70px !important;
+  }
+}

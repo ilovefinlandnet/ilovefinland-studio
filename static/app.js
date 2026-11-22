@@ -7026,6 +7026,76 @@ ${content}`;
     setInterval(checkCloudSyncStatus, 25000);
     setTimeout(checkCloudSyncStatus, 3000);
 
+    /* ---------- ARTICLE INSIDE FAST NAVIGATION & QUICKBAR ---------- */
+    function initArticleSubNav() {
+      // Subnav button jump click
+      document.querySelectorAll(".article-subnav-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const targetId = btn.getAttribute("data-target-sec");
+          if (!targetId) return;
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            const subnav = $("article-subnav");
+            const navOffset = subnav ? subnav.offsetHeight + 75 : 120;
+            const targetY = targetEl.getBoundingClientRect().top + window.pageYOffset - navOffset;
+            window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+
+            document.querySelectorAll(".article-subnav-btn").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+          }
+        });
+      });
+
+      // Scroll-Spy for Subnav
+      if ("IntersectionObserver" in window) {
+        const sectionIds = ["sec-art-content", "sec-art-photos", "sec-art-details", "sec-art-social", "sec-art-revisions"];
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const activeId = entry.target.id;
+              document.querySelectorAll(".article-subnav-btn").forEach((btn) => {
+                const match = btn.getAttribute("data-target-sec") === activeId;
+                btn.classList.toggle("active", match);
+              });
+            }
+          });
+        }, {
+          rootMargin: "-25% 0px -60% 0px",
+          threshold: 0,
+        });
+
+        sectionIds.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) observer.observe(el);
+        });
+      }
+
+      // Mobile Quick Action Bar Wiring
+      $("btn-quick-save-art")?.addEventListener("click", () => {
+        $("btn-save-article-edits")?.click();
+      });
+
+      $("btn-quick-push-art")?.addEventListener("click", () => {
+        $("btn-push-wordpress-draft")?.click();
+      });
+
+      $("btn-quick-copy-wp")?.addEventListener("click", () => {
+        $("btn-copy-all-wp-direct")?.click();
+      });
+
+      $("btn-quick-jump-top")?.addEventListener("click", () => {
+        const topEl = $("article-subnav") || $("panel-article");
+        if (topEl) {
+          const targetY = topEl.getBoundingClientRect().top + window.pageYOffset - 80;
+          window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+    }
+
+    initArticleSubNav();
+
     checkAuth();
   });
 })();

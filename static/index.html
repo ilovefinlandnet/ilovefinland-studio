@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=54.4" />
-  <link rel="stylesheet" href="/reel-studio.css?v=54.4" />
+  <link rel="stylesheet" href="/styles.css?v=54.5" />
+  <link rel="stylesheet" href="/reel-studio.css?v=54.5" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -1238,6 +1238,37 @@
               </div>
               <div id="wp-prior-coverage-detail" style="background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:0.8rem;"></div>
 
+              <!-- Article Sub-Navigation Capsule (Fast Jump Pills) -->
+              <nav class="article-subnav-capsule" id="article-subnav" aria-label="Jump to article section">
+                <button type="button" class="article-subnav-btn active" data-target-sec="sec-art-content">
+                  <span class="subnav-badge">1</span>
+                  <span class="subnav-icon">📝</span>
+                  <span class="subnav-label">Story &amp; Copy</span>
+                </button>
+                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-photos">
+                  <span class="subnav-badge">2</span>
+                  <span class="subnav-icon">📸</span>
+                  <span class="subnav-label">Featured &amp; Photos</span>
+                </button>
+                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-details">
+                  <span class="subnav-badge">3</span>
+                  <span class="subnav-icon">⚙️</span>
+                  <span class="subnav-label">WordPress Details</span>
+                </button>
+                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-social">
+                  <span class="subnav-badge">4</span>
+                  <span class="subnav-icon">💬</span>
+                  <span class="subnav-label">Viral Caption</span>
+                </button>
+                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-revisions">
+                  <span class="subnav-badge">5</span>
+                  <span class="subnav-icon">🔄</span>
+                  <span class="subnav-label">AI Revisions</span>
+                </button>
+              </nav>
+
+              <!-- ANCHOR 1: STORY & COPY (Sections 1 & 2) -->
+              <div id="sec-art-content" class="article-section-anchor">
               <!-- SECTION 1: ARTICLE DETAILS -->
               <div class="wp-section-block">
                 <div class="wp-section-title">
@@ -1349,7 +1380,10 @@
                   <textarea id="wp-code-textarea" class="wp-code-textarea" rows="12" spellcheck="false"></textarea>
                 </div>
               </div>
+              </div> <!-- /#sec-art-content -->
 
+              <!-- ANCHOR 2: FEATURED & PHOTOS (Section 3) -->
+              <div id="sec-art-photos" class="article-section-anchor">
               <!-- SECTION 3: FEATURED IMAGE (Verified Rights & Downloads) -->
               <div class="wp-section-block">
                 <div class="wp-section-title">
@@ -1453,7 +1487,10 @@
                   </div>
                 </div>
               </div>
+              </div> <!-- /#sec-art-photos -->
 
+              <!-- ANCHOR 3: WORDPRESS DETAILS & META (Section 4) -->
+              <div id="sec-art-details" class="article-section-anchor">
               <!-- SECTION 4: REMAINING WORDPRESS FIELDS (Exact Order) -->
               <div class="wp-section-block">
                 <div class="wp-section-title">
@@ -1480,52 +1517,58 @@
                   </div>
                 </details>
 
-                <!-- 1. Region -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <div class="wp-label-title-group">
-                      <label class="label-sm" for="wp-field-region">Region</label>
-                      <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Default: Finland</span>
+                <!-- Grid 1: Region & City (2-Column Responsive) -->
+                <div class="wp-field-grid-2">
+                  <!-- 1. Region -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <div class="wp-label-title-group">
+                        <label class="label-sm" for="wp-field-region">Region</label>
+                        <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Default: Finland</span>
+                      </div>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-region">📋 Copy</button>
                     </div>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-region">📋 Copy</button>
+                    <input type="text" id="wp-field-region" class="wp-input" placeholder="e.g. Finland (Default) or Lapland, Uusimaa" />
                   </div>
-                  <input type="text" id="wp-field-region" class="wp-input" placeholder="e.g. Finland (Default) or Lapland, Uusimaa" />
+
+                  <!-- 2. City / Location (required for location-specific articles) -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <div class="wp-label-title-group">
+                        <label class="label-sm" for="wp-field-city">City / Location <span class="hint-inline">(for city stories)</span></label>
+                        <span class="badge" style="background:#1e293b;color:#38bdf8;font-size:0.7rem;padding:2px 6px;">Only for city stories (else blank)</span>
+                      </div>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-city">📋 Copy</button>
+                    </div>
+                    <input type="text" id="wp-field-city" class="wp-input" placeholder="Leave empty for national news / general guides" />
+                  </div>
                 </div>
 
-                <!-- 2. City / Location (required for location-specific articles) -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <div class="wp-label-title-group">
-                      <label class="label-sm" for="wp-field-city">City / Location <span class="hint-inline">(for city stories)</span></label>
-                      <span class="badge" style="background:#1e293b;color:#38bdf8;font-size:0.7rem;padding:2px 6px;">Only for city stories (else blank)</span>
+                <!-- Grid 2: Exact Address & Event Date (2-Column Responsive) -->
+                <div class="wp-field-grid-2">
+                  <!-- 3. Exact place or address, where applicable -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <div class="wp-label-title-group">
+                        <label class="label-sm" for="wp-field-address">Exact Place / Address</label>
+                        <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Leave empty for 95% of articles</span>
+                      </div>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-address">📋 Copy</button>
                     </div>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-city">📋 Copy</button>
+                    <input type="text" id="wp-field-address" class="wp-input" placeholder="Leave empty unless reviewing a specific restaurant or museum" />
                   </div>
-                  <input type="text" id="wp-field-city" class="wp-input" placeholder="Leave empty for national news / general guides" />
-                </div>
 
-                <!-- 3. Exact place or address, where applicable -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <div class="wp-label-title-group">
-                      <label class="label-sm" for="wp-field-address">Exact Place / Address</label>
-                      <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Leave empty for 95% of articles</span>
+                  <!-- 4. Event date, time and venue (for Events) -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <div class="wp-label-title-group">
+                        <label class="label-sm" for="wp-field-event">Event Date, Time &amp; Venue</label>
+                        <span class="badge" style="background:#1e293b;color:#f59e0b;font-size:0.7rem;padding:2px 6px;">Only for 'Events' section</span>
+                      </div>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-event">📋 Copy</button>
                     </div>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-address">📋 Copy</button>
+                    <input type="text" id="wp-field-event" class="wp-input" placeholder="Leave empty unless writing about a scheduled festival or concert" />
                   </div>
-                  <input type="text" id="wp-field-address" class="wp-input" placeholder="Leave empty unless reviewing a specific restaurant or museum" />
-                </div>
-
-                <!-- 4. Event date, time and venue (for Events) -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <div class="wp-label-title-group">
-                      <label class="label-sm" for="wp-field-event">Event Date, Time &amp; Venue</label>
-                      <span class="badge" style="background:#1e293b;color:#f59e0b;font-size:0.7rem;padding:2px 6px;">Only for 'Events' section</span>
-                    </div>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-event">📋 Copy</button>
-                  </div>
-                  <input type="text" id="wp-field-event" class="wp-input" placeholder="Leave empty unless writing about a scheduled festival or concert" />
                 </div>
 
                 <!-- 5. Additional Article Images (Multiple Photos Supported) -->
@@ -1572,63 +1615,75 @@
                   <input type="hidden" id="wp-field-add-credit" />
                 </div>
 
-                <!-- 9. Source links (for externally sourced reporting) -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm">Source links (for externally sourced reporting)</label>
-                    <button type="button" class="btn-copy-field" id="btn-copy-all-sources">📋 Copy sources</button>
+                <!-- Grid 3: Sources & Internal Links (2-Column Responsive) -->
+                <div class="wp-field-grid-2">
+                  <!-- 9. Source links (for externally sourced reporting) -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm">Source links (externally sourced)</label>
+                      <button type="button" class="btn-copy-field" id="btn-copy-all-sources">📋 Copy sources</button>
+                    </div>
+                    <div id="wp-source-links-list" class="wp-sources-list"></div>
                   </div>
-                  <div id="wp-source-links-list" class="wp-sources-list"></div>
+
+                  <!-- 10. Related article URLs / internal links -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm">Related internal links</label>
+                      <button type="button" class="btn-copy-field" id="btn-copy-internal-links">📋 Copy links</button>
+                    </div>
+                    <div id="wp-internal-links-list" class="wp-sources-list"></div>
+                  </div>
                 </div>
 
-                <!-- 10. Related article URLs / internal links -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm">Related article URLs / internal links</label>
-                    <button type="button" class="btn-copy-field" id="btn-copy-internal-links">📋 Copy links</button>
+                <!-- Grid 4: SEO Title & Meta Description (2-Column Responsive) -->
+                <div class="wp-field-grid-2">
+                  <!-- 13. SEO title (optional override) -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-seo-title">SEO title (override) <span id="wp-seo-title-count" class="hint-inline">(0/60)</span></label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-seo-title">📋 Copy</button>
+                    </div>
+                    <input type="text" id="wp-field-seo-title" class="wp-input" maxlength="60" />
                   </div>
-                  <div id="wp-internal-links-list" class="wp-sources-list"></div>
+
+                  <!-- 14. Meta description (optional override) -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-meta-desc">Meta description (override) <span id="wp-meta-desc-count" class="hint-inline">(0/155)</span></label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-meta-desc">📋 Copy</button>
+                    </div>
+                    <textarea id="wp-field-meta-desc" class="wp-textarea" rows="2" maxlength="155"></textarea>
+                  </div>
                 </div>
 
-                <!-- 11. Private editorial verification notes (Editor/Admin only) -->
-                <div class="wp-field-wrap wp-private-notes-box">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-private-notes" style="color:#FCD34D;">
-                      🔒 Private editorial verification notes <span class="hint-inline" style="color:#FBBF24;">(Editor/Admin only • Excluded from public copy)</span>
-                    </label>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-private-notes">📋 Copy</button>
+                <!-- Grid 5: Tags & Private Notes (2-Column Responsive) -->
+                <div class="wp-field-grid-2">
+                  <!-- 12. Tags, separated by commas (optional) -->
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-tags">Tags, separated by commas (optional)</label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-tags">📋 Copy</button>
+                    </div>
+                    <input type="text" id="wp-field-tags" class="wp-input" />
                   </div>
-                  <textarea id="wp-field-private-notes" class="wp-textarea" rows="2" style="background:#082347;border-color:rgba(75, 137, 188, 0.28);color:#FFFFFF;font-size:0.8rem;"></textarea>
-                </div>
 
-                <!-- 12. Tags, separated by commas (optional) -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-tags">Tags, separated by commas (optional)</label>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-tags">📋 Copy</button>
+                  <!-- 11. Private editorial verification notes (Editor/Admin only) -->
+                  <div class="wp-field-wrap wp-private-notes-box">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="wp-field-private-notes" style="color:#FCD34D;">
+                        🔒 Private notes <span class="hint-inline" style="color:#FBBF24;">(Editor only)</span>
+                      </label>
+                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-private-notes">📋 Copy</button>
+                    </div>
+                    <textarea id="wp-field-private-notes" class="wp-textarea" rows="2" style="background:#082347;border-color:rgba(75, 137, 188, 0.28);color:#FFFFFF;font-size:0.8rem;"></textarea>
                   </div>
-                  <input type="text" id="wp-field-tags" class="wp-input" />
-                </div>
-
-                <!-- 13. SEO title (optional override) -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-seo-title">SEO title (optional override) <span id="wp-seo-title-count" class="hint-inline">(0/60)</span></label>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-seo-title">📋 Copy</button>
-                  </div>
-                  <input type="text" id="wp-field-seo-title" class="wp-input" maxlength="60" />
-                </div>
-
-                <!-- 14. Meta description (optional override) -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-meta-desc">Meta description (optional override) <span id="wp-meta-desc-count" class="hint-inline">(0/155)</span></label>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-meta-desc">📋 Copy</button>
-                  </div>
-                  <textarea id="wp-field-meta-desc" class="wp-textarea" rows="2" maxlength="155"></textarea>
                 </div>
               </div>
+              </div> <!-- /#sec-art-details -->
 
+              <!-- ANCHOR 4: VIRAL SOCIAL CAPTION (Section 5) -->
+              <div id="sec-art-social" class="article-section-anchor">
               <!-- SECTION 5: VIRAL SOCIAL CAPTION (Instagram, TikTok, Facebook) -->
               <div class="wp-section-block" id="social-caption-section">
                 <div class="wp-section-title">
@@ -1647,6 +1702,7 @@
                   <textarea id="social-caption-textarea" class="wp-textarea" rows="6" placeholder="Click 'Generate Viral Caption' to create a high-converting Hook, Story, Bullets, and Call to Action..." style="font-family:inherit;font-size:0.86rem;line-height:1.5;"></textarea>
                 </div>
               </div>
+              </div> <!-- /#sec-art-social -->
             </section>
 
             <!-- Interactive Static Social Post (1080×1350) & 3:4 Profile Crop Card -->
@@ -1925,7 +1981,7 @@
           </div>
 
           <!-- Editorial AI Co-Pilot & Revision Desk -->
-          <section class="card feedback-copilot-card">
+          <section id="sec-art-revisions" class="card feedback-copilot-card article-section-anchor">
             <div class="panel-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
               <div style="display:flex;align-items:center;gap:12px;">
                 <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(56,189,248,0.35);flex-shrink:0;">
@@ -2111,6 +2167,24 @@
               <span id="schedule-msg" class="hint-text"></span>
             </div>
           </section>
+
+          <!-- Floating Mobile Quick Action Bar (1-Click Save, Push & Teleport) -->
+          <div id="article-mobile-quickbar" class="article-mobile-quickbar">
+            <button type="button" id="btn-quick-save-art" class="btn-quick-pill" title="Save in-Studio changes">
+              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              <span>Save</span>
+            </button>
+            <button type="button" id="btn-quick-push-art" class="btn-quick-pill primary" title="Push Draft directly to WordPress">
+              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+              <span>Push WP</span>
+            </button>
+            <button type="button" id="btn-quick-copy-wp" class="btn-quick-pill ghost" title="Copy All WordPress Fields">
+              <span>📋 Copy</span>
+            </button>
+            <button type="button" id="btn-quick-jump-top" class="btn-quick-pill ghost" title="Scroll to top of article">
+              <span>⬆️ Top</span>
+            </button>
+          </div>
         </section>
 
         <!-- VIEW 2: ASSIGNMENTS & PRODUCTION DESK (Separated into Article vs Reel) -->
@@ -3053,9 +3127,9 @@
     </div>
   </div>
 
-  <script src="/reel-player.js?v=54.4"></script>
-  <script src="/reel-studio.js?v=54.4"></script>
-  <script src="/app.js?v=54.4"></script>
+  <script src="/reel-player.js?v=54.5"></script>
+  <script src="/reel-studio.js?v=54.5"></script>
+  <script src="/app.js?v=54.5"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');
