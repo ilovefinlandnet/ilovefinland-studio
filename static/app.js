@@ -1048,7 +1048,7 @@
 
     // Strict Image Synchronisation:
     // When the article has an authentic featured image, sync it with the static post.
-    const featUrl = article?.featured_image?.url || (currentPackageBundle?.versions?.find(v => v.version === (selectedVersion || currentPackageBundle.package.current_version))?.article?.featured_image?.url);
+    const featUrl = article?.featured_image?.url || (typeof bundle !== "undefined" && bundle?.versions?.find(v => v.version === (selectedVersion || bundle?.package?.current_version))?.article?.featured_image?.url);
     const hasFeat = Boolean(featUrl && featUrl.trim() && article?.featured_image?.status !== "missing");
     if (hasFeat) {
       if (!ig.photo_url || ig.photo_url.includes("tesla") || ig.photo_url.includes("sample-clips") || ig.photo_url.includes("helsinki-sample") || !ig.photo_url.trim()) {
