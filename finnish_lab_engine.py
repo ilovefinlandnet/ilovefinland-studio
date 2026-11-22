@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import io
 import json
 import os
 import sqlite3
@@ -20,6 +21,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import wave
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -106,6 +108,17 @@ def init_finnish_lab_db(db_path: str = FINNISH_LAB_DB_PATH) -> None:
             CREATE TABLE IF NOT EXISTS fl_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fl_audio_cache (
+                cache_key TEXT PRIMARY KEY,
+                mime_type TEXT NOT NULL,
+                audio_base64 TEXT NOT NULL,
+                model_id TEXT NOT NULL,
+                created_at TEXT NOT NULL
             )
             """
         )
@@ -1036,3 +1049,163 @@ def load_user_sync_snapshot(
         }
     finally:
         conn.close()
+
+
+def _pcm_to_wav_base64(pcm_b64: str, sample_rate: int = 24000) -> str:
+    """Wrap raw 16-bit signed little-endian mono PCM into a standard browser-playable WAV."""
+    pcm_bytes = base64.b64decode(pcm_b64)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(sample_rate)
+        wf.writeframes(pcm_bytes)
+    return base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def handle_tts(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    """
+    Generate warm, natural human-voiced Finnish (or bilingual Walking Podcast) audio
+    using Google AI Studio's Gemini Neural TTS models, cached in fl_audio_cache.
+    """
+    text = (payload.get("text") or "").strip()
+    mode = (payload.get("mode") or "phrase").strip().lower()  # phrase | slow | podcast
+    voice = (payload.get("voice") or "Aoede").strip()
+    if not text:
+        return {"error": "INVALID_INPUT", "message": "No text provided for speech."}, 400
+    if len(text) > 2200:
+        text = text[:2200]
+
+    init_finnish_lab_db(db_path)
+    cache_key = hashlib.sha256(f"tts|{mode}|{voice}|{text}".encode("utf-8")).hexdigest()
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT mime_type, audio_base64, model_id FROM fl_audio_cache WHERE cache_key=?",
+            (cache_key,),
+        ).fetchone()
+        if row:
+            _record_usage(is_cache_hit=True, db_path=db_path)
+            return {
+                "ok": True,
+                "mime_type": row[0],
+                "audio_base64": row[1],
+                "model": row[2],
+                "cached": True,
+                "usage": get_usage_stats(db_path),
+            }, 200
+    finally:
+        conn.close()
+
+    key = _get_gemini_key()
+    if not key:
+        return {"error": "AI_NOT_CONFIGURED", "message": "Gemini API key not configured."}, 503
+
+    limit_err = _check_rate_limits(db_path)
+    if limit_err:
+        return limit_err, 429
+
+    if mode == "slow":
+        tts_prompt = (
+            "Speak the following Finnish text slowly, warmly, and very clearly like a patient Finnish language teacher "
+            "helping a beginner hear every vowel and double consonant. Do not add any extra commentary:\n\n"
+            + text
+        )
+    elif mode == "podcast":
+        tts_prompt = (
+            "Read the following short bilingual Finnish-English walking podcast lesson in a warm, natural, friendly human teacher voice. "
+            "Pronounce every Finnish phrase with authentic, clear Finnish pronunciation, pause briefly between sentences so the listener can repeat aloud, "
+            "and speak the English explanations naturally:\n\n"
+            + text
+        )
+    else:
+        tts_prompt = (
+            "Speak the following Finnish text naturally and warmly in authentic, clear Finnish like a friendly native teacher. "
+            "Do not add extra words:\n\n"
+            + text
+        )
+
+    tts_models = [
+        "models/gemini-2.5-flash-preview-tts",
+        "models/gemini-3.1-flash-tts-preview",
+        "models/gemini-3.8-flash-lite-tts",
+    ]
+    req_body = json.dumps(
+        {
+            "contents": [{"parts": [{"text": tts_prompt}]}],
+            "generationConfig": {
+                "responseModalities": ["AUDIO"],
+                "speechConfig": {
+                    "voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice}}
+                },
+            },
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+
+    last_err = {"error": "TTS_FAILED", "message": "Could not generate human voice right now."}
+    for model_name in tts_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={key}"
+        req = urllib.request.Request(url, data=req_body, headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+            inline = None
+            for p in parts:
+                if isinstance(p, dict) and p.get("inlineData"):
+                    inline = p["inlineData"]
+                    break
+            if not inline or not inline.get("data"):
+                continue
+
+            raw_mime = (inline.get("mimeType") or "").lower()
+            raw_b64 = inline["data"]
+            if "pcm" in raw_mime or "l16" in raw_mime:
+                rate = 24000
+                if "rate=" in raw_mime:
+                    try:
+                        rate = int(raw_mime.split("rate=")[1].split(";")[0].strip())
+                    except Exception:
+                        rate = 24000
+                out_b64 = _pcm_to_wav_base64(raw_b64, sample_rate=rate)
+                out_mime = "audio/wav"
+            else:
+                out_b64 = raw_b64
+                out_mime = raw_mime or "audio/mpeg"
+
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.execute(
+                    "INSERT OR REPLACE INTO fl_audio_cache (cache_key, mime_type, audio_base64, model_id, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (cache_key, out_mime, out_b64, model_name, _utc_now_iso()),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            _record_usage(is_cache_hit=False, db_path=db_path)
+            return {
+                "ok": True,
+                "mime_type": out_mime,
+                "audio_base64": out_b64,
+                "model": model_name,
+                "cached": False,
+                "usage": get_usage_stats(db_path),
+            }, 200
+        except urllib.error.HTTPError as he:
+            if he.code == 429:
+                last_err = {
+                    "error": "GEMINI_FREE_QUOTA_EXCEEDED",
+                    "message": "Free voice quota temporarily full — falling back to device voice.",
+                }
+                continue
+            last_err = {"error": f"HTTP_{he.code}", "message": f"Voice service returned HTTP {he.code}."}
+            if he.code in (404, 500, 502, 503):
+                continue
+            break
+        except Exception as exc:
+            last_err = {"error": "TTS_ERROR", "message": str(exc).replace(key, "***")[:140]}
+
+    return last_err, 503
+

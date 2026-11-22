@@ -2350,6 +2350,11 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(res, status=status_code)
                 return
 
+            if path == "/api/finnish-lab/tts":
+                res, status_code = finnish_lab_engine.handle_tts(body or {})
+                self._send_json(res, status=status_code)
+                return
+
             if path == "/api/finnish-lab/word-anatomy":
                 res, status_code = finnish_lab_engine.handle_word_anatomy(body or {})
                 self._send_json(res, status=status_code)
