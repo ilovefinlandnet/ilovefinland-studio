@@ -84,10 +84,37 @@
     return "🔥 Vittu! Vituttaa — Muji Chutiya idiot, focus on Finnish! 💀😂";
   }
 
-  function detectMistakeInReply(replyText, mode) {
+  /* ---------- PERSONAL FRIEND MEMORY (REMEMBERS LIFE FACTS ACROSS CHATS) ---------- */
+  function capturePersonalMemory(msg) {
+    const t = (msg || "").trim();
+    if (!t || t.length < 6 || t.length > 220) return;
+    const patterns = [
+      /\b(?:i am in|i'm in|i live in|living in|staying in)\s+([a-zäöåA-ZÄÖÅ\s-]{2,28})/i,
+      /\b(?:my name is|call me)\s+([a-zäöåA-ZÄÖÅ\s-]{2,24})/i,
+      /\b(?:i work as|my job is|i am a|i'm a|i love|my wife|my husband|my hobby)\s+([^.?!\n]{3,60})/i,
+    ];
+    for (const re of patterns) {
+      if (re.test(t)) {
+        const s = DB.getSettings();
+        const mem = Array.isArray(s.friendMemory) ? s.friendMemory.slice() : [];
+        const clean = t.slice(0, 120);
+        if (!mem.some((x) => x.toLowerCase() === clean.toLowerCase())) {
+          mem.unshift(clean);
+          DB.saveSettings({ friendMemory: mem.slice(0, 12) });
+        }
+        break;
+      }
+    }
+  }
+
+  function detectMistakeInReply(replyText, mode, userPrompt) {
     const low = String(replyText || "").toLowerCase();
-    const isMistakeMode = mode === "homework_check" || mode === "practice" || mode === "quick_answer" || mode === "teach_me";
-    if (!isMistakeMode) return false;
+    const uLow = String(userPrompt || "").toLowerCase();
+    const isPracticeOrCheck =
+      mode === "homework_check" ||
+      mode === "practice" ||
+      /\b(correct|right|wrong|check my|my answer|did i say|is it|true or false)\b/i.test(uLow);
+    if (!isPracticeOrCheck) return false;
     const mistakeRe = /\b(not quite|incorrect|wrong|mistake|mistakes|should be|instead of|correction:|almost right|small error|grammar error|väärin)\b/i;
     const praiseOnlyRe = /\b(perfect!|100% correct|spot on|exact match|no mistakes|oikein!)\b/i;
     if (praiseOnlyRe.test(low) && !mistakeRe.test(low)) {
@@ -463,6 +490,10 @@
       );
       const data = await res.json().catch(() => ({ error: "BAD_RESPONSE", message: "Unexpected server response." }));
       if (!res.ok) {
+        if (res.status === 401) {
+          document.getElementById("studio-shell")?.classList.add("hidden");
+          document.getElementById("signin-gate")?.classList.remove("hidden");
+        }
         const err = new Error(data.message || data.error || `HTTP ${res.status}`);
         err.code = data.error || `HTTP_${res.status}`;
         throw err;
@@ -919,6 +950,8 @@
     scrollChatsToBottom();
 
     try {
+      capturePersonalMemory(msgText);
+      const userMemory = Array.isArray(DB.getSettings().friendMemory) ? DB.getSettings().friendMemory : [];
       const resp = await flApi("/api/finnish-lab/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -927,12 +960,13 @@
           mode,
           level: settings.level || "A1",
           roast_mode: isRoastEnabled(),
+          user_memory: userMemory,
           history,
           attachments: atts.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
         }),
       });
 
-      const roastBanner = detectMistakeInReply(resp.reply, mode) ? getRoastLine(true) : "";
+      const roastBanner = detectMistakeInReply(resp.reply, mode, msgText) ? getRoastLine(true) : "";
       conv.messages.push({
         id: DB.uid("msg"),
         role: "assistant",

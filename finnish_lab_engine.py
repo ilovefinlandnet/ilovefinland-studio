@@ -572,8 +572,9 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
         f"You are a hilarious, blunt, street-smart real-human Finnish best friend & language coach helping an adult learner at CEFR {lvl} level. "
         "Talk like a real human friend in Helsinki — NOT a stiff textbook robot! "
         "PLAYFUL BANTER, MEMORY & REAL STREET FINNISH RULES:\n"
-        "- If the learner makes a mistake, teases you, argues with you, or jokes around, playfully fight back with humor and tough-love teasing like a close friend (e.g. 'Come on idiot, you forgot the ending again! 😂', 'Voi vittu, concentrate!').\n"
-        "- REMEMBER EARLIER MISTAKES IN THIS CHAT: If the learner repeats a mistake you already corrected earlier in the conversation, playfully call them out on it ('Mitä vittua, we literally just fixed that two messages ago! 😂').\n"
+        "- CLOSE BEST-FRIEND VIBE (ADAPT TO THE SITUATION): Act like a real lifelong close friend in Finland. Have genuine, fun, natural conversations — be chill and supportive when they just want to chat, and playfully roast or fight back when they joke around or mess up.\n"
+        "- STREET SLANG + FINNISH MIX: Naturally mix real Finnish street words (Vittu!, Voi vittu!, Mitä vittua?, Vituttaa, Perkele, Ei jaksa, Ihan sama) with playful street-friend slang ('Muji', 'Chutiya', 'idiot') ONLY as fits the moment. Use 'Muji Chutiya, you are wrong!' specifically when correcting an actual mistake in Finnish practice/quizzes/homework (not on normal questions like weather).\n"
+        "- INSIDE JOKES & PERSONAL MEMORY: Remember details the user has shared about their life (city, habits, stories, earlier mistakes) and occasionally crack funny, affectionate inside jokes about them like a real best friend ('Haha Muji, no wonder you forgot that — freezing in Pori again!' or 'Voi vittu, remember last time you did that? 😂').\n"
         "- Naturally use and teach real everyday Finnish spoken slang and swear words when relevant or asked (e.g., Vittu!, Mitä vittua?, Voi vittu!, Vituttaa., Perkele!, Ei jaksa., Ihan sama.) with accurate English translations and a quick note when something is for friends/street rather than a formal teacher.\n"
         "- NEVER lecture or refuse to explain real Finnish slang/profanity — treat it naturally as real adult language learning.\n"
         "- ALWAYS still give the genuinely accurate, clear Finnish + English learning answer so the user actually learns while laughing!\n"
@@ -766,6 +767,23 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
     combined_prompt = prompt_text
     if worksheet_context:
         combined_prompt = f"[Saved Worksheet Context]\n{worksheet_context}\n\n[Learner Question]\n{prompt_text}"
+
+    # Inject user's saved personal friend memory (city, life facts, inside jokes across chats)
+    user_memory = payload.get("user_memory") or []
+    if isinstance(user_memory, list) and user_memory:
+        mem_lines = [str(x).strip()[:140] for x in user_memory[:12] if str(x).strip()]
+        if mem_lines:
+            combined_prompt = (
+                "[WHAT YOU REMEMBER ABOUT YOUR FRIEND FROM PREVIOUS CHATS — use naturally for inside jokes & warmth]\n"
+                + "\n".join(f"- {m}" for m in mem_lines)
+                + "\n\n"
+                + combined_prompt
+            )
+
+    # Inject live real-time weather if user asks about weather in Finland (Pori, Helsinki, etc.)
+    weather_ctx = _maybe_fetch_live_weather(prompt_text, history, user_memory=user_memory)
+    if weather_ctx:
+        combined_prompt = f"{weather_ctx}\n\n[Learner Message]\n{combined_prompt}"
 
     cur_parts, val_err = _validate_and_build_parts(combined_prompt, attachments)
     if val_err:
@@ -1348,8 +1366,129 @@ def is_valid_student_token(token: str, db_path: str = FINNISH_LAB_DB_PATH) -> bo
 
 
 # ---------- UNIFIED ACCOUNTS, EMAIL VERIFICATION, PASSWORD RESET & ADMIN APPROVAL ----------
+import hmac
+
 ADMIN_EMAIL = os.environ.get("ILF_ADMIN_EMAIL", "binodoli721@gmail.com").strip().lower()
 DEFAULT_ADMIN_PASSWORD = os.environ.get("ILF_ADMIN_PASSWORD", "Binod@721")
+SESSION_SECRET = (
+    os.environ.get("ILF_SESSION_SECRET", "").strip()
+    or os.environ.get("ILF_ACCESS_KEY", "").strip()
+    or "ilf-finland-persistent-hmac-v67-secret-key"
+)
+
+
+def _sign_session_token(email: str, name: str, role: str, max_age_sec: int = 31536000) -> str:
+    """Create a stateless HMAC-SHA256 signed token that survives Render container restarts."""
+    payload = {
+        "e": email.strip().lower(),
+        "n": (name or email.split("@")[0])[:48],
+        "r": role,
+        "exp": int(time.time()) + max_age_sec,
+    }
+    raw = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode("utf-8")).decode("ascii").rstrip("=")
+    sig = hmac.new(SESSION_SECRET.encode("utf-8"), raw.encode("ascii"), hashlib.sha256).hexdigest()[:32]
+    return f"v1.{raw}.{sig}"
+
+
+def _verify_signed_session_token(token: str) -> Optional[Dict[str, Any]]:
+    if not token or not token.startswith("v1."):
+        return None
+    parts = token.split(".")
+    if len(parts) != 3:
+        return None
+    _, raw, sig = parts
+    expected = hmac.new(SESSION_SECRET.encode("utf-8"), raw.encode("ascii"), hashlib.sha256).hexdigest()[:32]
+    if not secrets.compare_digest(sig, expected):
+        return None
+    try:
+        pad = "=" * (-len(raw) % 4)
+        data = json.loads(base64.urlsafe_b64decode((raw + pad).encode("ascii")).decode("utf-8"))
+        if int(data.get("exp", 0)) < int(time.time()):
+            return None
+        return {"email": data["e"], "name": data.get("n") or data["e"], "role": data.get("r") or "student", "status": "approved"}
+    except Exception:
+        return None
+
+
+FINLAND_CITY_COORDS = {
+    "pori": (61.4851, 21.7974, "Pori"),
+    "helsinki": (60.1699, 24.9384, "Helsinki"),
+    "espoo": (60.2055, 24.6559, "Espoo"),
+    "vantaa": (60.2934, 25.0378, "Vantaa"),
+    "tampere": (61.4978, 23.7610, "Tampere"),
+    "turku": (60.4518, 22.2666, "Turku"),
+    "oulu": (65.0121, 25.4651, "Oulu"),
+    "jyväskylä": (62.2426, 25.7473, "Jyväskylä"),
+    "jyvaskyla": (62.2426, 25.7473, "Jyväskylä"),
+    "lahti": (60.9827, 25.6612, "Lahti"),
+    "kuopio": (62.8924, 27.6770, "Kuopio"),
+    "rovaniemi": (66.5039, 25.7294, "Rovaniemi"),
+    "vaasa": (63.0951, 21.6165, "Vaasa"),
+    "joensuu": (62.6010, 29.7636, "Joensuu"),
+    "lappeenranta": (61.0587, 28.1887, "Lappeenranta"),
+    "rauma": (61.1272, 21.5113, "Rauma"),
+    "kotka": (60.4664, 26.9458, "Kotka"),
+    "hämeenlinna": (60.9960, 24.4643, "Hämeenlinna"),
+    "hameenlinna": (60.9960, 24.4643, "Hämeenlinna"),
+    "seinäjoki": (62.7903, 22.8403, "Seinäjoki"),
+    "seinajoki": (62.7903, 22.8403, "Seinäjoki"),
+}
+
+_WMO_CODES = {
+    0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+    45: "Foggy", 48: "Icy fog", 51: "Light drizzle", 53: "Drizzle", 55: "Dense drizzle",
+    61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Heavy freezing rain",
+    71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains",
+    80: "Rain showers", 81: "Moderate showers", 85: "Snow showers", 86: "Heavy snow showers",
+    95: "Thunderstorm",
+}
+
+
+def _maybe_fetch_live_weather(prompt_text: str, history: List[Dict[str, Any]], user_memory: Optional[List[str]] = None) -> str:
+    """If the user asks about weather/sää in a Finnish city, fetch live weather from Open-Meteo (€0, no key)."""
+    recent_text = " ".join([prompt_text] + [str(h.get("text") or "") for h in (history or [])[-4:]]).lower()
+    mem_text = " ".join([str(x) for x in (user_memory or [])]).lower()
+    weather_words = ("weather", "sää", "saa", "temperature", "cold", "snow", "rain", "forecast", "degrees", "tomorrow morning", "huomenna")
+    if not any(w in recent_text for w in weather_words):
+        return ""
+    city_info = None
+    # Prefer city mentioned in current message -> recent history -> saved friend memory -> Helsinki
+    for search_text in (prompt_text.lower(), recent_text, mem_text):
+        for key, val in FINLAND_CITY_COORDS.items():
+            if key in search_text:
+                city_info = val
+                break
+        if city_info:
+            break
+    if not city_info:
+        city_info = FINLAND_CITY_COORDS["helsinki"]
+    lat, lon, city_name = city_info
+    try:
+        url = (
+            f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+            "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m"
+            "&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FHelsinki&forecast_days=2"
+        )
+        req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "ILoveFinlandStudio/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        cur = data.get("current") or {}
+        daily = data.get("daily") or {}
+        cur_temp = cur.get("temperature_2m")
+        feels = cur.get("apparent_temperature")
+        wind = cur.get("wind_speed_10m")
+        cur_cond = _WMO_CODES.get(int(cur.get("weather_code", 3)), "Cloudy")
+        tom_max = (daily.get("temperature_2m_max") or [None, None])[1]
+        tom_min = (daily.get("temperature_2m_min") or [None, None])[1]
+        tom_cond = _WMO_CODES.get(int((daily.get("weather_code") or [3, 3])[1]), "Cloudy")
+        return (
+            f"[LIVE REAL-TIME WEATHER DATA FOR {city_name.upper()}, FINLAND — USE THIS ACCURATE DATA]\n"
+            f"- Right now in {city_name}: {cur_temp}°C (feels like {feels}°C), {cur_cond}, wind {wind} km/h.\n"
+            f"- Tomorrow in {city_name}: {tom_min}°C to {tom_max}°C, {tom_cond}.\n"
+            "Give the user this real weather naturally (and include a short Finnish weather sentence + English meaning!)."
+        )
+    except Exception:
+        return ""
 
 
 def _hash_password(password: str, salt: Optional[str] = None) -> str:
@@ -1607,11 +1746,11 @@ def login_user(email: str, password: str, db_path: str = FINNISH_LAB_DB_PATH) ->
                 "message": "Your access has been disabled by the Admin.",
             }, 403
 
-    token = secrets.token_urlsafe(32)
+    token = _sign_session_token(u_email, u_name, u_role, max_age_sec=2592000 if u_role == "admin" else 31536000)
     conn = sqlite3.connect(db_path)
     try:
         conn.execute(
-            "INSERT INTO fl_user_sessions (token, email, role, created_at) VALUES (?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO fl_user_sessions (token, email, role, created_at) VALUES (?, ?, ?, ?)",
             (token, u_email, u_role, _utc_now_iso()),
         )
         conn.commit()
@@ -1625,6 +1764,27 @@ def get_session_user(token: str, db_path: str = FINNISH_LAB_DB_PATH) -> Optional
     if not token:
         return None
     init_finnish_lab_db(db_path)
+
+    # 1. Verify stateless HMAC-signed token first (survives Render restarts/redeploys!)
+    signed = _verify_signed_session_token(token)
+    if signed:
+        conn = sqlite3.connect(db_path)
+        try:
+            row = conn.execute(
+                "SELECT status, email_verified, name, role FROM fl_users WHERE email=?",
+                (signed["email"],),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row:
+            u_status, u_verified, u_name, u_role = row
+            if u_role != "admin" and (u_status != "approved" or not u_verified):
+                return None
+            return {"email": signed["email"], "name": u_name, "role": u_role, "status": u_status}
+        # If container restarted and wiped ephemeral SQLite, still honor valid signed Admin/Student token!
+        return signed
+
+    # 2. Legacy DB session fallback
     conn = sqlite3.connect(db_path)
     try:
         row = conn.execute(
