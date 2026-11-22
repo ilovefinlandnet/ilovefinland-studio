@@ -291,13 +291,14 @@ def discover_gemini_models(force_refresh: bool = False) -> Dict[str, Any]:
             }
         )
 
-    # Preference ranking: reliable free-tier multimodal Flash models first
+    # Preference ranking: fastest verified free-tier multimodal Flash models first
     preferred_order = [
-        "models/gemini-2.5-flash-lite",
         "models/gemini-flash-lite-latest",
-        "models/gemini-2.5-flash",
+        "models/gemini-3.1-flash-lite-preview",
+        "models/gemini-3-flash-preview",
         "models/gemini-flash-latest",
-        "models/gemini-2.0-flash",
+        "models/gemini-2.5-flash",
+        "models/gemini-2.5-flash-lite",
     ]
     available_names = {c["name"] for c in candidates}
     ordered_selected: List[str] = [p for p in preferred_order if p in available_names]

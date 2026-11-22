@@ -2342,41 +2342,37 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
                 )
                 return
-            try:
-                body = self._read_json_body()
-            except Exception:
-                self._send_json({"error": "INVALID_JSON", "message": "Invalid JSON request body."}, status=HTTPStatus.BAD_REQUEST)
-                return
 
             import finnish_lab_engine
 
             if path == "/api/finnish-lab/ask":
-                res, status_code = finnish_lab_engine.handle_ask(body)
+                res, status_code = finnish_lab_engine.handle_ask(body or {})
                 self._send_json(res, status=status_code)
                 return
 
             if path == "/api/finnish-lab/word-anatomy":
-                res, status_code = finnish_lab_engine.handle_word_anatomy(body)
+                res, status_code = finnish_lab_engine.handle_word_anatomy(body or {})
                 self._send_json(res, status=status_code)
                 return
 
             if path == "/api/finnish-lab/writing-check":
-                res, status_code = finnish_lab_engine.handle_writing_check(body)
+                res, status_code = finnish_lab_engine.handle_writing_check(body or {})
                 self._send_json(res, status=status_code)
                 return
 
             if path == "/api/finnish-lab/generate-exercise":
-                res, status_code = finnish_lab_engine.handle_generate_exercise(body)
+                res, status_code = finnish_lab_engine.handle_generate_exercise(body or {})
                 self._send_json(res, status=status_code)
                 return
 
             if path == "/api/finnish-lab/settings/limit":
-                new_lim = finnish_lab_engine.set_daily_limit(body.get("daily_limit", 60))
+                new_lim = finnish_lab_engine.set_daily_limit((body or {}).get("daily_limit", 60))
                 self._send_json({"ok": True, "daily_limit": new_lim, "usage": finnish_lab_engine.get_usage_stats()})
                 return
 
             if path == "/api/finnish-lab/sync":
-                res = finnish_lab_engine.save_user_sync_snapshot(user, body.get("snapshot") or body)
+                payload = body or {}
+                res = finnish_lab_engine.save_user_sync_snapshot(user, payload.get("snapshot") or payload)
                 self._send_json(res, status=200 if res.get("ok") else 400)
                 return
 

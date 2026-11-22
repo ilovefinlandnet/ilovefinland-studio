@@ -108,19 +108,35 @@
 
   /* ---------- SECURE API CLIENT ---------- */
   async function flApi(path, opts) {
-    const res = await fetch(path, Object.assign({ credentials: "same-origin" }, opts || {}));
-    const data = await res.json().catch(() => ({ error: "BAD_RESPONSE", message: "Unexpected server response." }));
-    if (!res.ok) {
-      const err = new Error(data.message || data.error || `HTTP ${res.status}`);
-      err.code = data.error || `HTTP_${res.status}`;
-      err.payload = data;
-      throw err;
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 35000) : null;
+    try {
+      const res = await fetch(
+        path,
+        Object.assign({ credentials: "same-origin", signal: controller ? controller.signal : undefined }, opts || {})
+      );
+      const data = await res.json().catch(() => ({ error: "BAD_RESPONSE", message: "Unexpected server response." }));
+      if (!res.ok) {
+        const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+        err.code = data.error || `HTTP_${res.status}`;
+        err.payload = data;
+        throw err;
+      }
+      if (data.usage && state.status) {
+        state.status.usage = data.usage;
+        updateQuotaBadges();
+      }
+      return data;
+    } catch (e) {
+      if (e && e.name === "AbortError") {
+        const err = new Error("Request timed out after 35s. Please try again — your message and saved data are safe.");
+        err.code = "API_TIMEOUT";
+        throw err;
+      }
+      throw e;
+    } finally {
+      if (timer) clearTimeout(timer);
     }
-    if (data.usage && state.status) {
-      state.status.usage = data.usage;
-      updateQuotaBadges();
-    }
-    return data;
   }
 
   async function refreshStatus(force) {
