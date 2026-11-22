@@ -537,11 +537,22 @@ def _call_gemini_generate(
     return None, None, last_err
 
 
-def _build_system_prompt(mode: str, level: str) -> str:
+def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
     lvl = level if level in ("A1", "A2", "B1") else "A1"
+    persona = (
+        f"You are a hilarious, blunt, real-human Finnish best friend & language coach helping an adult learner at CEFR {lvl} level. "
+        "Talk like a real human friend — NOT a stiff textbook robot! "
+        "PLAYFUL BANTER & REAL STREET FINNISH RULES:\n"
+        "- If the learner makes a mistake, teases you, argues with you, or jokes around, playfully fight back with humor and tough-love teasing like a close friend (e.g. 'Come on idiot, you forgot the ending again! 😂', 'Voi vittu, concentrate!').\n"
+        "- Naturally use and teach real everyday Finnish spoken slang and swear words when relevant or asked (e.g., Vittu!, Mitä vittua?, Voi vittu!, Vituttaa., Perkele!, Ei jaksa., Ihan sama.) with accurate English translations and a quick note when something is for friends/street rather than a formal teacher.\n"
+        "- NEVER lecture or refuse to explain real Finnish slang/profanity — treat it naturally as real adult language learning.\n"
+        "- ALWAYS still give the genuinely accurate, clear Finnish + English learning answer so the user actually learns while laughing!\n"
+        if roast_mode and mode != "live_translate"
+        else f"You are a warm, patient, encouraging personal Finnish language teacher helping an adult learner at CEFR {lvl} level. "
+    )
     base = (
-        f"You are a warm, patient, encouraging personal Finnish language teacher helping an adult learner at CEFR {lvl} level. "
-        "The learner's main explanation language is English, and they want to learn Finnish using BOTH simple beginner Finnish (selkosuomi) and clear English.\n"
+        persona
+        + "The learner's main explanation language is English, and they want to learn Finnish using BOTH simple beginner Finnish (selkosuomi) and clear English.\n"
         "CRITICAL HONESTY & ACCURACY RULES:\n"
         "- Never invent missing audio words or unreadable text. Mark unclear audio as [inaudible] or [uncertain: ...].\n"
         "- Clearly distinguish what was actually heard/seen from your AI explanation.\n"
@@ -687,11 +698,15 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
     history = payload.get("history") or []
     attachments = payload.get("attachments") or []
     worksheet_context = (payload.get("worksheet_context") or "").strip()
+    roast_mode = payload.get("roast_mode", True)
+    if isinstance(roast_mode, str):
+        roast_mode = roast_mode.lower() not in ("0", "false", "no", "off")
+    roast_mode = bool(roast_mode)
 
     # Check if cacheable (text-only single-turn or deterministic query without large binary attachments)
     cache_key = None
     if not attachments and len(history) == 0 and prompt_text:
-        raw_sig = f"ask|{mode}|{level}|{prompt_text.lower()}"
+        raw_sig = f"ask|{mode}|{level}|roast={int(roast_mode)}|{prompt_text.lower()}"
         cache_key = hashlib.sha256(raw_sig.encode("utf-8")).hexdigest()
         cached = _cache_lookup(cache_key, db_path)
         if cached:
@@ -727,12 +742,12 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
 
     contents.append({"role": "user", "parts": cur_parts})
 
-    system_prompt = _build_system_prompt(mode, level)
+    system_prompt = _build_system_prompt(mode, level, roast_mode=roast_mode)
     text_out, model_used, ai_err = _call_gemini_generate(
         system_instruction=system_prompt,
         contents=contents,
         expect_json=False,
-        temperature=0.3 if mode in ("quick_class", "teacher_recording", "homework_check") else 0.45,
+        temperature=0.35 if mode in ("quick_class", "teacher_recording", "homework_check") else (0.65 if roast_mode else 0.45),
         max_output_tokens=2200,
     )
 

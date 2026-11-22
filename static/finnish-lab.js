@@ -69,9 +69,9 @@
     if (!isRoastEnabled()) return "";
     state.mistakeStreak = (state.mistakeStreak || 0) + 1;
     if (state.mistakeStreak === 1) return "😈 Muji Chutiya, you are wrong! 😂";
-    if (state.mistakeStreak === 2) return "😈 Idiot! Muji Chutiya, wrong again! 🤦‍♂️";
-    if (state.mistakeStreak === 3) return "🔥 Vittu! Muji Chutiya, concentrate idiot! 😂";
-    return "🔥 Vittu perkele! Muji Chutiya, idiot focus on Finnish! 💀😂";
+    if (state.mistakeStreak === 2) return "😈 Idiot! Voi vittu, Muji Chutiya — wrong again! 🤦‍♂️";
+    if (state.mistakeStreak === 3) return "🔥 Mitä vittua?! Muji Chutiya, concentrate idiot! 😂";
+    return "🔥 Vittu! Vituttaa — Muji Chutiya idiot, focus on Finnish! 💀😂";
   }
 
   function detectMistakeInReply(replyText, mode) {
@@ -147,6 +147,19 @@
         { fi: "Ulkona on kymmenen astetta pakkasta.", en: "Outside it is minus ten degrees." },
         { fi: "Muista laittaa lämmin takki!", en: "Remember to put on a warm jacket!" },
         { fi: "Kesällä Suomessa on valoisaa.", en: "In summer it is bright in Finland." },
+      ],
+    },
+    {
+      id: "pod_street",
+      title: "🗣️ Real Street Finnish & Slang",
+      duration: "~2 min",
+      items: [
+        { fi: "Vittu!", en: "Fuck! / Damn!" },
+        { fi: "Mitä vittua?", en: "What the fuck?" },
+        { fi: "Voi vittu!", en: "Oh, fuck!" },
+        { fi: "Vituttaa.", en: "I'm pissed off / It really annoys me." },
+        { fi: "Ei jaksa.", en: "I can't be bothered / Too tired for this." },
+        { fi: "Ihan sama.", en: "Whatever / I don't care." },
       ],
     },
     {
@@ -690,6 +703,7 @@
           message: aiPrompt,
           mode,
           level: settings.level || "A1",
+          roast_mode: isRoastEnabled(),
           history,
           attachments: atts.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
         }),
