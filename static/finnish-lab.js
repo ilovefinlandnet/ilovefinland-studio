@@ -60,6 +60,10 @@
     adminUsers: [],
     emailDeliveryConfigured: false,
     autoSyncTimer: null,
+    customPodcastEpisodes: [],
+    podcastCreating: false,
+    extractingCards: false,
+    speakingMsgId: null,
   };
 
   /* ---------- FUN ROAST MODE (ESCALATING MISTAKE SIGNATURE) ---------- */
@@ -226,64 +230,162 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  /* ---------- WARM HUMAN NEURAL VOICE (GEMINI TTS + CACHED WAV) ---------- */
-  function stopActiveAudio() {
+  /* ---------- WARM HUMAN NEURAL VOICE (GEMINI TTS + CACHED WAV + LIVE STOP) ---------- */
+  function stopActiveAudio(skipRender) {
     if (_activeAudioEl) {
-      try { _activeAudioEl.pause(); _activeAudioEl.currentTime = 0; } catch (_) {}
+      try { _activeAudioEl.onended = null; _activeAudioEl.pause(); _activeAudioEl.currentTime = 0; } catch (_) {}
       _activeAudioEl = null;
     }
     if ("speechSynthesis" in window) {
       try { window.speechSynthesis.cancel(); } catch (_) {}
     }
+    const wasSpeaking = Boolean(state.speakingMsgId);
+    state.speakingMsgId = null;
+    if (wasSpeaking && !skipRender) {
+      renderActiveView();
+      renderSidePanel();
+    }
   }
 
-  function fallbackBrowserSpeak(text, slow) {
-    if (!("speechSynthesis" in window)) return;
+  function fallbackBrowserSpeak(text, slow, msgId) {
+    if (!("speechSynthesis" in window)) { stopActiveAudio(); return; }
     try {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "fi-FI";
-      utter.rate = slow ? 0.65 : 0.95;
+      utter.rate = slow ? 0.68 : 0.95;
       const voices = window.speechSynthesis.getVoices() || [];
       const fiVoice = voices.find((v) => (v.lang || "").toLowerCase().startsWith("fi"));
       if (fiVoice) utter.voice = fiVoice;
+      utter.onend = () => { if (state.speakingMsgId === msgId) stopActiveAudio(); };
+      utter.onerror = () => { if (state.speakingMsgId === msgId) stopActiveAudio(); };
       window.speechSynthesis.speak(utter);
-    } catch (_) {}
+    } catch (_) {
+      stopActiveAudio();
+    }
   }
 
-  async function speakFinnish(text, slow) {
-    const clean = (text || "").replace(/[*_`#]/g, "").trim().slice(0, 420);
+  async function speakFinnish(text, slow, msgId) {
+    const targetId = msgId || ("tts_" + Date.now());
+    if (msgId && state.speakingMsgId === msgId) {
+      stopActiveAudio();
+      return;
+    }
+    const clean = (text || "")
+      .replace(/[*_`#>]/g, "")
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1200);
     if (!clean) return;
-    stopActiveAudio();
+
+    stopActiveAudio(true);
+    state.speakingMsgId = targetId;
+    renderActiveView();
+    renderSidePanel();
 
     const mode = slow ? "slow" : "phrase";
     const key = `${mode}|${clean}`;
     if (_audioMemCache.has(key)) {
       const audio = new Audio(_audioMemCache.get(key));
       _activeAudioEl = audio;
-      audio.play().catch(() => fallbackBrowserSpeak(clean, slow));
+      audio.onended = () => { if (state.speakingMsgId === targetId) stopActiveAudio(); };
+      audio.play().catch(() => fallbackBrowserSpeak(clean, slow, targetId));
       return;
     }
 
-    toast(slow ? "🐢 Preparing clear slow Finnish voice..." : "🔊 Preparing human Finnish voice...", "info");
+    toast(slow ? "🐢 Preparing clear slow voice..." : "🔊 Preparing full human voice...", "info");
     try {
       const res = await flApi("/api/finnish-lab/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: clean, mode }),
       });
+      if (state.speakingMsgId !== targetId) return; // User tapped Stop while loading!
       if (res && res.audio_base64) {
         const dataUrl = `data:${res.mime_type || "audio/wav"};base64,${res.audio_base64}`;
         _audioMemCache.set(key, dataUrl);
         const audio = new Audio(dataUrl);
         _activeAudioEl = audio;
-        audio.play().catch(() => fallbackBrowserSpeak(clean, slow));
+        audio.onended = () => { if (state.speakingMsgId === targetId) stopActiveAudio(); };
+        audio.play().catch(() => fallbackBrowserSpeak(clean, slow, targetId));
         return;
       }
     } catch (_) {
       // Quietly fall back to device voice if offline or quota full
     }
-    fallbackBrowserSpeak(clean, slow);
+    if (state.speakingMsgId === targetId) {
+      fallbackBrowserSpeak(clean, slow, targetId);
+    }
+  }
+
+  function getAllPodcastEpisodes() {
+    return [...(state.customPodcastEpisodes || []), ...PODCAST_EPISODES];
+  }
+
+  async function createCustomPodcastEpisode(topicStr) {
+    const topic = (topicStr || "").trim();
+    if (!topic) { toast("Type a topic first (e.g. At the doctor)!", "warning"); return; }
+    state.podcastCreating = true;
+    renderActiveView();
+    try {
+      const res = await flApi("/api/finnish-lab/podcast-topic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, level: DB.getSettings().level || "A1" }),
+      });
+      const ep = {
+        id: "pod_custom_" + Date.now(),
+        title: "✨ " + (res.title || topic),
+        duration: "~2 min",
+        items: res.items || [],
+      };
+      state.customPodcastEpisodes.unshift(ep);
+      state.podcastEpisodeId = ep.id;
+      state.podcastAudioUrl = null;
+      state.podcastShowScript = true;
+      toast(`Created "${ep.title}"! Tap Play to listen 🎧`, "success");
+    } catch (err) {
+      toast(err.message || "Could not create episode.", "error");
+    } finally {
+      state.podcastCreating = false;
+      renderActiveView();
+    }
+  }
+
+  async function extractAndSaveFlashcards(payload) {
+    if (state.extractingCards) return;
+    state.extractingCards = true;
+    toast("⏳ Extracting Finnish vocabulary into Flashcards...", "info");
+    try {
+      const res = await flApi("/api/finnish-lab/extract-flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const cards = res.cards || [];
+      if (!cards.length) {
+        toast("No new Finnish vocabulary found to save.", "warning");
+        return;
+      }
+      const existingSet = new Set((state.flashcards || []).map((c) => (c.fi || "").toLowerCase()));
+      let added = 0;
+      for (const c of cards) {
+        if (!existingSet.has((c.fi || "").toLowerCase())) {
+          await DB.addFlashcard({ fi: c.fi, en: c.en, example: c.example || "" });
+          existingSet.add((c.fi || "").toLowerCase());
+          added++;
+        }
+      }
+      state.flashcards = await DB.listFlashcards();
+      scheduleAutoSync();
+      toast(`⭐ Saved ${added || cards.length} words to Flashcards & Podcast!`, "success");
+      renderActiveView();
+    } catch (err) {
+      toast(err.message || "Could not extract flashcards.", "error");
+    } finally {
+      state.extractingCards = false;
+    }
   }
 
   function getPodcastItems(ep) {
@@ -295,7 +397,7 @@
   }
 
   async function generateAndPlayPodcast(epId) {
-    const ep = PODCAST_EPISODES.find((x) => x.id === epId) || PODCAST_EPISODES[0];
+    const ep = getAllPodcastEpisodes().find((x) => x.id === epId) || PODCAST_EPISODES[0];
     const items = getPodcastItems(ep);
     if (!items.length) {
       toast("Save a few flashcards first to turn your own words into a walking podcast!", "warning");
@@ -1140,12 +1242,19 @@
             .join("")}
         </div>`
       : "";
+    const isSpeakingThis = Boolean(m.id && state.speakingMsgId === m.id);
+    const fullSpeakText = (m.text || "").slice(0, 1200);
     const actionsHtml =
       m.role === "assistant" && !m.isError
         ? `<div class="fl-msg-actions">
-            <button type="button" class="fl-mini-btn" data-fl-speak="${esc(m.finnishTts || m.text.slice(0, 220))}">🔊 Listen</button>
-            <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(m.finnishTts || m.text.slice(0, 220))}">🐢 Slow</button>
+            ${
+              isSpeakingThis
+                ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.25);border-color:rgba(248,113,113,0.6);color:#fecaca;font-weight:700;">⏹️ Stop</button>`
+                : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🔊 Listen</button>`
+            }
+            <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🐢 Slow</button>
             <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}">Explain more</button>
+            <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Extract Finnish words to Flashcards & Podcast">⭐ Save Words</button>
             <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">💾 Save</button>
           </div>`
         : "";
@@ -1160,32 +1269,43 @@
     `;
   }
 
-  /* ---------- MODE 2: STUDY (3 SIMPLE CARDS — WALK & LISTEN PODCAST FIRST!) ---------- */
+  /* ---------- MODE 2: HIGH-END STUDY HUB (3 CLEAN LUXURY CARDS) ---------- */
   function renderStudyMode(prog) {
     if (!state.studyTool) {
+      const cardCount = (state.flashcards || []).length;
       return `
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <!-- Featured Card 1: Walk & Listen Podcast -->
-          <button type="button" class="fl-study-card" data-fl-study="podcast" style="background:linear-gradient(135deg, rgba(2,132,199,0.28), rgba(16,26,44,0.94));border-color:rgba(56,189,248,0.45);">
-            <div style="display:flex;align-items:center;gap:10px;width:100%;">
-              <span style="font-size:1.9rem;">🎧</span>
-              <div>
-                <strong style="font-size:1.05rem;display:block;">Walk &amp; Listen (Finnish Podcast)</strong>
-                <span style="font-size:0.82rem;color:#cbd5e1;">Natural human voice: Finnish sentence → English meaning → slow repeat. Put your phone in your pocket!</span>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <!-- Sleek Top Progress Strip -->
+          <div class="fl-study-stats-pill">
+            <span>🔥 <strong>${prog.streakDays || 0} day</strong> streak</span>
+            <span>⭐ <strong>${cardCount}</strong> saved cards</span>
+            <span style="color:#38bdf8;font-weight:700;">CEFR ${esc(DB.getSettings().level || "A1")}</span>
+          </div>
+
+          <!-- Featured Hero Card 1: Walk & Listen Podcast Studio -->
+          <button type="button" class="fl-study-hero-card" data-fl-study="podcast">
+            <div class="fl-study-icon-badge">🎧</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                <strong style="font-size:1.06rem;letter-spacing:-0.01em;">Walk &amp; Listen Podcast</strong>
+                <span style="font-size:0.65rem;padding:2px 7px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:800;">AI VOICE</span>
               </div>
+              <span style="font-size:0.81rem;color:#cbd5e1;line-height:1.4;display:block;">
+                Natural human voice episodes + create custom episodes on any topic. Put your phone in your pocket!
+              </span>
             </div>
           </button>
 
           <div class="fl-study-grid">
-            <button type="button" class="fl-study-card" data-fl-study="lesson">
-              <span style="font-size:1.6rem;">📖</span>
-              <strong style="font-size:1rem;">Today's 5-Min Lesson</strong>
-              <span style="font-size:0.8rem;color:#94a3b8;">5 words (human voice) → 1 rule → 1 quick check (🔥 ${prog.streakDays || 0}d)</span>
+            <button type="button" class="fl-study-tile" data-fl-study="lesson">
+              <div class="fl-study-icon-badge" style="width:44px;height:44px;font-size:1.3rem;">📖</div>
+              <strong style="font-size:0.98rem;">Today's 5-Min Lesson</strong>
+              <span style="font-size:0.79rem;color:#94a3b8;line-height:1.4;">5 words (human voice) → 1 grammar rule → 1 quick check</span>
             </button>
-            <button type="button" class="fl-study-card" data-fl-study="helper">
-              <span style="font-size:1.6rem;">📝</span>
-              <strong style="font-size:1rem;">Homework &amp; Lookup</strong>
-              <span style="font-size:0.8rem;color:#94a3b8;">Worksheet helper, word lookup, 17 A1 grammar guides &amp; roleplay</span>
+            <button type="button" class="fl-study-tile" data-fl-study="helper">
+              <div class="fl-study-icon-badge" style="width:44px;height:44px;font-size:1.3rem;">📝</div>
+              <strong style="font-size:0.98rem;">Homework &amp; Vocab Snap</strong>
+              <span style="font-size:0.79rem;color:#94a3b8;line-height:1.4;">Worksheet check, photo-to-flashcards, 17 A1 guides &amp; roleplay</span>
             </button>
           </div>
         </div>
@@ -1198,42 +1318,58 @@
   }
 
   function renderPodcastTool() {
-    const ep = PODCAST_EPISODES.find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
+    const allEps = getAllPodcastEpisodes();
+    const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
     const items = getPodcastItems(ep);
     return `
-      <div class="fl-card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <span style="font-size:1.6rem;">🎧</span>
+      <div class="fl-card" style="padding:18px;border-radius:20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">🎧</div>
           <div>
-            <strong style="font-size:1.05rem;display:block;color:#fff;">Walk &amp; Listen — Finnish Audio Podcast</strong>
-            <span style="font-size:0.78rem;color:#94a3b8;">Warm human teacher voice • Finnish sentence + English meaning + slow repeat</span>
+            <strong style="font-size:1.05rem;display:block;color:#fff;">Walk &amp; Listen — Podcast Studio</strong>
+            <span style="font-size:0.78rem;color:#94a3b8;">Warm human voice • Finnish → English → slow repeat</span>
+          </div>
+        </div>
+
+        <!-- Custom "Make My Own Episode" Creator -->
+        <div class="fl-pod-creator">
+          <div style="font-size:0.76rem;font-weight:700;color:#7dd3fc;">✨ Make My Own Episode (Any Topic)</div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="fl-pod-custom-topic" class="fl-input" placeholder="e.g. At the doctor, Job interview, At Kela..." style="flex:1;font-size:0.84rem;" />
+            <button type="button" class="fl-btn primary sm" id="fl-pod-create-btn" ${state.podcastCreating ? "disabled" : ""} style="white-space:nowrap;">${state.podcastCreating ? "⏳..." : "✨ Create"}</button>
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button type="button" class="fl-mini-btn" data-fl-pod-quick="At the doctor">🏥 Doctor</button>
+            <button type="button" class="fl-mini-btn" data-fl-pod-quick="Job interview in Finland">💼 Job Interview</button>
+            <button type="button" class="fl-mini-btn" data-fl-pod-quick="At Kela or Migri">🏛️ Kela</button>
+            <button type="button" class="fl-mini-btn" data-fl-pod-quick="Small talk with Finnish neighbor">☕ Neighbor</button>
           </div>
         </div>
 
         <!-- Episode Picker -->
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-          ${PODCAST_EPISODES.map(
+          ${allEps.map(
             (p) => `<button type="button" class="fl-btn sm ${p.id === ep.id ? "active" : ""}" data-fl-pod-ep="${p.id}">${esc(p.title)}</button>`
           ).join("")}
         </div>
 
-        <!-- Spotify-Style Simple Player -->
-        <div style="background:rgba(6,16,32,0.92);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:16px;text-align:center;">
-          <div style="font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:4px;">${esc(ep.title)}</div>
-          <div style="font-size:0.78rem;color:#7dd3fc;margin-bottom:12px;">${items.length} sentences • ${esc(ep.duration)} • Human Voice</div>
+        <!-- Spotify-Style Luxury Player -->
+        <div class="fl-pod-player-card">
+          <div style="font-size:1.08rem;font-weight:800;color:#fff;margin-bottom:4px;">${esc(ep.title)}</div>
+          <div style="font-size:0.78rem;color:#7dd3fc;margin-bottom:14px;">${items.length} sentences • ${esc(ep.duration)} • Human Neural Voice</div>
 
           ${
             state.podcastLoading
               ? `<div style="padding:14px;color:#7dd3fc;font-weight:700;">⏳ Preparing warm human voice episode... (cached after first play)</div>`
               : state.podcastAudioUrl
-              ? `<audio id="fl-podcast-audio" controls src="${state.podcastAudioUrl}" style="width:100%;margin-bottom:10px;"></audio>
+              ? `<audio id="fl-podcast-audio" controls src="${state.podcastAudioUrl}" style="width:100%;margin-bottom:12px;"></audio>
                  <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
                    <button type="button" class="fl-btn sm ${state.podcastSlow ? "active" : ""}" id="fl-pod-slow">🐢 Slow (0.8×): ${state.podcastSlow ? "ON" : "OFF"}</button>
                    <button type="button" class="fl-btn sm" id="fl-pod-replay">↺ Replay</button>
                    <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide Text" : "👁️ Show Text"}</button>
                  </div>`
-              : `<button type="button" class="fl-btn primary" id="fl-pod-play-btn" style="padding:13px 26px;font-size:0.96rem;border-radius:999px;">▶ Play Walking Podcast</button>
-                 <div style="margin-top:10px;">
+              : `<button type="button" class="fl-pod-play-cta" id="fl-pod-play-btn">▶ Play Walking Podcast</button>
+                 <div style="margin-top:12px;">
                    <button type="button" class="fl-mini-btn" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide Text" : "👁️ Preview Sentences"}</button>
                  </div>`
           }
@@ -1310,6 +1446,9 @@
           <button type="button" class="fl-btn success" data-fl-hw="check">✅ Check</button>
           <button type="button" class="fl-btn primary" data-fl-hw="answer">👁️ Answer</button>
         </div>
+        <button type="button" class="fl-btn sm" id="fl-hw-to-cards" style="width:100%;margin-top:8px;border-color:rgba(250,204,21,0.35);color:#fef08a;">
+          ⭐ Snap Vocab Photo → Save All Words to Flashcards
+        </button>
       </div>
     `;
   }
@@ -1679,8 +1818,9 @@
 
   /* ---------- EVENT WIRING ---------- */
   function bindCommonMessageButtons(container) {
-    container.querySelectorAll("[data-fl-speak]").forEach((b) => { b.onclick = () => speakFinnish(b.getAttribute("data-fl-speak"), false); });
-    container.querySelectorAll("[data-fl-speak-slow]").forEach((b) => { b.onclick = () => speakFinnish(b.getAttribute("data-fl-speak-slow"), true); });
+    container.querySelectorAll("[data-fl-speak]").forEach((b) => { b.onclick = () => speakFinnish(b.getAttribute("data-fl-speak"), false, b.getAttribute("data-fl-speak-id")); });
+    container.querySelectorAll("[data-fl-speak-slow]").forEach((b) => { b.onclick = () => speakFinnish(b.getAttribute("data-fl-speak-slow"), true, b.getAttribute("data-fl-speak-id")); });
+    container.querySelectorAll("[data-fl-stop-speak]").forEach((b) => { b.onclick = () => stopActiveAudio(); });
   }
 
   function bindMainEvents() {
@@ -1756,6 +1896,14 @@
     root.querySelectorAll("[data-fl-explain-more]").forEach((b) => {
       b.onclick = () => sendMessage("Explain this in more detail: simple Finnish (selkosuomi), English grammar tip, and 2 examples.", { mode: "teach_me" });
     });
+    root.querySelectorAll("[data-fl-extract-cards]").forEach((b) => {
+      b.onclick = () => {
+        const conv = getActiveConv();
+        const m = conv && conv.messages[Number(b.getAttribute("data-fl-extract-cards"))];
+        if (!m) return;
+        extractAndSaveFlashcards({ text: m.text });
+      };
+    });
     root.querySelectorAll("[data-fl-save-note]").forEach((b) => {
       b.onclick = async () => {
         const conv = getActiveConv();
@@ -1763,6 +1911,7 @@
         if (!m) return;
         await DB.saveNote({ title: conv.title, type: "class", content: m.text });
         state.notes = await DB.listNotes();
+        scheduleAutoSync();
         toast("Saved to Notes in ☰ menu!", "success");
       };
     });
@@ -1772,6 +1921,24 @@
     root.querySelector("#fl-study-back")?.addEventListener("click", () => { state.studyTool = null; renderActiveView(); });
 
     // Walk & Listen Podcast controls
+    root.querySelector("#fl-pod-create-btn")?.addEventListener("click", () => {
+      createCustomPodcastEpisode(document.getElementById("fl-pod-custom-topic")?.value || "");
+    });
+    root.querySelector("#fl-pod-custom-topic")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); createCustomPodcastEpisode(e.target.value || ""); }
+    });
+    root.querySelectorAll("[data-fl-pod-quick]").forEach((b) => {
+      b.onclick = () => createCustomPodcastEpisode(b.getAttribute("data-fl-pod-quick") || "");
+    });
+    root.querySelector("#fl-hw-to-cards")?.addEventListener("click", () => {
+      if (!state.hwAttachments.length) {
+        toast("Upload a textbook or whiteboard photo above first!", "warning");
+        return;
+      }
+      extractAndSaveFlashcards({
+        attachments: state.hwAttachments.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
+      });
+    });
     root.querySelectorAll("[data-fl-pod-ep]").forEach((b) => {
       b.onclick = () => {
         state.podcastEpisodeId = b.getAttribute("data-fl-pod-ep");

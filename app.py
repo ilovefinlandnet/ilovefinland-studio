@@ -2632,6 +2632,16 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(res, status=status_code)
                 return
 
+            if path == "/api/finnish-lab/podcast-topic":
+                res, status_code = finnish_lab_engine.handle_generate_podcast_episode(body or {})
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/extract-flashcards":
+                res, status_code = finnish_lab_engine.handle_extract_flashcards(body or {})
+                self._send_json(res, status=status_code)
+                return
+
             if path == "/api/finnish-lab/word-anatomy":
                 res, status_code = finnish_lab_engine.handle_word_anatomy(body or {})
                 self._send_json(res, status=status_code)

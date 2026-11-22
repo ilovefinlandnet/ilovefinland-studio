@@ -1800,4 +1800,125 @@ def admin_update_user_status(target_email: str, action: str, db_path: str = FINN
     return list_all_users_for_admin(db_path), 200
 
 
+# ---------- CUSTOM WALK & LISTEN PODCAST GENERATOR & PHOTO-TO-FLASHCARDS (v66.0) ----------
+def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    """Generate a custom 5-sentence bilingual Finnish podcast episode for any real-life topic."""
+    topic = (payload.get("topic") or "").strip()[:120]
+    level = (payload.get("level") or "A1").strip().upper()
+    if not topic:
+        return {"ok": False, "error": "INVALID_INPUT", "message": "Please enter a topic (e.g. At the doctor, Job interview)."}, 400
+
+    raw_sig = f"podcast_topic|{level}|{topic.lower()}"
+    cache_key = hashlib.sha256(raw_sig.encode("utf-8")).hexdigest()
+    cached = _cache_lookup(cache_key, db_path)
+    if cached:
+        _record_usage(is_cache_hit=True, db_path=db_path)
+        cached["usage"] = get_usage_stats(db_path)
+        return cached, 200
+
+    limit_err = _check_rate_limits(db_path)
+    if limit_err:
+        return limit_err, 429
+
+    sys_prompt = (
+        f"You create ultra-useful {level}-level Finnish audio podcast episodes for adult learners living in Finland. "
+        "Return ONLY valid JSON with keys: title (short clean English title, max 36 chars), "
+        "items (array of exactly 5 objects, each with keys: fi (short, natural everyday Finnish sentence), en (clear natural English translation)). "
+        "Keep Finnish sentences short, practical, and easy to repeat aloud while walking."
+    )
+    contents = [{"role": "user", "parts": [{"text": f"Create a 5-sentence Finnish walking podcast episode for this topic: {topic}"}]}]
+    text_out, model_used, ai_err = _call_gemini_generate(
+        system_instruction=sys_prompt,
+        contents=contents,
+        expect_json=True,
+        temperature=0.4,
+        max_output_tokens=900,
+    )
+    if ai_err:
+        status = 429 if "QUOTA" in ai_err.get("error", "") else 503
+        ai_err["usage"] = get_usage_stats(db_path)
+        return ai_err, status
+
+    try:
+        parsed = json.loads((text_out or "{}").strip().strip("`"))
+    except Exception:
+        return {"ok": False, "error": "PARSE_ERROR", "message": "Could not build episode. Please try again."}, 502
+
+    raw_items = parsed.get("items") or []
+    items = [
+        {"fi": str(it.get("fi") or "").strip(), "en": str(it.get("en") or "").strip()}
+        for it in raw_items
+        if str(it.get("fi") or "").strip() and str(it.get("en") or "").strip()
+    ][:6]
+    if not items:
+        return {"ok": False, "error": "EMPTY_EPISODE", "message": "Could not generate sentences for that topic."}, 502
+
+    _record_usage(is_cache_hit=False, db_path=db_path)
+    result = {
+        "ok": True,
+        "title": str(parsed.get("title") or topic).strip()[:40],
+        "items": items,
+        "model": model_used,
+        "cached": False,
+        "usage": get_usage_stats(db_path),
+    }
+    _cache_store(cache_key, "podcast_topic", model_used or "", result, db_path)
+    return result, 200
+
+
+def handle_extract_flashcards(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    """Extract clean Finnish -> English flashcards from a chat reply or textbook/whiteboard photo."""
+    text = (payload.get("text") or "").strip()[:3000]
+    attachments = payload.get("attachments") or []
+    if not text and not attachments:
+        return {"ok": False, "error": "INVALID_INPUT", "message": "Provide text or a photo to extract vocabulary."}, 400
+
+    limit_err = _check_rate_limits(db_path)
+    if limit_err:
+        return limit_err, 429
+
+    parts, val_err = _validate_and_build_parts(
+        text or "Extract the useful Finnish vocabulary words and phrases from this photo/page.",
+        attachments,
+    )
+    if val_err:
+        return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
+
+    sys_prompt = (
+        "You extract clean Finnish study flashcards from teacher notes, chat explanations, or textbook/whiteboard photos. "
+        "Return ONLY valid JSON with key: cards (array of 3 to 8 objects, each with keys: "
+        "fi (Finnish word or short phrase), en (clear concise English meaning), example (optional tiny Finnish example)). "
+        "Skip generic English filler; include only genuinely useful Finnish vocabulary."
+    )
+    text_out, model_used, ai_err = _call_gemini_generate(
+        system_instruction=sys_prompt,
+        contents=[{"role": "user", "parts": parts}],
+        expect_json=True,
+        temperature=0.25,
+        max_output_tokens=1000,
+    )
+    if ai_err:
+        status = 429 if "QUOTA" in ai_err.get("error", "") else 503
+        ai_err["usage"] = get_usage_stats(db_path)
+        return ai_err, status
+
+    try:
+        parsed = json.loads((text_out or "{}").strip().strip("`"))
+    except Exception:
+        return {"ok": False, "error": "PARSE_ERROR", "message": "Could not extract flashcards. Please try again."}, 502
+
+    cards = [
+        {
+            "fi": str(c.get("fi") or "").strip()[:80],
+            "en": str(c.get("en") or "").strip()[:100],
+            "example": str(c.get("example") or "").strip()[:140],
+        }
+        for c in (parsed.get("cards") or [])
+        if str(c.get("fi") or "").strip() and str(c.get("en") or "").strip()
+    ][:10]
+    _record_usage(is_cache_hit=False, db_path=db_path)
+    return {"ok": True, "cards": cards, "model": model_used, "usage": get_usage_stats(db_path)}, 200
+
+
+
 
