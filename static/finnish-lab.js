@@ -84,23 +84,43 @@
     return "🔥 Vittu! Vituttaa — Muji Chutiya idiot, focus on Finnish! 💀😂";
   }
 
-  /* ---------- PERSONAL FRIEND MEMORY (REMEMBERS LIFE FACTS ACROSS CHATS) ---------- */
+  /* ---------- INDIVIDUAL PER-USER FRIEND MEMORY (ISOLATED BY EMAIL!) ---------- */
+  function getUserMemoryKey() {
+    const em = (state.userEmail || "guest").trim().toLowerCase();
+    return `fl_friend_mem_${em}`;
+  }
+
+  function getUserMemoryList() {
+    try {
+      const raw = localStorage.getItem(getUserMemoryKey());
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveUserMemoryList(list) {
+    try {
+      localStorage.setItem(getUserMemoryKey(), JSON.stringify((list || []).slice(0, 15)));
+    } catch (_) {}
+  }
+
   function capturePersonalMemory(msg) {
     const t = (msg || "").trim();
-    if (!t || t.length < 6 || t.length > 220) return;
+    if (!t || t.length < 5 || t.length > 240) return;
     const patterns = [
-      /\b(?:i am in|i'm in|i live in|living in|staying in)\s+([a-zäöåA-ZÄÖÅ\s-]{2,28})/i,
+      /\b(?:i am in|i'm in|i live in|living in|staying in|in pori|in helsinki|in tampere|in turku|in oulu|in espoo)\b/i,
       /\b(?:my name is|call me)\s+([a-zäöåA-ZÄÖÅ\s-]{2,24})/i,
-      /\b(?:i work as|my job is|i am a|i'm a|i love|my wife|my husband|my hobby)\s+([^.?!\n]{3,60})/i,
+      /\b(?:i work|my job|i am a|i'm a|i love|i like|my wife|my husband|my kids|my family|my class|class at|feel sleepy|tired|happy|stressed|today i)\b/i,
     ];
     for (const re of patterns) {
       if (re.test(t)) {
-        const s = DB.getSettings();
-        const mem = Array.isArray(s.friendMemory) ? s.friendMemory.slice() : [];
-        const clean = t.slice(0, 120);
+        const mem = getUserMemoryList();
+        const clean = t.slice(0, 130);
         if (!mem.some((x) => x.toLowerCase() === clean.toLowerCase())) {
           mem.unshift(clean);
-          DB.saveSettings({ friendMemory: mem.slice(0, 12) });
+          saveUserMemoryList(mem);
         }
         break;
       }
@@ -553,6 +573,10 @@
     try {
       const r = await flApi("/api/finnish-lab/sync");
       if (r && r.has_snapshot && r.snapshot) {
+        if (Array.isArray(r.snapshot.userMemory) && r.snapshot.userMemory.length) {
+          const merged = Array.from(new Set([...getUserMemoryList(), ...r.snapshot.userMemory])).slice(0, 15);
+          saveUserMemoryList(merged);
+        }
         const cloudConvs = (r.snapshot.conversations || []).length;
         const localConvs = (state.conversations || []).length;
         // Import if cloud has conversations or local is empty
@@ -573,6 +597,7 @@
     state.autoSyncTimer = setTimeout(async () => {
       try {
         const snap = await DB.exportAllData();
+        snap.userMemory = getUserMemoryList();
         await flApi("/api/finnish-lab/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -951,7 +976,7 @@
 
     try {
       capturePersonalMemory(msgText);
-      const userMemory = Array.isArray(DB.getSettings().friendMemory) ? DB.getSettings().friendMemory : [];
+      const userMemory = getUserMemoryList();
       const resp = await flApi("/api/finnish-lab/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -960,6 +985,7 @@
           mode,
           level: settings.level || "A1",
           roast_mode: isRoastEnabled(),
+          user_name: (state.userName || "").replace(/\s*\(Admin\)/i, "").trim(),
           user_memory: userMemory,
           history,
           attachments: atts.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),

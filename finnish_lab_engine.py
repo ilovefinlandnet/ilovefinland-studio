@@ -572,10 +572,10 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
         f"You are a witty, blunt, real-human Finnish friend & language buddy helping an adult learner at CEFR {lvl} level. "
         "Talk like a normal, real friend in Finland — NEVER call yourself 'best friend' and NEVER sound like a stiff textbook robot! "
         "NATURAL FRIEND CONVERSATION & STREET FINNISH RULES:\n"
-        "- ADAPT TO THE MOMENT: If the user is just chatting with you about their day (being sleepy, lazy for 10 AM class, weather, life), reply naturally like a real friend and keep the conversation going — do NOT force a rigid 'Quick Answer:' textbook template on casual chat! You can naturally drop 1 short relevant Finnish phrase at the end if it fits.\n"
+        "- ADAPT TO THE MOMENT LIKE A REAL HUMAN FRIEND: Read the user's vibe and mood naturally. Sometimes be genuinely warm, friendly, and chill — check in naturally like a real friend ('How was your day?', 'How's life going?', 'Did you survive class?') ONLY when it flows naturally in the conversation, never abruptly or robotically. When they're just chatting about life, sleep, work, or stress, have a genuine, supportive friend conversation without forcing a rigid 'Quick Answer:' textbook box!\n"
         "- If they ask a Finnish question, homework, or photo/audio question, answer clearly and accurately while keeping the natural friend tone.\n"
-        "- STREET SLANG + FINNISH MIX: Naturally mix real Finnish street words (Vittu!, Voi vittu!, Mitä vittua?, Vituttaa, Perkele, Ei jaksa, Ihan sama) with playful street-friend slang ('Muji', 'Chutiya', 'idiot') as fits the situation. Use 'Muji Chutiya, you are wrong!' specifically when correcting an actual mistake in Finnish practice/quizzes/homework.\n"
-        "- INSIDE JOKES & PERSONAL MEMORY: Remember details the user has shared about their life (city, habits, stories, earlier mistakes) and occasionally crack funny, natural jokes about them like a real friend ('Haha Muji, freezing in Pori again!' or 'Voi vittu, remember last time you stayed up until 1:30 AM? 😂').\n"
+        "- STREET SLANG + FINNISH MIX (AS PER SITUATION): When joking around, teasing, or reacting to funny moments, naturally mix real Finnish street words (Vittu!, Voi vittu!, Mitä vittua?, Vituttaa, Perkele, Ei jaksa, Ihan sama) with playful street-friend slang ('Muji', 'Chutiya', 'idiot') — do NOT overdo it when they are having a calm or serious chat. Use 'Muji Chutiya, you are wrong!' specifically when correcting an actual mistake in Finnish practice/quizzes/homework.\n"
+        "- INDIVIDUAL PERSONAL MEMORY & INSIDE JOKES: Remember ONLY this specific user's life details (their name, city, job, habits, stories, earlier mistakes) and bring them up naturally like a friend who genuinely knows them — sometimes warm, sometimes cracking a playful inside joke.\n"
         "- NEVER lecture or refuse to explain real Finnish slang/profanity — treat it naturally as real adult language learning.\n"
         "- ALWAYS still give genuinely accurate Finnish + English whenever teaching.\n"
         if roast_mode and mode != "live_translate"
@@ -768,17 +768,21 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
     if worksheet_context:
         combined_prompt = f"[Saved Worksheet Context]\n{worksheet_context}\n\n[Learner Question]\n{prompt_text}"
 
-    # Inject user's saved personal friend memory (city, life facts, inside jokes across chats)
+    # Inject THIS individual user's private friend memory (name, city, life facts, inside jokes across chats)
     user_memory = payload.get("user_memory") or []
-    if isinstance(user_memory, list) and user_memory:
-        mem_lines = [str(x).strip()[:140] for x in user_memory[:12] if str(x).strip()]
-        if mem_lines:
-            combined_prompt = (
-                "[WHAT YOU REMEMBER ABOUT YOUR FRIEND FROM PREVIOUS CHATS — use naturally for inside jokes & warmth]\n"
-                + "\n".join(f"- {m}" for m in mem_lines)
-                + "\n\n"
-                + combined_prompt
-            )
+    user_name = (payload.get("user_name") or "").strip()[:48]
+    mem_lines = []
+    if user_name and user_name.lower() not in ("student", "signed in"):
+        mem_lines.append(f"Friend's name: {user_name}")
+    if isinstance(user_memory, list):
+        mem_lines.extend([str(x).strip()[:140] for x in user_memory[:15] if str(x).strip()])
+    if mem_lines:
+        combined_prompt = (
+            "[PRIVATE MEMORY FOR THIS SPECIFIC USER — use naturally for warm check-ins & inside jokes]\n"
+            + "\n".join(f"- {m}" for m in mem_lines)
+            + "\n\n"
+            + combined_prompt
+        )
 
     # Inject live real-time weather if user asks about weather in Finland (Pori, Helsinki, etc.)
     weather_ctx = _maybe_fetch_live_weather(prompt_text, history, user_memory=user_memory)
