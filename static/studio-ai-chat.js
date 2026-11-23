@@ -385,11 +385,11 @@
       : "";
 
     const copyBar = m.role === "assistant" && m.text
-      ? `<div class="fl-msg-actions" style="margin-top:6px;">
-           <button type="button" class="fl-act-icon" data-sai-copy="${msgIdx}" title="Copy reply" aria-label="Copy reply">
+      ? `<div class="fl-msg-actions" style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+           <button type="button" data-sai-copy="${msgIdx}" title="Copy reply" aria-label="Copy reply" style="background:transparent;border:none;color:#94a3b8;padding:4px 6px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
              ${ICO.copy}
            </button>
-           ${state.copiedMsgIdx === msgIdx ? `<span style="font-size:0.7rem;color:#7dd3fc;margin-left:4px;">Copied</span>` : ""}
+           ${state.copiedMsgIdx === msgIdx ? `<span style="font-size:0.7rem;color:#7dd3fc;">Copied</span>` : ""}
          </div>`
       : "";
 
@@ -433,14 +433,21 @@
 
         ${
           linked
-            ? `<div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;margin:2px 0 4px;border-radius:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);font-size:0.74rem;">
-                 <div style="display:flex;align-items:center;gap:6px;min-width:0;color:#bae6fd;">
-                   ${ICO.doc}
-                   <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>#${linked.id}</strong> ${esc(linked.title)}</span>
+            ? `<div style="flex-shrink:0;display:flex;flex-direction:column;gap:6px;margin:2px 0 4px;">
+                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);font-size:0.74rem;">
+                   <div style="display:flex;align-items:center;gap:6px;min-width:0;color:#bae6fd;">
+                     ${ICO.doc}
+                     <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>#${linked.id}</strong> ${esc(linked.title)}</span>
+                   </div>
+                   <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                     <button type="button" data-sai-open-article="${linked.id}" style="background:none;border:none;color:#38bdf8;font-size:0.72rem;font-weight:700;cursor:pointer;padding:2px 4px;">Open</button>
+                     <button type="button" id="sai-unlink-article" style="background:none;border:none;color:#94a3b8;font-size:0.78rem;cursor:pointer;padding:2px 4px;" title="Unlink article">✕</button>
+                   </div>
                  </div>
-                 <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                   <button type="button" data-sai-open-article="${linked.id}" style="background:none;border:none;color:#38bdf8;font-size:0.72rem;font-weight:700;cursor:pointer;padding:2px 4px;">Open</button>
-                   <button type="button" id="sai-unlink-article" style="background:none;border:none;color:#94a3b8;font-size:0.78rem;cursor:pointer;padding:2px 4px;" title="Unlink article">✕</button>
+                 <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;">
+                   <button type="button" data-sai-starter="Review this linked article — give me a Website SEO & Instagram score (/10), top 3 concrete fixes, 3 stronger headlines, and a monetization tip." style="flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#cbd5e1;font-size:0.71rem;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;">Audit SEO &amp; IG</button>
+                   <button type="button" data-sai-starter="Turn this linked article into a 6-slide Instagram Carousel and a 20-second Reel script with a saveable caption." style="flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#cbd5e1;font-size:0.71rem;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;">Carousel / Reel</button>
+                   <button type="button" data-sai-starter="Find real photos for this article" style="flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#cbd5e1;font-size:0.71rem;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;">Find Photos</button>
                  </div>
                </div>`
             : ""
@@ -457,9 +464,9 @@
                    <h1 class="fl-empty-title">ILoveFinland Studio AI</h1>
                    <p class="fl-empty-sub">Fact-check news, find real photos, create AI images, attach photos to any article, or create a full article right from chat.</p>
                    <div class="fl-starter-row">
+                     <button type="button" class="fl-starter-pill" data-sai-starter="Look at my recent Studio articles and live Finland trends — what 5 topics should I post this week to grow ilovefinland.net and Instagram?">Weekly growth plan</button>
                      <button type="button" class="fl-starter-pill" data-sai-starter="Check latest Finland news today — what is trending right now?">Fact-check news</button>
                      <button type="button" class="fl-starter-pill" data-sai-starter="Find me pictures related to Helsinki winter snow sunset">Find real photos</button>
-                     <button type="button" class="fl-starter-pill" data-sai-starter="Create an AI picture for snowy Helsinki tram at golden hour">Create AI image</button>
                      <button type="button" class="fl-starter-pill" data-sai-starter="Make an article for this title: Why Helsinki Winters Feel Magical">Make an article</button>
                    </div>
                  </div>`
