@@ -512,7 +512,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "app": "ILoveFinland Studio",
-                    "app_version": "81.0",
+                    "app_version": "82.0",
                     "milestone": 2,
                     "integrations": INTEGRATIONS_STATUS,
                 }
@@ -1176,7 +1176,21 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
 
         if path == "/api/studio-ai/chat":
             import studio_ai_chat
-            res, status_code = studio_ai_chat.handle_studio_chat(body or {})
+            res, status_code = studio_ai_chat.handle_studio_chat(body or {}, db_path=db_path, author=user)
+            self._send_json(res, status=status_code)
+            return
+
+        if path == "/api/studio-ai/attach-photo":
+            import studio_ai_chat
+            pkg_id = int((body or {}).get("package_id") or 0)
+            photo_obj = (body or {}).get("photo") or {}
+            mode = str((body or {}).get("mode") or "featured").strip().lower()
+            if not pkg_id:
+                self._send_json({"ok": False, "message": "Choose an article first."}, status=HTTPStatus.BAD_REQUEST)
+                return
+            res, status_code = studio_ai_chat.attach_photo_to_article(
+                pkg_id, photo_obj, mode=mode, db_path=db_path, author=user
+            )
             self._send_json(res, status=status_code)
             return
 

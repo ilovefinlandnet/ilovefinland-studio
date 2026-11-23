@@ -530,6 +530,13 @@
   }
   window.openFinnishLabView = () => switchView("finnish-lab");
   window.openStudioAIChatView = () => switchView("studio-ai");
+  window.getActiveStudioPackageId = () => currentPackageId;
+  window.openStudioArticleById = async (pkgId) => {
+    if (!pkgId) return;
+    currentPackageId = Number(pkgId);
+    await loadProjects();
+    openProjectInReview(currentPackageId);
+  };
 
   function goBack() {
     // 0. If inside Finnish Learning Lab, let it step back cleanly (Drawer -> Study Tool -> Chat) before leaving!
