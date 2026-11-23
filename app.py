@@ -512,7 +512,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "app": "ILoveFinland Studio",
-                    "app_version": "84.1",
+                    "app_version": "85.0",
                     "milestone": 2,
                     "integrations": INTEGRATIONS_STATUS,
                 }

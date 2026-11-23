@@ -10,22 +10,25 @@
   const DB = window.FinnishLabDB;
   const CURR = window.FinnishLabCurriculum;
 
-  /* ---------- ILOVEFINLAND NORDIC BRAND SVG ICONS (UNIFORM ACROSS IPHONE, IPAD & PC) ---------- */
+  /* ---------- ILOVEFINLAND NORDIC BRAND SVG ICONS (SUBTLE, UNIFORM ACROSS ALL DEVICES) ---------- */
   const ICO = {
-    listen: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`,
-    slow: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
-    stop: `<svg class="fl-svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"></rect></svg>`,
-    explain: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>`,
-    cards: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
-    save: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>`,
-    live: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path><circle cx="12" cy="12" r="2"></circle><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"></path></svg>`,
-    mic: `<svg class="fl-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`,
-    plus: `<svg class="fl-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-    send: `<svg class="fl-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`,
-    headphones: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
-    book: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
-    file: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
-    zap: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d8b4fe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`,
+    listen: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.8 5.5a9.2 9.2 0 0 1 0 13"></path></svg>`,
+    wave: `<svg class="fl-svg fl-audio-pulse" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><line x1="4" y1="10" x2="4" y2="14"></line><line x1="9" y1="6" x2="9" y2="18"></line><line x1="14" y1="4" x2="14" y2="20"></line><line x1="19" y1="8" x2="19" y2="16"></line></svg>`,
+    slow: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><polyline points="12 7 12 12 15.5 14"></polyline></svg>`,
+    stop: `<svg class="fl-svg" width="13" height="13" viewBox="0 0 24 24" fill="#38bdf8"><rect x="5" y="5" width="14" height="14" rx="3"></rect></svg>`,
+    explain: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>`,
+    cards: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+    save: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>`,
+    trash: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>`,
+    flame: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>`,
+    live: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path><circle cx="12" cy="12" r="2"></circle><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"></path></svg>`,
+    mic: `<svg class="fl-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`,
+    plus: `<svg class="fl-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+    send: `<svg class="fl-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`,
+    headphones: `<svg class="fl-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
+    book: `<svg class="fl-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
+    file: `<svg class="fl-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
+    zap: `<svg class="fl-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`,
   };
 
   const state = {
@@ -371,18 +374,53 @@
     }
   }
 
+  const _audioInflight = new Map();
+
+  function cleanTtsText(text) {
+    return (text || "")
+      .replace(/[*_`#>]/g, "")
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1200);
+  }
+
+  function fetchOrGetTtsUrl(clean, mode) {
+    const key = `${mode}|${clean}`;
+    if (_audioMemCache.has(key)) return Promise.resolve(_audioMemCache.get(key));
+    if (_audioInflight.has(key)) return _audioInflight.get(key);
+    const p = flApi("/api/finnish-lab/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: clean, mode }),
+    })
+      .then((res) => {
+        if (res && res.audio_base64) {
+          const dataUrl = `data:${res.mime_type || "audio/wav"};base64,${res.audio_base64}`;
+          _audioMemCache.set(key, dataUrl);
+          return dataUrl;
+        }
+        return null;
+      })
+      .catch(() => null)
+      .finally(() => _audioInflight.delete(key));
+    _audioInflight.set(key, p);
+    return p;
+  }
+
+  function prewarmFinnishAudio(text) {
+    const clean = cleanTtsText(text);
+    if (!clean || clean.length < 2) return;
+    fetchOrGetTtsUrl(clean, "phrase").catch(() => {});
+  }
+
   async function speakFinnish(text, slow, msgId) {
     const targetId = msgId || ("tts_" + Date.now());
     if (msgId && state.speakingMsgId === msgId) {
       stopActiveAudio();
       return;
     }
-    const clean = (text || "")
-      .replace(/[*_`#>]/g, "")
-      .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 1200);
+    const clean = cleanTtsText(text);
     if (!clean) return;
 
     stopActiveAudio(true);
@@ -390,35 +428,42 @@
     renderActiveView();
     renderSidePanel();
 
-    const mode = slow ? "slow" : "phrase";
-    const key = `${mode}|${clean}`;
-    if (_audioMemCache.has(key)) {
-      const audio = new Audio(_audioMemCache.get(key));
+    const playUrl = (dataUrl, rate) => {
+      const audio = new Audio(dataUrl);
+      if (rate && rate !== 1) {
+        audio.playbackRate = rate;
+        if ("preservesPitch" in audio) audio.preservesPitch = true;
+        if ("webkitPreservesPitch" in audio) audio.webkitPreservesPitch = true;
+      }
       _activeAudioEl = audio;
       audio.onended = () => { if (state.speakingMsgId === targetId) stopActiveAudio(); };
       audio.play().catch(() => fallbackBrowserSpeak(clean, slow, targetId));
+    };
+
+    const phraseKey = `phrase|${clean}`;
+    const slowKey = `slow|${clean}`;
+
+    // Instant 0ms playback if already pre-warmed or cached (Slow reuses phrase audio at 0.78x instantly!)
+    if (!slow && _audioMemCache.has(phraseKey)) {
+      playUrl(_audioMemCache.get(phraseKey), 1);
       return;
     }
+    if (slow && _audioMemCache.has(slowKey)) {
+      playUrl(_audioMemCache.get(slowKey), 1);
+      return;
+    }
+    if (slow && (_audioMemCache.has(phraseKey) || _audioInflight.has(phraseKey))) {
+      const dataUrl = await fetchOrGetTtsUrl(clean, "phrase");
+      if (state.speakingMsgId !== targetId) return;
+      if (dataUrl) { playUrl(dataUrl, 0.78); return; }
+    }
 
-    toast(slow ? "🐢 Preparing clear slow voice..." : "🔊 Preparing full human voice...", "info");
-    try {
-      const res = await flApi("/api/finnish-lab/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: clean, mode }),
-      });
-      if (state.speakingMsgId !== targetId) return; // User tapped Stop while loading!
-      if (res && res.audio_base64) {
-        const dataUrl = `data:${res.mime_type || "audio/wav"};base64,${res.audio_base64}`;
-        _audioMemCache.set(key, dataUrl);
-        const audio = new Audio(dataUrl);
-        _activeAudioEl = audio;
-        audio.onended = () => { if (state.speakingMsgId === targetId) stopActiveAudio(); };
-        audio.play().catch(() => fallbackBrowserSpeak(clean, slow, targetId));
-        return;
-      }
-    } catch (_) {
-      // Quietly fall back to device voice if offline or quota full
+    // Fetch (or join an already in-flight pre-warm!) — always fetch phrase so both Normal & Slow become instant!
+    const dataUrl = await fetchOrGetTtsUrl(clean, "phrase");
+    if (state.speakingMsgId !== targetId) return;
+    if (dataUrl) {
+      playUrl(dataUrl, slow ? 0.78 : 1);
+      return;
     }
     if (state.speakingMsgId === targetId) {
       fallbackBrowserSpeak(clean, slow, targetId);
@@ -1315,6 +1360,8 @@
       await DB.saveConversation(conv);
       DB.touchStudyStreak();
       scheduleAutoSync();
+      // Silently pre-warm Finnish human voice in background so tapping Sound plays in 0ms!
+      prewarmFinnishAudio(resp.finnish_tts || resp.reply);
     } catch (err) {
       conv.messages.push({
         id: DB.uid("msg"),
@@ -1681,8 +1728,8 @@
         <div style="display:flex;flex-direction:column;gap:14px;">
           <!-- Sleek Top Progress Strip -->
           <div class="fl-study-stats-pill">
-            <span>🔥 <strong>${prog.streakDays || 0} day</strong> streak</span>
-            <span>⭐ <strong>${cardCount}</strong> saved cards</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;">${ICO.flame} <strong>${prog.streakDays || 0} day</strong> streak</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;">${ICO.cards} <strong>${cardCount}</strong> saved cards</span>
             <span style="color:#38bdf8;font-weight:700;">CEFR ${esc(DB.getSettings().level || "A1")}</span>
           </div>
 
@@ -1734,8 +1781,8 @@
     return `
       <div class="fl-card" style="padding:18px;border-radius:20px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
-          <button type="button" class="fl-btn sm ${state.gameTab === "street" ? "active" : ""}" data-fl-gtab="street">⚡ Street vs. Class</button>
-          <button type="button" class="fl-btn sm ${state.gameTab === "speak" ? "active" : ""}" data-fl-gtab="speak">🎙️ Say It Out Loud</button>
+          <button type="button" class="fl-btn sm ${state.gameTab === "street" ? "active" : ""}" data-fl-gtab="street">${ICO.zap} Street vs. Class</button>
+          <button type="button" class="fl-btn sm ${state.gameTab === "speak" ? "active" : ""}" data-fl-gtab="speak">${ICO.mic} Say It Out Loud</button>
         </div>
 
         ${
@@ -1747,7 +1794,7 @@
                <div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
                  <div style="font-size:0.72rem;color:#7dd3fc;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">A Finn on the street says:</div>
                  <div style="font-size:1.35rem;font-weight:800;color:#fff;margin-bottom:8px;">“${esc(q.spoken)}”</div>
-                 <button type="button" class="fl-mini-btn" data-fl-speak="${esc(q.spoken)}">🔊 Hear it</button>
+                 <button type="button" class="fl-mini-btn" data-fl-speak="${esc(q.spoken)}">${ICO.listen} Hear it</button>
                </div>
                <div style="display:flex;flex-direction:column;gap:8px;">
                  ${q.opts
@@ -1773,7 +1820,7 @@
                  <div style="font-size:0.84rem;color:#94a3b8;margin-top:4px;">🇬🇧 ${esc(sp.en)}</div>
                  <div style="font-size:0.74rem;color:#fde047;margin-top:4px;">Focus: ${esc(sp.focus)}</div>
                  <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
-                   <button type="button" class="fl-btn sm" data-fl-speak="${esc(sp.fi)}">🔊 Hear First</button>
+                   <button type="button" class="fl-btn sm" data-fl-speak="${esc(sp.fi)}">${ICO.listen} Hear First</button>
                    <button type="button" class="fl-btn sm" id="fl-speak-next-phrase">Next Phrase →</button>
                  </div>
                </div>
@@ -1807,7 +1854,7 @@
     return `
       <div class="fl-card" style="padding:18px;border-radius:20px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-          <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">🎧</div>
+          <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.headphones}</div>
           <div>
             <strong style="font-size:1.05rem;display:block;color:#fff;">Walk &amp; Listen — Podcast Studio</strong>
             <span style="font-size:0.78rem;color:#94a3b8;">Warm human voice • Finnish → English → slow repeat</span>
@@ -1816,10 +1863,10 @@
 
         <!-- Custom "Make My Own Episode" Creator -->
         <div class="fl-pod-creator">
-          <div style="font-size:0.76rem;font-weight:700;color:#7dd3fc;">✨ Make My Own Episode (Any Topic)</div>
+          <div style="font-size:0.76rem;font-weight:700;color:#7dd3fc;display:inline-flex;align-items:center;gap:5px;">${ICO.explain} Make My Own Episode (Any Topic)</div>
           <div style="display:flex;gap:6px;">
             <input type="text" id="fl-pod-custom-topic" class="fl-input" placeholder="e.g. At the doctor, Job interview, At Kela..." style="flex:1;font-size:0.84rem;" />
-            <button type="button" class="fl-btn primary sm" id="fl-pod-create-btn" ${state.podcastCreating ? "disabled" : ""} style="white-space:nowrap;">${state.podcastCreating ? "⏳..." : "✨ Create"}</button>
+            <button type="button" class="fl-btn primary sm" id="fl-pod-create-btn" ${state.podcastCreating ? "disabled" : ""} style="white-space:nowrap;">${state.podcastCreating ? "Creating..." : `${ICO.explain} Create`}</button>
           </div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <button type="button" class="fl-mini-btn" data-fl-pod-quick="At the doctor">🏥 Doctor</button>
@@ -1847,7 +1894,7 @@
               : state.podcastAudioUrl
               ? `<audio id="fl-podcast-audio" controls src="${state.podcastAudioUrl}" style="width:100%;margin-bottom:12px;"></audio>
                  <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
-                   <button type="button" class="fl-btn sm ${state.podcastSlow ? "active" : ""}" id="fl-pod-slow">🐢 Slow (0.8×): ${state.podcastSlow ? "ON" : "OFF"}</button>
+                   <button type="button" class="fl-btn sm ${state.podcastSlow ? "active" : ""}" id="fl-pod-slow">${ICO.slow} Slow (0.8×): ${state.podcastSlow ? "ON" : "OFF"}</button>
                    <button type="button" class="fl-btn sm" id="fl-pod-replay">↺ Replay</button>
                    <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide Text" : "👁️ Show Text"}</button>
                  </div>`
@@ -1869,7 +1916,7 @@
                       <strong style="color:#fff;">${idx + 1}. ${esc(it.fi)}</strong>
                       <div style="font-size:0.78rem;color:#7dd3fc;">🇬🇧 ${esc(it.en)}</div>
                     </div>
-                    <button type="button" class="fl-mini-btn" data-fl-speak="${esc(it.fi)}">🔊</button>
+                    <button type="button" class="fl-mini-btn" data-fl-speak="${esc(it.fi)}" title="Listen">${ICO.listen}</button>
                   </div>
                 `
                   )
@@ -1943,7 +1990,7 @@
     return `
       <div class="fl-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <strong style="font-size:1rem;">📖 Today's Lesson — Step ${step}/3</strong>
+          <strong style="font-size:1rem;display:inline-flex;align-items:center;gap:6px;">${ICO.book} Today's Lesson — Step ${step}/3</strong>
           <span style="font-size:0.76rem;color:#7dd3fc;">${step === 1 ? pack.topic : step === 2 ? "1 Simple Rule" : "Quick Check"}</span>
         </div>
         ${
@@ -1957,8 +2004,8 @@
                     <div style="font-size:0.74rem;color:#94a3b8;">${esc(w.exFi)} <em>(${esc(w.exEn)})</em></div>
                   </div>
                   <div style="display:flex;gap:4px;">
-                    <button type="button" class="fl-mini-btn" data-fl-speak="${esc(w.fi + ". " + w.exFi)}">🔊</button>
-                    <button type="button" class="fl-mini-btn" data-fl-save-vocab="${i}">⭐</button>
+                    <button type="button" class="fl-mini-btn" data-fl-speak="${esc(w.fi + ". " + w.exFi)}" title="Listen">${ICO.listen}</button>
+                    <button type="button" class="fl-mini-btn" data-fl-save-vocab="${i}" title="Save card">${ICO.cards}</button>
                   </div>
                 </div>
               `
@@ -1997,7 +2044,7 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
         <button type="button" class="fl-btn sm ${sk === "reading" ? "active" : ""}" data-fl-skill="reading">📰 Reading</button>
         <button type="button" class="fl-btn sm ${sk === "writing" ? "active" : ""}" data-fl-skill="writing">✍️ Writing</button>
-        <button type="button" class="fl-btn sm ${sk === "listening" ? "active" : ""}" data-fl-skill="listening">🎧 Listening</button>
+        <button type="button" class="fl-btn sm ${sk === "listening" ? "active" : ""}" data-fl-skill="listening">${ICO.headphones} Listening</button>
         <button type="button" class="fl-btn sm ${sk === "speaking" ? "active" : ""}" data-fl-skill="speaking">🗣️ Roleplay</button>
       </div>
       ${
@@ -2006,8 +2053,8 @@
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <strong>${esc(r.title)}</strong>
                 <div style="display:flex;gap:4px;">
-                  <button type="button" class="fl-mini-btn" data-fl-speak="${esc((r.sentences || []).map((s) => s.fi).join(" "))}">🔊</button>
-                  <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc((r.sentences || []).map((s) => s.fi).join(" "))}">🐢</button>
+                  <button type="button" class="fl-mini-btn" data-fl-speak="${esc((r.sentences || []).map((s) => s.fi).join(" "))}" title="Listen">${ICO.listen}</button>
+                  <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc((r.sentences || []).map((s) => s.fi).join(" "))}" title="Slow">${ICO.slow}</button>
                 </div>
               </div>
               ${(r.sentences || []).map((s) => `<div style="padding:9px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:8px;"><strong>${esc(s.fi)}</strong><div style="font-size:0.8rem;color:#7dd3fc;">${esc(s.en)}</div>${s.spoken_fi ? `<div style="font-size:0.76rem;color:#6ee7b7;">Spoken: ${esc(s.spoken_fi)}</div>` : ""}</div>`).join("")}
@@ -2021,10 +2068,10 @@
             </div>`
           : sk === "listening"
           ? `<div class="fl-card">
-              <strong style="display:block;margin-bottom:10px;">🎧 ${esc(l.title)}</strong>
+              <strong style="display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;">${ICO.headphones} ${esc(l.title)}</strong>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-                <button type="button" class="fl-btn primary sm" data-fl-speak="${esc(fullFi)}">🔊 Play</button>
-                <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(fullFi)}">🐢 Slow</button>
+                <button type="button" class="fl-btn primary sm" data-fl-speak="${esc(fullFi)}">${ICO.listen} Play</button>
+                <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(fullFi)}">${ICO.slow} Slow</button>
                 <button type="button" class="fl-btn sm" id="fl-listen-toggle-tr">${state.listeningShowTranscript ? "Hide Text" : "Show Text"}</button>
               </div>
               ${state.listeningShowTranscript ? (l.lines || []).map((ln) => `<div style="margin-bottom:6px;"><strong>${esc(ln.speaker)}:</strong> ${esc(ln.fi)}<div style="font-size:0.78rem;color:#7dd3fc;">${esc(ln.en)}</div></div>`).join("") : `<div style="font-size:0.8rem;color:#94a3b8;">Listen first, then tap Show Text!</div>`}
@@ -2095,7 +2142,7 @@
                             (c) => `
                         <div class="fl-vocab-row" style="cursor:pointer;${c.id === state.activeConvId ? "border-color:#38bdf8;" : ""}" data-fl-select-conv="${c.id}">
                           <span style="font-size:0.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.title)}</span>
-                          <button type="button" class="fl-mini-btn" data-fl-del-conv="${c.id}">🗑️</button>
+                          <button type="button" class="fl-mini-btn" data-fl-del-conv="${c.id}" title="Delete">${ICO.trash}</button>
                         </div>
                       `
                           )
@@ -2169,7 +2216,7 @@
                             <strong style="font-size:0.82rem;">${esc(n.title)}</strong>
                             <div style="display:flex;gap:4px;">
                               <button type="button" class="fl-mini-btn" data-fl-export-note="${n.id}">⬇️</button>
-                              <button type="button" class="fl-mini-btn" data-fl-del-note="${n.id}">🗑️</button>
+                              <button type="button" class="fl-mini-btn" data-fl-del-note="${n.id}" title="Delete">${ICO.trash}</button>
                             </div>
                           </div>
                           <div style="font-size:0.76rem;color:#cbd5e1;margin-top:4px;">${renderMarkdownLite((n.content || "").slice(0, 220))}</div>
@@ -2229,7 +2276,7 @@
                                       <div style="display:flex;gap:5px;flex-wrap:wrap;">
                                         ${usr.status !== "approved" ? `<button type="button" class="fl-btn success sm" data-fl-user-act="approve" data-fl-user-email="${esc(usr.email)}" style="padding:4px 8px;font-size:0.72rem;">✅ Approve</button>` : ""}
                                         ${usr.status === "approved" ? `<button type="button" class="fl-btn danger sm" data-fl-user-act="revoke" data-fl-user-email="${esc(usr.email)}" style="padding:4px 8px;font-size:0.72rem;">🚫 Revoke</button>` : ""}
-                                        <button type="button" class="fl-mini-btn" data-fl-user-act="delete" data-fl-user-email="${esc(usr.email)}" title="Delete user">🗑️</button>
+                                        <button type="button" class="fl-mini-btn" data-fl-user-act="delete" data-fl-user-email="${esc(usr.email)}" title="Delete user">${ICO.trash}</button>
                                       </div>
                                     </div>
                                   `
@@ -2254,7 +2301,7 @@
                     💾 <strong>Smart Storage &amp; Sync:</strong> Photos auto-compress (~120 KB), audio auto-clears, and your chats auto-sync across phone, iPad &amp; laptop.
                   </div>
                   ${state.role === "admin" ? `<button type="button" id="fl-focus-toggle" class="fl-btn sm ${state.focusMode ? "active" : ""}">${state.focusMode ? "↙ Show Studio Sidebar" : "⛶ Full-Screen Focus Mode"}</button>` : ""}
-                  <div style="color:#94a3b8;">🔥 Streak: ${prog.streakDays || 0}d • AI left today: ${u.remaining}/${u.limit}</div>
+                  <div style="color:#94a3b8;display:inline-flex;align-items:center;gap:5px;">${ICO.flame} Streak: ${prog.streakDays || 0}d • AI left today: ${u.remaining}/${u.limit}</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">
                     <button type="button" class="fl-btn primary sm" id="fl-export-backup">⬇️ Export</button>
                     <label class="fl-btn sm" style="cursor:pointer;">⬆️ Import<input type="file" id="fl-import-backup" accept="application/json" style="display:none;" /></label>
