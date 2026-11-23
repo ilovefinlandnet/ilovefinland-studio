@@ -876,6 +876,12 @@
 
     if (tabName === "ig" && currentStaticPost) {
       drawStaticPostCanvases(currentStaticPost);
+      if (typeof loadActiveCarouselSlideInputs === "function") {
+        loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
+      }
+      if (typeof renderActiveCarouselSlideCanvas === "function") {
+        renderActiveCarouselSlideCanvas();
+      }
     }
   }
 
@@ -1468,7 +1474,7 @@
         carouselSlidesData[i] = defaultSlideData(i);
       }
       carouselSlidesData[1].badge_text = ig.badge_text || "NEWS";
-      carouselSlidesData[1].headline_line1 = ig.headline_line1 || "";
+      carouselSlidesData[1].headline_line1 = ig.headline_line1 || (bundle && bundle.package && bundle.package.title) || "";
       carouselSlidesData[1].headline_line2 = ig.headline_line2 || "";
       carouselSlidesData[1].headline_line3 = ig.headline_line3 || "";
       carouselSlidesData[1].cta_text = ig.cta_text || "Read full article";
@@ -1476,6 +1482,22 @@
       carouselSlidesData[1].location = ig.location_stamp || "";
       carouselSlidesData[1].card_style = ig.card_style || "frosted";
       carouselSlidesData[1].show_swipe_arrow = true;
+    }
+
+    // Ensure Slide 1 always has title and headline populated
+    if (typeof carouselSlidesData !== "undefined" && carouselSlidesData[1]) {
+      if (!carouselSlidesData[1].headline_line1 || !carouselSlidesData[1].headline_line1.trim()) {
+        carouselSlidesData[1].headline_line1 = ig.headline_line1 || (bundle && bundle.package && bundle.package.title) || "";
+      }
+      if (!carouselSlidesData[1].headline_line2 && ig.headline_line2) {
+        carouselSlidesData[1].headline_line2 = ig.headline_line2;
+      }
+      if (!carouselSlidesData[1].badge_text && ig.badge_text) {
+        carouselSlidesData[1].badge_text = ig.badge_text;
+      }
+      if (typeof loadActiveCarouselSlideInputs === "function") {
+        loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
+      }
     }
 
     drawStaticPostCanvases(ig);

@@ -1783,7 +1783,8 @@
                   <div>
                     <h2 class="panel-title">3. Instagram &amp; Facebook Post Studio</h2>
                     <div class="panel-subtitle-row">
-                      <span class="badge" style="background:#10B981;color:#fff;font-weight:700;">6-Slide Story Deck</span>
+                      <span class="badge" style="background:#0284c7;color:#fff;font-weight:700;">Design - 1: Default Post</span>
+                      <span class="badge" style="background:#10B981;color:#fff;font-weight:700;">Design - 2: 6-Slide Deck</span>
                       <span class="badge" style="background:#E1306C;color:#fff;">📸 Instagram (1080×1350)</span>
                       <span class="badge" style="background:#1877F2;color:#fff;">📘 Facebook Link Post</span>
                       <span class="badge badge-check">Synced with Article Photo</span>
@@ -1798,61 +1799,267 @@
                 </div>
               </div>
 
-              <!-- Format Switch Tabs -->
+              <!-- Format & Design Switch Tabs -->
               <div class="social-format-tabs" role="tablist">
-                <button type="button" class="social-tab-btn active" data-format-target="format-view-feed">
-                  📱 6-Slide Story Deck &amp; Vertical (1080×1350)
+                <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed">
+                  📱 Design - 1: Default Main Post (1080×1350)
                 </button>
-                <button type="button" class="social-tab-btn" data-format-target="format-view-fb">
+                <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb">
                   📘 Facebook Landscape (1200×630)
                 </button>
-                <button type="button" class="social-tab-btn" data-format-target="format-view-crop">
+                <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop">
                   🔍 IG Profile Grid (3:4)
+                </button>
+                <button type="button" class="social-tab-btn" id="btn-jump-carousel-deck" style="background:rgba(2,156,216,0.12);border:1px solid rgba(56,189,248,0.4);color:#38BDF8;" onclick="const cw = document.getElementById('carousel-deck-wrapper'); if(cw){ const b = document.getElementById('carousel-deck-body'); if(b) b.style.display='block'; cw.scrollIntoView({behavior:'smooth'}); }">
+                  📑 Jump to Design - 2 Carousel (6 Slides) ↓
                 </button>
               </div>
 
-              <!-- Main Visual Workspace -->
-              <div class="static-post-workspace" style="display:block;">
-                <!-- Format 1: 6-Slide Story Deck & Vertical Feed (1080x1350) -->
-                <div class="static-canvas-col format-col active-format" id="format-view-feed" style="width:100%;margin-bottom:0;">
-                  <!-- Top Batch Strip -->
-                  <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <div style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg, #10b981 0%, #0284c7 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);font-size:1.1rem;">
-                        📑
-                      </div>
+              <!-- Main Visual Workspace for Design - 1 (Default Post) & Facebook / Crop Formats -->
+              <div class="static-post-workspace">
+                <!-- Visual Cards Preview Container (Left Column) -->
+                <div class="static-canvas-card">
+                  <!-- No Image Uploaded Warning Banner -->
+                  <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:12px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <span style="font-size:1.4rem;">⚠️</span>
                       <div>
-                        <strong style="color:#38BDF8;font-size:0.95rem;letter-spacing:-0.01em;">Instagram Carousel &amp; Feed Post Studio (Slides 1 to 6)</strong>
-                        <span style="font-size:0.73rem;color:#94A3B8;display:block;margin-top:1px;">Single cover or 6-slide carousel • All matching Scandinavian editorial typography</span>
+                        <strong style="color:#FFFFFF;font-size:0.92rem;">No Image Uploaded for Social Post</strong>
+                        <p style="margin:2px 0 0;font-size:0.78rem;color:#FCA5A5;">An authentic photo is required before exporting or publishing to Instagram and Facebook.</p>
                       </div>
                     </div>
-
-                    <button type="button" id="btn-download-all-carousel-slides" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:8px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(2,156,216,0.35);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                      <span>📲 Download All Slides (1 to 6) Batch</span>
+                    <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#029CD8;border:1px solid #168BFF;color:#fff;">
+                      📸 Upload Photo
                     </button>
                   </div>
 
-                  <!-- Slide Tabs (1, 2, 3, 4, 5, 6) -->
-                  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <button type="button" class="btn-carousel-tab active" data-slide="1" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;">Slide 1 (Cover)</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="2" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 2</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 3</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 4</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 5</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 6 (CTA)</button>
+                  <div class="static-canvas-views">
+                    <!-- Format 1: Instagram & Facebook Vertical Feed (1080x1350) - DESIGN 1 (DEFAULT) -->
+                    <div class="static-canvas-col format-col active-format" id="format-view-feed">
+                      <div class="format-header-badge">
+                        <span class="badge" style="background:#0284c7;color:#fff;font-weight:800;letter-spacing:0.02em;">Design - 1 (Default)</span>
+                        <span class="badge" style="background:#E1306C;color:#fff;">Instagram</span>
+                        <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
+                        <span class="format-dim-pill">1080 × 1350 (4:5)</span>
+                      </div>
+                      <span class="static-canvas-label">Full Feed Post • Design - 1 (Universal Vertical)</span>
+                      <canvas id="static-post-canvas" width="1080" height="1350"></canvas>
+                      
+                      <!-- Direct Mobile Save Button -->
+                      <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
+                        📲 Save to Photos / Camera Roll
+                      </button>
+
+                      <div class="static-dl-row">
+                        <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
+                        <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                      </div>
+                    </div>
+
+                    <!-- Format 2: Facebook Landscape (1200x630) -->
+                    <div class="static-canvas-col format-col" id="format-view-fb">
+                      <div class="format-header-badge">
+                        <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
+                        <span class="format-dim-pill">1200 × 630 (1.91:1)</span>
+                      </div>
+                      <span class="static-canvas-label">Facebook Desktop &amp; Link Post</span>
+                      <canvas id="static-fb-canvas" width="1200" height="630"></canvas>
+                      
+                      <!-- Direct Mobile Save Button -->
+                      <button type="button" id="btn-save-photos-fb" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
+                        📲 Save to Photos / Camera Roll
+                      </button>
+
+                      <div class="static-dl-row">
+                        <button type="button" id="btn-dl-static-fb-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (1200×630)</button>
+                        <button type="button" id="btn-dl-static-fb-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (1200×630)</button>
+                      </div>
+                    </div>
+
+                    <!-- Format 3: Instagram Profile Grid Crop (3:4) -->
+                    <div class="static-canvas-col format-col" id="format-view-crop">
+                      <div class="format-header-badge">
+                        <span class="badge" style="background:#833AB4;color:#fff;">Instagram</span>
+                        <span class="format-dim-pill">1012 × 1350 (3:4)</span>
+                      </div>
+                      <span class="static-canvas-label">Profile Grid Safety Preview</span>
+                      <canvas id="static-crop-canvas" width="1012" height="1350"></canvas>
+                      
+                      <!-- Direct Mobile Save Button -->
+                      <button type="button" id="btn-save-photos-crop" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
+                        📲 Save to Photos / Camera Roll
+                      </button>
+
+                      <div class="static-dl-row">
+                        <button type="button" id="btn-dl-static-crop-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (3:4)</button>
+                        <button type="button" id="btn-dl-static-crop-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (3:4)</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="hint-text" style="margin-top:10px;font-size:0.75rem;text-align:center;">
+                    Auto-synced with article photo • Original heart logo • Navy scrim • Blue category badge • High-contrast typography
+                  </div>
+                </div>
+
+                <!-- Direct Editor Controls & Caption for Design - 1 (Right Column) -->
+                <div class="static-controls-col">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="font-size:0.86rem;font-weight:800;color:#38BDF8;letter-spacing:-0.01em;">⚙️ Design - 1 Editor Controls</span>
+                      <span class="badge" style="background:#0284c7;color:#fff;font-size:0.68rem;padding:2px 7px;">Default Style</span>
+                    </div>
+                    <span style="font-size:0.72rem;color:#94a3b8;">Single Cover Post</span>
+                  </div>
+                  <!-- Photo Upload / Replacement Box -->
+                  <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                      <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
+                      <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                      <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                        <span>📷 Upload / Replace Photo</span>
+                      </button>
+                      <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                      <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
+                    </div>
                   </div>
 
-                  <!-- 2-Column Unified Workspace: Left Canvas (380px), Right Controls (Flexible) -->
-                  <div style="grid-template-columns: 380px 1fr; gap: 24px; display: grid;">
-                    <!-- Left: Slide Canvas Preview & Downloads -->
+                  <!-- Category Badge & Headlines -->
+                  <div class="wp-field-wrap">
+                    <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
+                    <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <label class="label-sm" for="static-edit-line1">Headline Line 1 (White Bold)</label>
+                    <input type="text" id="static-edit-line1" class="wp-input" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <label class="label-sm" for="static-edit-line2">Headline Line 2 (White Bold)</label>
+                    <input type="text" id="static-edit-line2" class="wp-input" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-line3">Headline Line 3 (Electric Blue #00A3FF Emphasis)</label>
+                      <span class="hint-inline" id="static-line2-size-val">32px</span>
+                    </div>
+                    <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                        <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white" selected>⚪ White (Default)</option>
+                          <option value="blue">🔵 Electric Blue</option>
+                        </select>
+                      </div>
+                    </div>
+                    <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
+                    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE AT ILOVEFINLAND.NET</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
+                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear (Hide)</button>
+                    </div>
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Category Badge)</label>
+                      <span class="hint-inline" id="static-line2-size-val">32px</span>
+                    </div>
+                    <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;" />
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
+                      <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption + Hashtags</button>
+                    </div>
+                    <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
+                  </div>
+
+                  <div class="wp-field-wrap">
+                    <div class="wp-field-label-row">
+                      <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
+                      <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
+                    </div>
+                    <input type="text" id="static-edit-hashtags" class="wp-input" />
+                    <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
+                  </div>
+
+                  <!-- Save & Polish Controls -->
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px;flex-wrap:wrap;">
+                    <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;" title="Polish Caption &amp; Hashtags with ChatGPT (GPT-4o)">
+                      <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                      <span>Polish Caption with ChatGPT</span>
+                    </button>
+                    <button type="button" id="btn-save-static-post" class="btn btn-secondary btn-sm" style="gap:6px;background:#0284c7;border-color:#38bdf8;color:#fff;font-weight:700;">
+                      <span>💾 Save Static Post Adjustments</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ============================================================== -->
+              <!-- CAROUSEL DECK: DESIGN - 2 (6 SLIDES: COVER + SLIDES 2 TO 6)   -->
+              <!-- ============================================================== -->
+              <div id="carousel-deck-wrapper" style="margin-top:36px;padding-top:24px;border-top:1.5px dashed rgba(56,189,248,0.25);">
+                <!-- Header Strip -->
+                <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:14px 18px;flex-wrap:wrap;gap:12px;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #10b981 0%, #0284c7 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);font-size:1.15rem;">
+                      📑
+                    </div>
                     <div>
-                      <div style="padding:14px;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.35);">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <strong style="color:#38BDF8;font-size:0.98rem;letter-spacing:-0.01em;">Instagram Carousel (Design - 2: 6-Slide Story Deck)</strong>
+                        <span class="badge" style="background:#10B981;color:#fff;font-size:0.68rem;padding:2px 7px;font-weight:700;">Design - 2</span>
+                        <span class="badge" style="background:#0284c7;color:#fff;font-size:0.68rem;padding:2px 7px;">6 Slides</span>
+                      </div>
+                      <span style="font-size:0.75rem;color:#94A3B8;display:block;margin-top:2px;">Slide 1 (Cover) + Slides 2–6 • Modern Scandinavian Frosted Glass • Title Case • Extensible for Design - 3</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <button type="button" id="btn-download-all-carousel-slides" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:8px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(2,156,216,0.35);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                      <span>📲 Download All Slides (1 to 6) Batch</span>
+                    </button>
+                    <!-- Minimize / Maximize Toggle Button -->
+                    <button type="button" id="btn-toggle-carousel-deck" class="btn btn-secondary btn-sm" style="padding:8px 14px;font-size:0.78rem;font-weight:700;border-radius:8px;border:1px solid rgba(255,255,255,0.18);display:inline-flex;align-items:center;gap:6px;">
+                      <span id="carousel-deck-toggle-chevron">▲</span> <span id="carousel-deck-toggle-label">Minimize Design - 2 (Slides 1–6)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Body for Slides 1 to 6 (Open by default) -->
+                <div id="carousel-deck-body" style="display:block;margin-top:18px;">
+                  <!-- Slide Tabs (1, 2, 3, 4, 5, 6) -->
+                  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <button type="button" class="btn-carousel-tab active" data-slide="1" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;">Slide 1 (Cover)</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="2" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 2</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 3</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 4</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 5</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 6 (CTA)</button>
+                  </div>
+
+                  <!-- 2-Column Deck Workspace matching Desktop Grid -->
+                  <div class="carousel-deck-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:28px;align-items:start;">
+                    <!-- Left: Slide Canvas Preview & Downloads -->
+                    <div style="max-width:530px;width:100%;margin:0 auto;">
+                      <div style="padding:16px;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
                           <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-size:1.2rem;">✨</span>
                             <div>
-                              <strong id="carousel-active-slide-title" style="display:block;font-size:0.90rem;color:#38BDF8;font-weight:800;">Slide 1 (Main Cover Story)</strong>
-                              <span style="font-size:0.70rem;color:#94A3B8;">4:5 Vertical • Editorial Format</span>
+                              <strong id="carousel-active-slide-title" style="display:block;font-size:0.92rem;color:#38BDF8;font-weight:800;">Slide 1 (Main Cover Story)</strong>
+                              <span style="font-size:0.72rem;color:#94A3B8;">4:5 Vertical • Editorial Format</span>
                             </div>
                           </div>
                           <span id="carousel-active-slide-badge" class="badge" style="background:#0284c7;color:#fff;font-weight:800;font-size:0.68rem;padding:2px 7px;">Slide 1 of 6</span>
@@ -1862,7 +2069,8 @@
                           <canvas id="carousel-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:block;background:#061426;"></canvas>
                         </div>
 
-                        <button type="button" id="btn-save-carousel-slide" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
+                        <!-- Direct Save / Download Controls for Active Slide -->
+                        <button type="button" id="btn-save-carousel-slide-photos" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
                           📲 Save This Slide to Photos
                         </button>
 
@@ -1871,17 +2079,17 @@
                           <button type="button" id="btn-dl-carousel-slide-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
                         </div>
 
-                        <!-- Slide Specific Details -->
+                        <!-- Location & Layout Style for Active Slide -->
                         <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:10px;">
                           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;">📍 Location Stamp:</label>
+                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-input-location">📍 Location Stamp:</label>
                             <input type="text" id="carousel-input-location" class="wp-input" style="flex:1;max-width:210px;font-size:0.78rem;padding:5px 8px;border-radius:6px;" placeholder="Leave empty to hide" />
                           </div>
 
                           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;">Layout Variant:</label>
+                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-select-card-style">Layout Variant:</label>
                             <select id="carousel-select-card-style" class="wp-input" style="flex:1;max-width:210px;font-size:0.78rem;padding:5px 8px;border-radius:6px;">
-                              <option value="frosted">Frosted Glass Card (Modern)</option>
+                              <option value="frosted" selected>Frosted Glass Card (Modern)</option>
                               <option value="minimal">Minimal Floating Pill</option>
                               <option value="clean">Clean Photo (Full Bleed)</option>
                               <option value="magazine">Magazine Cover (Vignette)</option>
@@ -1899,8 +2107,8 @@
                       </div>
                     </div>
 
-                    <!-- Right: Slide Specific Edit Controls & Caption -->
-                    <div>
+                    <!-- Right: Slide Specific Edit Controls -->
+                    <div style="width:100%;">
                       <!-- Photo Upload for this Slide -->
                       <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1975,101 +2183,30 @@
                         <button type="button" id="btn-carousel-rerender" class="btn btn-primary btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#029CD8;font-weight:700;border-radius:4px;">✨ Re-render</button>
                       </div>
 
-                      <!-- Caption & Hashtags Section -->
-                      <div style="margin-top:16px;padding:12px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                          <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">Viral Caption (Instagram, TikTok &amp; Facebook)</label>
-                          <div style="display:flex;gap:6px;">
-                            <button type="button" class="btn btn-ghost btn-xs" id="btn-generate-social-caption" style="font-size:0.70rem;padding:2px 8px;border:1px solid rgba(75, 137, 188, 0.28);color:#38bdf8;">✨ Generate Caption</button>
-                            <button type="button" class="btn btn-ghost btn-xs" id="btn-copy-static-caption" style="font-size:0.70rem;padding:2px 8px;border:1px solid rgba(75, 137, 188, 0.28);color:#CBD5E1;">📋 Copy Caption</button>
-                          </div>
-                        </div>
-                        <textarea id="social-caption-textarea" class="wp-textarea" rows="4" style="background:#082347;border-color:rgba(75, 137, 188, 0.28);color:#FFFFFF;font-size:0.82rem;line-height:1.45;" placeholder="Viral caption with hook, takeaway, and hashtags..."></textarea>
-                        
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:4px;">
-                          <label class="label-sm" style="margin:0;color:#CBD5E1;font-size:0.74rem;">Hashtags (5/5 Max)</label>
-                        </div>
-                        <input type="text" id="static-edit-hashtags" class="wp-input" style="background:#082347;border-color:rgba(75, 137, 188, 0.28);color:#FFFFFF;font-size:0.78rem;" placeholder="#Finland #Helsinki #Nordic..." />
-                      </div>
-
-                      <!-- Save Button -->
-                      <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:flex-end;">
-                        <button type="button" id="btn-save-carousel-changes" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #0284c7 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
+                      <!-- Dedicated Save Changes to Article & Post Button for Design - 2 -->
+                      <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">
+                        <button type="button" id="btn-save-carousel-changes" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:11px 22px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,132,199,0.35);display:inline-flex;align-items:center;gap:8px;">
                           <span>💾 Save Changes to Article &amp; Post</span>
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <!-- Format 2: Facebook Landscape (1200x630) -->
-                <div class="static-canvas-col format-col" id="format-view-fb" style="display:none;">
-                  <div class="format-header-badge">
-                    <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
-                    <span class="format-dim-pill">1200 × 630 (1.91:1)</span>
-                  </div>
-                  <span class="static-canvas-label">Facebook Desktop &amp; Link Post</span>
-                  <canvas id="static-fb-canvas" width="1200" height="630"></canvas>
-                  
-                  <button type="button" id="btn-save-photos-fb" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
-                    📲 Save to Photos / Camera Roll
-                  </button>
-
-                  <div class="static-dl-row">
-                    <button type="button" id="btn-dl-static-fb-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (1200×630)</button>
-                    <button type="button" id="btn-dl-static-fb-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (1200×630)</button>
-                  </div>
-                </div>
-
-                <!-- Format 3: Instagram Profile Grid (3:4 Crop) -->
-                <div class="static-canvas-col format-col" id="format-view-crop" style="display:none;">
-                  <div class="format-header-badge">
-                    <span class="badge" style="background:#E1306C;color:#fff;">Profile Grid Crop</span>
-                    <span class="format-dim-pill">1080 × 1440 (3:4)</span>
-                  </div>
-                  <span class="static-canvas-label">Instagram Grid Profile Preview</span>
-                  <canvas id="static-crop-canvas" width="1080" height="1440"></canvas>
-                  
-                  <button type="button" id="btn-save-photos-crop" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
-                    📲 Save to Photos / Camera Roll
-                  </button>
-
-                  <div class="static-dl-row">
-                    <button type="button" id="btn-dl-static-crop-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (3:4)</button>
-                    <button type="button" id="btn-dl-static-crop-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (3:4)</button>
-                  </div>
-                </div>
               </div>
 
               <!-- Hidden backwards-compatibility containers for legacy DOM elements -->
               <div style="display:none;" aria-hidden="true">
-                <canvas id="static-post-canvas" width="1080" height="1350"></canvas>
                 <canvas id="ai-suggested-canvas" width="1080" height="1350"></canvas>
-                <input type="text" id="static-edit-badge" />
-                <input type="text" id="static-edit-line1" />
-                <input type="text" id="static-edit-line2" />
-                <input type="text" id="static-edit-line3" />
-                <input type="text" id="static-edit-cta" />
-                <select id="static-edit-cta-color"><option value="white">white</option></select>
-                <input type="range" id="static-edit-fontsize" />
                 <input type="text" id="ai-input-location" />
                 <select id="ai-select-card-style"><option value="frosted">frosted</option></select>
                 <input type="checkbox" id="ai-check-swipe-arrow" />
-                <textarea id="static-edit-caption"></textarea>
-                <button id="btn-save-static-post"></button>
-                <button id="btn-save-photos-45"></button>
-                <button id="btn-dl-static-45-jpg"></button>
-                <button id="btn-dl-static-45-png"></button>
                 <button id="btn-save-photos-ai"></button>
                 <button id="btn-dl-ai-jpg"></button>
                 <button id="btn-dl-ai-png"></button>
                 <button id="btn-refresh-ai-canvas"></button>
                 <button id="btn-auto-titlecase"></button>
-                <div id="carousel-deck-wrapper"></div>
-                <div id="carousel-deck-body"></div>
-                <button id="btn-toggle-carousel-deck"></button>
-                <span id="carousel-deck-toggle-chevron"></span>
-                <span id="carousel-deck-toggle-label"></span>
+                <textarea id="social-caption-textarea"></textarea>
+                <button id="btn-generate-social-caption"></button>
               </div>
             </section>
           </div>
@@ -3233,7 +3370,7 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=91.0"></script>
+  <script src="/app.js?v=92.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
   <script src="/finnish-lab.js?v=85.1"></script>
