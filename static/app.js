@@ -876,11 +876,11 @@
 
     if (tabName === "ig" && currentStaticPost) {
       drawStaticPostCanvases(currentStaticPost);
-      if (typeof loadActiveCarouselSlideInputs === "function") {
-        loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
+      if (typeof window.loadActiveCarouselSlideInputs === "function") {
+        window.loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
       }
-      if (typeof renderActiveCarouselSlideCanvas === "function") {
-        renderActiveCarouselSlideCanvas();
+      if (typeof window.renderActiveCarouselSlideCanvas === "function") {
+        window.renderActiveCarouselSlideCanvas();
       }
     }
   }
@@ -1495,8 +1495,8 @@
       if (!carouselSlidesData[1].badge_text && ig.badge_text) {
         carouselSlidesData[1].badge_text = ig.badge_text;
       }
-      if (typeof loadActiveCarouselSlideInputs === "function") {
-        loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
+      if (typeof window.loadActiveCarouselSlideInputs === "function") {
+        window.loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
       }
     }
 
@@ -2166,8 +2166,8 @@
         if (hasPhoto && photoImg && typeof carouselSlidesData !== "undefined" && carouselSlidesData[1]) {
           if (!carouselSlidesData[1].photoImg && !carouselSlidesData[1].photoDataUrl) {
             carouselSlidesData[1].photoImg = photoImg;
-            if (activeCarouselSlide === 1 && typeof renderActiveCarouselSlideCanvas === "function") {
-              renderActiveCarouselSlideCanvas();
+            if (activeCarouselSlide === 1 && typeof window.renderActiveCarouselSlideCanvas === "function") {
+              window.renderActiveCarouselSlideCanvas();
             }
           }
         }
@@ -6813,22 +6813,22 @@
       s.card_style = $("carousel-select-card-style")?.value || "frosted";
       s.show_swipe_arrow = $("carousel-check-swipe-arrow") ? $("carousel-check-swipe-arrow").checked : (activeCarouselSlide !== 6);
 
-      // If editing Slide 1, sync back to Design - 1 controls and canvases
+      // If editing Slide 1, sync back to Design - 1 controls and canvases ONLY if non-empty
       if (activeCarouselSlide === 1) {
-        if ($("static-edit-badge") && s.badge_text) $("static-edit-badge").value = s.badge_text;
-        if ($("static-edit-line1")) $("static-edit-line1").value = s.headline_line1;
-        if ($("static-edit-line2")) $("static-edit-line2").value = s.headline_line2;
-        if ($("static-edit-line3")) $("static-edit-line3").value = s.headline_line3;
-        if ($("static-edit-cta")) $("static-edit-cta").value = s.cta_text;
-        if ($("static-edit-cta-color")) $("static-edit-cta-color").value = s.cta_color;
-        if ($("ai-input-location")) $("ai-input-location").value = s.location;
+        if ($("static-edit-badge") && s.badge_text && s.badge_text.trim()) $("static-edit-badge").value = s.badge_text;
+        if ($("static-edit-line1") && s.headline_line1 && s.headline_line1.trim()) $("static-edit-line1").value = s.headline_line1;
+        if ($("static-edit-line2") && s.headline_line2 && s.headline_line2.trim()) $("static-edit-line2").value = s.headline_line2;
+        if ($("static-edit-line3") && s.headline_line3 && s.headline_line3.trim()) $("static-edit-line3").value = s.headline_line3;
+        if ($("static-edit-cta") && s.cta_text && s.cta_text.trim()) $("static-edit-cta").value = s.cta_text;
+        if ($("static-edit-cta-color") && s.cta_color) $("static-edit-cta-color").value = s.cta_color;
+        if ($("ai-input-location") && s.location) $("ai-input-location").value = s.location;
         if (typeof currentStaticPost !== "undefined" && currentStaticPost) {
-          currentStaticPost.badge_text = s.badge_text;
-          currentStaticPost.headline_line1 = s.headline_line1;
-          currentStaticPost.headline_line2 = s.headline_line2;
-          currentStaticPost.headline_line3 = s.headline_line3;
-          currentStaticPost.cta_text = s.cta_text;
-          currentStaticPost.cta_color = s.cta_color;
+          if (s.badge_text && s.badge_text.trim()) currentStaticPost.badge_text = s.badge_text;
+          if (s.headline_line1 && s.headline_line1.trim()) currentStaticPost.headline_line1 = s.headline_line1;
+          if (s.headline_line2 && s.headline_line2.trim()) currentStaticPost.headline_line2 = s.headline_line2;
+          if (s.headline_line3 && s.headline_line3.trim()) currentStaticPost.headline_line3 = s.headline_line3;
+          if (s.cta_text && s.cta_text.trim()) currentStaticPost.cta_text = s.cta_text;
+          if (s.cta_color) currentStaticPost.cta_color = s.cta_color;
           if (typeof drawStaticPostCanvases === "function") {
             drawStaticPostCanvases(currentStaticPost);
           }
@@ -6840,6 +6840,25 @@
       activeCarouselSlide = slideNum;
       const s = carouselSlidesData[slideNum] || defaultSlideData(slideNum);
       carouselSlidesData[slideNum] = s;
+
+      // For Slide 1: If headline lines are empty, automatically populate from Design - 1 inputs or current package
+      if (slideNum === 1) {
+        if (!s.headline_line1 || !s.headline_line1.trim()) {
+          s.headline_line1 = ($("static-edit-line1")?.value) || (currentStaticPost?.headline_line1) || (bundle?.package?.title) || "";
+        }
+        if (!s.headline_line2 || !s.headline_line2.trim()) {
+          s.headline_line2 = ($("static-edit-line2")?.value) || (currentStaticPost?.headline_line2) || "";
+        }
+        if (!s.headline_line3 || !s.headline_line3.trim()) {
+          s.headline_line3 = ($("static-edit-line3")?.value) || (currentStaticPost?.headline_line3) || "";
+        }
+        if (!s.badge_text || !s.badge_text.trim()) {
+          s.badge_text = ($("static-edit-badge")?.value) || (currentStaticPost?.badge_text) || "NEWS";
+        }
+        if (!s.cta_text || !s.cta_text.trim()) {
+          s.cta_text = ($("static-edit-cta")?.value) || (currentStaticPost?.cta_text) || "Read full article";
+        }
+      }
 
       const titleEl = $("carousel-active-slide-title");
       if (titleEl) {
@@ -7166,6 +7185,11 @@
       if (!s) return;
       renderSingleSlideToCanvas(cvs, s, activeCarouselSlide);
     }
+
+    // Expose to window for top-level access from loadPackage and tab switchers
+    window.loadActiveCarouselSlideInputs = loadActiveCarouselSlideInputs;
+    window.saveActiveCarouselSlideInputs = saveActiveCarouselSlideInputs;
+    window.renderActiveCarouselSlideCanvas = renderActiveCarouselSlideCanvas;
 
     // Carousel Tab switching
     document.querySelectorAll(".btn-carousel-tab").forEach((btn) => {
