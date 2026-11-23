@@ -1485,7 +1485,7 @@
             <button type="button" class="fl-seg-btn ${state.mode === "study" ? "active" : ""}" data-fl-mode="study">Study</button>
           </div>
 
-          <button type="button" class="fl-new-chat-pill" id="fl-new-chat-top" title="Start a new chat">+ New Chat</button>
+          <button type="button" class="fl-new-chat-pill" id="fl-new-chat-top" title="Start a new chat">+ New</button>
         </header>
 
         ${state.mode === "chat" ? renderChatMode() : `<div class="fl-study-scroll">${renderStudyMode(prog)}</div>`}
