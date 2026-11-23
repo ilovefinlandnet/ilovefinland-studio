@@ -72,7 +72,10 @@ def _fetch_url_preview(url: str) -> Optional[Dict[str, str]]:
 
 def _load_recent_studio_summary(db_path: str = db.DB_PATH, limit: int = 20) -> str:
     """Compact live snapshot of recent Studio articles so Studio AI knows your real content catalog."""
-    pkgs = _list_recent_packages(db_path=db_path, limit=limit)
+    try:
+        pkgs = _list_recent_packages(db_path=db_path, limit=limit)
+    except Exception:
+        return "Studio catalog unavailable."
     if not pkgs:
         return "No articles in Studio yet."
     lines = [f"- #{p['id']} [{p['status']}] {p['title']}" for p in pkgs]
@@ -96,7 +99,7 @@ def _load_linked_article_context(package_id: Optional[int], db_path: str = db.DB
         return {
             "id": int(pkg.get("id") or package_id),
             "title": pkg.get("title") or art.get("headline") or f"Article #{package_id}",
-            "status": pkg.get("status") or "",
+            "status": pkg.get("article_status") or ("Pushed to WP" if pkg.get("wordpress_post_id") else "Draft"),
             "category": art.get("category") or "",
             "excerpt": (art.get("excerpt") or "")[:350],
             "body_snippet": _strip_html(body_raw)[:1800],
@@ -347,10 +350,17 @@ def _list_recent_packages(db_path: str = db.DB_PATH, limit: int = 30) -> List[Di
     conn = db.get_connection(db_path)
     try:
         rows = conn.execute(
-            "SELECT id, title, status, updated_at FROM packages WHERE COALESCE(is_archived, 0) = 0 ORDER BY updated_at DESC, id DESC LIMIT ?",
+            "SELECT id, title, article_status, wordpress_post_id, updated_at FROM packages WHERE COALESCE(is_archived, 0) = 0 ORDER BY updated_at DESC, id DESC LIMIT ?",
             (limit,),
         ).fetchall()
-        return [{"id": int(r["id"]), "title": r["title"], "status": r["status"]} for r in rows]
+        return [
+            {
+                "id": int(r["id"]),
+                "title": r["title"],
+                "status": "Pushed to WP" if r["wordpress_post_id"] else (r["article_status"] or "Draft"),
+            }
+            for r in rows
+        ]
     finally:
         conn.close()
 
