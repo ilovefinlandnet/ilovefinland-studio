@@ -25,12 +25,20 @@ body:has(#view-finnish-lab:not(.hidden)) {
     #060d1c !important;
 }
 
+.studio-shell:has(#view-finnish-lab:not(.hidden)) .workspace-wrap {
+  height: 100dvh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
 .workspace:has(#view-finnish-lab:not(.hidden)) {
   padding: 0 !important;
   margin: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
-  height: 100dvh !important;
+  flex: 1 !important;
+  min-height: 0 !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
@@ -95,11 +103,10 @@ body.fl-focus-mode .sidebar {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* Admin mobile/tablet header offset (when Studio's fixed mobile-header is visible below 1024px) */
-@media (max-width: 1024px) {
+/* Admin mobile header offset ONLY <= 768px where Studio mobile-header is position:fixed */
+@media (max-width: 768px) {
   body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)) {
     padding-top: calc(68px + env(safe-area-inset-top, 0px)) !important;
-    height: 100dvh !important;
     box-sizing: border-box !important;
   }
   .fl-app {
