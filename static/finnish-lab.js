@@ -1313,29 +1313,23 @@
   function scrollChatsToBottom(instant) {
     setTimeout(() => {
       const stage = document.getElementById("fl-chat-stage");
-      if (stage) stage.scrollTop = stage.scrollHeight;
-      document.querySelectorAll(".fl-side-messages").forEach((el) => { el.scrollTop = el.scrollHeight; });
-      const labView = document.getElementById("view-finnish-lab");
-      if (labView && !labView.classList.contains("hidden") && state.mode === "chat") {
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: instant ? "auto" : "smooth",
-        });
+      if (stage) {
+        stage.scrollTo({ top: stage.scrollHeight, behavior: instant ? "auto" : "smooth" });
       }
+      document.querySelectorAll(".fl-side-messages").forEach((el) => { el.scrollTop = el.scrollHeight; });
       updateScrollDownButton();
-    }, 50);
+    }, 45);
   }
 
   function updateScrollDownButton() {
     const btn = document.getElementById("fl-scroll-down-btn");
-    if (!btn) return;
-    const labView = document.getElementById("view-finnish-lab");
-    if (!labView || labView.classList.contains("hidden") || state.mode !== "chat") {
-      btn.classList.add("hidden");
+    const stage = document.getElementById("fl-chat-stage");
+    if (!btn || !stage || state.mode !== "chat") {
+      if (btn) btn.classList.add("hidden");
       return;
     }
-    const distFromBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
-    btn.classList.toggle("hidden", distFromBottom < 140);
+    const distFromBottom = stage.scrollHeight - (stage.scrollTop + stage.clientHeight);
+    btn.classList.toggle("hidden", distFromBottom < 120);
   }
 
   /* ---------- CROP / ROTATE MODAL ---------- */
@@ -1489,7 +1483,7 @@
           <button type="button" class="fl-new-chat-pill" id="fl-new-chat-top" title="Start a new chat">+ New Chat</button>
         </header>
 
-        ${state.mode === "chat" ? renderChatMode() : renderStudyMode(prog)}
+        ${state.mode === "chat" ? renderChatMode() : `<div class="fl-study-scroll">${renderStudyMode(prog)}</div>`}
       </div>
 
       ${state.drawerOpen ? renderSlideDrawer(settings, prog, dueCount) : ""}
@@ -2307,16 +2301,27 @@
       window.visualViewport.addEventListener("scroll", syncKeyboardDock);
     }
 
-    // Floating ChatGPT-style ↓ jump-to-bottom button
+    // Floating ChatGPT-style ↓ jump-to-bottom button (tracks inner #fl-chat-stage scroll!)
     root.querySelector("#fl-scroll-down-btn")?.addEventListener("click", () => scrollChatsToBottom(false));
-    if (!window.__flScrollBtnBound) {
-      window.__flScrollBtnBound = true;
-      window.addEventListener("scroll", updateScrollDownButton, { passive: true });
-      window.addEventListener("resize", updateScrollDownButton, { passive: true });
-    }
+    root.querySelector("#fl-chat-stage")?.addEventListener("scroll", updateScrollDownButton, { passive: true });
     updateScrollDownButton();
 
-    // Top bar
+    // iOS & iPadOS Safari Keyboard Lock: shrink app shell cleanly to visualViewport.height when keyboard opens
+    if (window.visualViewport && !window.__flViewportBound) {
+      window.__flViewportBound = true;
+      const syncAppViewport = () => {
+        const ws = document.querySelector(".workspace");
+        const lab = document.getElementById("view-finnish-lab");
+        if (!ws || !lab || lab.classList.contains("hidden")) return;
+        const vv = window.visualViewport;
+        if (vv && vv.height > 260) {
+          ws.style.height = `${Math.round(vv.height)}px`;
+          window.scrollTo(0, 0);
+        }
+      };
+      window.visualViewport.addEventListener("resize", syncAppViewport);
+      window.visualViewport.addEventListener("scroll", syncAppViewport);
+    }
     root.querySelector("#fl-open-drawer")?.addEventListener("click", () => { state.drawerOpen = true; renderActiveView(); });
     root.querySelectorAll("[data-fl-mode]").forEach((b) => {
       b.onclick = () => { state.mode = b.getAttribute("data-fl-mode"); state.plusMenuOpen = false; renderActiveView(); };

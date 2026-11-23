@@ -1,6 +1,6 @@
 /* ============================================================================
-   FINNISH LEARNING LAB — CALM CHATGPT-STYLE DESIGN (v57.0)
-   Mobile, iPad & PC Friendly • Pure Dark Glass • Zero Clutter
+   FINNISH LEARNING LAB — TRUE 100dvh NATIVE APP SHELL (v75.0)
+   Rock-Solid on iPhone, iPad Portrait/Landscape & Desktop • Zero Jitter
    ============================================================================ */
 
 /* Hide Studio editorial cockpit & floating button while inside Finnish Lab */
@@ -15,62 +15,95 @@ body:has(#signin-gate:not(.hidden)) #fl-side-panel {
   display: none !important;
 }
 
+/* Lock outer page scroll while inside Finnish Lab so ONLY the inner canvas scrolls (ChatGPT/Claude feel!) */
+body:has(#view-finnish-lab:not(.hidden)) {
+  overflow: hidden !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.12), transparent 50%),
+    #060d1c !important;
+}
+
+.workspace:has(#view-finnish-lab:not(.hidden)) {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 /* Full-Screen Focus Mode on Desktop / iPad */
 body.fl-focus-mode .sidebar {
   display: none !important;
 }
-body.fl-focus-mode .workspace {
-  max-width: 100% !important;
-  padding: 12px 16px 24px !important;
-}
 
-/* Main Centered Container (ChatGPT/Claude reading comfort on PC & iPad) */
+/* Main App Container — Exact 100dvh Flex Shell (Top Bar | Scroll Body | Bottom Dock) */
 #view-finnish-lab {
   width: 100%;
-  max-width: 820px;
-  margin: 0 auto;
+  max-width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   color: #f8fafc;
+  box-sizing: border-box;
+}
+
+#finnish-lab-root {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .fl-app {
+  width: 100%;
+  max-width: 820px;
+  height: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 110px);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   position: relative;
+  padding: 0 14px;
+  box-sizing: border-box;
 }
 
-/* Top Bar — Sticky Frosted Glass: [☰]   [ Chat | Study ]   [+ New Chat] */
+/* Top Bar — Always Pinned at Top of Flex Shell (Zero Jumping on iPhone, iPad & PC!) */
 .fl-header {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 60;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 4px 12px;
-  margin: 0 -4px 6px;
-  background: rgba(7, 15, 30, 0.86);
+  padding: 12px 0 10px;
+  background: rgba(6, 13, 28, 0.88);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-@media (max-width: 768px) {
-  .fl-header {
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 54px; /* Pinned right below the Studio mobile header — immune to ancestor overflow */
-    margin: 0;
-    padding: 8px 12px 10px;
-    z-index: 880;
-  }
-  body.fl-student-only .fl-header {
-    top: 0;
+/* Admin mobile/tablet header offset (when Studio's 54px top bar is visible below 1024px) */
+@media (max-width: 1024px) {
+  body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)) {
+    padding-top: 56px !important;
+    height: 100dvh !important;
+    box-sizing: border-box !important;
   }
   .fl-app {
-    padding-top: 58px;
+    padding: 0 12px;
   }
 }
 
@@ -158,14 +191,27 @@ body.fl-focus-mode .workspace {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Open, Borderless Chat Canvas (Zero Box-in-Box Clutter) */
+/* Open, Borderless Scrollable Chat Canvas (Only THIS area scrolls — buttery smooth on iPhone & iPad!) */
 .fl-chat-stage {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 6px 2px 150px;
+  padding: 14px 2px 18px;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.fl-study-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 2px 28px;
 }
 
 .fl-empty-hero {
@@ -321,13 +367,12 @@ body.fl-focus-mode .workspace {
   50% { opacity: 0.35; transform: scale(1.25); }
 }
 
-/* Sleek ChatGPT-Style Bottom Input Capsule */
+/* Sleek ChatGPT-Style Bottom Input Capsule (Locked cleanly inside 100dvh flex shell — zero iOS clipping!) */
 .fl-dock {
-  position: sticky;
-  bottom: 12px;
+  flex-shrink: 0;
   z-index: 40;
-  margin-top: auto;
-  padding-top: 8px;
+  padding: 8px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(6, 13, 28, 0) 0%, rgba(6, 13, 28, 0.92) 28%, rgba(6, 13, 28, 0.98) 100%);
 }
 
 .fl-capsule {
@@ -738,30 +783,10 @@ body.fl-focus-mode .workspace {
   gap: 10px;
 }
 
-/* Mobile & iPad Precision Polish (Zero Clipping!) */
+/* Mobile & iPad Precision Polish (Zero Clipping, Zero Fixed-Position Hacks!) */
 @media (max-width: 768px) {
-  .workspace:has(#view-finnish-lab:not(.hidden)) {
-    padding: 62px 10px 18px !important;
-  }
-  .fl-app {
-    min-height: calc(100vh - 82px);
-  }
   .fl-study-grid {
     grid-template-columns: 1fr;
-  }
-  .fl-dock {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    z-index: 900;
-    transition: bottom 0.08s ease-out;
-  }
-  body.fl-kb-open .fl-dock {
-    bottom: 22px; /* Lifts capsule cleanly above iOS Safari URL bar when typing */
-  }
-  .fl-chat-stage {
-    padding-bottom: 118px;
   }
   body:not(.fl-student-only) .fl-drawer-panel {
     padding-top: 66px; /* Sit cleanly below Studio mobile header */
@@ -788,7 +813,7 @@ body.fl-focus-mode .workspace {
 }
 
 /* ============================================================================
-   STUDENT-ONLY FULL-SCREEN MODE (/finnish-student) & ADMIN SHARE PANEL (v59.0)
+   STUDENT-ONLY FULL-SCREEN MODE & ADMIN SHARE PANEL
    ============================================================================ */
 body.fl-student-only .sidebar,
 body.fl-student-only .mobile-header,
@@ -810,19 +835,8 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
   margin-left: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
-  padding: 12px 14px 24px !important;
-}
-
-@media (max-width: 768px) {
-  body.fl-student-only .fl-app {
-    min-height: calc(100vh - 24px);
-  }
-  body.fl-student-only .fl-dock {
-    bottom: 12px; /* No Studio bottom-nav in student-only view */
-  }
-  body.fl-student-only .fl-chat-stage {
-    padding-bottom: 115px;
-  }
+  padding: 0 !important;
+  height: 100dvh !important;
 }
 
 .fl-student-gate {
