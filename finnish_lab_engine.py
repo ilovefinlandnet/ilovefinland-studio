@@ -1152,6 +1152,29 @@ def _pcm_to_wav_base64(pcm_b64: str, sample_rate: int = 24000) -> str:
     return base64.b64encode(buf.getvalue()).decode("ascii")
 
 
+def _pcm_to_compact_audio_base64(pcm_b64: str, sample_rate: int = 24000) -> Tuple[str, str]:
+    """Compress raw 16-bit mono PCM to lightweight 48kbps MP3 via ffmpeg (8x smaller on 4G), falling back to WAV."""
+    import subprocess
+    pcm_bytes = base64.b64decode(pcm_b64)
+    try:
+        proc = subprocess.run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-f", "s16le", "-ar", str(sample_rate), "-ac", "1", "-i", "pipe:0",
+                "-codec:a", "libmp3lame", "-b:a", "48k", "-f", "mp3", "pipe:1",
+            ],
+            input=pcm_bytes,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+        )
+        if proc.returncode == 0 and proc.stdout and len(proc.stdout) > 200:
+            return base64.b64encode(proc.stdout).decode("ascii"), "audio/mpeg"
+    except Exception:
+        pass
+    return _pcm_to_wav_base64(pcm_b64, sample_rate=sample_rate), "audio/wav"
+
+
 def handle_tts(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
     """
     Generate warm, natural human-voiced Finnish (or bilingual Walking Podcast) audio
@@ -1257,8 +1280,7 @@ def handle_tts(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
                         rate = int(raw_mime.split("rate=")[1].split(";")[0].strip())
                     except Exception:
                         rate = 24000
-                out_b64 = _pcm_to_wav_base64(raw_b64, sample_rate=rate)
-                out_mime = "audio/wav"
+                out_b64, out_mime = _pcm_to_compact_audio_base64(raw_b64, sample_rate=rate)
             else:
                 out_b64 = raw_b64
                 out_mime = raw_mime or "audio/mpeg"

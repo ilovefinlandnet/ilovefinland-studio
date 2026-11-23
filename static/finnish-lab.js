@@ -452,13 +452,20 @@
       playUrl(_audioMemCache.get(slowKey), 1);
       return;
     }
-    if (slow && (_audioMemCache.has(phraseKey) || _audioInflight.has(phraseKey))) {
-      const dataUrl = await fetchOrGetTtsUrl(clean, "phrase");
-      if (state.speakingMsgId !== targetId) return;
-      if (dataUrl) { playUrl(dataUrl, 0.78); return; }
+    if (slow && _audioMemCache.has(phraseKey)) {
+      playUrl(_audioMemCache.get(phraseKey), 0.78);
+      return;
     }
 
-    // Fetch (or join an already in-flight pre-warm!) — always fetch phrase so both Normal & Slow become instant!
+    // TRUE 0ms INSTANT VOICE: if human audio isn't cached yet, speak immediately on-tap with native fi-FI voice
+    // while silently pre-warming the warm Gemini human voice in the background for next play!
+    if ("speechSynthesis" in window) {
+      fallbackBrowserSpeak(clean, slow, targetId);
+      prewarmFinnishAudio(clean);
+      return;
+    }
+
+    // Fallback for browsers without Web Speech API: fetch Gemini human voice directly
     const dataUrl = await fetchOrGetTtsUrl(clean, "phrase");
     if (state.speakingMsgId !== targetId) return;
     if (dataUrl) {
@@ -466,7 +473,7 @@
       return;
     }
     if (state.speakingMsgId === targetId) {
-      fallbackBrowserSpeak(clean, slow, targetId);
+      stopActiveAudio();
     }
   }
 
