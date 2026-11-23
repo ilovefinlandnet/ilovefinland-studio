@@ -2193,10 +2193,48 @@
                         <input type="text" id="carousel-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
                       </div>
 
-                      <!-- Quick Presets -->
-                      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-                        <button type="button" id="btn-carousel-clean-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#38BDF8;font-weight:700;border-radius:4px;">🖼️ Clean Photo Only</button>
-                        <button type="button" id="btn-carousel-frosted-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;border-radius:4px;">📄 Frosted Glass Card</button>
+                      <!-- Website CTA / Footer Line -->
+                      <div class="wp-field-wrap">
+                        <div class="wp-field-label-row">
+                          <label class="label-sm" for="carousel-edit-cta">Website CTA / Footer Line (Optional)</label>
+                          <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                            <select id="carousel-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                              <option value="white" selected>⚪ White (Default)</option>
+                              <option value="blue">🔵 Electric Blue</option>
+                            </select>
+                          </div>
+                        </div>
+                        <input type="text" id="carousel-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
+                        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                          <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE</button>
+                          <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="READ FULL STORY • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL STORY</button>
+                          <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear</button>
+                        </div>
+                      </div>
+
+                      <!-- Typography Font Size Slider -->
+                      <div class="wp-field-wrap">
+                        <div class="wp-field-label-row">
+                          <label class="label-sm" for="carousel-edit-fontsize">Typography Font Size (Scales Slide Lines &amp; Badge)</label>
+                          <span class="hint-inline" id="carousel-fontsize-val">44px</span>
+                        </div>
+                        <input type="range" id="carousel-edit-fontsize" min="20" max="52" step="1" value="44" style="width:100%;" />
+                      </div>
+
+                      <!-- Quick Presets & Actions -->
+                      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+                        <button type="button" id="btn-carousel-clean-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#38BDF8;font-weight:700;border-radius:4px;">🖼️ Clean Photo Only</button>
+                        <button type="button" id="btn-carousel-frosted-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;border-radius:4px;">📄 Frosted Glass Card</button>
+                        <button type="button" id="btn-carousel-autotitlecase" class="btn btn-secondary btn-xs" style="font-size:0.72rem;padding:5px 10px;border-radius:4px;">🔤 Auto Title Case</button>
+                        <button type="button" id="btn-carousel-rerender" class="btn btn-primary btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#029CD8;font-weight:700;border-radius:4px;">✨ Re-render</button>
+                      </div>
+
+                      <!-- Save Article & Post Changes Button -->
+                      <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:flex-end;">
+                        <button type="button" id="btn-save-carousel-changes" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #0284c7 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
+                          <span>💾 Save Changes to Article &amp; Post</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -3364,7 +3402,7 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=89.1"></script>
+  <script src="/app.js?v=89.2"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
   <script src="/finnish-lab.js?v=85.1"></script>

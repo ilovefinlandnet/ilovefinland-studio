@@ -13,6 +13,35 @@
   let approvedNow = { article: false, reel: false };
   let uploadedClips = [];
 
+  const sharedLogoImg = new Image();
+  sharedLogoImg.crossOrigin = "anonymous";
+  sharedLogoImg.src = "/assets/ilf-heart-exact.png";
+
+  const defaultSlideData = (num) => ({
+    slide_number: num,
+    badge_text: num === 6 ? "TAKEAWAY" : `SLIDE 0${num}`,
+    headline_line1: "",
+    headline_line2: "",
+    headline_line3: "",
+    cta_text: num === 6 ? "DISCOVER MORE AT ILOVEFINLAND.NET" : "Read full article",
+    cta_color: "blue",
+    font_size: 44,
+    location: "",
+    card_style: "frosted",
+    show_swipe_arrow: num !== 6,
+    photoDataUrl: "",
+    photoImg: null,
+  });
+
+  let activeCarouselSlide = 2;
+  const carouselSlidesData = {
+    2: defaultSlideData(2),
+    3: defaultSlideData(3),
+    4: defaultSlideData(4),
+    5: defaultSlideData(5),
+    6: defaultSlideData(6),
+  };
+
   const $ = (id) => document.getElementById(id);
 
   /* ---------- MODERN IN-APP TOAST NOTIFICATION SYSTEM ---------- */
@@ -6681,27 +6710,6 @@
     // ==============================================================
     // CAROUSEL DECK CONTROLLER (SLIDES 2 TO 6)
     // ==============================================================
-    let activeCarouselSlide = 2;
-    const defaultSlideData = (num) => ({
-      badge_text: num === 6 ? "TAKEAWAY" : `SLIDE 0${num}`,
-      headline_line1: "",
-      headline_line2: "",
-      headline_line3: "",
-      location: "",
-      card_style: "frosted",
-      show_swipe_arrow: num !== 6,
-      photoDataUrl: "",
-      photoImg: null,
-    });
-
-    const carouselSlidesData = {
-      2: defaultSlideData(2),
-      3: defaultSlideData(3),
-      4: defaultSlideData(4),
-      5: defaultSlideData(5),
-      6: defaultSlideData(6),
-    };
-
     function getCleanCarouselSlidesForSave() {
       saveActiveCarouselSlideInputs();
       const list = [];
@@ -6714,6 +6722,9 @@
             headline_line1: s.headline_line1 || "",
             headline_line2: s.headline_line2 || "",
             headline_line3: s.headline_line3 || "",
+            cta_text: s.cta_text || "",
+            cta_color: s.cta_color || "white",
+            font_size: s.font_size || 44,
             location: s.location || "",
             card_style: s.card_style || "frosted",
             show_swipe_arrow: s.show_swipe_arrow !== false,
@@ -6731,6 +6742,9 @@
       s.headline_line1 = $("carousel-edit-line1")?.value || "";
       s.headline_line2 = $("carousel-edit-line2")?.value || "";
       s.headline_line3 = $("carousel-edit-line3")?.value || "";
+      s.cta_text = $("carousel-edit-cta")?.value || "";
+      s.cta_color = $("carousel-edit-cta-color")?.value || "white";
+      s.font_size = parseInt($("carousel-edit-fontsize")?.value, 10) || 44;
       s.location = $("carousel-input-location")?.value || "";
       s.card_style = $("carousel-select-card-style")?.value || "frosted";
       s.show_swipe_arrow = $("carousel-check-swipe-arrow") ? $("carousel-check-swipe-arrow").checked : (activeCarouselSlide !== 6);
@@ -6750,11 +6764,15 @@
         badgeEl.textContent = `Slide ${slideNum} of 6`;
       }
 
-      if ($("carousel-edit-badge")) $("carousel-edit-badge").value = s.badge_text;
-      if ($("carousel-edit-line1")) $("carousel-edit-line1").value = s.headline_line1;
-      if ($("carousel-edit-line2")) $("carousel-edit-line2").value = s.headline_line2;
-      if ($("carousel-edit-line3")) $("carousel-edit-line3").value = s.headline_line3;
-      if ($("carousel-input-location")) $("carousel-input-location").value = s.location;
+      if ($("carousel-edit-badge")) $("carousel-edit-badge").value = s.badge_text || "";
+      if ($("carousel-edit-line1")) $("carousel-edit-line1").value = s.headline_line1 || "";
+      if ($("carousel-edit-line2")) $("carousel-edit-line2").value = s.headline_line2 || "";
+      if ($("carousel-edit-line3")) $("carousel-edit-line3").value = s.headline_line3 || "";
+      if ($("carousel-edit-cta")) $("carousel-edit-cta").value = s.cta_text || "";
+      if ($("carousel-edit-cta-color")) $("carousel-edit-cta-color").value = s.cta_color || "white";
+      if ($("carousel-edit-fontsize")) $("carousel-edit-fontsize").value = s.font_size || 44;
+      if ($("carousel-fontsize-val")) $("carousel-fontsize-val").textContent = `${s.font_size || 44}px`;
+      if ($("carousel-input-location")) $("carousel-input-location").value = s.location || "";
       if ($("carousel-select-card-style")) $("carousel-select-card-style").value = s.card_style || "frosted";
       if ($("carousel-check-swipe-arrow")) $("carousel-check-swipe-arrow").checked = s.show_swipe_arrow !== false;
 
@@ -6778,7 +6796,7 @@
     }
 
     function renderSingleSlideToCanvas(cvs, s, slideNum) {
-      if (!cvs) return;
+      if (!cvs || !s) return;
       const ctx = cvs.getContext("2d");
       const w = 1080;
       const h = 1350;
@@ -6819,6 +6837,11 @@
         ctx.fillRect(0, 0, w, h);
       }
 
+      // Safe Logo Reference
+      const activeLogo = (typeof sharedLogoImg !== "undefined" && sharedLogoImg && sharedLogoImg.complete && sharedLogoImg.naturalWidth > 0)
+        ? sharedLogoImg
+        : null;
+
       // Top-Left Brand Logo Capsule (Official Brand Logo + ILoveFinland.net)
       const brandName = "ILoveFinland.net";
       ctx.save();
@@ -6844,8 +6867,8 @@
       ctx.fill();
       ctx.stroke();
 
-      if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-        ctx.drawImage(logoImg, brandX + brandPadX, brandY + brandPadY, logoIconSize, logoIconSize);
+      if (activeLogo) {
+        ctx.drawImage(activeLogo, brandX + brandPadX, brandY + brandPadY, logoIconSize, logoIconSize);
       } else {
         ctx.fillStyle = "#029CD8";
         ctx.font = "26px sans-serif";
@@ -6858,11 +6881,13 @@
 
       // Location Stamp
       let locText = (s.location || "").trim();
-      if (locText && !locText.startsWith("📍")) locText = "📍 " + locText;
-      if (locText && locText !== "📍") {
+      locText = locText.replace(/^(📍\s*)+/, "");
+      if (locText && locText.toLowerCase() !== "finland, finland") {
+        if (locText.toLowerCase() === "finland") locText = "Finland";
+        const fullLoc = "📍 " + locText;
         ctx.save();
         ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
-        const locM = ctx.measureText(locText);
+        const locM = ctx.measureText(fullLoc);
         const locPadX = 22;
         const locPadY = 12;
         const locW = locM.width + locPadX * 2;
@@ -6882,7 +6907,7 @@
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(locText, locX + locPadX, locY + locH - locPadY - 8);
+        ctx.fillText(fullLoc, locX + locPadX, locY + locH - locPadY - 8);
         ctx.restore();
       }
 
@@ -6923,14 +6948,14 @@
       const cardPad = 42;
       const cardW = w - 128;
       const cardX = 64;
-      const cardY = h - 420;
-      const cardH = 356;
+      const cardH = 376;
+      const cardY = h - 440;
 
       ctx.save();
       ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
       ctx.shadowBlur = 35;
       ctx.shadowOffsetY = 16;
-      ctx.fillStyle = s.card_style === "minimal" ? "rgba(1, 37, 71, 0.92)" : "rgba(2, 24, 48, 0.84)";
+      ctx.fillStyle = s.card_style === "minimal" ? "rgba(1, 37, 71, 0.92)" : "rgba(2, 24, 48, 0.86)";
       ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -6971,26 +6996,40 @@
       ctx.restore();
 
       // Headline Lines
-      const line1 = (s.headline_line1 || "").trim();
-      const line2 = (s.headline_line2 || "").trim();
-      const line3 = (s.headline_line3 || "").trim();
-      let titleLines = [];
-      if (line1) titleLines.push(line1);
-      if (line2) titleLines.push(line2);
-      if (line3) titleLines.push(line3);
+      const fs = s.font_size || 44;
+      const lineH = Math.round(fs * 1.25);
+      const maxTitleW = cardW - (cardPad * 2);
 
-      if (titleLines.length === 0) {
-        titleLines = [slideNum === 6 ? "Read the full story at ilovefinland.net" : "Slide details & highlights"];
+      const rawLine1 = (s.headline_line1 || "").trim();
+      const rawLine2 = (s.headline_line2 || "").trim();
+      const rawLine3 = (s.headline_line3 || "").trim();
+
+      let titleLines = [];
+      if (rawLine1 || rawLine2 || rawLine3) {
+        if (rawLine1) titleLines.push(toEditorialTitleCase(rawLine1));
+        if (rawLine2) titleLines.push(toEditorialTitleCase(rawLine2));
+        if (rawLine3) titleLines.push(toEditorialTitleCase(rawLine3));
+      } else {
+        titleLines = [slideNum === 6 ? "Read The Full Story At ILoveFinland.net" : "Slide Details & Highlights"];
       }
 
       ctx.save();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif';
-      let titleY = catY + catH + 46;
-      const lineH = 54;
+      ctx.font = `800 ${fs}px -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif`;
+      let titleY = catY + catH + Math.round(fs * 0.95);
       for (let i = 0; i < Math.min(titleLines.length, 3); i++) {
-        if (i === 2 && line3) ctx.fillStyle = "#00A3FF";
-        ctx.fillText(titleLines[i], cardX + cardPad, titleY);
+        if (i === 2 && rawLine3) {
+          ctx.fillStyle = "#00A3FF";
+        } else {
+          ctx.fillStyle = "#FFFFFF";
+        }
+        let lineToDraw = titleLines[i];
+        if (ctx.measureText(lineToDraw).width > maxTitleW) {
+          while (lineToDraw.length > 3 && ctx.measureText(lineToDraw + "…").width > maxTitleW) {
+            lineToDraw = lineToDraw.slice(0, -1);
+          }
+          lineToDraw += "…";
+        }
+        ctx.fillText(lineToDraw, cardX + cardPad, titleY);
         titleY += lineH;
       }
       ctx.restore();
@@ -7005,15 +7044,20 @@
       ctx.lineTo(cardX + cardW - cardPad, footY - 26);
       ctx.stroke();
 
-      if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-        ctx.drawImage(logoImg, cardX + cardPad, footY - 20, 24, 24);
+      const footerCta = (s.cta_text && s.cta_text.trim())
+        ? s.cta_text.trim()
+        : (slideNum === 6 ? "DISCOVER MORE AT ILOVEFINLAND.NET" : "Read full article");
+      const ctaColor = s.cta_color === "blue" ? "#38BDF8" : "#FFFFFF";
+
+      if (activeLogo) {
+        ctx.drawImage(activeLogo, cardX + cardPad, footY - 20, 24, 24);
         ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-        ctx.fillStyle = "#38BDF8";
-        ctx.fillText(slideNum === 6 ? "Explore more stories" : "Read full article", cardX + cardPad + 32, footY);
+        ctx.fillStyle = ctaColor;
+        ctx.fillText(footerCta, cardX + cardPad + 32, footY);
       } else {
         ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-        ctx.fillStyle = "#38BDF8";
-        ctx.fillText(slideNum === 6 ? "Explore more stories" : "Read full article", cardX + cardPad, footY);
+        ctx.fillStyle = ctaColor;
+        ctx.fillText(footerCta, cardX + cardPad, footY);
       }
 
       ctx.fillStyle = showArrow ? "#38BDF8" : "#94A3B8";
@@ -7062,6 +7106,7 @@
           carouselSlidesData[activeCarouselSlide].photoDataUrl = dataUrl;
           carouselSlidesData[activeCarouselSlide].photoImg = img;
           loadActiveCarouselSlideInputs(activeCarouselSlide);
+          showToast(`Photo uploaded for Slide ${activeCarouselSlide}!`);
         };
         img.src = dataUrl;
       };
@@ -7136,13 +7181,125 @@
       saveActiveCarouselSlideInputs();
       renderActiveCarouselSlideCanvas();
     });
+    $("btn-carousel-autotitlecase")?.addEventListener("click", () => {
+      const l1 = $("carousel-edit-line1");
+      const l2 = $("carousel-edit-line2");
+      const l3 = $("carousel-edit-line3");
+      if (l1) l1.value = toEditorialTitleCase(l1.value);
+      if (l2) l2.value = toEditorialTitleCase(l2.value);
+      if (l3) l3.value = toEditorialTitleCase(l3.value);
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+      showToast("Applied editorial title case to slide lines");
+    });
+    $("btn-carousel-rerender")?.addEventListener("click", () => {
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+      showToast("Re-rendered slide canvas");
+    });
+
     $("carousel-edit-badge")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-edit-line1")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-edit-line2")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-edit-line3")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-cta")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-cta-color")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-fontsize")?.addEventListener("input", (e) => {
+      const val = e.target.value;
+      if ($("carousel-fontsize-val")) $("carousel-fontsize-val").textContent = `${val}px`;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    document.querySelectorAll(".btn-preset-carousel-cta").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const ctaVal = btn.dataset.cta || "";
+        if ($("carousel-edit-cta")) $("carousel-edit-cta").value = ctaVal;
+        saveActiveCarouselSlideInputs();
+        renderActiveCarouselSlideCanvas();
+      });
+    });
     $("carousel-input-location")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-select-card-style")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-check-swipe-arrow")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+
+    // Dedicated Save Changes to Article & Post from Carousel Deck
+    $("btn-save-carousel-changes")?.addEventListener("click", async () => {
+      if (!currentPackageId) {
+        showToast("⚠️ No active package loaded to save.", "warning");
+        return;
+      }
+      const saveBtn = $("btn-save-carousel-changes");
+      const origHtml = saveBtn ? saveBtn.innerHTML : "";
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span>⏳ Saving...</span>`;
+      }
+      try {
+        saveActiveCarouselSlideInputs();
+        const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
+        const adjustments = {
+          badge_text: $("static-edit-badge")?.value || "NEWS",
+          headline_line1: $("static-edit-line1")?.value || "",
+          headline_line2: $("static-edit-line2")?.value || "",
+          headline_line3: $("static-edit-line3")?.value || "",
+          cta_text: $("static-edit-cta")?.value || "",
+          cta_color: $("static-edit-cta-color")?.value || "white",
+          line1_font_size: fs,
+          line2_font_size: fs,
+          line3_font_size: fs,
+          caption: $("static-edit-caption")?.value || "",
+          hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
+          carousel_slides: getCleanCarouselSlidesForSave(),
+          show_swipe_arrow: $("ai-check-swipe-arrow")?.checked || false,
+          location_stamp: $("ai-input-location")?.value || "",
+          card_style: $("ai-select-card-style")?.value || "frosted",
+        };
+
+        await api("/api/package/adjust-static-post", {
+          method: "POST",
+          body: JSON.stringify({ package_id: currentPackageId, adjustments }),
+        });
+
+        if ($("wp-field-headline")) {
+          const fields = {
+            headline: $("wp-field-headline")?.value || "",
+            short_description: $("wp-field-dek")?.value || "",
+            language: $("wp-field-lang")?.value || "English",
+            section: $("wp-field-section")?.value || "News",
+            category: $("wp-field-category")?.value || "Transport & Infrastructure",
+            body_html: $("wp-code-textarea")?.value || "",
+            region: $("wp-field-region")?.value || "Finland",
+            city_location: $("wp-field-city")?.value || "",
+            exact_address: $("wp-field-address")?.value || $("wp-field-place")?.value || "",
+            event_datetime_venue: $("wp-field-event")?.value || "",
+            tags: $("wp-field-tags")?.value || "",
+            seo_title: $("wp-field-seo-title")?.value || "",
+            meta_description: $("wp-field-meta-desc")?.value || "",
+          };
+          await api("/api/package/update-article", {
+            method: "POST",
+            body: JSON.stringify({ package_id: currentPackageId, fields }),
+          });
+        }
+
+        await loadPackage(currentPackageId);
+        showToast("✅ Saved Carousel & Post changes to database!", "success");
+        if (saveBtn) {
+          saveBtn.innerHTML = `<span>✓ Saved Changes!</span>`;
+          setTimeout(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = origHtml;
+          }, 2000);
+        }
+      } catch (err) {
+        console.error("Save carousel error:", err);
+        showToast(`❌ Failed to save: ${err.message || err}`, "error");
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = origHtml;
+        }
+      }
+    });
 
     // Save Article Edits
     $("btn-save-article-edits")?.addEventListener("click", async () => {
