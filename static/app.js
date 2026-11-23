@@ -1526,39 +1526,59 @@
 
     // 3. Top-Right Destination Tag (📍 Location Stamp)
     const locInput = $("ai-input-location");
-    let locationText = locInput && locInput.value.trim() ? locInput.value.trim() : "";
-    if (!locationText) {
-      const storyCity = (currentStaticPost && currentStaticPost.city) || (typeof activeStory !== "undefined" && activeStory && activeStory.city) || "Finland";
-      locationText = "📍 " + (storyCity.charAt(0).toUpperCase() + storyCity.slice(1)) + ", Finland";
-      if (locInput) locInput.value = locationText;
+    let locationText = locInput && locInput.value !== undefined ? locInput.value.trim() : "";
+    
+    // Auto-detect location only if user hasn't explicitly cleared the field
+    if (!locationText && locInput && locInput.dataset.userCleared !== "true") {
+      const storyCity = (currentStaticPost && currentStaticPost.city) || (typeof activeStory !== "undefined" && activeStory && activeStory.city) || "";
+      if (storyCity && storyCity.trim().toLowerCase() !== "finland") {
+        locationText = "📍 " + (storyCity.charAt(0).toUpperCase() + storyCity.slice(1)) + ", Finland";
+      } else if (storyCity && storyCity.trim().toLowerCase() === "finland") {
+        locationText = "📍 Finland";
+      }
+      if (locationText && locInput) locInput.value = locationText;
     }
-    if (!locationText.startsWith("📍")) locationText = "📍 " + locationText;
 
-    ctx.save();
-    ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
-    const locM = ctx.measureText(locationText);
-    const locPadX = 22;
-    const locPadY = 12;
-    const locW = locM.width + locPadX * 2;
-    const locH = brandH; // Matches brand pill height perfectly!
-    const locX = w - 64 - locW;
-    const locY = 64;
+    // Clean up any duplicated "Finland, Finland" bugs
+    locationText = locationText.replace(/,\s*Finland,\s*Finland/gi, ", Finland")
+                               .replace(/Finland,\s*Finland/gi, "Finland")
+                               .trim();
 
-    ctx.fillStyle = "rgba(1, 28, 56, 0.75)";
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    if (typeof ctx.roundRect === "function") {
-      ctx.roundRect(locX, locY, locW, locH, 999);
-    } else {
-      ctx.rect(locX, locY, locW, locH);
+    if (locationText && !locationText.startsWith("📍") && locationText.toLowerCase() !== "none" && locationText.toLowerCase() !== "off") {
+      locationText = "📍 " + locationText;
     }
-    ctx.fill();
-    ctx.stroke();
+    if (locationText === "📍" || locationText.toLowerCase() === "none" || locationText.toLowerCase() === "off") {
+      locationText = "";
+    }
 
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillText(locationText, locX + locPadX, locY + locH - locPadY - 8);
-    ctx.restore();
+    // Only draw the top-right location badge if there is a real, non-empty location!
+    if (locationText) {
+      ctx.save();
+      ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
+      const locM = ctx.measureText(locationText);
+      const locPadX = 22;
+      const locPadY = 12;
+      const locW = locM.width + locPadX * 2;
+      const locH = brandH; // Matches brand pill height perfectly!
+      const locX = w - 64 - locW;
+      const locY = 64;
+
+      ctx.fillStyle = "rgba(1, 28, 56, 0.75)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(locX, locY, locW, locH, 999);
+      } else {
+        ctx.rect(locX, locY, locW, locH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(locationText, locX + locPadX, locY + locH - locPadY - 8);
+      ctx.restore();
+    }
 
     // 4. Modern Frosted Glass Floating Card (Bottom)
     const styleSelect = $("ai-select-card-style");
@@ -1647,20 +1667,32 @@
     ctx.lineTo(cardX + cardW - cardPad, footY - 26);
     ctx.stroke();
 
+    // Dynamic category-based left CTA text
+    let leftCtaText = "Read full article";
+    const catUpper = (catText || "").toUpperCase();
+    if (catUpper.includes("TRAVEL") || catUpper.includes("GUIDE") || catUpper.includes("TRIP") || catUpper.includes("HIKE")) {
+      leftCtaText = "Read full guide & tips";
+    } else if (catUpper.includes("CULTURE") || catUpper.includes("FOOD") || catUpper.includes("STORY") || catUpper.includes("LIFESTYLE")) {
+      leftCtaText = "Explore the full story";
+    } else if (catUpper.includes("NEWS") || catUpper.includes("ANALYSIS") || catUpper.includes("INSIGHT") || catUpper.includes("BUSINESS")) {
+      leftCtaText = "Read full article";
+    }
+
     if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
       ctx.drawImage(logoImg, cardX + cardPad, footY - 20, 24, 24);
       ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
       ctx.fillStyle = "#38BDF8";
-      ctx.fillText("Read full guide & route details", cardX + cardPad + 32, footY);
+      ctx.fillText(leftCtaText, cardX + cardPad + 32, footY);
     } else {
       ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
       ctx.fillStyle = "#38BDF8";
-      ctx.fillText("Read full guide & route details", cardX + cardPad, footY);
+      ctx.fillText(leftCtaText, cardX + cardPad, footY);
     }
 
     ctx.fillStyle = "#94A3B8";
     ctx.textAlign = "right";
-    ctx.fillText("Tap link in bio →", cardX + cardW - cardPad, footY);
+    ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    ctx.fillText("Link in bio • ilovefinland.net →", cardX + cardW - cardPad, footY);
     ctx.restore();
   }
 
@@ -6497,7 +6529,12 @@
     $("ai-select-card-style")?.addEventListener("change", () => {
       if (cachedAISuggestedRender) cachedAISuggestedRender();
     });
-    $("ai-input-location")?.addEventListener("input", () => {
+    $("ai-input-location")?.addEventListener("input", (e) => {
+      if (e.target && !e.target.value.trim()) {
+        e.target.dataset.userCleared = "true";
+      } else if (e.target) {
+        e.target.dataset.userCleared = "false";
+      }
       if (cachedAISuggestedRender) cachedAISuggestedRender();
     });
 
