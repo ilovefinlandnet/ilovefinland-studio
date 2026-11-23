@@ -2092,5 +2092,67 @@ def handle_extract_flashcards(payload: Dict[str, Any], db_path: str = FINNISH_LA
     return {"ok": True, "cards": cards, "model": model_used, "usage": get_usage_stats(db_path)}, 200
 
 
+def handle_pronunciation_check(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    """Listen to a learner's spoken Finnish audio clip and give natural pronunciation feedback + score."""
+    target_phrase = (payload.get("target_phrase") or "").strip()[:200]
+    audio_b64 = (payload.get("audio_base64") or "").strip()
+    mime_type = (payload.get("mime_type") or "audio/webm").strip().lower()
+    roast_mode = bool(payload.get("roast_mode", True))
+    if not target_phrase or not audio_b64:
+        return {"ok": False, "error": "INVALID_INPUT", "message": "Please record your voice saying the phrase first."}, 400
+
+    limit_err = _check_rate_limits(db_path)
+    if limit_err:
+        return limit_err, 429
+
+    parts, val_err = _validate_and_build_parts(
+        f'The learner tried to pronounce this Finnish phrase: "{target_phrase}". Listen carefully to their audio.',
+        [{"mime_type": mime_type, "data_base64": audio_b64}],
+    )
+    if val_err:
+        return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
+
+    tone = (
+        "Be a funny, honest Finnish friend (playfully tease them if they butchered it, praise them warmly if they nailed it!)."
+        if roast_mode
+        else "Be a warm, encouraging Finnish pronunciation coach."
+    )
+    sys_prompt = (
+        f"{tone} Return ONLY valid JSON with keys: "
+        "score (integer 1 to 10), heard (what you actually heard them say), "
+        "verdict (short 1-line punchy reaction), tip (1 concrete pronunciation tip focusing on Finnish vowels ä/ö/y, stress on 1st syllable, or double letters)."
+    )
+    text_out, model_used, ai_err = _call_gemini_generate(
+        system_instruction=sys_prompt,
+        contents=[{"role": "user", "parts": parts}],
+        expect_json=True,
+        temperature=0.35,
+        max_output_tokens=500,
+    )
+    if ai_err:
+        status = 429 if "QUOTA" in ai_err.get("error", "") else 503
+        ai_err["usage"] = get_usage_stats(db_path)
+        return ai_err, status
+
+    try:
+        parsed = json.loads((text_out or "{}").strip().strip("`"))
+    except Exception:
+        parsed = {"score": 7, "heard": target_phrase, "verdict": "Nice try!", "tip": "Keep stress on the first syllable."}
+
+    _record_usage(is_cache_hit=False, db_path=db_path)
+    return {
+        "ok": True,
+        "feedback": {
+            "score": int(parsed.get("score") or 7),
+            "heard": str(parsed.get("heard") or ""),
+            "verdict": str(parsed.get("verdict") or "Good effort!"),
+            "tip": str(parsed.get("tip") or ""),
+        },
+        "model": model_used,
+        "usage": get_usage_stats(db_path),
+    }, 200
+
+
+
 
 

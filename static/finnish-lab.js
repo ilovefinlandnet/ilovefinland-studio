@@ -70,7 +70,38 @@
     podcastCreating: false,
     extractingCards: false,
     speakingMsgId: null,
+    gameTab: "street", // street | speak
+    streetIdx: 0,
+    streetScore: 0,
+    streetFeedback: null,
+    speakPhraseIdx: 0,
+    speakRecording: false,
+    speakRecorder: null,
+    speakResult: null,
+    knownAppVersion: null,
   };
+
+  const STREET_GAME_QUESTIONS = [
+    { spoken: "Mä en tiiä.", formal: "Minä en tiedä.", en: "I don't know.", opts: ["I don't know.", "I am going home.", "Wait a second."] },
+    { spoken: "Mä meen himaan.", formal: "Minä menen kotiin.", en: "I'm going home.", opts: ["I'm hungry.", "I'm going home.", "See you tomorrow."] },
+    { spoken: "Ootsä valmis?", formal: "Oletko sinä valmis?", en: "Are you ready?", opts: ["Are you tired?", "Are you ready?", "Where are you?"] },
+    { spoken: "Kaks kahvii, kiitos.", formal: "Kaksi kahvia, kiitos.", en: "Two coffees, please.", opts: ["Two coffees, please.", "One tea, thanks.", "No milk, thanks."] },
+    { spoken: "Sori, mä oon myöhässä.", formal: "Anteeksi, minä olen myöhässä.", en: "Sorry, I'm late.", opts: ["Sorry, I forgot.", "Sorry, I'm late.", "Sorry, I don't understand."] },
+    { spoken: "Ei jaksa.", formal: "En jaksa.", en: "I can't be bothered / Too tired.", opts: ["No problem.", "I can't be bothered / Too tired.", "I don't have money."] },
+    { spoken: "Ihan sama.", formal: "Aivan sama.", en: "Whatever / I don't care.", opts: ["Same to you.", "Whatever / I don't care.", "Very good."] },
+    { spoken: "Oisko sulla aikaa?", formal: "Olisiko sinulla aikaa?", en: "Would you have time?", opts: ["Do you have a pen?", "Would you have time?", "What time is it?"] },
+    { spoken: "Mitä sä teet huomenna?", formal: "Mitä sinä teet huomenna?", en: "What are you doing tomorrow?", opts: ["Where were you yesterday?", "What are you doing tomorrow?", "How is the weather?"] },
+    { spoken: "Vituttaa.", formal: "Minua ärsyttää todella paljon.", en: "I'm pissed off / Really annoyed.", opts: ["I'm so excited.", "I'm pissed off / Really annoyed.", "I'm freezing cold."] },
+  ];
+
+  const SPEAK_PHRASES = [
+    { fi: "Hyvää huomenta!", en: "Good morning!", focus: "Long 'ää' in hyvää" },
+    { fi: "Mitä kuuluu?", en: "How are you?", focus: "Double 'uu' in kuuluu" },
+    { fi: "Saisinko yhden kahvin?", en: "Could I have one coffee?", focus: "Clear 'y' in yhden" },
+    { fi: "Anteeksi, voitko toistaa?", en: "Excuse me, can you repeat?", focus: "Double 'ee' in anteeksi" },
+    { fi: "Tänään on kylmä sää.", en: "Today the weather is cold.", focus: "Crisp 'ä' and 'y'" },
+    { fi: "Mä meen nyt kotiin.", en: "I'm going home now.", focus: "Natural spoken flow" },
+  ];
 
   /* ---------- FUN ROAST MODE (ESCALATING MISTAKE SIGNATURE) ---------- */
   function isRoastEnabled() {
@@ -1657,13 +1688,95 @@
               <span style="font-size:0.79rem;color:#94a3b8;line-height:1.4;">Worksheet check, photo-to-flashcards, 17 A1 guides &amp; roleplay</span>
             </button>
           </div>
+
+          <!-- Luxury Card 3: Street vs Class Game & Pronunciation Check -->
+          <button type="button" class="fl-study-tile" data-fl-study="game" style="width:100%;flex-direction:row;align-items:center;gap:14px;border-color:rgba(168,85,247,0.35);background:linear-gradient(135deg, rgba(88,28,135,0.22), rgba(13,22,40,0.9));">
+            <div class="fl-study-icon-badge" style="width:48px;height:48px;font-size:1.4rem;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">⚡</div>
+            <div style="flex:1;min-width:0;">
+              <strong style="font-size:0.98rem;display:block;">Street Finnish Game &amp; 🎙️ Speak Check</strong>
+              <span style="font-size:0.79rem;color:#cbd5e1;line-height:1.4;display:block;">1-min Puhekieli tap quiz (with Roast Mode!) + say Finnish out loud for AI pronunciation score</span>
+            </div>
+          </button>
         </div>
       `;
     }
     const back = `<button type="button" class="fl-btn sm" id="fl-study-back" style="margin-bottom:10px;">← Back to Study</button>`;
     if (state.studyTool === "podcast") return back + renderPodcastTool();
     if (state.studyTool === "lesson") return back + renderLessonTool();
+    if (state.studyTool === "game") return back + renderGameAndSpeakTool();
     return back + renderHelperHubTool();
+  }
+
+  function renderGameAndSpeakTool() {
+    const q = STREET_GAME_QUESTIONS[state.streetIdx % STREET_GAME_QUESTIONS.length];
+    const sp = SPEAK_PHRASES[state.speakPhraseIdx % SPEAK_PHRASES.length];
+    return `
+      <div class="fl-card" style="padding:18px;border-radius:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
+          <button type="button" class="fl-btn sm ${state.gameTab === "street" ? "active" : ""}" data-fl-gtab="street">⚡ Street vs. Class</button>
+          <button type="button" class="fl-btn sm ${state.gameTab === "speak" ? "active" : ""}" data-fl-gtab="speak">🎙️ Say It Out Loud</button>
+        </div>
+
+        ${
+          state.gameTab === "street"
+            ? `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:#94a3b8;margin-bottom:10px;">
+                 <span>Question ${(state.streetIdx % STREET_GAME_QUESTIONS.length) + 1} / ${STREET_GAME_QUESTIONS.length}</span>
+                 <span style="color:#6ee7b7;font-weight:700;">Score: ${state.streetScore}</span>
+               </div>
+               <div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
+                 <div style="font-size:0.72rem;color:#7dd3fc;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">A Finn on the street says:</div>
+                 <div style="font-size:1.35rem;font-weight:800;color:#fff;margin-bottom:8px;">“${esc(q.spoken)}”</div>
+                 <button type="button" class="fl-mini-btn" data-fl-speak="${esc(q.spoken)}">🔊 Hear it</button>
+               </div>
+               <div style="display:flex;flex-direction:column;gap:8px;">
+                 ${q.opts
+                   .map(
+                     (opt) => `<button type="button" class="fl-btn" style="text-align:left;padding:12px 14px;" data-fl-street-ans="${esc(opt)}">${esc(opt)}</button>`
+                   )
+                   .join("")}
+               </div>
+               ${
+                 state.streetFeedback
+                   ? `<div style="margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.05);font-size:0.84rem;">
+                        ${state.streetFeedback.roast ? `<div class="fl-roast-banner">${esc(state.streetFeedback.roast)}</div>` : ""}
+                        <div style="font-weight:700;color:${state.streetFeedback.ok ? "#6ee7b7" : "#fca5a5"};">${state.streetFeedback.ok ? "✅ Oikein!" : "❌ Not quite!"}</div>
+                        <div style="color:#cbd5e1;margin-top:4px;"><strong>Street:</strong> ${esc(q.spoken)} • <strong>Book:</strong> ${esc(q.formal)}</div>
+                        <div style="color:#7dd3fc;margin-top:2px;">🇬🇧 ${esc(q.en)}</div>
+                        <button type="button" class="fl-btn primary sm" id="fl-street-next" style="margin-top:10px;width:100%;">Next Phrase →</button>
+                      </div>`
+                   : ""
+               }`
+            : `<div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
+                 <div style="font-size:0.72rem;color:#7dd3fc;margin-bottom:4px;">SAY THIS OUT LOUD (${(state.speakPhraseIdx % SPEAK_PHRASES.length) + 1}/${SPEAK_PHRASES.length})</div>
+                 <div style="font-size:1.35rem;font-weight:800;color:#fff;">${esc(sp.fi)}</div>
+                 <div style="font-size:0.84rem;color:#94a3b8;margin-top:4px;">🇬🇧 ${esc(sp.en)}</div>
+                 <div style="font-size:0.74rem;color:#fde047;margin-top:4px;">Focus: ${esc(sp.focus)}</div>
+                 <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                   <button type="button" class="fl-btn sm" data-fl-speak="${esc(sp.fi)}">🔊 Hear First</button>
+                   <button type="button" class="fl-btn sm" id="fl-speak-next-phrase">Next Phrase →</button>
+                 </div>
+               </div>
+               <div style="text-align:center;">
+                 ${
+                   state.speakRecording
+                     ? `<button type="button" class="fl-btn danger" id="fl-speak-stop-btn" style="padding:13px 26px;border-radius:999px;font-weight:800;">⏹️ Stop &amp; Check My Voice</button>`
+                     : `<button type="button" class="fl-pod-play-cta" id="fl-speak-start-btn">🎙️ Tap &amp; Say It Out Loud</button>`
+                 }
+               </div>
+               ${
+                 state.speakResult
+                   ? `<div style="margin-top:14px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.06);font-size:0.86rem;line-height:1.5;">
+                        ${state.speakResult.roast ? `<div class="fl-roast-banner">${esc(state.speakResult.roast)}</div>` : ""}
+                        <div style="font-size:1.05rem;font-weight:800;color:${state.speakResult.score >= 7 ? "#6ee7b7" : "#fde047"};">Score: ${state.speakResult.score}/10</div>
+                        <div style="color:#fff;margin-top:4px;"><strong>${esc(state.speakResult.verdict)}</strong></div>
+                        ${state.speakResult.heard ? `<div style="color:#94a3b8;margin-top:4px;">Heard: <em>"${esc(state.speakResult.heard)}"</em></div>` : ""}
+                        ${state.speakResult.tip ? `<div style="color:#7dd3fc;margin-top:4px;">💡 ${esc(state.speakResult.tip)}</div>` : ""}
+                      </div>`
+                   : ""
+               }`
+        }
+      </div>
+    `;
   }
 
   function renderPodcastTool() {
@@ -2295,6 +2408,81 @@
     root.querySelectorAll("[data-fl-study]").forEach((b) => { b.onclick = () => { state.studyTool = b.getAttribute("data-fl-study"); state.lessonStep = 1; renderActiveView(); }; });
     root.querySelector("#fl-study-back")?.addEventListener("click", () => { state.studyTool = null; renderActiveView(); });
 
+    // Street vs Class Game & Pronunciation Check events
+    root.querySelectorAll("[data-fl-gtab]").forEach((b) => { b.onclick = () => { state.gameTab = b.getAttribute("data-fl-gtab"); renderActiveView(); }; });
+    root.querySelectorAll("[data-fl-street-ans]").forEach((b) => {
+      b.onclick = () => {
+        const q = STREET_GAME_QUESTIONS[state.streetIdx % STREET_GAME_QUESTIONS.length];
+        const ok = b.getAttribute("data-fl-street-ans") === q.en;
+        if (ok) {
+          state.streetScore++;
+          getRoastLine(false);
+          state.streetFeedback = { ok: true, roast: "" };
+        } else {
+          state.streetFeedback = { ok: false, roast: getRoastLine(true) };
+        }
+        renderActiveView();
+      };
+    });
+    root.querySelector("#fl-street-next")?.addEventListener("click", () => {
+      state.streetIdx++;
+      state.streetFeedback = null;
+      renderActiveView();
+    });
+    root.querySelector("#fl-speak-next-phrase")?.addEventListener("click", () => {
+      state.speakPhraseIdx++;
+      state.speakResult = null;
+      renderActiveView();
+    });
+    root.querySelector("#fl-speak-start-btn")?.addEventListener("click", async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast("Microphone not supported here.", "error");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "audio/webm";
+        const cleanMime = mimeType.split(";")[0];
+        const rec = new MediaRecorder(stream, { mimeType });
+        const chunks = [];
+        state.speakRecorder = rec;
+        state.speakRecording = true;
+        state.speakResult = null;
+        rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
+        rec.onstop = async () => {
+          stream.getTracks().forEach((t) => t.stop());
+          state.speakRecording = false;
+          renderActiveView();
+          const blob = new Blob(chunks, { type: cleanMime });
+          const b64 = await blobToBase64(blob);
+          const sp = SPEAK_PHRASES[state.speakPhraseIdx % SPEAK_PHRASES.length];
+          toast("⏳ Checking your Finnish pronunciation...", "info");
+          try {
+            const res = await flApi("/api/finnish-lab/pronunciation-check", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ target_phrase: sp.fi, audio_base64: b64, mime_type: cleanMime, roast_mode: isRoastEnabled() }),
+            });
+            const fb = res.feedback || {};
+            const roast = (fb.score || 7) < 6 ? getRoastLine(true) : (getRoastLine(false), "");
+            state.speakResult = { ...fb, roast };
+          } catch (err) {
+            toast(err.message || "Could not check pronunciation.", "error");
+          }
+          renderActiveView();
+        };
+        rec.start();
+        renderActiveView();
+      } catch (_) {
+        toast("Microphone permission denied.", "error");
+      }
+    });
+    root.querySelector("#fl-speak-stop-btn")?.addEventListener("click", () => {
+      if (state.speakRecorder && state.speakRecording) {
+        try { state.speakRecorder.stop(); } catch (_) {}
+      }
+    });
+
     // Walk & Listen Podcast controls
     root.querySelector("#fl-pod-create-btn")?.addEventListener("click", () => {
       createCustomPodcastEpisode(document.getElementById("fl-pod-custom-topic")?.value || "");
@@ -2571,11 +2759,52 @@
     return false; // Let Studio goBack() return to previous Studio tab
   }
 
+  /* ---------- SMART AUTO-REFRESH (NEW VERSION & ADMIN PENDING USERS) ---------- */
+  function startSmartAutoRefresh() {
+    if (window.__flAutoRefreshStarted) return;
+    window.__flAutoRefreshStarted = true;
+
+    // 1. Check for new app version every 60s (auto-reloads safely only when completely idle!)
+    const checkVersion = async () => {
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+        const d = await res.json().catch(() => ({}));
+        if (!d.app_version) return;
+        if (!state.knownAppVersion) {
+          state.knownAppVersion = d.app_version;
+          return;
+        }
+        if (d.app_version !== state.knownAppVersion) {
+          const inp = document.getElementById("fl-chat-input");
+          const isTyping = inp && inp.value && inp.value.trim().length > 0;
+          if (!state.isRecording && !state.isLiveTranslating && !state.isSending && !state.speakRecording && !isTyping) {
+            toast("✨ New update ready — refreshing...", "info");
+            setTimeout(() => window.location.reload(), 900);
+          }
+        }
+      } catch (_) {}
+    };
+    checkVersion();
+    setInterval(checkVersion, 60000);
+
+    // 2. Auto-refresh Admin pending users list every 15s while Settings drawer is open
+    setInterval(async () => {
+      if (state.role === "admin" && state.drawerOpen && state.drawerTab === "settings") {
+        const prevLen = (state.adminUsers || []).length;
+        await refreshAdminUsers();
+        if ((state.adminUsers || []).length !== prevLen) {
+          renderActiveView();
+        }
+      }
+    }, 15000);
+  }
+
   /* ---------- INIT ---------- */
   async function initFinnishLab() {
     await Promise.all([loadAllData(), refreshRole()]);
     mountFloatingAndSidePanel();
     renderActiveView();
+    startSmartAutoRefresh();
     if (state.role !== "guest") {
       refreshStatus();
       autoPullSync();

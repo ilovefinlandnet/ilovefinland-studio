@@ -512,6 +512,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "app": "ILoveFinland Studio",
+                    "app_version": "74.0",
                     "milestone": 2,
                     "integrations": INTEGRATIONS_STATUS,
                 }
@@ -2644,6 +2645,11 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
 
             if path == "/api/finnish-lab/extract-flashcards":
                 res, status_code = finnish_lab_engine.handle_extract_flashcards(body or {})
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/pronunciation-check":
+                res, status_code = finnish_lab_engine.handle_pronunciation_check(body or {})
                 self._send_json(res, status=status_code)
                 return
 
