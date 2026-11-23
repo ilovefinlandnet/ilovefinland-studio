@@ -279,12 +279,15 @@
 
   function renderMarkdownLite(md) {
     let h = esc(md || "");
-    h = h.replace(/^### (.+)$/gm, "<h3>$1</h3>");
-    h = h.replace(/^## (.+)$/gm, "<h3>$1</h3>");
-    h = h.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    h = h.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    h = h.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
+    h = h.replace(/^##\s+(.+)$/gm, "<h3>$1</h3>");
+    // Convert BOTH "* item" and "- item" markdown bullets FIRST so "*" bullets never collide with italics!
+    h = h.replace(/^\s*[*-]\s+(.+)$/gm, "<div style='padding-left:12px;'>• $1</div>");
+    h = h.replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
+    h = h.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
     h = h.replace(/`([^`]+)`/g, "<code style='background:#061428;padding:1px 5px;border-radius:4px;color:#7dd3fc;'>$1</code>");
-    h = h.replace(/^- (.+)$/gm, "<div style='padding-left:12px;'>• $1</div>");
+    // Strip any leftover unmatched stray asterisks so raw "*" never leaks into UI bubbles
+    h = h.replace(/\*/g, "");
     h = h.replace(/\n/g, "<br/>");
     return h;
   }
@@ -1473,7 +1476,9 @@
       <div class="fl-app">
         <!-- Top Bar: [☰]    [ Chat | Study ]    [+] -->
         <header class="fl-header">
-          <button type="button" class="fl-icon-circle" id="fl-open-drawer" title="Chats, Flashcards, Notes & Settings">☰</button>
+          <button type="button" class="fl-icon-circle" id="fl-open-drawer" title="Saved Chats, Flashcards, Notes & Settings" aria-label="Open Finnish Lab menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          </button>
 
           <div class="fl-segment" role="tablist">
             <button type="button" class="fl-seg-btn ${state.mode === "chat" ? "active" : ""}" data-fl-mode="chat">Chat</button>
@@ -1647,7 +1652,7 @@
     `;
   }
 
-  /* ---------- MODE 2: HIGH-END STUDY HUB (3 CLEAN LUXURY CARDS) ---------- */
+  /* ---------- MODE 2: HIGH-END STUDY HUB (UNIFIED 2x2 LUXURY GRID) ---------- */
   function renderStudyMode(prog) {
     if (!state.studyTool) {
       const cardCount = (state.flashcards || []).length;
@@ -1660,41 +1665,38 @@
             <span style="color:#38bdf8;font-weight:700;">CEFR ${esc(DB.getSettings().level || "A1")}</span>
           </div>
 
-          <!-- Featured Hero Card 1: Walk & Listen Podcast Studio -->
-          <button type="button" class="fl-study-hero-card" data-fl-study="podcast">
-            <div class="fl-study-icon-badge">🎧</div>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-                <strong style="font-size:1.06rem;letter-spacing:-0.01em;">Walk &amp; Listen Podcast</strong>
-                <span style="font-size:0.65rem;padding:2px 7px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:800;">AI VOICE</span>
+          <!-- Unified 2x2 Luxury Card Grid (Equal Heights & Consistent Spacing on iPhone, iPad & PC!) -->
+          <div class="fl-study-grid" style="gap:14px;">
+            <button type="button" class="fl-study-tile" data-fl-study="podcast" style="border-color:rgba(56,189,248,0.42);background:radial-gradient(circle at 85% 15%, rgba(56,189,248,0.2), transparent 60%), rgba(13,24,46,0.92);">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">🎧</div>
+                <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:800;">AI VOICE</span>
               </div>
-              <span style="font-size:0.81rem;color:#cbd5e1;line-height:1.4;display:block;">
-                Natural human voice episodes + create custom episodes on any topic. Put your phone in your pocket!
-              </span>
-            </div>
-          </button>
-
-          <div class="fl-study-grid">
-            <button type="button" class="fl-study-tile" data-fl-study="lesson">
-              <div class="fl-study-icon-badge" style="width:44px;height:44px;font-size:1.3rem;">📖</div>
-              <strong style="font-size:0.98rem;">Today's 5-Min Lesson</strong>
-              <span style="font-size:0.79rem;color:#94a3b8;line-height:1.4;">5 words (human voice) → 1 grammar rule → 1 quick check</span>
+              <strong style="font-size:1rem;">Walk &amp; Listen Podcast</strong>
+              <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Human-voice episodes + make custom episodes on any topic while walking.</span>
             </button>
+
+            <button type="button" class="fl-study-tile" data-fl-study="lesson">
+              <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">📖</div>
+              <strong style="font-size:1rem;">Today's 5-Min Lesson</strong>
+              <span style="font-size:0.8rem;color:#94a3b8;line-height:1.45;">5 daily words (human voice) → 1 simple grammar rule → 1 quick check.</span>
+            </button>
+
             <button type="button" class="fl-study-tile" data-fl-study="helper">
-              <div class="fl-study-icon-badge" style="width:44px;height:44px;font-size:1.3rem;">📝</div>
-              <strong style="font-size:0.98rem;">Homework &amp; Vocab Snap</strong>
-              <span style="font-size:0.79rem;color:#94a3b8;line-height:1.4;">Worksheet check, photo-to-flashcards, 17 A1 guides &amp; roleplay</span>
+              <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">📝</div>
+              <strong style="font-size:1rem;">Homework &amp; Vocab Snap</strong>
+              <span style="font-size:0.8rem;color:#94a3b8;line-height:1.45;">Worksheet helper, photo-to-flashcards, 17 A1 grammar guides &amp; roleplay.</span>
+            </button>
+
+            <button type="button" class="fl-study-tile" data-fl-study="game" style="border-color:rgba(168,85,247,0.38);background:radial-gradient(circle at 85% 15%, rgba(168,85,247,0.18), transparent 60%), rgba(13,22,40,0.92);">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">⚡</div>
+                <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(168,85,247,0.22);color:#e9d5ff;font-weight:800;">FUN</span>
+              </div>
+              <strong style="font-size:1rem;">Street Game &amp; Speak</strong>
+              <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">1-min spoken Finnish (Puhekieli) quiz + AI pronunciation check out loud.</span>
             </button>
           </div>
-
-          <!-- Luxury Card 3: Street vs Class Game & Pronunciation Check -->
-          <button type="button" class="fl-study-tile" data-fl-study="game" style="width:100%;flex-direction:row;align-items:center;gap:14px;border-color:rgba(168,85,247,0.35);background:linear-gradient(135deg, rgba(88,28,135,0.22), rgba(13,22,40,0.9));">
-            <div class="fl-study-icon-badge" style="width:48px;height:48px;font-size:1.4rem;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">⚡</div>
-            <div style="flex:1;min-width:0;">
-              <strong style="font-size:0.98rem;display:block;">Street Finnish Game &amp; 🎙️ Speak Check</strong>
-              <span style="font-size:0.79rem;color:#cbd5e1;line-height:1.4;display:block;">1-min Puhekieli tap quiz (with Roast Mode!) + say Finnish out loud for AI pronunciation score</span>
-            </div>
-          </button>
         </div>
       `;
     }

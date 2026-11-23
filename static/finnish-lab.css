@@ -88,25 +88,34 @@ body.fl-focus-mode .sidebar {
   box-sizing: border-box;
 }
 
-/* Top Bar — Always Pinned at Top of Flex Shell (Zero Jumping on iPhone, iPad & PC!) */
+/* Top Bar — Mathematically Centered 3-Column Grid (0px off-center on iPhone, iPad & PC!) */
 .fl-header {
   flex-shrink: 0;
   z-index: 60;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 0 10px;
-  background: rgba(6, 13, 28, 0.88);
+  gap: 8px;
+  padding: 10px 0;
+  background: rgba(6, 13, 28, 0.9);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
+.fl-header > :first-child { justify-self: start; }
+.fl-header > :nth-child(2) { justify-self: center; }
+.fl-header > :last-child { justify-self: end; }
 
-/* Admin mobile header offset ONLY <= 768px where Studio mobile-header is position:fixed */
+/* Ensure Studio sidebar scrolls cleanly on 900px laptops so Sign Out is NEVER clipped */
+#sidebar-drawer {
+  overflow-y: auto !important;
+  max-height: 100dvh !important;
+}
+
+/* Admin mobile header offset ONLY <= 768px where Studio mobile-header is position:fixed (exact 52px flush!) */
 @media (max-width: 768px) {
   body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)) {
-    padding-top: calc(68px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
     box-sizing: border-box !important;
   }
   .fl-app {
@@ -677,12 +686,14 @@ body.fl-focus-mode .sidebar {
   cursor: pointer;
 }
 
-/* Slide-Over Menu Drawer (☰) */
+/* Slide-Over Menu Drawer — Clean Full-Height Overlay Above Studio Header */
 .fl-drawer-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1080;
-  background: rgba(2, 8, 18, 0.72);
+  z-index: 1500 !important;
+  background: rgba(2, 6, 16, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
 }
 
@@ -794,9 +805,6 @@ body.fl-focus-mode .sidebar {
 @media (max-width: 768px) {
   .fl-study-grid {
     grid-template-columns: 1fr;
-  }
-  body:not(.fl-student-only) .fl-drawer-panel {
-    padding-top: 66px; /* Sit cleanly below Studio mobile header */
   }
   .fl-floating-launcher {
     bottom: 72px;
@@ -1201,17 +1209,16 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
   transform: scale(0.97);
 }
 
-/* ChatGPT-Style Floating Jump-to-Bottom Button (↓) */
+/* ChatGPT/WhatsApp-Style Floating Jump-to-Bottom Button (Bottom-Right — NEVER blocks text or action buttons!) */
 .fl-scroll-down-btn {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 146px;
+  position: absolute;
+  right: 16px;
+  bottom: 126px;
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 25, 45, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(13, 24, 46, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #f8fafc;
@@ -1222,14 +1229,14 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 890;
+  z-index: 80;
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
 .fl-scroll-down-btn.hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateY(8px);
 }
 
 /* Ultra-Clean Live Subtitle Conversation Card */
