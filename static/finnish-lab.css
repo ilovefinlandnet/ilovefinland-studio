@@ -1210,3 +1210,12 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
   pointer-events: none;
   transform: translateX(-50%) translateY(8px);
 }
+
+/* Ultra-Clean Live Subtitle Conversation Card */
+.fl-msg.live-sub {
+  padding: 11px 14px;
+  border-left: 3px solid #38bdf8;
+  background: rgba(12, 24, 44, 0.92);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}

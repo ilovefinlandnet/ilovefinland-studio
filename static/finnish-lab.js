@@ -677,31 +677,36 @@
     }
   }
 
-  /* ---------- SILENT LIVE LISTEN & ANSWER (CONTINUOUS REAL-TIME ON IPHONE, IPAD & PC!) ---------- */
+  /* ---------- SILENT LIVE LISTEN & CONVERSATION SUBTITLES (FAST 3.5s CHUNKS + CONTEXT!) ---------- */
   async function sendLiveAudioChunk(blob, cleanMime) {
-    if (!blob || blob.size < 3500) return; // Skip tiny empty chunks
+    if (!blob || blob.size < 2200) return; // Skip tiny silent chunks
     try {
       const b64 = await blobToBase64(blob);
-      const conv = await ensureActiveConv("🌐 Live Class Translation");
+      const conv = await ensureActiveConv("🌐 Live Class Subtitles");
       const settings = DB.getSettings();
-      state.liveInterimText = "Translating live while listening...";
+      // Pass last 3 live lines as lightweight text context so ongoing conversations make full sense!
+      const recentLiveHistory = (conv.messages || [])
+        .slice(-3)
+        .map((m) => ({ role: m.role, text: (m.text || "").slice(0, 260), attachments: [] }));
+
+      state.liveInterimText = "⚡ Translating live...";
       renderLiveBannerOnly();
       const resp = await flApi("/api/finnish-lab/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: "Listen to this live classroom audio chunk, transcribe the Finnish, translate into English, and if there is a question give the short A1 Finnish answer. If silent/no speech, reply ONLY [SILENCE].",
+          message: "Transcribe this live audio chunk into fast Finnish + English subtitles (or Speaker 1 / Speaker 2 dialogue if multiple people talk). If a question was asked, include a short A1 Finnish Answer. If silent/noise only, reply ONLY [SILENCE].",
           mode: "live_translate",
           level: settings.level || "A1",
           roast_mode: false,
-          history: [],
+          history: recentLiveHistory,
           attachments: [{ mime_type: cleanMime, data_base64: b64 }],
         }),
       });
       const reply = (resp && resp.reply ? resp.reply : "").trim();
       if (!reply || reply.toUpperCase().includes("[SILENCE]")) {
         if (state.isLiveTranslating) {
-          state.liveInterimText = "Listening live for Finnish...";
+          state.liveInterimText = "🎙️ Listening live (fast mode)...";
           renderLiveBannerOnly();
         }
         return;
@@ -710,18 +715,19 @@
         id: DB.uid("msg"),
         role: "assistant",
         text: reply,
+        isLiveSubtitle: true,
         finnishTts: resp.finnish_tts || "",
         at: new Date().toISOString(),
       });
       await DB.saveConversation(conv);
       scheduleAutoSync();
-      if (state.isLiveTranslating) state.liveInterimText = "Listening live for Finnish...";
+      if (state.isLiveTranslating) state.liveInterimText = "🎙️ Listening live (fast mode)...";
       renderActiveView();
       renderSidePanel();
-      scrollChatsToBottom();
+      scrollChatsToBottom(false);
     } catch (_) {
       if (state.isLiveTranslating) {
-        state.liveInterimText = "Listening live for Finnish...";
+        state.liveInterimText = "🎙️ Listening live (fast mode)...";
         renderLiveBannerOnly();
       }
     }
@@ -736,7 +742,7 @@
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       state.liveStream = stream;
       state.isLiveTranslating = true;
-      state.liveInterimText = "Listening live (answers appear every ~6s)...";
+      state.liveInterimText = "🎙️ Listening live (fast ~3.5s updates)...";
       renderActiveView();
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -759,7 +765,7 @@
         rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
         rec.onstop = () => {
           const blob = new Blob(chunks, { type: cleanMime });
-          // Send this chunk asynchronously while the NEXT chunk is ALREADY recording!
+          // Send asynchronously while next chunk is ALREADY recording!
           sendLiveAudioChunk(blob, cleanMime);
         };
         rec.start();
@@ -768,7 +774,7 @@
             try { rec.stop(); } catch (_) {}
             recordOneChunk();
           }
-        }, 6000);
+        }, 3500);
       };
 
       recordOneChunk();
@@ -1453,21 +1459,30 @@
     const fullSpeakText = (m.text || "").slice(0, 1200);
     const actionsHtml =
       m.role === "assistant" && !m.isError
-        ? `<div class="fl-msg-actions">
-            ${
-              isSpeakingThis
-                ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.25);border-color:rgba(248,113,113,0.6);color:#fecaca;font-weight:700;">⏹️ Stop</button>`
-                : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🔊 Listen</button>`
-            }
-            <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🐢 Slow</button>
-            <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}">Explain more</button>
-            <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Extract Finnish words to Flashcards & Podcast">⭐ Save Words</button>
-            <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">💾 Save</button>
-          </div>`
+        ? m.isLiveSubtitle
+          ? `<div class="fl-msg-actions" style="margin-top:6px;">
+               ${
+                 isSpeakingThis
+                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.25);border-color:rgba(248,113,113,0.6);color:#fecaca;font-weight:700;">⏹️ Stop</button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🔊</button>`
+               }
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}">⭐ Cards</button>
+             </div>`
+          : `<div class="fl-msg-actions">
+               ${
+                 isSpeakingThis
+                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.25);border-color:rgba(248,113,113,0.6);color:#fecaca;font-weight:700;">⏹️ Stop</button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🔊 Listen</button>`
+               }
+               <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🐢 Slow</button>
+               <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}">Explain more</button>
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Extract Finnish words to Flashcards & Podcast">⭐ Save Words</button>
+               <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">💾 Save</button>
+             </div>`
         : "";
     const roastHtml = m.roastBanner ? `<div class="fl-roast-banner">${esc(m.roastBanner)}</div>` : "";
     return `
-      <div class="fl-msg ${m.role === "user" ? "user" : "assistant"}">
+      <div class="fl-msg ${m.role === "user" ? "user" : "assistant"}${m.isLiveSubtitle ? " live-sub" : ""}">
         ${roastHtml}
         ${attHtml}
         <div>${renderMarkdownLite(m.text)}</div>

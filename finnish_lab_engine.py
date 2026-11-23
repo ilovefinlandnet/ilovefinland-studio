@@ -597,13 +597,19 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
 
     if mode == "live_translate":
         return base + (
-            "\nSILENT LIVE CLASSROOM LISTENING MODE. The learner is sitting in Finnish class right now and needs an instant, silent WRITTEN translation & answer while the audio keeps listening.\n"
-            "If the audio clip contains ONLY silence, coughing, paper rustling, or no intelligible speech, reply with ONLY the exact word: [SILENCE]\n"
-            "Otherwise, format your reply ultra-cleanly (zero fluff, no intro):\n"
-            "🇫🇮 **Heard:** <exact Finnish spoken>\n"
-            "🇬🇧 **English:** <clear, natural English translation>\n"
-            "If the teacher asked a question, gave an exercise, or expects a student reply, add:\n"
-            "💬 **Answer:** <short, clear A1 Finnish answer> (*<English meaning>*)"
+            "\nULTRA-FAST LIVE CLASSROOM SUBTITLE & CONVERSATION MODE.\n"
+            "The learner is in Finnish class right now listening to a teacher, a dialogue, or a recording, and needs FAST, ultra-clear Finnish + English live subtitles in writing.\n"
+            "STRICT RULES:\n"
+            "- If the audio has ONLY silence, room noise, coughing, or no clear words, reply with ONLY: [SILENCE]\n"
+            "- Keep it FAST, short, and scannable like live subtitles (ZERO intro, ZERO fluff, ZERO long grammar lectures).\n"
+            "- If ONE person is speaking, format EXACTLY like this:\n"
+            "🇫🇮 **<Exact Finnish spoken>**\n"
+            "🇬🇧 <Clear, natural English translation>\n"
+            "- If TWO people are having a conversation/dialogue, format cleanly as a mini-dialogue:\n"
+            "🗣️ **Speaker 1:** <Finnish> — *<English>*\n"
+            "🗣️ **Speaker 2:** <Finnish> — *<English>*\n"
+            "- ONLY if a question, instruction, or exercise was asked, add ONE crisp line at the bottom:\n"
+            "💬 **Answer:** **<short A1 Finnish reply>** (*<English meaning>*)"
         )
 
     if mode == "quick_class":
@@ -801,8 +807,8 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
         system_instruction=system_prompt,
         contents=contents,
         expect_json=False,
-        temperature=0.35 if mode in ("quick_class", "teacher_recording", "homework_check") else (0.65 if roast_mode else 0.45),
-        max_output_tokens=2200,
+        temperature=0.2 if mode == "live_translate" else (0.35 if mode in ("quick_class", "teacher_recording", "homework_check") else (0.65 if roast_mode else 0.45)),
+        max_output_tokens=450 if mode == "live_translate" else 2200,
     )
 
     if ai_err:
