@@ -1644,21 +1644,21 @@
           ? `<div class="fl-msg-actions" style="margin-top:6px;">
                ${
                  isSpeakingThis
-                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.2);color:#fca5a5;">${ICO.stop} Stop</button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">${ICO.listen} Listen</button>`
+                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" title="Stop audio" aria-label="Stop" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${ICO.stop}<span>Stop</span></button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen" aria-label="Listen">${ICO.listen}</button>`
                }
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}">${ICO.cards} Cards</button>
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save vocabulary to Flashcards" aria-label="Save Words">${ICO.cards}</button>
              </div>`
           : `<div class="fl-msg-actions">
                ${
                  isSpeakingThis
-                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.2);color:#fca5a5;">${ICO.stop} Stop</button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">${ICO.listen} Listen</button>`
+                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" title="Stop audio" aria-label="Stop" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${ICO.stop}<span>Stop</span></button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen in Finnish voice" aria-label="Listen">${ICO.listen}</button>`
                }
-               <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">${ICO.slow} Slow</button>
-               <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}">${ICO.explain} Explain</button>
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Extract Finnish words to Flashcards & Podcast">${ICO.cards} Words</button>
-               <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">${ICO.save} Save</button>
+               <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen slowly (0.8×)" aria-label="Slow">${ICO.slow}<span style="font-size:0.68rem;">0.8×</span></button>
+               <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}" title="Explain in more detail" aria-label="Explain">${ICO.explain}</button>
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save words to Flashcards" aria-label="Save Words">${ICO.cards}</button>
+               <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}" title="Save to Notes" aria-label="Save">${ICO.save}</button>
              </div>`
         : "";
     const roastHtml = m.roastBanner ? `<div class="fl-roast-banner">${esc(m.roastBanner)}</div>` : "";
