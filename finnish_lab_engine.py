@@ -33,8 +33,8 @@ FINNISH_LAB_DB_PATH = os.environ.get(
 )
 
 # Configurable free-tier safety limits (never auto-upgrade to paid)
-DEFAULT_DAILY_LIMIT = int(os.environ.get("FINNISH_LAB_DAILY_LIMIT", "60"))
-DEFAULT_RPM_LIMIT = int(os.environ.get("FINNISH_LAB_RPM_LIMIT", "10"))
+DEFAULT_DAILY_LIMIT = int(os.environ.get("FINNISH_LAB_DAILY_LIMIT", "300"))
+DEFAULT_RPM_LIMIT = int(os.environ.get("FINNISH_LAB_RPM_LIMIT", "30"))
 MAX_ATTACHMENT_BYTES = 18 * 1024 * 1024  # 18 MB per attachment safety cap
 
 _MODEL_CACHE_LOCK = threading.Lock()

@@ -42,6 +42,8 @@
     liveStream: null,
     liveChunkRecorder: null,
     liveChunkTimer: null,
+    liveAudioCtx: null,
+    liveVadInterval: null,
     isSending: false,
     selectedGrammarId: "olla",
     currentReading: null,
@@ -721,13 +723,13 @@
       });
       await DB.saveConversation(conv);
       scheduleAutoSync();
-      if (state.isLiveTranslating) state.liveInterimText = "🎙️ Listening live (fast mode)...";
+      if (state.isLiveTranslating) state.liveInterimText = "🎙️ Listening for speech...";
       renderActiveView();
       renderSidePanel();
       scrollChatsToBottom(false);
-    } catch (_) {
+    } catch (err) {
       if (state.isLiveTranslating) {
-        state.liveInterimText = "🎙️ Listening live (fast mode)...";
+        state.liveInterimText = `⚠️ ${(err && err.message ? err.message : "Retrying...").slice(0, 60)}`;
         renderLiveBannerOnly();
       }
     }
@@ -742,7 +744,7 @@
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       state.liveStream = stream;
       state.isLiveTranslating = true;
-      state.liveInterimText = "🎙️ Listening live (fast ~3.5s updates)...";
+      state.liveInterimText = "🎙️ Listening for speech...";
       renderActiveView();
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -752,7 +754,34 @@
         : "audio/webm";
       const cleanMime = mimeType.split(";")[0];
 
-      const recordOneChunk = () => {
+      // Smart Voice Activity Detection (cuts cleanly at natural speech pauses — never cuts words in half, never wastes quota on silence!)
+      let analyser = null;
+      let freqBuf = null;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const ctx = new AC();
+          const src = ctx.createMediaStreamSource(stream);
+          analyser = ctx.createAnalyser();
+          analyser.fftSize = 512;
+          src.connect(analyser);
+          freqBuf = new Uint8Array(analyser.frequencyBinCount);
+          state.liveAudioCtx = ctx;
+        }
+      } catch (_) {}
+
+      const getVolume = () => {
+        if (!analyser || !freqBuf) return 20; // Fallback: assume speech
+        analyser.getByteTimeDomainData(freqBuf);
+        let sum = 0;
+        for (let i = 0; i < freqBuf.length; i++) {
+          const d = freqBuf[i] - 128;
+          sum += d * d;
+        }
+        return Math.sqrt(sum / freqBuf.length);
+      };
+
+      const recordOneUtterance = () => {
         if (!state.isLiveTranslating || !state.liveStream) return;
         const chunks = [];
         let rec;
@@ -762,22 +791,57 @@
           rec = new MediaRecorder(state.liveStream);
         }
         state.liveChunkRecorder = rec;
+        let heardSpeech = false;
+        let speechStartMs = 0;
+        let lastLoudMs = Date.now();
+        const chunkStartMs = Date.now();
+
         rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
         rec.onstop = () => {
-          const blob = new Blob(chunks, { type: cleanMime });
-          // Send asynchronously while next chunk is ALREADY recording!
-          sendLiveAudioChunk(blob, cleanMime);
+          if (heardSpeech || !analyser) {
+            const blob = new Blob(chunks, { type: cleanMime });
+            sendLiveAudioChunk(blob, cleanMime);
+          }
         };
         rec.start();
-        state.liveChunkTimer = setTimeout(() => {
-          if (state.isLiveTranslating && rec.state === "recording") {
-            try { rec.stop(); } catch (_) {}
-            recordOneChunk();
+
+        if (state.liveVadInterval) clearInterval(state.liveVadInterval);
+        state.liveVadInterval = setInterval(() => {
+          if (!state.isLiveTranslating || rec.state !== "recording") {
+            clearInterval(state.liveVadInterval);
+            state.liveVadInterval = null;
+            return;
           }
-        }, 3500);
+          const now = Date.now();
+          const vol = getVolume();
+          if (vol > 4.2) {
+            if (!heardSpeech) {
+              heardSpeech = true;
+              speechStartMs = now;
+              state.liveInterimText = "🗣️ Hearing Finnish...";
+              renderLiveBannerOnly();
+            }
+            lastLoudMs = now;
+          }
+          const elapsed = now - chunkStartMs;
+          const silenceAfterSpeech = heardSpeech ? now - lastLoudMs : 0;
+          const speechDur = heardSpeech ? now - speechStartMs : 0;
+
+          // Cut cleanly on 1.1s natural pause after speech, OR max 6.5s continuous talking, OR flush silent buffer every 8s
+          const shouldCutForPause = heardSpeech && speechDur >= 900 && silenceAfterSpeech >= 1100;
+          const shouldCutMaxSpeech = heardSpeech && speechDur >= 6500;
+          const shouldResetSilent = !heardSpeech && elapsed >= 8000;
+
+          if (shouldCutForPause || shouldCutMaxSpeech || shouldResetSilent) {
+            clearInterval(state.liveVadInterval);
+            state.liveVadInterval = null;
+            try { rec.stop(); } catch (_) {}
+            recordOneUtterance();
+          }
+        }, 180);
       };
 
-      recordOneChunk();
+      recordOneUtterance();
     } catch (_) {
       toast("Microphone permission denied.", "error");
       stopLiveTranslation();
@@ -855,6 +919,10 @@
   function stopLiveTranslation() {
     state.isLiveTranslating = false;
     state.liveInterimText = "";
+    if (state.liveVadInterval) {
+      clearInterval(state.liveVadInterval);
+      state.liveVadInterval = null;
+    }
     if (state.liveChunkTimer) {
       clearTimeout(state.liveChunkTimer);
       state.liveChunkTimer = null;
@@ -864,6 +932,10 @@
         if (state.liveChunkRecorder.state === "recording") state.liveChunkRecorder.stop();
       } catch (_) {}
       state.liveChunkRecorder = null;
+    }
+    if (state.liveAudioCtx) {
+      try { state.liveAudioCtx.close(); } catch (_) {}
+      state.liveAudioCtx = null;
     }
     if (state.liveStream) {
       try { state.liveStream.getTracks().forEach((t) => t.stop()); } catch (_) {}
