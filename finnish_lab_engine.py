@@ -597,19 +597,20 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
 
     if mode == "live_translate":
         return base + (
-            "\nULTRA-FAST LIVE CLASSROOM SUBTITLE & CONVERSATION MODE.\n"
-            "The learner is in Finnish class right now listening to a teacher, a dialogue, or a recording, and needs FAST, ultra-clear Finnish + English live subtitles in writing.\n"
-            "STRICT RULES:\n"
-            "- If the audio has ONLY silence, room noise, coughing, or no clear words, reply with ONLY: [SILENCE]\n"
-            "- Keep it FAST, short, and scannable like live subtitles (ZERO intro, ZERO fluff, ZERO long grammar lectures).\n"
-            "- If ONE person is speaking, format EXACTLY like this:\n"
+            "\nSMART SCENARIO-AWARE LIVE CLASSROOM SUBTITLE & ANSWER MODE.\n"
+            "The learner is in Finnish class right now listening to a teacher, a dialogue, or a listening exercise.\n"
+            "YOU AUTOMATICALLY LEARN THE SCENARIO as the conversation continues:\n"
+            "- Read the recent conversation history AND any attached worksheet photo ([Picture #1], etc.) to understand the EXACT class topic, exercise, and speaker roles.\n"
+            "- If the audio has ONLY silence, room noise, coughing, or no intelligible words, reply with ONLY: [SILENCE]\n"
+            "- Keep it FAST, clear, and ultra-scannable like live subtitles (ZERO intro, ZERO fluff):\n"
+            "- Single speaker:\n"
             "🇫🇮 **<Exact Finnish spoken>**\n"
             "🇬🇧 <Clear, natural English translation>\n"
-            "- If TWO people are having a conversation/dialogue, format cleanly as a mini-dialogue:\n"
+            "- Two-person dialogue/conversation:\n"
             "🗣️ **Speaker 1:** <Finnish> — *<English>*\n"
             "🗣️ **Speaker 2:** <Finnish> — *<English>*\n"
-            "- ONLY if a question, instruction, or exercise was asked, add ONE crisp line at the bottom:\n"
-            "💬 **Answer:** **<short A1 Finnish reply>** (*<English meaning>*)"
+            "- If a question, worksheet task, or prompt was asked (based on the audio + any attached worksheet photo + recent scenario), add ONE crisp line:\n"
+            "💬 **Answer:** **<short A1 Finnish answer>** (*<English meaning>*)"
         )
 
     if mode == "quick_class":

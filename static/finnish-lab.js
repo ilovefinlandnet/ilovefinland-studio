@@ -44,6 +44,7 @@
     liveChunkTimer: null,
     liveAudioCtx: null,
     liveVadInterval: null,
+    liveForceCutFn: null,
     isSending: false,
     selectedGrammarId: "olla",
     currentReading: null,
@@ -679,25 +680,56 @@
     }
   }
 
-  /* ---------- SILENT LIVE LISTEN & CONVERSATION SUBTITLES (FAST 3.5s CHUNKS + CONTEXT!) ---------- */
+  /* ---------- SMART SCENARIO-AWARE LIVE LISTEN & CONVERSATION SUBTITLES (v73.0) ---------- */
   async function sendLiveAudioChunk(blob, cleanMime) {
-    if (!blob || blob.size < 2200) return; // Skip tiny silent chunks
+    if (!blob || blob.size < 1600) return; // Skip truly empty blobs
     try {
       const b64 = await blobToBase64(blob);
       const conv = await ensureActiveConv("🌐 Live Class Subtitles");
       const settings = DB.getSettings();
-      // Pass last 3 live lines as lightweight text context so ongoing conversations make full sense!
-      const recentLiveHistory = (conv.messages || [])
-        .slice(-3)
-        .map((m) => ({ role: m.role, text: (m.text || "").slice(0, 260), attachments: [] }));
 
-      state.liveInterimText = "⚡ Translating live...";
+      // Build 8-turn scenario memory + auto-link the latest uploaded worksheet photo ([Picture #1]) if present!
+      const recentLiveHistory = [];
+      let linkedWorksheet = null;
+      for (const m of (conv.messages || []).slice(-8)) {
+        const histAtts = [];
+        if (!linkedWorksheet && (m.attachments || []).length) {
+          for (const a of m.attachments) {
+            const mt = a.mime_type || "";
+            if (mt.startsWith("image/") || mt === "application/pdf") {
+              const cached = a.id ? state.sessionMediaMap[a.id] : null;
+              if (cached && cached.data_base64) {
+                linkedWorksheet = { mime_type: cached.mime_type, data_base64: cached.data_base64, refLabel: cached.refLabel || "Picture #1" };
+                histAtts.push({ mime_type: cached.mime_type, data_base64: cached.data_base64 });
+                break;
+              } else if (mt.startsWith("image/") && a.previewUrl && a.previewUrl.startsWith("data:image/")) {
+                const tb64 = a.previewUrl.includes(",") ? a.previewUrl.split(",")[1] : "";
+                if (tb64) {
+                  linkedWorksheet = { mime_type: "image/jpeg", data_base64: tb64, refLabel: a.refLabel || "Picture #1" };
+                  histAtts.push({ mime_type: "image/jpeg", data_base64: tb64 });
+                  break;
+                }
+              }
+            }
+          }
+        }
+        recentLiveHistory.push({
+          role: m.role,
+          text: (m.text || "").slice(0, 320),
+          attachments: histAtts,
+        });
+      }
+
+      state.liveInterimText = linkedWorksheet ? "⚡ Translating live (with worksheet)..." : "⚡ Translating live...";
       renderLiveBannerOnly();
       const resp = await flApi("/api/finnish-lab/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: "Transcribe this live audio chunk into fast Finnish + English subtitles (or Speaker 1 / Speaker 2 dialogue if multiple people talk). If a question was asked, include a short A1 Finnish Answer. If silent/noise only, reply ONLY [SILENCE].",
+          message:
+            "Listen to this live classroom audio chunk using the ongoing scenario & any worksheet photo in history. " +
+            "Transcribe into fast Finnish + English subtitles (or Speaker 1 / Speaker 2 dialogue). " +
+            "If a question or exercise is asked, give the short A1 Finnish Answer. If only silence/noise, reply ONLY [SILENCE].",
           mode: "live_translate",
           level: settings.level || "A1",
           roast_mode: false,
@@ -708,7 +740,7 @@
       const reply = (resp && resp.reply ? resp.reply : "").trim();
       if (!reply || reply.toUpperCase().includes("[SILENCE]")) {
         if (state.isLiveTranslating) {
-          state.liveInterimText = "🎙️ Listening live (fast mode)...";
+          state.liveInterimText = "🎙️ Listening live...";
           renderLiveBannerOnly();
         }
         return;
@@ -723,7 +755,7 @@
       });
       await DB.saveConversation(conv);
       scheduleAutoSync();
-      if (state.isLiveTranslating) state.liveInterimText = "🎙️ Listening for speech...";
+      if (state.isLiveTranslating) state.liveInterimText = "🎙️ Listening live...";
       renderActiveView();
       renderSidePanel();
       scrollChatsToBottom(false);
@@ -744,7 +776,7 @@
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       state.liveStream = stream;
       state.isLiveTranslating = true;
-      state.liveInterimText = "🎙️ Listening for speech...";
+      state.liveInterimText = "🎙️ Listening live...";
       renderActiveView();
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -754,24 +786,31 @@
         : "audio/webm";
       const cleanMime = mimeType.split(";")[0];
 
-      // Smart Voice Activity Detection (cuts cleanly at natural speech pauses — never cuts words in half, never wastes quota on silence!)
+      // Smart VAD with iOS Safari AudioContext.resume() fix + 5s safety fallback
       let analyser = null;
       let freqBuf = null;
+      let vadReady = false;
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) {
           const ctx = new AC();
-          const src = ctx.createMediaStreamSource(stream);
-          analyser = ctx.createAnalyser();
-          analyser.fftSize = 512;
-          src.connect(analyser);
-          freqBuf = new Uint8Array(analyser.frequencyBinCount);
-          state.liveAudioCtx = ctx;
+          if (ctx.state === "suspended") {
+            await ctx.resume().catch(() => {});
+          }
+          if (ctx.state === "running") {
+            const src = ctx.createMediaStreamSource(stream);
+            analyser = ctx.createAnalyser();
+            analyser.fftSize = 512;
+            src.connect(analyser);
+            freqBuf = new Uint8Array(analyser.frequencyBinCount);
+            state.liveAudioCtx = ctx;
+            vadReady = true;
+          }
         }
       } catch (_) {}
 
       const getVolume = () => {
-        if (!analyser || !freqBuf) return 20; // Fallback: assume speech
+        if (!vadReady || !analyser || !freqBuf) return 15; // Fallback: always send chunk
         analyser.getByteTimeDomainData(freqBuf);
         let sum = 0;
         for (let i = 0; i < freqBuf.length; i++) {
@@ -791,19 +830,33 @@
           rec = new MediaRecorder(state.liveStream);
         }
         state.liveChunkRecorder = rec;
-        let heardSpeech = false;
-        let speechStartMs = 0;
+        let heardSpeech = !vadReady;
+        let speechStartMs = heardSpeech ? Date.now() : 0;
         let lastLoudMs = Date.now();
         const chunkStartMs = Date.now();
+        let peakVol = 0;
 
         rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
         rec.onstop = () => {
-          if (heardSpeech || !analyser) {
+          if (heardSpeech || peakVol > 1.8 || !vadReady) {
             const blob = new Blob(chunks, { type: cleanMime });
             sendLiveAudioChunk(blob, cleanMime);
           }
         };
         rec.start();
+
+        const cutAndRestart = (forceSend) => {
+          if (state.liveVadInterval) {
+            clearInterval(state.liveVadInterval);
+            state.liveVadInterval = null;
+          }
+          if (forceSend) heardSpeech = true;
+          if (rec.state === "recording") {
+            try { rec.stop(); } catch (_) {}
+          }
+          if (state.isLiveTranslating) recordOneUtterance();
+        };
+        state.liveForceCutFn = () => cutAndRestart(true);
 
         if (state.liveVadInterval) clearInterval(state.liveVadInterval);
         state.liveVadInterval = setInterval(() => {
@@ -814,7 +867,8 @@
           }
           const now = Date.now();
           const vol = getVolume();
-          if (vol > 4.2) {
+          if (vol > peakVol) peakVol = vol;
+          if (vol > 2.2) {
             if (!heardSpeech) {
               heardSpeech = true;
               speechStartMs = now;
@@ -827,18 +881,16 @@
           const silenceAfterSpeech = heardSpeech ? now - lastLoudMs : 0;
           const speechDur = heardSpeech ? now - speechStartMs : 0;
 
-          // Cut cleanly on 1.1s natural pause after speech, OR max 6.5s continuous talking, OR flush silent buffer every 8s
-          const shouldCutForPause = heardSpeech && speechDur >= 900 && silenceAfterSpeech >= 1100;
-          const shouldCutMaxSpeech = heardSpeech && speechDur >= 6500;
-          const shouldResetSilent = !heardSpeech && elapsed >= 8000;
+          // Cut cleanly on 1.0s natural pause after speech, OR max 5.5s continuous speech, OR 5s fallback if AudioContext wasn't running
+          const shouldCutForPause = vadReady && heardSpeech && speechDur >= 800 && silenceAfterSpeech >= 1000;
+          const shouldCutMaxSpeech = heardSpeech && speechDur >= 5500;
+          const shouldFallbackCut = !vadReady && elapsed >= 5000;
+          const shouldResetSilent = vadReady && !heardSpeech && elapsed >= 7000;
 
-          if (shouldCutForPause || shouldCutMaxSpeech || shouldResetSilent) {
-            clearInterval(state.liveVadInterval);
-            state.liveVadInterval = null;
-            try { rec.stop(); } catch (_) {}
-            recordOneUtterance();
+          if (shouldCutForPause || shouldCutMaxSpeech || shouldFallbackCut || shouldResetSilent) {
+            cutAndRestart(false);
           }
-        }, 180);
+        }, 160);
       };
 
       recordOneUtterance();
@@ -1449,7 +1501,10 @@
                   <span class="fl-live-dot"></span>
                   <span id="fl-live-interim" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(state.liveInterimText)}</span>
                 </div>
-                <button type="button" class="fl-btn danger sm" id="fl-stop-live">Stop</button>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                  <button type="button" class="fl-btn primary sm" id="fl-live-now" title="Translate what was just said right now">⚡ Now</button>
+                  <button type="button" class="fl-btn danger sm" id="fl-stop-live">Stop</button>
+                </div>
               </div>`
             : ""
         }
@@ -2179,6 +2234,7 @@
     root.querySelector("#fl-start-rec")?.addEventListener("click", startRecording);
     root.querySelector("#fl-stop-rec")?.addEventListener("click", stopRecording);
     root.querySelector("#fl-live-btn")?.addEventListener("click", toggleLiveTranslation);
+    root.querySelector("#fl-live-now")?.addEventListener("click", () => { if (state.liveForceCutFn) state.liveForceCutFn(); });
     root.querySelector("#fl-stop-live")?.addEventListener("click", stopLiveTranslation);
 
     const autoResizeChatInput = (el) => {
