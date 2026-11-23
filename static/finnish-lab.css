@@ -121,6 +121,7 @@ body.fl-focus-mode .sidebar {
     left: auto !important;
     right: auto !important;
     flex-shrink: 0 !important;
+    padding-top: max(10px, env(safe-area-inset-top)) !important;
   }
   body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)) {
     padding-top: 0 !important;
