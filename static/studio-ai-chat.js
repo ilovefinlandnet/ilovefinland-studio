@@ -19,13 +19,17 @@
     sparkle: `<svg class="fl-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>`,
     copy: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
     doc: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`,
+    mic: `<svg class="fl-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`,
   };
+
+  let _saiSpeechRec = null;
 
   const state = {
     chats: [],
     activeId: null,
     drawerOpen: false,
     isSending: false,
+    isListening: false,
     pendingAtts: [],
     pickerOpen: false,
     pickerIntent: "attach", // "attach" | "link"
@@ -533,7 +537,8 @@
                   ${ICO.doc}<span>${linked ? "Switch Article" : "Link Article"}</span>
                 </button>
               </div>
-              <div class="fl-capsule-right">
+              <div class="fl-capsule-right" style="display:flex;align-items:center;gap:6px;">
+                <button type="button" class="fl-cap-btn" id="sai-mic-btn" title="${state.isListening ? "Stop voice input" : "Speak to Studio AI"}" style="padding:0;width:36px;height:36px;border-radius:50%;${state.isListening ? "background:rgba(239,68,68,0.22);border:1px solid rgba(248,113,113,0.6);color:#fca5a5;" : "color:#94a3b8;"}">${ICO.mic}</button>
                 <button type="button" class="fl-send-circle" id="sai-send-btn" ${state.isSending ? "disabled" : ""} title="Send">${ICO.send}</button>
               </div>
             </div>
@@ -768,6 +773,45 @@
       inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSend(); } });
     }
     root.querySelector("#sai-send-btn")?.addEventListener("click", doSend);
+    root.querySelector("#sai-mic-btn")?.addEventListener("click", () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert("Voice dictation isn't supported in this browser — try Safari or Chrome!");
+        return;
+      }
+      if (state.isListening && _saiSpeechRec) {
+        try { _saiSpeechRec.stop(); } catch (_) {}
+        state.isListening = false;
+        render();
+        return;
+      }
+      try {
+        const rec = new SR();
+        _saiSpeechRec = rec;
+        rec.lang = "en-US";
+        rec.interimResults = true;
+        rec.continuous = false;
+        const baseText = inp ? inp.value.trim() : "";
+        state.isListening = true;
+        render();
+        rec.onresult = (ev) => {
+          let spoken = "";
+          for (let i = 0; i < ev.results.length; i++) spoken += ev.results[i][0].transcript;
+          const liveInp = document.getElementById("sai-input");
+          if (liveInp) {
+            liveInp.value = baseText ? `${baseText} ${spoken.trim()}` : spoken.trim();
+            liveInp.style.height = "auto";
+            liveInp.style.height = Math.min(liveInp.scrollHeight, 160) + "px";
+          }
+        };
+        rec.onerror = () => { state.isListening = false; _saiSpeechRec = null; render(); };
+        rec.onend = () => { state.isListening = false; _saiSpeechRec = null; render(); };
+        rec.start();
+      } catch (_) {
+        state.isListening = false;
+        render();
+      }
+    });
     root.querySelectorAll("[data-sai-starter]").forEach((b) => {
       b.onclick = () => sendStudioMessage(b.getAttribute("data-sai-starter"));
     });
