@@ -19,11 +19,11 @@
 
   const defaultSlideData = (num) => ({
     slide_number: num,
-    badge_text: num === 6 ? "TAKEAWAY" : `SLIDE 0${num}`,
+    badge_text: num === 1 ? "NEWS" : (num === 6 ? "TAKEAWAY" : `SLIDE 0${num}`),
     headline_line1: "",
     headline_line2: "",
     headline_line3: "",
-    cta_text: num === 6 ? "DISCOVER MORE AT ILOVEFINLAND.NET" : "Read full article",
+    cta_text: num === 1 ? "Read full article" : (num === 6 ? "DISCOVER MORE AT ILOVEFINLAND.NET" : "Read full article"),
     cta_color: "blue",
     font_size: 44,
     location: "",
@@ -33,8 +33,9 @@
     photoImg: null,
   });
 
-  let activeCarouselSlide = 2;
+  let activeCarouselSlide = 1;
   const carouselSlidesData = {
+    1: defaultSlideData(1),
     2: defaultSlideData(2),
     3: defaultSlideData(3),
     4: defaultSlideData(4),
@@ -1440,7 +1441,7 @@
     if (Array.isArray(ig.carousel_slides) && ig.carousel_slides.length > 0 && typeof carouselSlidesData !== "undefined") {
       ig.carousel_slides.forEach((s) => {
         const num = s.slide_number;
-        if (num >= 2 && num <= 6) {
+        if (num >= 1 && num <= 6) {
           carouselSlidesData[num] = {
             ...defaultSlideData(num),
             ...s,
@@ -1457,6 +1458,19 @@
           }
         }
       });
+    } else if (typeof carouselSlidesData !== "undefined") {
+      for (let i = 1; i <= 6; i++) {
+        carouselSlidesData[i] = defaultSlideData(i);
+      }
+      carouselSlidesData[1].badge_text = ig.badge_text || "NEWS";
+      carouselSlidesData[1].headline_line1 = ig.headline_line1 || "";
+      carouselSlidesData[1].headline_line2 = ig.headline_line2 || "";
+      carouselSlidesData[1].headline_line3 = ig.headline_line3 || "";
+      carouselSlidesData[1].cta_text = ig.cta_text || "Read full article";
+      carouselSlidesData[1].cta_color = ig.cta_color || "blue";
+      carouselSlidesData[1].location = ig.location_stamp || "";
+      carouselSlidesData[1].card_style = ig.card_style || "frosted";
+      carouselSlidesData[1].show_swipe_arrow = true;
     }
 
     drawStaticPostCanvases(ig);
@@ -2122,6 +2136,14 @@
 
         // Render AI-suggested modern Scandinavian style post
         renderAISuggestedPost(photoImg, hasPhoto, logoImg, ig);
+        if (hasPhoto && photoImg && typeof carouselSlidesData !== "undefined" && carouselSlidesData[1]) {
+          if (!carouselSlidesData[1].photoImg && !carouselSlidesData[1].photoDataUrl) {
+            carouselSlidesData[1].photoImg = photoImg;
+            if (activeCarouselSlide === 1 && typeof renderActiveCarouselSlideCanvas === "function") {
+              renderActiveCarouselSlideCanvas();
+            }
+          }
+        }
       };
 
       const logoImg = new Image();
@@ -6656,6 +6678,19 @@
       const sizeVal = $("static-line2-size-val");
       if (sizeVal) sizeVal.textContent = `${fs}px`;
       drawStaticPostCanvases(currentStaticPost);
+
+      // Keep carousel Slide 1 in sync
+      if (typeof carouselSlidesData !== "undefined" && carouselSlidesData[1]) {
+        carouselSlidesData[1].badge_text = currentStaticPost.badge_text;
+        carouselSlidesData[1].headline_line1 = currentStaticPost.headline_line1;
+        carouselSlidesData[1].headline_line2 = currentStaticPost.headline_line2;
+        carouselSlidesData[1].headline_line3 = currentStaticPost.headline_line3;
+        carouselSlidesData[1].cta_text = currentStaticPost.cta_text;
+        carouselSlidesData[1].cta_color = currentStaticPost.cta_color;
+        if (activeCarouselSlide === 1 && typeof renderActiveCarouselSlideCanvas === "function") {
+          renderActiveCarouselSlideCanvas();
+        }
+      }
     };
 
     $("static-edit-badge")?.addEventListener("input", updateStaticPostLive);
@@ -6713,7 +6748,7 @@
     function getCleanCarouselSlidesForSave() {
       saveActiveCarouselSlideInputs();
       const list = [];
-      for (let i = 2; i <= 6; i++) {
+      for (let i = 1; i <= 6; i++) {
         const s = carouselSlidesData[i];
         if (s) {
           list.push({
@@ -6748,6 +6783,28 @@
       s.location = $("carousel-input-location")?.value || "";
       s.card_style = $("carousel-select-card-style")?.value || "frosted";
       s.show_swipe_arrow = $("carousel-check-swipe-arrow") ? $("carousel-check-swipe-arrow").checked : (activeCarouselSlide !== 6);
+
+      // If editing Slide 1, sync back to Design - 1 controls and canvases
+      if (activeCarouselSlide === 1) {
+        if ($("static-edit-badge") && s.badge_text) $("static-edit-badge").value = s.badge_text;
+        if ($("static-edit-line1")) $("static-edit-line1").value = s.headline_line1;
+        if ($("static-edit-line2")) $("static-edit-line2").value = s.headline_line2;
+        if ($("static-edit-line3")) $("static-edit-line3").value = s.headline_line3;
+        if ($("static-edit-cta")) $("static-edit-cta").value = s.cta_text;
+        if ($("static-edit-cta-color")) $("static-edit-cta-color").value = s.cta_color;
+        if ($("ai-input-location")) $("ai-input-location").value = s.location;
+        if (typeof currentStaticPost !== "undefined" && currentStaticPost) {
+          currentStaticPost.badge_text = s.badge_text;
+          currentStaticPost.headline_line1 = s.headline_line1;
+          currentStaticPost.headline_line2 = s.headline_line2;
+          currentStaticPost.headline_line3 = s.headline_line3;
+          currentStaticPost.cta_text = s.cta_text;
+          currentStaticPost.cta_color = s.cta_color;
+          if (typeof drawStaticPostCanvases === "function") {
+            drawStaticPostCanvases(currentStaticPost);
+          }
+        }
+      }
     }
 
     function loadActiveCarouselSlideInputs(slideNum) {
@@ -6757,7 +6814,13 @@
 
       const titleEl = $("carousel-active-slide-title");
       if (titleEl) {
-        titleEl.textContent = slideNum === 6 ? "Slide 6 (Closing & Call-To-Action)" : `Slide ${slideNum} (Point / Story)`;
+        if (slideNum === 1) {
+          titleEl.textContent = "Slide 1 (Main Cover Story)";
+        } else if (slideNum === 6) {
+          titleEl.textContent = "Slide 6 (Closing & Call-To-Action)";
+        } else {
+          titleEl.textContent = `Slide ${slideNum} (Point / Story)`;
+        }
       }
       const badgeEl = $("carousel-active-slide-badge");
       if (badgeEl) {
@@ -7128,30 +7191,26 @@
 
     // Group Download (all slides 1 to 6)
     async function downloadAllCarouselSlides() {
-      // 1. Download Slide 1 Cover
-      downloadCanvas("ai-suggested-canvas", "01_cover_4x5.jpg", "image/jpeg");
-
-      // 2. Download Slides 2 to 6
       const offscreen = document.createElement("canvas");
       offscreen.width = 1080;
       offscreen.height = 1350;
 
-      let count = 1;
-      for (let i = 2; i <= 6; i++) {
+      let count = 0;
+      for (let i = 1; i <= 6; i++) {
         const s = carouselSlidesData[i];
-        if (s && (s.photoImg || s.photoDataUrl || s.headline_line1 || s.headline_line2)) {
+        if (s && (s.photoImg || s.photoDataUrl || s.headline_line1 || s.headline_line2 || i === 1)) {
           count++;
-          await new Promise((r) => setTimeout(r, 280));
+          await new Promise((r) => setTimeout(r, 260));
           renderSingleSlideToCanvas(offscreen, s, i);
           const a = document.createElement("a");
-          a.download = `0${i}_slide_4x5.jpg`;
+          a.download = `0${i}_slide_design2_4x5.jpg`;
           a.href = offscreen.toDataURL("image/jpeg", 0.94);
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
         }
       }
-      showToast(`Downloaded ${count} carousel slides!`);
+      showToast(`Downloaded all ${count} Design - 2 carousel slides!`);
     }
     $("btn-download-all-carousel-slides")?.addEventListener("click", downloadAllCarouselSlides);
 
@@ -7164,7 +7223,7 @@
       const chev = $("carousel-deck-toggle-chevron");
       const lbl = $("carousel-deck-toggle-label");
       if (chev) chev.textContent = isHidden ? "▲" : "▼";
-      if (lbl) lbl.textContent = isHidden ? "Minimize Slides 2–6" : "Expand Slides 2–6";
+      if (lbl) lbl.textContent = isHidden ? "Minimize Design - 2 (Slides 1–6)" : "Expand Design - 2 (Slides 1–6)";
       if (isHidden) {
         loadActiveCarouselSlideInputs(activeCarouselSlide);
       }
