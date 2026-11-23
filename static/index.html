@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css?v=55.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=80.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=81.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -139,6 +139,11 @@
           <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
           <span>🎬 Reel Editor</span>
           <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:#38bdf8;color:#0f172a;border-radius:6px;font-weight:700;">CapCut</span>
+        </button>
+        <button class="nav-item" data-view="studio-ai" id="nav-item-studio-ai">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>
+          <span>Studio AI</span>
+          <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:rgba(56,189,248,0.18);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35);border-radius:6px;font-weight:700;">Chat</span>
         </button>
 
         <div class="nav-section-label" style="margin-top:14px;">PERSONAL LEARNING</div>
@@ -2896,6 +2901,11 @@
           <div id="finnish-lab-root"></div>
         </section>
 
+        <!-- ADMIN-ONLY VIEW: STUDIO AI CHAT ROOM (#studio-ai) -->
+        <section id="view-studio-ai" class="view hidden">
+          <div id="studio-ai-root"></div>
+        </section>
+
       </main>
     </div>
 
@@ -3196,10 +3206,11 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=68.0"></script>
-  <script src="/finnish-lab-db.js?v=79.0"></script>
-  <script src="/finnish-lab-curriculum.js?v=79.0"></script>
-  <script src="/finnish-lab.js?v=79.0"></script>
+  <script src="/app.js?v=81.0"></script>
+  <script src="/finnish-lab-db.js?v=81.0"></script>
+  <script src="/finnish-lab-curriculum.js?v=81.0"></script>
+  <script src="/finnish-lab.js?v=81.0"></script>
+  <script src="/studio-ai-chat.js?v=81.0"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');

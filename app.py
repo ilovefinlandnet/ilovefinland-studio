@@ -512,7 +512,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "app": "ILoveFinland Studio",
-                    "app_version": "80.0",
+                    "app_version": "81.0",
                     "milestone": 2,
                     "integrations": INTEGRATIONS_STATUS,
                 }
@@ -1173,6 +1173,12 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             user = self._require_auth()
             if not user:
                 return
+
+        if path == "/api/studio-ai/chat":
+            import studio_ai_chat
+            res, status_code = studio_ai_chat.handle_studio_chat(body or {})
+            self._send_json(res, status=status_code)
+            return
 
         if path == "/api/package/approve":
             pkg_id = int(body.get("package_id", 1))

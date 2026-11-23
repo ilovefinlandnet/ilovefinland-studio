@@ -3,34 +3,40 @@
    Rock-Solid on iPhone, iPad Portrait/Landscape & Desktop • Zero Jitter
    ============================================================================ */
 
-/* Hide Studio editorial cockpit & floating button while inside Finnish Lab */
-.workspace:has(#view-finnish-lab:not(.hidden)) .cockpit-telemetry-bar {
+/* Hide Studio editorial cockpit & floating button while inside Finnish Lab or Studio AI */
+.workspace:has(#view-finnish-lab:not(.hidden)) .cockpit-telemetry-bar,
+.workspace:has(#view-studio-ai:not(.hidden)) .cockpit-telemetry-bar {
   display: none !important;
 }
 body:has(#view-finnish-lab:not(.hidden)) .fl-floating-launcher,
 body:has(#view-finnish-lab:not(.hidden)) #btn-mobile-finnish-lab,
 body:has(#view-finnish-lab:not(.hidden)) .bottom-nav,
+body:has(#view-studio-ai:not(.hidden)) .fl-floating-launcher,
+body:has(#view-studio-ai:not(.hidden)) .bottom-nav,
 body:has(#signin-gate:not(.hidden)) .fl-floating-launcher,
 body:has(#signin-gate:not(.hidden)) #fl-side-panel {
   display: none !important;
 }
 
-/* Lock outer page scroll while inside Finnish Lab — Pure Calm OLED Dark (ChatGPT iOS feel!) */
-body:has(#view-finnish-lab:not(.hidden)) {
+/* Lock outer page scroll while inside Finnish Lab or Studio AI — Pure Calm OLED Dark (ChatGPT iOS feel!) */
+body:has(#view-finnish-lab:not(.hidden)),
+body:has(#view-studio-ai:not(.hidden)) {
   overflow: hidden !important;
   height: 100dvh !important;
   max-width: 100vw !important;
   background: #05080f !important;
 }
 
-.studio-shell:has(#view-finnish-lab:not(.hidden)) .workspace-wrap {
+.studio-shell:has(#view-finnish-lab:not(.hidden)) .workspace-wrap,
+.studio-shell:has(#view-studio-ai:not(.hidden)) .workspace-wrap {
   height: 100dvh !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
 }
 
-.workspace:has(#view-finnish-lab:not(.hidden)) {
+.workspace:has(#view-finnish-lab:not(.hidden)),
+.workspace:has(#view-studio-ai:not(.hidden)) {
   padding: 0 !important;
   margin: 0 !important;
   width: 100% !important;
@@ -48,7 +54,8 @@ body.fl-focus-mode .sidebar {
 }
 
 /* Main App Container — Exact 100dvh Flex Shell (Top Bar | Scroll Body | Bottom Dock) */
-#view-finnish-lab {
+#view-finnish-lab,
+#view-studio-ai {
   width: 100%;
   max-width: 100%;
   height: 100%;
@@ -61,7 +68,8 @@ body.fl-focus-mode .sidebar {
   box-sizing: border-box;
 }
 
-#finnish-lab-root {
+#finnish-lab-root,
+#studio-ai-root {
   width: 100%;
   height: 100%;
   flex: 1;
@@ -113,7 +121,8 @@ body.fl-focus-mode .sidebar {
 /* On ALL phones/tablets, make .mobile-header in-flow flex-shrink:0 inside .workspace-wrap
    so .workspace ALWAYS starts at the EXACT pixel .mobile-header ends (0px overlap on Dynamic Island / Notch / Safari / iPad!) */
 @media (max-width: 1024px) {
-  body:not(.fl-student-only):has(#view-finnish-lab:not(.hidden)) .mobile-header {
+  body:not(.fl-student-only):has(#view-finnish-lab:not(.hidden)) .mobile-header,
+  body:not(.fl-student-only):has(#view-studio-ai:not(.hidden)) .mobile-header {
     position: relative !important;
     top: auto !important;
     left: auto !important;
@@ -121,7 +130,8 @@ body.fl-focus-mode .sidebar {
     flex-shrink: 0 !important;
     padding-top: max(10px, env(safe-area-inset-top)) !important;
   }
-  body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)) {
+  body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)),
+  body:not(.fl-student-only) .workspace:has(#view-studio-ai:not(.hidden)) {
     padding-top: 0 !important;
   }
   .fl-app {

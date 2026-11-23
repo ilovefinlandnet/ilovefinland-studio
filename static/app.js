@@ -455,6 +455,7 @@
       performance: "Stats",
       connections: "Connections",
       "ai-media": "AI Media",
+      "studio-ai": "Studio AI",
     };
     return names[v] || v;
   }
@@ -523,8 +524,12 @@
     if (viewName === "finnish-lab" && window.FinnishLab) {
       window.FinnishLab.render();
     }
+    if (viewName === "studio-ai" && window.StudioAIChat) {
+      window.StudioAIChat.render();
+    }
   }
   window.openFinnishLabView = () => switchView("finnish-lab");
+  window.openStudioAIChatView = () => switchView("studio-ai");
 
   function goBack() {
     // 0. If inside Finnish Learning Lab, let it step back cleanly (Drawer -> Study Tool -> Chat) before leaving!
@@ -5396,7 +5401,7 @@
       switchView("finnish-lab", false, true);
     } else if (window.location.pathname === "/finnish-lab" || window.location.pathname.startsWith("/finnish-lab/")) {
       switchView("finnish-lab", false, true);
-    } else if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments", "finnish-lab"].includes(initialHash)) {
+    } else if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments", "finnish-lab", "studio-ai"].includes(initialHash)) {
       switchView(initialHash, false, true);
     }
 

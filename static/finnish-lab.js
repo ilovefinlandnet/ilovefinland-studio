@@ -2268,16 +2268,19 @@
     `;
   }
 
-  /* ---------- FLOATING TUTOR & SIDE PANEL (OUTSIDE FINNISH LAB) ---------- */
+  /* ---------- FLOATING STUDIO AI LAUNCHER (ADMIN-ONLY, OUTSIDE LAB & STUDIO AI) ---------- */
   function mountFloatingAndSidePanel() {
-    if (state.isStudentRoute) return;
+    if (state.isStudentRoute || state.role === "student") return;
     if (document.getElementById("fl-floating-launcher")) return;
     const launcher = document.createElement("button");
     launcher.id = "fl-floating-launcher";
     launcher.type = "button";
     launcher.className = "fl-floating-launcher";
-    launcher.innerHTML = `<span>🇫🇮</span><span>Finnish Tutor</span>`;
-    launcher.onclick = () => toggleSidePanel(true);
+    launcher.innerHTML = `${ICO.explain}<span>Studio AI</span>`;
+    launcher.onclick = () => {
+      if (window.openStudioAIChatView) window.openStudioAIChatView();
+      else toggleSidePanel(true);
+    };
     document.body.appendChild(launcher);
 
     const panel = document.createElement("aside");
