@@ -293,58 +293,72 @@ body.fl-focus-mode .sidebar {
   background: rgba(56, 189, 248, 0.14);
 }
 
-/* Chat Bubbles */
+/* Chat Messages — Open, Breathable ChatGPT / Claude Reading Layout */
 .fl-msg {
-  max-width: 88%;
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  max-width: 84%;
+  padding: 11px 15px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
   word-break: break-word;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
 }
 
 .fl-msg.user {
   align-self: flex-end;
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #ffffff;
   border-bottom-right-radius: 6px;
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.28);
 }
 
 .fl-msg.assistant {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  padding: 4px 4px 10px;
+  border-radius: 0;
   color: #f1f5f9;
-  border-bottom-left-radius: 6px;
 }
 
 .fl-msg h3, .fl-msg h4 {
-  margin: 10px 0 4px;
-  font-size: 0.88rem;
+  margin: 12px 0 5px;
+  font-size: 0.92rem;
   color: #7dd3fc;
 }
 
 .fl-msg-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 6px;
-  margin-top: 10px;
-  padding-top: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fl-msg-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .fl-mini-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 9px;
+  padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   color: #cbd5e1;
-  font-size: 0.73rem;
+  font-size: 0.74rem;
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .fl-mini-btn:hover {
