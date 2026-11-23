@@ -785,9 +785,11 @@
     }
     if (state.isRecording) stopRecording();
 
-    // Use continuous rolling 6-second audio streaming on iOS Safari (reliable & never stops!)
-    // and also as automatic fallback whenever SpeechRecognition isn't supported.
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    // Use continuous rolling 6-second audio streaming on iPhone & iPad Safari (reliable & never stops!)
+    // (iPadOS 13+ reports "MacIntel" with maxTouchPoints > 1)
+    const isIOS =
+      /iPhone|iPad|iPod/i.test(navigator.userAgent || "") ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (isIOS || !SR) {
       startRollingLiveListen();
@@ -1143,12 +1145,32 @@
     }
   }
 
-  function scrollChatsToBottom() {
+  function scrollChatsToBottom(instant) {
     setTimeout(() => {
       const stage = document.getElementById("fl-chat-stage");
       if (stage) stage.scrollTop = stage.scrollHeight;
       document.querySelectorAll(".fl-side-messages").forEach((el) => { el.scrollTop = el.scrollHeight; });
-    }, 40);
+      const labView = document.getElementById("view-finnish-lab");
+      if (labView && !labView.classList.contains("hidden") && state.mode === "chat") {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: instant ? "auto" : "smooth",
+        });
+      }
+      updateScrollDownButton();
+    }, 50);
+  }
+
+  function updateScrollDownButton() {
+    const btn = document.getElementById("fl-scroll-down-btn");
+    if (!btn) return;
+    const labView = document.getElementById("view-finnish-lab");
+    if (!labView || labView.classList.contains("hidden") || state.mode !== "chat") {
+      btn.classList.add("hidden");
+      return;
+    }
+    const distFromBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+    btn.classList.toggle("hidden", distFromBottom < 140);
   }
 
   /* ---------- CROP / ROTATE MODAL ---------- */
@@ -1336,6 +1358,9 @@
         }
         ${state.isSending ? `<div class="fl-msg assistant">⏳ Thinking...</div>` : ""}
       </div>
+
+      <!-- ChatGPT-Style Floating Jump-to-Bottom Button -->
+      <button type="button" id="fl-scroll-down-btn" class="fl-scroll-down-btn hidden" title="Jump to latest message" aria-label="Scroll to bottom">↓</button>
 
       <!-- Sleek Bottom Input Capsule (Exact Screenshot 1 Feel) -->
       <div class="fl-dock">
@@ -2022,6 +2047,15 @@
       window.visualViewport.addEventListener("resize", syncKeyboardDock);
       window.visualViewport.addEventListener("scroll", syncKeyboardDock);
     }
+
+    // Floating ChatGPT-style ↓ jump-to-bottom button
+    root.querySelector("#fl-scroll-down-btn")?.addEventListener("click", () => scrollChatsToBottom(false));
+    if (!window.__flScrollBtnBound) {
+      window.__flScrollBtnBound = true;
+      window.addEventListener("scroll", updateScrollDownButton, { passive: true });
+      window.addEventListener("resize", updateScrollDownButton, { passive: true });
+    }
+    updateScrollDownButton();
 
     // Top bar
     root.querySelector("#fl-open-drawer")?.addEventListener("click", () => { state.drawerOpen = true; renderActiveView(); });
