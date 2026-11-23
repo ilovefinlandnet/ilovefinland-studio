@@ -1,14 +1,14 @@
 """
-ILoveFinland Studio — Admin-Only Studio AI Command Chat Engine (v82.0).
+ILoveFinland Studio — Admin-Only Studio AI Command Center (v83.0).
 
 Strictly Admin-only (binodoli721@gmail.com). Completely separate from Finnish Learning Lab.
 Capabilities inside one unified ChatGPT-style room:
-1. General AI Chat + Multimodal Photo/PDF analysis (Gemini Flash).
-2. Live Web Fact-Checking ("Is this news true?") via Gemini Google Search Grounding.
-3. Real Photo Search ("Find me pictures for this title") via Openverse & Wikimedia Commons (free, high-res).
-4. AI Image Generation ("Create an AI picture for this title") via Gemini Image / Pollinations fallback.
-5. Attach Photo to Article ("Add photo 2 to my Helsinki article" / 1-tap "+ Article" button).
-6. Create Studio Article + Social Post directly from chat ("Make an article for this title: ...").
+1. General AI Chat + Multimodal Photo/PDF analysis (Gemini Flash), aware of any Linked Studio Article.
+2. Live Web Fact-Checking ("Is this news true?") via Gemini Google Search Grounding + 1-tap "Turn into Studio Article".
+3. Real Photo Search ("Find me pictures for this title / this article") via Openverse & Wikimedia Commons.
+4. AI Image Generation ("Create an AI picture for this title / this article") via Gemini Image / Pollinations fallback.
+5. Attach Photo to Article ("Add photo 2" / "Add photo 2 to my Helsinki article" / 1-tap "+ Article" picker).
+6. Create Full Studio Article + Social Post directly from chat ("Make an article for this title: ...").
 """
 
 from __future__ import annotations
@@ -33,10 +33,61 @@ def _get_gemini_key() -> str:
     )
 
 
-def _detect_intent(msg: str) -> str:
+def _strip_html(html: str) -> str:
+    txt = re.sub(r"<[^>]+>", " ", html or "")
+    return re.sub(r"\s+", " ", txt).strip()
+
+
+def _load_linked_article_context(package_id: Optional[int], db_path: str = db.DB_PATH) -> Optional[Dict[str, Any]]:
+    """Load concise context of the currently linked Studio article so Studio AI can read & act on it."""
+    if not package_id:
+        return None
+    try:
+        bundle = db.get_package_bundle(int(package_id), db_path=db_path)
+        if not bundle:
+            return None
+        pkg = bundle.get("package") or {}
+        versions = bundle.get("versions") or []
+        latest = versions[-1] if versions else {}
+        art = latest.get("article") or {}
+        ig = latest.get("ig_post") or {}
+        body_raw = art.get("body_html") or art.get("body") or ""
+        return {
+            "id": int(pkg.get("id") or package_id),
+            "title": pkg.get("title") or art.get("headline") or f"Article #{package_id}",
+            "status": pkg.get("status") or "",
+            "excerpt": (art.get("excerpt") or "")[:300],
+            "body_snippet": _strip_html(body_raw)[:1400],
+            "ig_caption": (ig.get("caption") or "")[:400],
+        }
+    except Exception:
+        return None
+
+
+def _detect_intent(msg: str, has_recent_media: bool = False, has_linked_article: bool = False) -> str:
     low = (msg or "").lower().strip()
-    # 1. Attach a photo/image to an article
-    if (
+
+    # 1. Create a new Studio article + social post from a title/topic
+    if any(k in low for k in (
+        "make an article", "make the article", "make article",
+        "create an article", "create the article", "create article",
+        "write an article for studio", "new article for", "create a story",
+        "make a story", "draft an article", "publish an article",
+        "article for this title", "article about this", "turn into studio article",
+        "turn this into an article",
+    )):
+        return "create_article"
+
+    # 2. Attach a photo/image to an article
+    short_attach = (
+        has_recent_media
+        and re.match(
+            r"^(please\s+)?(add|use|put|set|attach)\s+(photo|picture|image|pic|this one|this photo|this image|number|#?\d)",
+            low,
+        )
+        is not None
+    )
+    if short_attach or (
         any(k in low for k in (
             "add this to", "add this one to", "add photo", "add picture", "add image",
             "put photo", "put picture", "put this photo", "put this image",
@@ -45,33 +96,25 @@ def _detect_intent(msg: str) -> str:
             "to this article", "to the article", "to my article", "article photo",
         ))
         and any(w in low for w in ("photo", "picture", "image", "this one", "featured"))
-        and any(w in low for w in ("article", "post", "story", "featured", "#"))
+        and (has_linked_article or any(w in low for w in ("article", "post", "story", "featured", "#")))
     ):
         return "attach_photo"
-
-    # 2. Create a new Studio article + social post from a title/topic
-    if any(k in low for k in (
-        "make an article", "make the article", "make article",
-        "create an article", "create the article", "create article",
-        "write an article for studio", "new article for", "create a story",
-        "make a story", "draft an article", "publish an article",
-        "article for this title", "article about this",
-    )):
-        return "create_article"
 
     # 3. Generate an AI image
     if any(k in low for k in (
         "create ai picture", "create an ai picture", "create a picture", "create image",
         "generate image", "generate a picture", "generate ai", "make a picture", "make an image",
         "draw ", "create photo", "generate photo", "ai picture for", "ai image for",
+        "ai photo for", "create an ai photo",
     )):
         return "generate_image"
 
     # 4. Find real stock photos
     if any(k in low for k in (
         "find picture", "find me picture", "find photo", "find me photo", "find images",
-        "search photo", "search picture", "stock photo", "real photo", "picture related to",
-        "photos for", "pictures for", "image for this title",
+        "find real photo", "search photo", "search picture", "stock photo", "real photo",
+        "picture related to", "photos for", "pictures for", "image for this title",
+        "photo for this article", "photos for this article",
     )):
         return "find_photos"
 
@@ -131,11 +174,10 @@ def attach_photo_to_article(
 
     local_url = ""
     if not data_url and img_url.startswith("http"):
-        dl_data_url, dl_err = _download_image_to_data_url(img_url)
+        dl_data_url, _ = _download_image_to_data_url(img_url)
         if dl_data_url and dl_data_url.startswith("data:image/"):
             data_url = dl_data_url
         else:
-            # Fallback to direct URL if download blocked
             local_url = img_url
     elif img_url.startswith("/assets/"):
         local_url = img_url
@@ -198,7 +240,6 @@ def _find_matching_package(
         return None
     low = (message or "").lower()
 
-    # 1. Explicit #ID or "article 58"
     m_id = re.search(r"(?:#|article\s*#?|post\s*#?|story\s*#?)(\d{1,5})\b", low)
     if m_id:
         target_id = int(m_id.group(1))
@@ -206,17 +247,15 @@ def _find_matching_package(
             if p["id"] == target_id:
                 return p
 
-    # 2. "this article" / "current article" when an article is currently open in Studio
     if active_package_id and any(k in low for k in ("this article", "current article", "that article", "this story", "this post")):
         for p in pkgs:
             if p["id"] == int(active_package_id):
                 return p
 
-    # 3. Keyword overlap against article titles
     stop = {
         "add", "put", "use", "set", "attach", "this", "one", "that", "the", "to", "for", "in", "on",
         "my", "article", "post", "story", "photo", "picture", "image", "featured", "as", "please",
-        "first", "second", "third", "fourth", "fifth", "sixth", "last", "number", "num",
+        "first", "second", "third", "fourth", "fifth", "sixth", "last", "number", "num", "extra",
     }
     words = [w for w in re.findall(r"[a-zA-ZäöåÄÖÅ0-9]{3,}", low) if w not in stop and not w.isdigit()]
     if words:
@@ -231,7 +270,6 @@ def _find_matching_package(
         if best and best_score >= 1:
             return best
 
-    # 4. Fallback to active_package_id if user is actively reviewing one
     if active_package_id:
         for p in pkgs:
             if p["id"] == int(active_package_id):
@@ -245,7 +283,6 @@ def _pick_photo_from_recent(message: str, recent_media: Dict[str, Any]) -> Optio
     photos = recent_media.get("photos") or []
     gen = recent_media.get("generated_image")
 
-    # Check explicit number: "photo 2", "#3", "second", "last"
     idx: Optional[int] = None
     word_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6}
     for w, n in word_map.items():
@@ -269,13 +306,13 @@ def _pick_photo_from_recent(message: str, recent_media: Dict[str, Any]) -> Optio
 
 
 def _extract_article_topic(message: str) -> str:
-    # Strip leading command phrases cleanly
     cleaned = re.sub(
-        r"^\s*(please\s+)?(can you\s+)?(make|create|write|draft|build|generate)\s+(me\s+)?(an?|the|new)\s+(studio\s+)?(article|story|post)\s*(like that\s*)?(for|about|on|titled|with title|title)?\s*(this\s+title)?\s*[:\-–—]?\s*",
+        r"^\s*(please\s+)?(can you\s+)?(make|create|write|draft|build|generate|turn\s+this\s+into)\s+(me\s+)?(an?|the|new)?\s*(studio\s+)?(article|story|post)\s*(like that\s*)?(for|about|on|titled|with title|title)?\s*(this\s+title)?\s*[:\-–—]?\s*",
         "",
         message.strip(),
         flags=re.I,
     ).strip()
+    cleaned = re.sub(r"\s+(and\s+)?(use|with)\s+(photo|picture|image|this photo|this image).*$", "", cleaned, flags=re.I).strip()
     cleaned = cleaned.strip("\"' ")
     return cleaned or message.strip()
 
@@ -283,7 +320,7 @@ def _extract_article_topic(message: str) -> str:
 def _search_real_photos(query: str, limit: int = 6) -> List[Dict[str, str]]:
     """Search free high-res real photos via Openverse & Wikimedia Commons (zero API key needed)."""
     clean_q = re.sub(
-        r"\b(find|me|pictures?|photos?|images?|related|to|this|title|for|about|please|search|stock|real)\b",
+        r"\b(find|me|pictures?|photos?|images?|related|to|this|title|article|for|about|please|search|stock|real)\b",
         " ",
         query,
         flags=re.I,
@@ -341,7 +378,7 @@ def _search_real_photos(query: str, limit: int = 6) -> List[Dict[str, str]]:
 def _generate_ai_image(prompt_text: str) -> Tuple[Optional[Dict[str, str]], Optional[str]]:
     """Generate a high-res editorial AI image (tries Gemini native image gen first, then Pollinations free fallback)."""
     clean_prompt = re.sub(
-        r"\b(create|generate|make|an?|ai|picture|image|photo|for|this|title|please)\b",
+        r"\b(create|generate|make|an?|ai|picture|image|photo|for|this|title|article|please)\b",
         " ",
         prompt_text,
         flags=re.I,
@@ -447,7 +484,7 @@ def handle_studio_chat(
     db_path: str = db.DB_PATH,
     author: str = "binodoli721@gmail.com",
 ) -> Tuple[Dict[str, Any], int]:
-    """Unified Admin-only Studio AI Chat handler."""
+    """Unified Admin-only Studio AI Command Center handler."""
     message = (payload.get("message") or "").strip()
     history = payload.get("history") or []
     attachments = payload.get("attachments") or []
@@ -459,7 +496,9 @@ def handle_studio_chat(
     if not message and not attachments:
         return {"ok": False, "error": "EMPTY", "message": "Type a message or attach a photo/PDF."}, 400
 
-    intent = forced_action or _detect_intent(message)
+    linked_article = _load_linked_article_context(active_package_id, db_path=db_path)
+    has_recent_media = bool((recent_media.get("photos") or []) or recent_media.get("generated_image"))
+    intent = forced_action or _detect_intent(message, has_recent_media=has_recent_media, has_linked_article=bool(linked_article))
 
     # 1. ATTACH PHOTO TO ARTICLE
     if intent == "attach_photo":
@@ -503,6 +542,7 @@ def handle_studio_chat(
             "photos": [],
             "generated_image": None,
             "sources": [],
+            "linked_article": {"id": res["package_id"], "title": res["package_title"]},
             "article_action": {
                 "package_id": res["package_id"],
                 "title": res["package_title"],
@@ -516,7 +556,7 @@ def handle_studio_chat(
         if len(topic) < 4:
             return {
                 "ok": True,
-                "reply": "Tell me the title or topic for the article! Example: *Make an article for this title: Why Helsinki Winters Are Magical*",
+                "reply": "Tell me the title or topic for the article! Example: *Make an article for this title: Why Helsinki Winters Feel Magical*",
                 "intent": intent,
                 "photos": [],
                 "generated_image": None,
@@ -524,10 +564,14 @@ def handle_studio_chat(
             }, 200
         try:
             links = re.findall(r"https?://[^\s]+", message)
+            extra_notes = (payload.get("extra_instructions") or "").strip()
+            instr = f"Created from Studio AI Chat: {message[:400]}"
+            if extra_notes:
+                instr = f"{instr}\nVerified context:\n{extra_notes[:1200]}"
             bundle = db.create_assignment(
                 topic=topic[:180],
                 scope="Article + Static Post",
-                instructions=f"Created from Studio AI Chat request: {message[:400]}",
+                instructions=instr,
                 links=links,
                 language="English",
                 db_path=db_path,
@@ -536,13 +580,12 @@ def handle_studio_chat(
             pkg_id = int(pkg.get("id") or 0)
             pkg_title = pkg.get("title") or topic
 
-            # If user also mentioned using a recent photo ("and use photo 2" / "with this photo"), attach it automatically!
             attached_note = ""
             if pkg_id and any(k in message.lower() for k in ("with this photo", "use photo", "use this photo", "use this image", "with photo", "use picture")):
                 picked = _pick_photo_from_recent(message, recent_media)
                 if picked:
                     p_obj, p_lbl = picked
-                    a_res, a_code = attach_photo_to_article(pkg_id, p_obj, mode="featured", db_path=db_path, author=author)
+                    _, a_code = attach_photo_to_article(pkg_id, p_obj, mode="featured", db_path=db_path, author=author)
                     if a_code == 200:
                         attached_note = f"\n- Also set **{p_lbl}** as its **Featured Photo**."
 
@@ -551,13 +594,14 @@ def handle_studio_chat(
                 "reply": (
                     f"Created your new Studio Article & Social Post!\n"
                     f"- **Title:** {pkg_title}\n"
-                    f"- **Article ID:** #{pkg_id} (saved in **Articles & Posts**){attached_note}\n\n"
-                    f"Tap **Open Article →** below to review, edit, or push to WordPress."
+                    f"- **Article ID:** #{pkg_id} (linked to this chat & saved in **Articles & Posts**){attached_note}\n\n"
+                    f"You can now say *\"Find real photos for this article\"*, *\"Create an AI photo for this article\"*, or tap **Open Article →** below."
                 ),
                 "intent": intent,
                 "photos": [],
                 "generated_image": None,
                 "sources": [],
+                "linked_article": {"id": pkg_id, "title": pkg_title},
                 "article_action": {
                     "package_id": pkg_id,
                     "title": pkg_title,
@@ -567,23 +611,30 @@ def handle_studio_chat(
         except Exception as exc:
             return {"ok": False, "error": "CREATE_ARTICLE_FAILED", "message": f"Could not create article: {str(exc)[:140]}"}, 500
 
-    # 3. FIND REAL PHOTOS
+    # 3. FIND REAL PHOTOS (uses linked article title automatically when user says "for this article"!)
     if intent == "find_photos":
-        found_photos = _search_real_photos(message, limit=6)
+        query_for_search = message
+        if linked_article and any(k in message.lower() for k in ("this article", "this story", "this post", "my article")) and len(message.split()) <= 10:
+            query_for_search = linked_article["title"]
+        found_photos = _search_real_photos(query_for_search, limit=6)
+        hint_target = f" for **{linked_article['title']}**" if linked_article and query_for_search == linked_article["title"] else ""
         reply = (
-            f"Found **{len(found_photos)} real high-res photos**! Tap **+ Article** on any photo to add it straight to an article, or tell me *\"Add photo 2 to my article\"*."
+            f"Found **{len(found_photos)} real high-res photos**{hint_target}! Tap **+ Article** on any photo, or say *\"Add photo 2\"*."
             if found_photos
             else "I couldn't find matching free stock photos for that exact phrasing — try shorter keywords (e.g. `Helsinki winter snow`) or ask me to **create an AI picture** instead!"
         )
         return {"ok": True, "reply": reply, "intent": intent, "photos": found_photos, "generated_image": None, "sources": []}, 200
 
-    # 4. GENERATE AI IMAGE
+    # 4. GENERATE AI IMAGE (uses linked article title automatically when user says "for this article"!)
     if intent == "generate_image":
-        generated_image, gen_err = _generate_ai_image(message)
+        gen_prompt = message
+        if linked_article and any(k in message.lower() for k in ("this article", "this story", "this post", "my article")) and len(message.split()) <= 12:
+            gen_prompt = linked_article["title"]
+        generated_image, gen_err = _generate_ai_image(gen_prompt)
         if generated_image:
             return {
                 "ok": True,
-                "reply": f"Here is your editorial AI image for **{generated_image['prompt']}**! Tap **+ Article** to set it as an article photo, or **Download** to save it.",
+                "reply": f"Here is your editorial AI image for **{generated_image['prompt']}**! Tap **+ Article** or say *\"Use this photo\"* to set it as your article photo.",
                 "intent": intent,
                 "photos": [],
                 "generated_image": generated_image,
@@ -591,7 +642,7 @@ def handle_studio_chat(
             }, 200
         return {"ok": False, "error": "GEN_FAILED", "message": gen_err or "Could not generate image."}, 503
 
-    # 5. GENERAL CHAT + FACT-CHECK (MULTIMODAL GEMINI)
+    # 5. GENERAL CHAT + FACT-CHECK (MULTIMODAL GEMINI, LINKED-ARTICLE AWARE)
     contents: List[Dict[str, Any]] = []
     for turn in history[-12:]:
         role = "model" if turn.get("role") in ("assistant", "model") else "user"
@@ -604,12 +655,24 @@ def handle_studio_chat(
         return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
     contents.append({"role": "user", "parts": cur_parts})
 
+    linked_block = ""
+    if linked_article:
+        linked_block = (
+            f"\n\nCURRENTLY LINKED STUDIO ARTICLE (#{linked_article['id']}):\n"
+            f"- Title: {linked_article['title']}\n"
+            f"- Status: {linked_article['status']}\n"
+            f"- Excerpt: {linked_article['excerpt']}\n"
+            f"- Body snippet: {linked_article['body_snippet']}\n"
+            f"- IG Caption: {linked_article['ig_caption']}\n"
+            "If Binod refers to 'this article', 'the headline', 'the caption', or 'the intro', use this exact linked article."
+        )
+
     sys_prompt = (
-        "You are Binod's private AI assistant inside ILoveFinland Studio (for ilovefinland.net & @ilovefinland Instagram, plus general personal/business help). "
+        "You are Binod's private AI Editorial Command Center inside ILoveFinland Studio (for ilovefinland.net & @ilovefinland Instagram, plus general personal/business help). "
         "Be sharp, concise, practical, and direct like ChatGPT.\n"
         "- When fact-checking news or claims about Finland or the world, give a clear verdict (**✅ True**, **⚠️ Partly True / Unverified**, or **❌ False**), cite real facts/dates, and prioritize official sources (Yle, Migri, Traficom, Kela, FMI, Reuters).\n"
-        "- When asked for article outlines, Instagram captions, Reel hooks, emails, or general advice, give clean, ready-to-use output.\n"
-        "- Remind Binod naturally if relevant that he can say 'Make an article for this title: ...' or 'Add photo 2 to my article' to save directly to Studio."
+        "- When asked for article outlines, headlines, Instagram captions, Reel hooks, emails, or general advice, give clean, ready-to-use output."
+        + linked_block
     )
     text_out, sources, err = _call_studio_gemini(
         contents=contents,
@@ -619,6 +682,12 @@ def handle_studio_chat(
     if err or not text_out:
         return {"ok": False, "error": "AI_ERROR", "message": err or "AI could not respond right now."}, 503
 
+    turn_into_article_topic = None
+    if intent == "fact_check" and "❌ false" not in text_out.lower()[:120]:
+        # Suggest clean article topic from user's verified news question
+        clean_t = re.sub(r"\b(is this news true|is this true|fact[- ]?check|verify this|check this news|please)\b[:?\s]*", "", message, flags=re.I).strip(" ?.")
+        turn_into_article_topic = (clean_t or message)[:110]
+
     return {
         "ok": True,
         "reply": text_out,
@@ -626,4 +695,5 @@ def handle_studio_chat(
         "photos": [],
         "generated_image": None,
         "sources": sources,
+        "turn_into_article_topic": turn_into_article_topic,
     }, 200

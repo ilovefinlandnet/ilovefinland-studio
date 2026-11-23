@@ -1,8 +1,8 @@
 /* ============================================================================
-   ILOVEFINLAND STUDIO — ADMIN-ONLY STUDIO AI CHAT ROOM (v82.0)
+   ILOVEFINLAND STUDIO — ADMIN-ONLY STUDIO AI COMMAND CENTER (v83.0)
    Pure OLED ChatGPT Experience:
-   • General Chat & Photo/PDF Analysis
-   • News Fact-Check (Live Web Search)
+   • General Chat & Photo/PDF Analysis (aware of Linked Studio Article)
+   • News Fact-Check (Live Web Search) + 1-Tap "Turn into Studio Article"
    • Real Photo Search + 1-Tap "+ Article" Attach
    • AI Image Generation + 1-Tap "+ Article" Attach
    • Create Full Studio Article & Social Post Directly From Chat
@@ -17,6 +17,8 @@
     plus: `<svg class="fl-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
     send: `<svg class="fl-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`,
     sparkle: `<svg class="fl-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>`,
+    copy: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+    doc: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`,
   };
 
   const state = {
@@ -26,12 +28,14 @@
     isSending: false,
     pendingAtts: [],
     pickerOpen: false,
+    pickerIntent: "attach", // "attach" | "link"
     pickerPhoto: null,
     pickerMode: "featured",
     pickerSearch: "",
     pickerArticles: [],
     pickerLoading: false,
     attachingId: null,
+    copiedMsgIdx: null,
   };
 
   function esc(s) {
@@ -93,6 +97,7 @@
       c = {
         id: "sai_" + Date.now(),
         title: (firstMsg || "New Studio Chat").slice(0, 42),
+        linkedArticle: null,
         messages: [],
       };
       state.chats.unshift(c);
@@ -159,8 +164,9 @@
     }, 40);
   }
 
-  async function openArticlePicker(photoObj) {
-    state.pickerPhoto = photoObj;
+  async function openArticlePicker(intent, photoObj) {
+    state.pickerIntent = intent || "attach";
+    state.pickerPhoto = photoObj || null;
     state.pickerMode = "featured";
     state.pickerSearch = "";
     state.pickerOpen = true;
@@ -182,6 +188,15 @@
     }
   }
 
+  function linkArticleToChat(articleObj) {
+    const chat = ensureActiveChat(articleObj.title);
+    chat.linkedArticle = { id: Number(articleObj.id), title: articleObj.title };
+    state.pickerOpen = false;
+    state.pickerPhoto = null;
+    saveChats();
+    render();
+  }
+
   async function attachPhotoToArticleId(packageId, photoObj, mode) {
     if (!packageId || !photoObj) return;
     state.attachingId = packageId;
@@ -200,6 +215,7 @@
       if (!res.ok || !data.ok) {
         chat.messages.push({ role: "assistant", text: `⚠️ ${data.message || "Could not attach photo to article."}` });
       } else {
+        chat.linkedArticle = { id: data.package_id, title: data.package_title };
         const roleWord = mode === "additional" ? "Extra Photo" : "Featured Photo";
         chat.messages.push({
           role: "assistant",
@@ -218,7 +234,7 @@
     }
   }
 
-  async function sendStudioMessage(text) {
+  async function sendStudioMessage(text, extraOpts) {
     const clean = (text || "").trim();
     if (!clean && state.pendingAtts.length === 0) return;
     if (state.isSending) return;
@@ -228,7 +244,9 @@
     state.pendingAtts = [];
 
     const recent_media = getLatestRecentMedia(chat);
-    const active_package_id = window.getActiveStudioPackageId ? window.getActiveStudioPackageId() : null;
+    const active_package_id =
+      (chat.linkedArticle && chat.linkedArticle.id) ||
+      (window.getActiveStudioPackageId ? window.getActiveStudioPackageId() : null);
 
     chat.messages.push({
       role: "user",
@@ -242,17 +260,21 @@
 
     try {
       const history = chat.messages.slice(-12, -1).map((m) => ({ role: m.role, text: m.text }));
+      const bodyPayload = {
+        message: clean,
+        history,
+        attachments: atts,
+        recent_media,
+        active_package_id,
+      };
+      if (extraOpts && extraOpts.extra_instructions) {
+        bodyPayload.extra_instructions = extraOpts.extra_instructions;
+      }
       const res = await fetch("/api/studio-ai/chat", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: clean,
-          history,
-          attachments: atts,
-          recent_media,
-          active_package_id,
-        }),
+        body: JSON.stringify(bodyPayload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
@@ -261,6 +283,9 @@
           text: `⚠️ ${data.message || data.error || "Could not reach Studio AI right now."}`,
         });
       } else {
+        if (data.linked_article && data.linked_article.id) {
+          chat.linkedArticle = data.linked_article;
+        }
         chat.messages.push({
           role: "assistant",
           text: data.reply || "",
@@ -269,6 +294,7 @@
           sources: data.sources || [],
           article_action: data.article_action || null,
           pick_article_for_photo: data.pick_article_for_photo || null,
+          turn_into_article_topic: data.turn_into_article_topic || null,
         });
       }
     } catch (err) {
@@ -326,6 +352,14 @@
          </div>`
       : "";
 
+    const turnIntoArticleHtml = m.turn_into_article_topic
+      ? `<div style="margin-top:10px;">
+           <button type="button" data-sai-turn-article="${msgIdx}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);color:#7dd3fc;padding:6px 12px;border-radius:999px;font-size:0.76rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+             ${ICO.sparkle}<span>Turn into Studio Article</span>
+           </button>
+         </div>`
+      : "";
+
     const pickChoicesHtml = m.pick_article_for_photo && (m.pick_article_for_photo.articles || []).length
       ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
            ${m.pick_article_for_photo.articles
@@ -350,6 +384,15 @@
          </div>`
       : "";
 
+    const copyBar = m.role === "assistant" && m.text
+      ? `<div class="fl-msg-actions" style="margin-top:6px;">
+           <button type="button" class="fl-act-icon" data-sai-copy="${msgIdx}" title="Copy reply" aria-label="Copy reply">
+             ${ICO.copy}
+           </button>
+           ${state.copiedMsgIdx === msgIdx ? `<span style="font-size:0.7rem;color:#7dd3fc;margin-left:4px;">Copied</span>` : ""}
+         </div>`
+      : "";
+
     return `
       <div class="fl-msg ${m.role === "user" ? "user" : "assistant"}">
         ${m.attNames && m.attNames.length ? `<div style="font-size:0.72rem;opacity:0.85;margin-bottom:4px;">📎 ${esc(m.attNames.join(", "))}</div>` : ""}
@@ -357,8 +400,10 @@
         ${photosHtml}
         ${genHtml}
         ${actionHtml}
+        ${turnIntoArticleHtml}
         ${pickChoicesHtml}
         ${srcHtml}
+        ${copyBar}
       </div>
     `;
   }
@@ -368,6 +413,7 @@
     if (!root) return;
     const chat = getActiveChat();
     const msgs = chat ? chat.messages || [] : [];
+    const linked = chat && chat.linkedArticle ? chat.linkedArticle : null;
 
     const filteredArticles = state.pickerArticles.filter((a) => {
       const q = (state.pickerSearch || "").trim().toLowerCase();
@@ -385,7 +431,22 @@
           <button type="button" class="fl-new-chat-pill" id="sai-new-chat">+ New</button>
         </header>
 
-        <div class="fl-chat-stage" id="sai-chat-stage" style="padding-bottom:68px;">
+        ${
+          linked
+            ? `<div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;margin:2px 0 4px;border-radius:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);font-size:0.74rem;">
+                 <div style="display:flex;align-items:center;gap:6px;min-width:0;color:#bae6fd;">
+                   ${ICO.doc}
+                   <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>#${linked.id}</strong> ${esc(linked.title)}</span>
+                 </div>
+                 <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                   <button type="button" data-sai-open-article="${linked.id}" style="background:none;border:none;color:#38bdf8;font-size:0.72rem;font-weight:700;cursor:pointer;padding:2px 4px;">Open</button>
+                   <button type="button" id="sai-unlink-article" style="background:none;border:none;color:#94a3b8;font-size:0.78rem;cursor:pointer;padding:2px 4px;" title="Unlink article">✕</button>
+                 </div>
+               </div>`
+            : ""
+        }
+
+        <div class="fl-chat-stage" id="sai-chat-stage" style="padding-bottom:74px;">
           ${
             msgs.length
               ? msgs.map((m, i) => renderMessage(m, i)).join("")
@@ -415,13 +476,16 @@
                    </div>`
                 : ""
             }
-            <textarea id="sai-input" class="fl-capsule-input" rows="1" placeholder="Ask anything, find photos, or make an article..."></textarea>
+            <textarea id="sai-input" class="fl-capsule-input" rows="1" placeholder="Message Studio AI..."></textarea>
             <div class="fl-capsule-bar">
               <div class="fl-capsule-left">
                 <label class="fl-cap-btn" title="Attach Photo or PDF" style="padding:0;width:36px;cursor:pointer;">
                   ${ICO.plus}
                   <input type="file" id="sai-file-input" accept="image/*,application/pdf" style="display:none;" />
                 </label>
+                <button type="button" class="fl-cap-btn" id="sai-link-article-btn" title="Link a Studio article to this chat" style="font-size:0.74rem;padding:0 10px;gap:5px;color:#94a3b8;">
+                  ${ICO.doc}<span>${linked ? "Switch Article" : "Link Article"}</span>
+                </button>
               </div>
               <div class="fl-capsule-right">
                 <button type="button" class="fl-send-circle" id="sai-send-btn" ${state.isSending ? "disabled" : ""} title="Send">${ICO.send}</button>
@@ -465,13 +529,17 @@
           ? `<div class="fl-drawer-backdrop" id="sai-picker-backdrop" style="justify-content:center;align-items:flex-end;">
                <div style="width:100%;max-width:460px;max-height:78dvh;background:#0b1120;border:1px solid rgba(255,255,255,0.12);border-radius:18px 18px 0 0;padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;">
                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                   <strong style="color:#fff;font-size:0.95rem;">Add Photo to Article</strong>
+                   <strong style="color:#fff;font-size:0.95rem;">${state.pickerIntent === "link" ? "Link Article to Chat" : "Add Photo to Article"}</strong>
                    <button type="button" class="fl-btn sm" id="sai-close-picker">✕</button>
                  </div>
-                 <div style="display:flex;gap:6px;">
-                   <button type="button" class="fl-btn sm ${state.pickerMode === "featured" ? "primary" : ""}" id="sai-mode-featured" style="flex:1;">Featured Photo</button>
-                   <button type="button" class="fl-btn sm ${state.pickerMode === "additional" ? "primary" : ""}" id="sai-mode-additional" style="flex:1;">Extra Photo</button>
-                 </div>
+                 ${
+                   state.pickerIntent === "attach"
+                     ? `<div style="display:flex;gap:6px;">
+                          <button type="button" class="fl-btn sm ${state.pickerMode === "featured" ? "primary" : ""}" id="sai-mode-featured" style="flex:1;">Featured Photo</button>
+                          <button type="button" class="fl-btn sm ${state.pickerMode === "additional" ? "primary" : ""}" id="sai-mode-additional" style="flex:1;">Extra Photo</button>
+                        </div>`
+                     : ""
+                 }
                  <input type="text" id="sai-picker-search" value="${esc(state.pickerSearch)}" placeholder="Search article title or #ID..." style="width:100%;padding:9px 12px;border-radius:10px;background:#141923;border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:0.84rem;box-sizing:border-box;" />
                  <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
                    ${
@@ -483,7 +551,7 @@
                                (a) => `
                              <button type="button" data-sai-pick-pkg="${a.id}" ${state.attachingId ? "disabled" : ""} style="text-align:left;padding:10px 12px;border-radius:10px;background:#141923;border:1px solid rgba(255,255,255,0.08);color:#f1f5f9;font-size:0.82rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;">
                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>#${a.id}</strong> ${esc(a.title)}</span>
-                               <span style="color:#38bdf8;font-size:0.72rem;font-weight:700;flex-shrink:0;">${state.attachingId === a.id ? "Saving..." : "Use →"}</span>
+                               <span style="color:#38bdf8;font-size:0.72rem;font-weight:700;flex-shrink:0;">${state.attachingId === a.id ? "Saving..." : state.pickerIntent === "link" ? "Link →" : "Use →"}</span>
                              </button>`
                              )
                              .join("")
@@ -501,7 +569,7 @@
 
   function bindEvents(root) {
     const startNew = () => {
-      const c = { id: "sai_" + Date.now(), title: "New Studio Chat", messages: [] };
+      const c = { id: "sai_" + Date.now(), title: "New Studio Chat", linkedArticle: null, messages: [] };
       state.chats.unshift(c);
       state.activeId = c.id;
       state.drawerOpen = false;
@@ -514,6 +582,12 @@
     root.querySelector("#sai-close-drawer")?.addEventListener("click", () => { state.drawerOpen = false; render(); });
     root.querySelector("#sai-drawer-backdrop")?.addEventListener("click", (e) => { if (e.target.id === "sai-drawer-backdrop") { state.drawerOpen = false; render(); } });
 
+    root.querySelector("#sai-link-article-btn")?.addEventListener("click", () => openArticlePicker("link", null));
+    root.querySelector("#sai-unlink-article")?.addEventListener("click", () => {
+      const c = getActiveChat();
+      if (c) { c.linkedArticle = null; saveChats(); render(); }
+    });
+
     // Article picker modal events
     root.querySelector("#sai-close-picker")?.addEventListener("click", () => { state.pickerOpen = false; render(); });
     root.querySelector("#sai-picker-backdrop")?.addEventListener("click", (e) => { if (e.target.id === "sai-picker-backdrop") { state.pickerOpen = false; render(); } });
@@ -521,27 +595,58 @@
     root.querySelector("#sai-mode-additional")?.addEventListener("click", () => { state.pickerMode = "additional"; render(); });
     root.querySelector("#sai-picker-search")?.addEventListener("input", (e) => { state.pickerSearch = e.target.value; render(); root.querySelector("#sai-picker-search")?.focus(); });
     root.querySelectorAll("[data-sai-pick-pkg]").forEach((b) => {
-      b.onclick = () => attachPhotoToArticleId(Number(b.getAttribute("data-sai-pick-pkg")), state.pickerPhoto, state.pickerMode);
+      b.onclick = () => {
+        const pkgId = Number(b.getAttribute("data-sai-pick-pkg"));
+        if (state.pickerIntent === "link") {
+          const found = state.pickerArticles.find((x) => x.id === pkgId);
+          if (found) linkArticleToChat(found);
+        } else {
+          attachPhotoToArticleId(pkgId, state.pickerPhoto, state.pickerMode);
+        }
+      };
     });
 
-    // 1-tap "+ Article" buttons on real photos & AI images
     const chat = getActiveChat();
     root.querySelectorAll("[data-sai-attach-photo]").forEach((b) => {
       b.onclick = () => {
         const [mi, pi] = String(b.getAttribute("data-sai-attach-photo") || "").split(":").map(Number);
         const photo = chat?.messages?.[mi]?.photos?.[pi];
-        if (photo) openArticlePicker(photo);
+        if (photo) openArticlePicker("attach", photo);
       };
     });
     root.querySelectorAll("[data-sai-attach-gen]").forEach((b) => {
       b.onclick = () => {
         const mi = Number(b.getAttribute("data-sai-attach-gen"));
         const gen = chat?.messages?.[mi]?.generated_image;
-        if (gen) openArticlePicker(gen);
+        if (gen) openArticlePicker("attach", gen);
       };
     });
 
-    // Inline quick-attach choices from natural-language chat
+    root.querySelectorAll("[data-sai-turn-article]").forEach((b) => {
+      b.onclick = () => {
+        const mi = Number(b.getAttribute("data-sai-turn-article"));
+        const msg = chat?.messages?.[mi];
+        if (msg && msg.turn_into_article_topic) {
+          sendStudioMessage(`Make an article for this title: ${msg.turn_into_article_topic}`, {
+            extra_instructions: msg.text || "",
+          });
+        }
+      };
+    });
+
+    root.querySelectorAll("[data-sai-copy]").forEach((b) => {
+      b.onclick = () => {
+        const mi = Number(b.getAttribute("data-sai-copy"));
+        const txt = chat?.messages?.[mi]?.text || "";
+        if (txt && navigator.clipboard) {
+          navigator.clipboard.writeText(txt).catch(() => {});
+          state.copiedMsgIdx = mi;
+          render();
+          setTimeout(() => { state.copiedMsgIdx = null; render(); }, 1600);
+        }
+      };
+    });
+
     root.querySelectorAll("[data-sai-quick-attach]").forEach((b) => {
       b.onclick = () => {
         const [mi, pkgId] = String(b.getAttribute("data-sai-quick-attach") || "").split(":").map(Number);
@@ -552,7 +657,6 @@
       };
     });
 
-    // 1-tap "Open Article →" button
     root.querySelectorAll("[data-sai-open-article]").forEach((b) => {
       b.onclick = () => {
         const pkgId = Number(b.getAttribute("data-sai-open-article"));
