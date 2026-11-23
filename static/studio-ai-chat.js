@@ -117,6 +117,7 @@
     let photos = [];
     let generated_image = null;
     let uploaded_image = null;
+    let uploaded_images = [];
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (!photos.length && msgs[i].photos && msgs[i].photos.length) {
         photos = msgs[i].photos;
@@ -124,15 +125,15 @@
       if (!generated_image && msgs[i].generated_image) {
         generated_image = msgs[i].generated_image;
       }
-      if (!uploaded_image && msgs[i].attImages && msgs[i].attImages.length) {
-        const lastImg = msgs[i].attImages[msgs[i].attImages.length - 1];
-        if (lastImg && lastImg.data_url) {
-          uploaded_image = { data_url: lastImg.data_url, title: lastImg.name || "Uploaded Photo", source: "ILF", photographer: "ILF" };
-        }
+      if (!uploaded_images.length && msgs[i].attImages && msgs[i].attImages.length) {
+        uploaded_images = msgs[i].attImages
+          .filter((im) => im && im.data_url)
+          .map((im) => ({ data_url: im.data_url, title: im.name || "Uploaded Photo", source: "ILF", photographer: "ILF" }));
+        if (uploaded_images.length) uploaded_image = uploaded_images[0];
       }
-      if (photos.length && generated_image && uploaded_image) break;
+      if (photos.length && generated_image && uploaded_images.length) break;
     }
-    return { photos, generated_image, uploaded_image };
+    return { photos, generated_image, uploaded_image, uploaded_images };
   }
 
   function readFileAsCompressedAttachment(file) {
@@ -410,15 +411,16 @@
       : "";
 
     const userImgsHtml = (m.attImages || []).length
-      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:${m.text ? "8px" : "0"};">
+      ? `<div style="display:grid;grid-template-columns:${m.attImages.length > 1 ? "repeat(2,minmax(0,1fr))" : "minmax(0,220px)"};gap:8px;margin-bottom:${m.text ? "8px" : "0"};">
            ${m.attImages
              .map(
                (img, imgIdx) => `
-             <div style="background:#0b1120;border:1px solid rgba(255,255,255,0.16);border-radius:12px;overflow:hidden;max-width:220px;">
-               <img src="${esc(img.data_url)}" alt="${esc(img.name || "Photo")}" style="width:100%;max-height:200px;object-fit:cover;display:block;" />
-               <div style="padding:5px 8px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
-                 <span style="font-size:0.68rem;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(img.name || "Photo")}</span>
-                 <button type="button" data-sai-attach-user-img="${msgIdx}:${imgIdx}" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.45);color:#e0f2fe;font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:6px;cursor:pointer;white-space:nowrap;">+ Article</button>
+             <div style="background:#0b1120;border:1px solid rgba(255,255,255,0.16);border-radius:12px;overflow:hidden;position:relative;">
+               ${m.attImages.length > 1 ? `<span style="position:absolute;top:5px;left:5px;z-index:2;background:rgba(5,8,15,0.8);color:#e2e8f0;font-size:0.64rem;font-weight:800;padding:2px 6px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);">#${imgIdx + 1}</span>` : ""}
+               <img src="${esc(img.data_url)}" alt="${esc(img.name || "Photo")}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;" />
+               <div style="padding:5px 7px;display:flex;justify-content:space-between;align-items:center;gap:4px;">
+                 <span style="font-size:0.66rem;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(img.name || "Photo")}</span>
+                 <button type="button" data-sai-attach-user-img="${msgIdx}:${imgIdx}" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.45);color:#e0f2fe;font-size:0.66rem;font-weight:700;padding:2px 6px;border-radius:6px;cursor:pointer;white-space:nowrap;">+ Article</button>
                </div>
              </div>`
              )
@@ -529,9 +531,9 @@
             <textarea id="sai-input" class="fl-capsule-input" rows="1" placeholder="Message Studio AI..."></textarea>
             <div class="fl-capsule-bar">
               <div class="fl-capsule-left">
-                <label class="fl-cap-btn" title="Attach Photo or PDF" style="padding:0;width:36px;cursor:pointer;">
+                <label class="fl-cap-btn" title="Attach Photos (multiple) or PDF" style="padding:0;width:36px;cursor:pointer;">
                   ${ICO.plus}
-                  <input type="file" id="sai-file-input" accept="image/*,application/pdf" style="display:none;" />
+                  <input type="file" id="sai-file-input" accept="image/*,application/pdf" multiple style="display:none;" />
                 </label>
                 <button type="button" class="fl-cap-btn" id="sai-link-article-btn" title="Link a Studio article to this chat" style="font-size:0.74rem;padding:0 10px;gap:5px;color:#94a3b8;">
                   ${ICO.doc}<span>${linked ? "Switch Article" : "Link Article"}</span>
@@ -740,8 +742,9 @@
     });
 
     root.querySelector("#sai-file-input")?.addEventListener("change", async (e) => {
-      const f = e.target.files?.[0];
-      if (f) {
+      const files = Array.from(e.target.files || []).slice(0, 6);
+      for (const f of files) {
+        if (state.pendingAtts.length >= 6) break;
         const att = await readFileAsCompressedAttachment(f);
         if (att) state.pendingAtts.push(att);
       }

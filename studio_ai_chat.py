@@ -505,6 +505,32 @@ def attach_photo_to_article(
         return {"ok": False, "error": "ATTACH_FAILED", "message": str(exc)[:180]}, 400
 
 
+def _collect_all_uploaded_photos(
+    recent_media: Dict[str, Any],
+    attachments: Optional[List[Dict[str, Any]]] = None,
+) -> List[Dict[str, Any]]:
+    """Return all uploaded images from the current message (preferred) or the latest user upload turn."""
+    cur_imgs: List[Dict[str, Any]] = []
+    for att in attachments or []:
+        mime = (att.get("mime_type") or "").lower()
+        b64 = att.get("data_base64") or ""
+        if mime.startswith("image/") and b64:
+            cur_imgs.append({
+                "data_url": f"data:{mime};base64,{b64}",
+                "title": (att.get("name") or "Uploaded Photo")[:80],
+                "source": "ILF",
+                "photographer": "ILF",
+            })
+    if cur_imgs:
+        return cur_imgs
+    up_list = recent_media.get("uploaded_images") or []
+    if up_list:
+        return up_list
+    if recent_media.get("uploaded_image"):
+        return [recent_media["uploaded_image"]]
+    return []
+
+
 def _pick_photo_from_recent(
     message: str,
     recent_media: Dict[str, Any],
@@ -513,18 +539,7 @@ def _pick_photo_from_recent(
     low = (message or "").lower()
     photos = recent_media.get("photos") or []
     gen = recent_media.get("generated_image")
-    uploaded = recent_media.get("uploaded_image")
-
-    for att in attachments or []:
-        mime = (att.get("mime_type") or "").lower()
-        b64 = att.get("data_base64") or ""
-        if mime.startswith("image/") and b64:
-            return {
-                "data_url": f"data:{mime};base64,{b64}",
-                "title": (att.get("name") or "Uploaded Photo")[:80],
-                "source": "ILF",
-                "photographer": "ILF",
-            }, "your uploaded photo"
+    uploaded_list = _collect_all_uploaded_photos(recent_media, attachments=attachments)
 
     idx: Optional[int] = None
     word_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6}
@@ -536,13 +551,25 @@ def _pick_photo_from_recent(
         m_num = re.search(r"(?:photo|picture|image|pic|number|#)\s*(\d)\b", low)
         if m_num:
             idx = int(m_num.group(1))
-    if idx is None and "last" in low and photos:
-        idx = len(photos)
+    if idx is None and "last" in low:
+        if uploaded_list and not photos:
+            idx = len(uploaded_list)
+        elif photos:
+            idx = len(photos)
+
+    # If user attached photos in THIS message, prioritize them (supporting #1..#6!)
+    cur_has_upload = any((a.get("mime_type") or "").lower().startswith("image/") and a.get("data_base64") for a in (attachments or []))
+    if cur_has_upload and uploaded_list:
+        if idx is not None and 1 <= idx <= len(uploaded_list):
+            return uploaded_list[idx - 1], f"Uploaded Photo #{idx}"
+        return uploaded_list[0], "your uploaded photo"
 
     if idx is not None and 1 <= idx <= len(photos):
         return photos[idx - 1], f"Photo #{idx}"
-    if uploaded and idx is None:
-        return uploaded, "your uploaded photo"
+    if idx is not None and 1 <= idx <= len(uploaded_list):
+        return uploaded_list[idx - 1], f"Uploaded Photo #{idx}"
+    if uploaded_list and idx is None:
+        return uploaded_list[0], "your uploaded photo"
     if gen and (idx is None or "ai" in low or "generated" in low):
         return gen, "your AI image"
     if photos:
@@ -798,14 +825,25 @@ def _write_and_save_ai_article(
         )
         pkg_title = ai_pkg.get("headline") or pkg_title
 
-    # Auto-attach any uploaded/generated/found photo if user has one in this chat!
+    # Auto-attach ALL uploaded photos (1st = Featured, 2nd..6th = Extra Photos) or the picked photo!
     attached_note = ""
-    picked = _pick_photo_from_recent(message, recent_media, attachments=attachments)
-    if pkg_id and picked:
-        p_obj, p_lbl = picked
-        _, a_code = attach_photo_to_article(pkg_id, p_obj, mode="featured", db_path=db_path, author=author)
-        if a_code == 200:
-            attached_note = f"\n- **Photo:** Attached **{p_lbl}** as the Featured Image."
+    all_uploaded = _collect_all_uploaded_photos(recent_media, attachments=attachments)
+    if pkg_id and len(all_uploaded) > 1:
+        ok_count = 0
+        for i, up_img in enumerate(all_uploaded[:6]):
+            m_mode = "featured" if i == 0 else "additional"
+            _, a_code = attach_photo_to_article(pkg_id, up_img, mode=m_mode, db_path=db_path, author=author)
+            if a_code == 200:
+                ok_count += 1
+        if ok_count:
+            attached_note = f"\n- **Photos:** Set Photo #1 as **Featured Photo** and added **{ok_count - 1} Extra Photos** to the article."
+    else:
+        picked = _pick_photo_from_recent(message, recent_media, attachments=attachments)
+        if pkg_id and picked:
+            p_obj, p_lbl = picked
+            _, a_code = attach_photo_to_article(pkg_id, p_obj, mode="featured", db_path=db_path, author=author)
+            if a_code == 200:
+                attached_note = f"\n- **Photo:** Attached **{p_lbl}** as the Featured Image."
 
     cover_preview = ""
     if ai_pkg and ai_pkg.get("ig_cover_line1"):
@@ -948,8 +986,31 @@ def handle_studio_chat(
             }, 200
         return _apply_smart_edit_to_article(linked_article, message, history, db_path=db_path)
 
-    # 2. ATTACH PHOTO TO ARTICLE
+    # 2. ATTACH PHOTO(S) TO ARTICLE
     if intent == "attach_photo":
+        all_uploaded = _collect_all_uploaded_photos(recent_media, attachments=attachments)
+        wants_all = len(all_uploaded) > 1 and any(k in message.lower() for k in ("all", "these photos", "these pictures", "these images", "both"))
+        if wants_all and linked_article:
+            ok_count = 0
+            last_res = None
+            for i, up_img in enumerate(all_uploaded[:6]):
+                m_mode = "featured" if i == 0 else "additional"
+                r_i, c_i = attach_photo_to_article(linked_article["id"], up_img, mode=m_mode, db_path=db_path, author=author)
+                if c_i == 200:
+                    ok_count += 1
+                    last_res = r_i
+            if ok_count and last_res:
+                return {
+                    "ok": True,
+                    "reply": f"Done! Added all **{ok_count} uploaded photos** to **{last_res['package_title']}** (#{last_res['package_id']}) — Photo #1 as **Featured Photo** and {ok_count - 1} as **Extra Photos**.",
+                    "intent": intent,
+                    "photos": [],
+                    "generated_image": None,
+                    "sources": [],
+                    "linked_article": {"id": last_res["package_id"], "title": last_res["package_title"]},
+                    "article_action": {"package_id": last_res["package_id"], "title": last_res["package_title"], "label": "Open Article →"},
+                }, 200
+
         picked = _pick_photo_from_recent(message, recent_media, attachments=attachments)
         if not picked:
             return {
