@@ -597,12 +597,13 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
 
     if mode == "live_translate":
         return base + (
-            "\nSILENT LIVE TRANSLATION MODE. The learner is listening in class and needs an instant, silent WRITTEN translation right in the chat.\n"
-            "Format your reply ultra-cleanly (zero fluff, no intro):\n"
-            "🇫🇮 **Finnish:** <exact Finnish heard/written>\n"
+            "\nSILENT LIVE CLASSROOM LISTENING MODE. The learner is sitting in Finnish class right now and needs an instant, silent WRITTEN translation & answer while the audio keeps listening.\n"
+            "If the audio clip contains ONLY silence, coughing, paper rustling, or no intelligible speech, reply with ONLY the exact word: [SILENCE]\n"
+            "Otherwise, format your reply ultra-cleanly (zero fluff, no intro):\n"
+            "🇫🇮 **Heard:** <exact Finnish spoken>\n"
             "🇬🇧 **English:** <clear, natural English translation>\n"
-            "If it is a question or instruction directed at the student, add ONE short line:\n"
-            "💬 **You can reply:** <short A1 Finnish answer> (*<English meaning>*)"
+            "If the teacher asked a question, gave an exercise, or expects a student reply, add:\n"
+            "💬 **Answer:** <short, clear A1 Finnish answer> (*<English meaning>*)"
         )
 
     if mode == "quick_class":

@@ -39,6 +39,9 @@
     isLiveTranslating: false,
     liveRecognition: null,
     liveInterimText: "",
+    liveStream: null,
+    liveChunkRecorder: null,
+    liveChunkTimer: null,
     isSending: false,
     selectedGrammarId: "olla",
     currentReading: null,
@@ -674,7 +677,107 @@
     }
   }
 
-  /* ---------- SILENT LIVE TRANSLATION (WRITTEN IN SAME CHAT, NEVER TALKS BACK!) ---------- */
+  /* ---------- SILENT LIVE LISTEN & ANSWER (CONTINUOUS REAL-TIME ON IPHONE, IPAD & PC!) ---------- */
+  async function sendLiveAudioChunk(blob, cleanMime) {
+    if (!blob || blob.size < 3500) return; // Skip tiny empty chunks
+    try {
+      const b64 = await blobToBase64(blob);
+      const conv = await ensureActiveConv("🌐 Live Class Translation");
+      const settings = DB.getSettings();
+      state.liveInterimText = "Translating live while listening...";
+      renderLiveBannerOnly();
+      const resp = await flApi("/api/finnish-lab/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "Listen to this live classroom audio chunk, transcribe the Finnish, translate into English, and if there is a question give the short A1 Finnish answer. If silent/no speech, reply ONLY [SILENCE].",
+          mode: "live_translate",
+          level: settings.level || "A1",
+          roast_mode: false,
+          history: [],
+          attachments: [{ mime_type: cleanMime, data_base64: b64 }],
+        }),
+      });
+      const reply = (resp && resp.reply ? resp.reply : "").trim();
+      if (!reply || reply.toUpperCase().includes("[SILENCE]")) {
+        if (state.isLiveTranslating) {
+          state.liveInterimText = "Listening live for Finnish...";
+          renderLiveBannerOnly();
+        }
+        return;
+      }
+      conv.messages.push({
+        id: DB.uid("msg"),
+        role: "assistant",
+        text: reply,
+        finnishTts: resp.finnish_tts || "",
+        at: new Date().toISOString(),
+      });
+      await DB.saveConversation(conv);
+      scheduleAutoSync();
+      if (state.isLiveTranslating) state.liveInterimText = "Listening live for Finnish...";
+      renderActiveView();
+      renderSidePanel();
+      scrollChatsToBottom();
+    } catch (_) {
+      if (state.isLiveTranslating) {
+        state.liveInterimText = "Listening live for Finnish...";
+        renderLiveBannerOnly();
+      }
+    }
+  }
+
+  async function startRollingLiveListen() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast("Microphone not supported in this browser.", "error");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      state.liveStream = stream;
+      state.isLiveTranslating = true;
+      state.liveInterimText = "Listening live (answers appear every ~6s)...";
+      renderActiveView();
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "audio/webm";
+      const cleanMime = mimeType.split(";")[0];
+
+      const recordOneChunk = () => {
+        if (!state.isLiveTranslating || !state.liveStream) return;
+        const chunks = [];
+        let rec;
+        try {
+          rec = new MediaRecorder(state.liveStream, { mimeType });
+        } catch (_) {
+          rec = new MediaRecorder(state.liveStream);
+        }
+        state.liveChunkRecorder = rec;
+        rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
+        rec.onstop = () => {
+          const blob = new Blob(chunks, { type: cleanMime });
+          // Send this chunk asynchronously while the NEXT chunk is ALREADY recording!
+          sendLiveAudioChunk(blob, cleanMime);
+        };
+        rec.start();
+        state.liveChunkTimer = setTimeout(() => {
+          if (state.isLiveTranslating && rec.state === "recording") {
+            try { rec.stop(); } catch (_) {}
+            recordOneChunk();
+          }
+        }, 6000);
+      };
+
+      recordOneChunk();
+    } catch (_) {
+      toast("Microphone permission denied.", "error");
+      stopLiveTranslation();
+    }
+  }
+
   function toggleLiveTranslation() {
     if (state.isLiveTranslating) {
       stopLiveTranslation();
@@ -682,10 +785,12 @@
     }
     if (state.isRecording) stopRecording();
 
+    // Use continuous rolling 6-second audio streaming on iOS Safari (reliable & never stops!)
+    // and also as automatic fallback whenever SpeechRecognition isn't supported.
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      toast("Your browser doesn't support live speech streaming — starting silent audio recording instead. Tap Stop when ready, then Send ⬆️!", "info");
-      startRecording();
+    if (isIOS || !SR) {
+      startRollingLiveListen();
       return;
     }
 
@@ -720,6 +825,9 @@
         if (ev.error === "not-allowed") {
           toast("Microphone permission denied.", "error");
           stopLiveTranslation();
+        } else if (ev.error === "service-not-allowed" || ev.error === "network") {
+          stopLiveTranslation();
+          startRollingLiveListen();
         }
       };
 
@@ -732,13 +840,27 @@
       rec.start();
       renderActiveView();
     } catch (_) {
-      toast("Could not start live translation — use 🎙️ Record instead.", "warning");
+      startRollingLiveListen();
     }
   }
 
   function stopLiveTranslation() {
     state.isLiveTranslating = false;
     state.liveInterimText = "";
+    if (state.liveChunkTimer) {
+      clearTimeout(state.liveChunkTimer);
+      state.liveChunkTimer = null;
+    }
+    if (state.liveChunkRecorder) {
+      try {
+        if (state.liveChunkRecorder.state === "recording") state.liveChunkRecorder.stop();
+      } catch (_) {}
+      state.liveChunkRecorder = null;
+    }
+    if (state.liveStream) {
+      try { state.liveStream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+      state.liveStream = null;
+    }
     if (state.liveRecognition) {
       try { state.liveRecognition.onend = null; state.liveRecognition.stop(); } catch (_) {}
       state.liveRecognition = null;
