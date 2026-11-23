@@ -1399,6 +1399,37 @@
       if (cnt) cnt.textContent = (ig.hashtags || []).length;
     }
 
+    if (ig.show_swipe_arrow !== undefined && $("ai-check-swipe-arrow")) {
+      $("ai-check-swipe-arrow").checked = Boolean(ig.show_swipe_arrow);
+    }
+    if (ig.location_stamp && $("ai-input-location")) {
+      $("ai-input-location").value = ig.location_stamp;
+    }
+    if (ig.card_style && $("ai-select-card-style")) {
+      $("ai-select-card-style").value = ig.card_style;
+    }
+    if (Array.isArray(ig.carousel_slides) && ig.carousel_slides.length > 0 && typeof carouselSlidesData !== "undefined") {
+      ig.carousel_slides.forEach((s) => {
+        const num = s.slide_number;
+        if (num >= 2 && num <= 6) {
+          carouselSlidesData[num] = {
+            ...defaultSlideData(num),
+            ...s,
+          };
+          if (s.photoDataUrl) {
+            const img = new Image();
+            img.onload = () => {
+              carouselSlidesData[num].photoImg = img;
+              if (typeof activeCarouselSlide !== "undefined" && activeCarouselSlide === num && typeof renderActiveCarouselSlideCanvas === "function") {
+                renderActiveCarouselSlideCanvas();
+              }
+            };
+            img.src = s.photoDataUrl;
+          }
+        }
+      });
+    }
+
     drawStaticPostCanvases(ig);
   }
 
@@ -1583,6 +1614,38 @@
     // 4. Modern Frosted Glass Floating Card (Bottom)
     const styleSelect = $("ai-select-card-style");
     const cardStyle = styleSelect ? styleSelect.value : "frosted";
+    const showSwipeArrow = $("ai-check-swipe-arrow") && $("ai-check-swipe-arrow").checked;
+
+    // Clean Photo Only mode: Skip card, just render sleek bottom-right CTA / arrow pill
+    if (cardStyle === "clean") {
+      const ctaPillText = showSwipeArrow ? "ILoveFinland ➔" : "Link in bio • ilovefinland.net →";
+      ctx.save();
+      ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
+      const ctaM = ctx.measureText(ctaPillText);
+      const ctaPadX = 24;
+      const ctaPadY = 14;
+      const ctaW = ctaM.width + ctaPadX * 2;
+      const ctaH = brandH;
+      const ctaX = w - 64 - ctaW;
+      const ctaY = h - 64 - ctaH;
+
+      ctx.fillStyle = "rgba(1, 28, 56, 0.82)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(ctaX, ctaY, ctaW, ctaH, 999);
+      } else {
+        ctx.rect(ctaX, ctaY, ctaW, ctaH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = showSwipeArrow ? "#38BDF8" : "#FFFFFF";
+      ctx.fillText(ctaPillText, ctaX + ctaPadX, ctaY + ctaH - ctaPadY - 6);
+      ctx.restore();
+      return;
+    }
 
     let rawTitle = (ig.headline_line1 || "") + " " + (ig.headline_line2 || "") + (ig.headline_line3 ? " " + ig.headline_line3 : "");
     rawTitle = rawTitle.trim();
@@ -1689,10 +1752,18 @@
       ctx.fillText(leftCtaText, cardX + cardPad, footY);
     }
 
-    ctx.fillStyle = "#94A3B8";
-    ctx.textAlign = "right";
-    ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-    ctx.fillText("Link in bio • ilovefinland.net →", cardX + cardW - cardPad, footY);
+    const showSwipeArrow = $("ai-check-swipe-arrow") && $("ai-check-swipe-arrow").checked;
+    if (showSwipeArrow) {
+      ctx.fillStyle = "#38BDF8";
+      ctx.textAlign = "right";
+      ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      ctx.fillText("ILoveFinland ➔", cardX + cardW - cardPad, footY);
+    } else {
+      ctx.fillStyle = "#94A3B8";
+      ctx.textAlign = "right";
+      ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      ctx.fillText("Link in bio • ilovefinland.net →", cardX + cardW - cardPad, footY);
+    }
     ctx.restore();
   }
 
@@ -6529,6 +6600,9 @@
     $("ai-select-card-style")?.addEventListener("change", () => {
       if (cachedAISuggestedRender) cachedAISuggestedRender();
     });
+    $("ai-check-swipe-arrow")?.addEventListener("change", () => {
+      if (cachedAISuggestedRender) cachedAISuggestedRender();
+    });
     $("ai-input-location")?.addEventListener("input", (e) => {
       if (e.target && !e.target.value.trim()) {
         e.target.dataset.userCleared = "true";
@@ -6577,6 +6651,9 @@
 
     $("btn-save-static-post")?.addEventListener("click", async () => {
       if (!currentPackageId || !currentStaticPost) return;
+      if (typeof saveActiveCarouselSlideInputs === "function") {
+        saveActiveCarouselSlideInputs();
+      }
       const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
       const adjustments = {
         badge_text: $("static-edit-badge")?.value || "NEWS",
@@ -6590,6 +6667,10 @@
         line3_font_size: fs,
         caption: $("static-edit-caption")?.value || "",
         hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
+        carousel_slides: typeof getCleanCarouselSlidesForSave === "function" ? getCleanCarouselSlidesForSave() : [],
+        show_swipe_arrow: $("ai-check-swipe-arrow")?.checked || false,
+        location_stamp: $("ai-input-location")?.value || "",
+        card_style: $("ai-select-card-style")?.value || "frosted",
       };
       const res = await api("/api/package/adjust-static-post", {
         method: "POST",
@@ -6597,6 +6678,472 @@
       });
       loadPackage(currentPackageId);
     });
+
+    // ==============================================================
+    // CAROUSEL DECK CONTROLLER (SLIDES 2 TO 6)
+    // ==============================================================
+    let activeCarouselSlide = 2;
+    const defaultSlideData = (num) => ({
+      badge_text: num === 6 ? "TAKEAWAY" : `SLIDE 0${num}`,
+      headline_line1: "",
+      headline_line2: "",
+      headline_line3: "",
+      location: "",
+      card_style: "frosted",
+      show_swipe_arrow: num !== 6,
+      photoDataUrl: "",
+      photoImg: null,
+    });
+
+    const carouselSlidesData = {
+      2: defaultSlideData(2),
+      3: defaultSlideData(3),
+      4: defaultSlideData(4),
+      5: defaultSlideData(5),
+      6: defaultSlideData(6),
+    };
+
+    function getCleanCarouselSlidesForSave() {
+      saveActiveCarouselSlideInputs();
+      const list = [];
+      for (let i = 2; i <= 6; i++) {
+        const s = carouselSlidesData[i];
+        if (s) {
+          list.push({
+            slide_number: i,
+            badge_text: s.badge_text || "",
+            headline_line1: s.headline_line1 || "",
+            headline_line2: s.headline_line2 || "",
+            headline_line3: s.headline_line3 || "",
+            location: s.location || "",
+            card_style: s.card_style || "frosted",
+            show_swipe_arrow: s.show_swipe_arrow !== false,
+            photoDataUrl: s.photoDataUrl || "",
+          });
+        }
+      }
+      return list;
+    }
+
+    function saveActiveCarouselSlideInputs() {
+      const s = carouselSlidesData[activeCarouselSlide];
+      if (!s) return;
+      s.badge_text = $("carousel-edit-badge")?.value || "";
+      s.headline_line1 = $("carousel-edit-line1")?.value || "";
+      s.headline_line2 = $("carousel-edit-line2")?.value || "";
+      s.headline_line3 = $("carousel-edit-line3")?.value || "";
+      s.location = $("carousel-input-location")?.value || "";
+      s.card_style = $("carousel-select-card-style")?.value || "frosted";
+      s.show_swipe_arrow = $("carousel-check-swipe-arrow") ? $("carousel-check-swipe-arrow").checked : (activeCarouselSlide !== 6);
+    }
+
+    function loadActiveCarouselSlideInputs(slideNum) {
+      activeCarouselSlide = slideNum;
+      const s = carouselSlidesData[slideNum] || defaultSlideData(slideNum);
+      carouselSlidesData[slideNum] = s;
+
+      const titleEl = $("carousel-active-slide-title");
+      if (titleEl) {
+        titleEl.textContent = slideNum === 6 ? "Slide 6 (Closing & Call-To-Action)" : `Slide ${slideNum} (Point / Story)`;
+      }
+      const badgeEl = $("carousel-active-slide-badge");
+      if (badgeEl) {
+        badgeEl.textContent = `Slide ${slideNum} of 6`;
+      }
+
+      if ($("carousel-edit-badge")) $("carousel-edit-badge").value = s.badge_text;
+      if ($("carousel-edit-line1")) $("carousel-edit-line1").value = s.headline_line1;
+      if ($("carousel-edit-line2")) $("carousel-edit-line2").value = s.headline_line2;
+      if ($("carousel-edit-line3")) $("carousel-edit-line3").value = s.headline_line3;
+      if ($("carousel-input-location")) $("carousel-input-location").value = s.location;
+      if ($("carousel-select-card-style")) $("carousel-select-card-style").value = s.card_style || "frosted";
+      if ($("carousel-check-swipe-arrow")) $("carousel-check-swipe-arrow").checked = s.show_swipe_arrow !== false;
+
+      const statusBadge = $("carousel-photo-status-badge");
+      const nameEl = $("carousel-photo-name");
+      if (s.photoImg || s.photoDataUrl) {
+        if (statusBadge) {
+          statusBadge.textContent = "Photo Ready";
+          statusBadge.className = "badge badge-success";
+        }
+        if (nameEl) nameEl.textContent = "Photo assigned";
+      } else {
+        if (statusBadge) {
+          statusBadge.textContent = "No Photo";
+          statusBadge.className = "badge badge-alert";
+        }
+        if (nameEl) nameEl.textContent = "No photo selected";
+      }
+
+      renderActiveCarouselSlideCanvas();
+    }
+
+    function renderSingleSlideToCanvas(cvs, s, slideNum) {
+      if (!cvs) return;
+      const ctx = cvs.getContext("2d");
+      const w = 1080;
+      const h = 1350;
+      ctx.clearRect(0, 0, w, h);
+
+      // Background Photo or Gradient
+      if (s.photoImg && s.photoImg.complete && s.photoImg.naturalWidth > 0) {
+        const p = s.photoImg;
+        const imgAspect = p.width / p.height;
+        const canvasAspect = w / h;
+        let drawW, drawH, drawX, drawY;
+        if (imgAspect > canvasAspect) {
+          drawH = h;
+          drawW = h * imgAspect;
+          drawX = (w - drawW) / 2;
+          drawY = 0;
+        } else {
+          drawW = w;
+          drawH = w / imgAspect;
+          drawX = 0;
+          drawY = (h - drawH) / 2;
+        }
+        ctx.drawImage(p, drawX, drawY, drawW, drawH);
+
+        // Vignette
+        const vig = ctx.createLinearGradient(0, 0, 0, h);
+        vig.addColorStop(0, "rgba(1, 20, 40, 0.35)");
+        vig.addColorStop(0.35, "rgba(1, 20, 40, 0.05)");
+        vig.addColorStop(0.65, "rgba(1, 20, 40, 0.25)");
+        vig.addColorStop(1, "rgba(1, 15, 30, 0.65)");
+        ctx.fillStyle = vig;
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+        bgGrad.addColorStop(0, "#011830");
+        bgGrad.addColorStop(1, "#062A4D");
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      // Top-Left Brand Logo Capsule (Official Brand Logo + ILoveFinland.net)
+      const brandName = "ILoveFinland.net";
+      ctx.save();
+      ctx.font = '800 25px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      const brandM = ctx.measureText(brandName);
+      const logoIconSize = 42;
+      const brandPadX = 18;
+      const brandPadY = 10;
+      const brandW = logoIconSize + 12 + brandM.width + brandPadX * 2;
+      const brandH = logoIconSize + brandPadY * 2;
+      const brandX = 64;
+      const brandY = 64;
+
+      ctx.fillStyle = "rgba(1, 28, 56, 0.78)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(brandX, brandY, brandW, brandH, 999);
+      } else {
+        ctx.rect(brandX, brandY, brandW, brandH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+        ctx.drawImage(logoImg, brandX + brandPadX, brandY + brandPadY, logoIconSize, logoIconSize);
+      } else {
+        ctx.fillStyle = "#029CD8";
+        ctx.font = "26px sans-serif";
+        ctx.fillText("💙", brandX + brandPadX, brandY + brandH - brandPadY - 8);
+      }
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = '800 25px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctx.fillText(brandName, brandX + brandPadX + logoIconSize + 12, brandY + brandH - brandPadY - 10);
+      ctx.restore();
+
+      // Location Stamp
+      let locText = (s.location || "").trim();
+      if (locText && !locText.startsWith("📍")) locText = "📍 " + locText;
+      if (locText && locText !== "📍") {
+        ctx.save();
+        ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
+        const locM = ctx.measureText(locText);
+        const locPadX = 22;
+        const locPadY = 12;
+        const locW = locM.width + locPadX * 2;
+        const locH = brandH;
+        const locX = w - 64 - locW;
+        const locY = 64;
+
+        ctx.fillStyle = "rgba(1, 28, 56, 0.75)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(locX, locY, locW, locH, 999);
+        } else {
+          ctx.rect(locX, locY, locW, locH);
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(locText, locX + locPadX, locY + locH - locPadY - 8);
+        ctx.restore();
+      }
+
+      const showArrow = s.show_swipe_arrow !== false;
+      const ctaText = showArrow ? "ILoveFinland ➔" : "Link in bio • ilovefinland.net →";
+
+      // If clean photo style, just draw floating CTA pill
+      if (s.card_style === "clean") {
+        ctx.save();
+        ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif';
+        const ctaM = ctx.measureText(ctaText);
+        const ctaPadX = 24;
+        const ctaPadY = 14;
+        const ctaW = ctaM.width + ctaPadX * 2;
+        const ctaH = brandH;
+        const ctaX = w - 64 - ctaW;
+        const ctaY = h - 64 - ctaH;
+
+        ctx.fillStyle = "rgba(1, 28, 56, 0.82)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(ctaX, ctaY, ctaW, ctaH, 999);
+        } else {
+          ctx.rect(ctaX, ctaY, ctaW, ctaH);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = showArrow ? "#38BDF8" : "#FFFFFF";
+        ctx.fillText(ctaText, ctaX + ctaPadX, ctaY + ctaH - ctaPadY - 6);
+        ctx.restore();
+        return;
+      }
+
+      // Frosted Glass Card
+      const cardPad = 42;
+      const cardW = w - 128;
+      const cardX = 64;
+      const cardY = h - 420;
+      const cardH = 356;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+      ctx.shadowBlur = 35;
+      ctx.shadowOffsetY = 16;
+      ctx.fillStyle = s.card_style === "minimal" ? "rgba(1, 37, 71, 0.92)" : "rgba(2, 24, 48, 0.84)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(cardX, cardY, cardW, cardH, 26);
+      } else {
+        ctx.rect(cardX, cardY, cardW, cardH);
+      }
+      ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.stroke();
+      ctx.restore();
+
+      // Category / Slide Badge
+      const catText = (s.badge_text || `SLIDE 0${slideNum}`).toUpperCase();
+      ctx.save();
+      ctx.font = '800 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      const catM = ctx.measureText(catText);
+      const catW = catM.width + 24;
+      const catH = 36;
+      const catX = cardX + cardPad;
+      const catY = cardY + 34;
+
+      ctx.fillStyle = "#029CD8";
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(catX, catY, catW, catH, 6);
+      } else {
+        ctx.rect(catX, catY, catW, catH);
+      }
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(catText, catX + 12, catY + 25);
+
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      ctx.fillText(" • Finnish Highlights", catX + catW + 10, catY + 25);
+      ctx.restore();
+
+      // Headline Lines
+      const line1 = (s.headline_line1 || "").trim();
+      const line2 = (s.headline_line2 || "").trim();
+      const line3 = (s.headline_line3 || "").trim();
+      let titleLines = [];
+      if (line1) titleLines.push(line1);
+      if (line2) titleLines.push(line2);
+      if (line3) titleLines.push(line3);
+
+      if (titleLines.length === 0) {
+        titleLines = [slideNum === 6 ? "Read the full story at ilovefinland.net" : "Slide details & highlights"];
+      }
+
+      ctx.save();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif';
+      let titleY = catY + catH + 46;
+      const lineH = 54;
+      for (let i = 0; i < Math.min(titleLines.length, 3); i++) {
+        if (i === 2 && line3) ctx.fillStyle = "#00A3FF";
+        ctx.fillText(titleLines[i], cardX + cardPad, titleY);
+        titleY += lineH;
+      }
+      ctx.restore();
+
+      // Footer
+      ctx.save();
+      const footY = cardY + cardH - 32;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cardX + cardPad, footY - 26);
+      ctx.lineTo(cardX + cardW - cardPad, footY - 26);
+      ctx.stroke();
+
+      if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+        ctx.drawImage(logoImg, cardX + cardPad, footY - 20, 24, 24);
+        ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        ctx.fillStyle = "#38BDF8";
+        ctx.fillText(slideNum === 6 ? "Explore more stories" : "Read full article", cardX + cardPad + 32, footY);
+      } else {
+        ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        ctx.fillStyle = "#38BDF8";
+        ctx.fillText(slideNum === 6 ? "Explore more stories" : "Read full article", cardX + cardPad, footY);
+      }
+
+      ctx.fillStyle = showArrow ? "#38BDF8" : "#94A3B8";
+      ctx.textAlign = "right";
+      ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+      ctx.fillText(ctaText, cardX + cardW - cardPad, footY);
+      ctx.restore();
+    }
+
+    function renderActiveCarouselSlideCanvas() {
+      const cvs = $("carousel-canvas");
+      if (!cvs) return;
+      const s = carouselSlidesData[activeCarouselSlide];
+      if (!s) return;
+      renderSingleSlideToCanvas(cvs, s, activeCarouselSlide);
+    }
+
+    // Carousel Tab switching
+    document.querySelectorAll(".btn-carousel-tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        saveActiveCarouselSlideInputs();
+        document.querySelectorAll(".btn-carousel-tab").forEach((b) => {
+          b.style.background = "rgba(2,24,48,0.7)";
+          b.style.color = "#94A3B8";
+          b.style.border = "1px solid rgba(255,255,255,0.12)";
+          b.classList.remove("active");
+        });
+        btn.style.background = "#029CD8";
+        btn.style.color = "#fff";
+        btn.style.border = "1px solid #38BDF8";
+        btn.classList.add("active");
+        const slideNum = parseInt(btn.dataset.slide, 10);
+        loadActiveCarouselSlideInputs(slideNum);
+      });
+    });
+
+    // Upload photo for active carousel slide
+    $("input-upload-carousel-photo")?.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target.result;
+        const img = new Image();
+        img.onload = () => {
+          carouselSlidesData[activeCarouselSlide].photoDataUrl = dataUrl;
+          carouselSlidesData[activeCarouselSlide].photoImg = img;
+          loadActiveCarouselSlideInputs(activeCarouselSlide);
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Individual downloads for active slide
+    $("btn-save-carousel-slide")?.addEventListener("click", () => {
+      const cvs = $("carousel-canvas");
+      if (!cvs) return;
+      saveImageDirectlyToMobilePhotos(cvs, `ilovefinland-slide-${activeCarouselSlide}.jpg`, "image/jpeg", `Slide ${activeCarouselSlide} (4:5)`);
+    });
+    $("btn-dl-carousel-slide-jpg")?.addEventListener("click", () => {
+      downloadCanvas("carousel-canvas", `ilovefinland-slide-${activeCarouselSlide}.jpg`, "image/jpeg");
+    });
+    $("btn-dl-carousel-slide-png")?.addEventListener("click", () => {
+      downloadCanvas("carousel-canvas", `ilovefinland-slide-${activeCarouselSlide}.png`, "image/png");
+    });
+
+    // Group Download (all slides 1 to 6)
+    async function downloadAllCarouselSlides() {
+      // 1. Download Slide 1 Cover
+      downloadCanvas("ai-suggested-canvas", "01_cover_4x5.jpg", "image/jpeg");
+
+      // 2. Download Slides 2 to 6
+      const offscreen = document.createElement("canvas");
+      offscreen.width = 1080;
+      offscreen.height = 1350;
+
+      let count = 1;
+      for (let i = 2; i <= 6; i++) {
+        const s = carouselSlidesData[i];
+        if (s && (s.photoImg || s.photoDataUrl || s.headline_line1 || s.headline_line2)) {
+          count++;
+          await new Promise((r) => setTimeout(r, 280));
+          renderSingleSlideToCanvas(offscreen, s, i);
+          const a = document.createElement("a");
+          a.download = `0${i}_slide_4x5.jpg`;
+          a.href = offscreen.toDataURL("image/jpeg", 0.94);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      }
+      showToast(`Downloaded ${count} carousel slides!`);
+    }
+    $("btn-download-all-carousel-slides")?.addEventListener("click", downloadAllCarouselSlides);
+
+    // Expand / Minimize Toggle
+    $("btn-toggle-carousel-deck")?.addEventListener("click", () => {
+      const body = $("carousel-deck-body");
+      if (!body) return;
+      const isHidden = body.style.display === "none";
+      body.style.display = isHidden ? "block" : "none";
+      const chev = $("carousel-deck-toggle-chevron");
+      const lbl = $("carousel-deck-toggle-label");
+      if (chev) chev.textContent = isHidden ? "▲" : "▼";
+      if (lbl) lbl.textContent = isHidden ? "Minimize Slides 2–6" : "Expand Slides 2–6";
+      if (isHidden) {
+        loadActiveCarouselSlideInputs(activeCarouselSlide);
+      }
+    });
+
+    // Presets & Live input listeners for Carousel Slide
+    $("btn-carousel-clean-preset")?.addEventListener("click", () => {
+      if ($("carousel-select-card-style")) $("carousel-select-card-style").value = "clean";
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-frosted-preset")?.addEventListener("click", () => {
+      if ($("carousel-select-card-style")) $("carousel-select-card-style").value = "frosted";
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("carousel-edit-badge")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-line1")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-line2")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-line3")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-input-location")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-select-card-style")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-check-swipe-arrow")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
 
     // Save Article Edits
     $("btn-save-article-edits")?.addEventListener("click", async () => {

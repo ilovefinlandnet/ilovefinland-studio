@@ -27,10 +27,25 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FINNISH_LAB_DB_PATH = os.environ.get(
-    "FINNISH_LAB_DB_PATH",
-    os.path.join(BASE_DIR, "finnish_lab.db"),
-)
+
+def _resolve_lab_db_path() -> str:
+    env_db = os.environ.get("FINNISH_LAB_DB_PATH")
+    if env_db:
+        return env_db
+    data_dir = "/data"
+    if os.path.exists(data_dir) and os.path.isdir(data_dir):
+        persistent_db = os.path.join(data_dir, "finnish_lab.db")
+        default_db = os.path.join(BASE_DIR, "finnish_lab.db")
+        if not os.path.exists(persistent_db) and os.path.exists(default_db):
+            try:
+                import shutil
+                shutil.copy2(default_db, persistent_db)
+            except Exception:
+                pass
+        return persistent_db
+    return os.path.join(BASE_DIR, "finnish_lab.db")
+
+FINNISH_LAB_DB_PATH = _resolve_lab_db_path()
 
 # Configurable free-tier safety limits (never auto-upgrade to paid)
 DEFAULT_DAILY_LIMIT = int(os.environ.get("FINNISH_LAB_DAILY_LIMIT", "300"))

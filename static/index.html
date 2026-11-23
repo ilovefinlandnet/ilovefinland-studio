@@ -1931,8 +1931,17 @@
                         <select id="ai-select-card-style" class="wp-input" style="flex:1;max-width:220px;font-size:0.78rem;padding:5px 8px;border-radius:6px;">
                           <option value="frosted">Frosted Glass Card (Modern)</option>
                           <option value="minimal">Minimal Floating Pill</option>
+                          <option value="clean">Clean Photo (Full Bleed)</option>
                           <option value="magazine">Magazine Cover (Vignette)</option>
                         </select>
+                      </div>
+
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                        <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="ai-check-swipe-arrow">👉 Next Slide Arrow:</label>
+                        <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
+                          <input type="checkbox" id="ai-check-swipe-arrow" style="cursor:pointer;" />
+                          <span>Show "ILoveFinland ➔"</span>
+                        </label>
                       </div>
 
                       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;">
@@ -2041,6 +2050,155 @@
                     <button type="button" id="btn-save-static-post" class="btn btn-secondary btn-sm" style="gap:6px;">
                       <span>💾 Save Static Post Adjustments</span>
                     </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ============================================================== -->
+              <!-- CAROUSEL DECK: SLIDES 2 TO 6 (MINIMIZED BY DEFAULT)           -->
+              <!-- ============================================================== -->
+              <div id="carousel-deck-wrapper" style="margin-top:28px;padding-top:22px;border-top:1.5px dashed rgba(56,189,248,0.25);">
+                <!-- Minimized Header Strip -->
+                <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:14px 18px;flex-wrap:wrap;gap:12px;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(56,189,248,0.3);font-size:1.15rem;">
+                      📸
+                    </div>
+                    <div>
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <strong style="color:#38BDF8;font-size:0.98rem;letter-spacing:-0.01em;">Instagram Carousel Deck (Slides 2 to 6)</strong>
+                        <span class="badge" style="background:#0284c7;color:#fff;font-size:0.68rem;padding:2px 7px;">Multi-Photo Post</span>
+                      </div>
+                      <span style="font-size:0.75rem;color:#94A3B8;display:block;margin-top:2px;">Slide 1 is your Main Cover above • Expand to edit Slides 2–6 individually</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <!-- Group Download All Slides -->
+                    <button type="button" id="btn-download-all-carousel-slides" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:8px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(2,156,216,0.35);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                      <span>📲 Download All Slides (1 to 6) Batch</span>
+                    </button>
+                    <!-- Minimize / Maximize Toggle Button -->
+                    <button type="button" id="btn-toggle-carousel-deck" class="btn btn-secondary btn-sm" style="padding:7px 14px;font-size:0.78rem;font-weight:700;border-radius:8px;border:1px solid rgba(255,255,255,0.18);display:inline-flex;align-items:center;gap:6px;">
+                      <span id="carousel-deck-toggle-chevron">▼</span> <span id="carousel-deck-toggle-label">Expand Slides 2–6</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Collapsible Body for Slides 2 to 6 -->
+                <div id="carousel-deck-body" style="display:none;margin-top:16px;">
+                  <!-- Slide Tabs (2, 3, 4, 5, 6) -->
+                  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <button type="button" class="btn-carousel-tab active" data-slide="2" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;">Slide 2</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 3</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 4</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 5</button>
+                    <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:7px 14px;border-radius:8px;font-size:0.80rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 6 (CTA)</button>
+                  </div>
+
+                  <!-- Container where Active Slide is rendered with exact same style -->
+                  <div id="carousel-slide-active-card" class="static-post-card-body" style="grid-template-columns: 360px 1fr; gap: 24px; display: grid;">
+                    <!-- Left: Slide Canvas Preview & Direct Download -->
+                    <div class="static-canvas-col">
+                      <div class="ai-suggested-post-box" style="padding:16px;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                          <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.2rem;">✨</span>
+                            <div>
+                              <strong id="carousel-active-slide-title" style="display:block;font-size:0.90rem;color:#38BDF8;font-weight:800;">Slide 2 (Context / Point 1)</strong>
+                              <span style="font-size:0.72rem;color:#94A3B8;">4:5 Vertical • Editorial Format</span>
+                            </div>
+                          </div>
+                          <span id="carousel-active-slide-badge" class="badge" style="background:#0284c7;color:#fff;font-weight:800;font-size:0.70rem;padding:2px 8px;">Slide 2 of 6</span>
+                        </div>
+
+                        <div style="position:relative;margin-bottom:12px;">
+                          <canvas id="carousel-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:block;background:#061426;"></canvas>
+                        </div>
+
+                        <!-- Direct Save / Download Controls for this specific Slide -->
+                        <button type="button" id="btn-save-carousel-slide" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
+                          📲 Save This Slide to Photos
+                        </button>
+
+                        <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
+                          <button type="button" id="btn-dl-carousel-slide-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
+                          <button type="button" id="btn-dl-carousel-slide-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                        </div>
+
+                        <!-- Slide Specific Controls -->
+                        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:10px;">
+                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;">📍 Location Stamp:</label>
+                            <input type="text" id="carousel-input-location" class="wp-input" style="flex:1;max-width:220px;font-size:0.78rem;padding:5px 8px;border-radius:6px;" placeholder="Leave empty to hide" />
+                          </div>
+
+                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;">Layout Variant:</label>
+                            <select id="carousel-select-card-style" class="wp-input" style="flex:1;max-width:220px;font-size:0.78rem;padding:5px 8px;border-radius:6px;">
+                              <option value="frosted">Frosted Glass Card (Modern)</option>
+                              <option value="minimal">Minimal Floating Pill</option>
+                              <option value="clean">Clean Photo (Full Bleed)</option>
+                              <option value="magazine">Magazine Cover (Vignette)</option>
+                            </select>
+                          </div>
+
+                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-check-swipe-arrow">👉 Next Slide Arrow:</label>
+                            <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
+                              <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
+                              <span>Show "ILoveFinland ➔"</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Right: Slide Specific Edit Controls -->
+                    <div class="static-controls-col">
+                      <!-- Photo Upload for this Slide -->
+                      <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                          <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;" id="carousel-photo-label">📸 Slide Photo</label>
+                          <span id="carousel-photo-status-badge" class="badge badge-alert">No Photo</span>
+                        </div>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                          <button type="button" id="btn-upload-carousel-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-carousel-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                            <span>📷 Upload Photo for This Slide</span>
+                          </button>
+                          <input type="file" id="input-upload-carousel-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                          <span id="carousel-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
+                        </div>
+                      </div>
+
+                      <!-- Category Badge Text -->
+                      <div class="wp-field-wrap">
+                        <label class="label-sm" for="carousel-edit-badge">Category / Slide Badge Text</label>
+                        <input type="text" id="carousel-edit-badge" class="wp-input" maxlength="20" placeholder="e.g. 02 / 06 or POINT 1" />
+                      </div>
+
+                      <!-- Headline Line 1 & Line 2 -->
+                      <div class="wp-field-wrap">
+                        <label class="label-sm" for="carousel-edit-line1">Headline Line 1 (White Bold)</label>
+                        <input type="text" id="carousel-edit-line1" class="wp-input" placeholder="e.g. Paperless didn't vanish..." />
+                      </div>
+
+                      <div class="wp-field-wrap">
+                        <label class="label-sm" for="carousel-edit-line2">Headline Line 2 (White Bold)</label>
+                        <input type="text" id="carousel-edit-line2" class="wp-input" placeholder="e.g. It just moved to your screen" />
+                      </div>
+
+                      <div class="wp-field-wrap">
+                        <label class="label-sm" for="carousel-edit-line3">Headline Line 3 (Optional Electric Blue)</label>
+                        <input type="text" id="carousel-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
+                      </div>
+
+                      <!-- Quick Presets -->
+                      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+                        <button type="button" id="btn-carousel-clean-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#38BDF8;font-weight:700;border-radius:4px;">🖼️ Clean Photo Only</button>
+                        <button type="button" id="btn-carousel-frosted-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;border-radius:4px;">📄 Frosted Glass Card</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

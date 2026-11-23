@@ -16,7 +16,25 @@ import env_loader
 import editorial_engine
 import openai_client
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "studio.db")
+def _resolve_db_path() -> str:
+    env_db = os.environ.get("DATABASE_PATH")
+    if env_db:
+        return env_db
+    # If Render persistent disk /data is mounted, use /data/studio.db
+    data_dir = "/data"
+    if os.path.exists(data_dir) and os.path.isdir(data_dir):
+        persistent_db = os.path.join(data_dir, "studio.db")
+        default_db = os.path.join(os.path.dirname(__file__), "studio.db")
+        if not os.path.exists(persistent_db) and os.path.exists(default_db):
+            try:
+                import shutil
+                shutil.copy2(default_db, persistent_db)
+            except Exception:
+                pass
+        return persistent_db
+    return os.path.join(os.path.dirname(__file__), "studio.db")
+
+DB_PATH = _resolve_db_path()
 
 
 def save_persistent_session(token: str, email: str, db_path: str = DB_PATH) -> None:
@@ -3731,6 +3749,14 @@ def adjust_static_post(
             if isinstance(tags, str):
                 tags = [t.strip() for t in tags.split(",") if t.strip()]
             ig_post["hashtags"] = tags[:5]
+        if "carousel_slides" in adjustments:
+            ig_post["carousel_slides"] = adjustments["carousel_slides"]
+        if "show_swipe_arrow" in adjustments:
+            ig_post["show_swipe_arrow"] = bool(adjustments["show_swipe_arrow"])
+        if "location_stamp" in adjustments:
+            ig_post["location_stamp"] = adjustments["location_stamp"]
+        if "card_style" in adjustments:
+            ig_post["card_style"] = adjustments["card_style"]
 
         now = utc_now_iso()
         new_ver = cur_ver + 1
