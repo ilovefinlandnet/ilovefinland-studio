@@ -10,6 +10,24 @@
   const DB = window.FinnishLabDB;
   const CURR = window.FinnishLabCurriculum;
 
+  /* ---------- ILOVEFINLAND NORDIC BRAND SVG ICONS (UNIFORM ACROSS IPHONE, IPAD & PC) ---------- */
+  const ICO = {
+    listen: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`,
+    slow: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+    stop: `<svg class="fl-svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"></rect></svg>`,
+    explain: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>`,
+    cards: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+    save: `<svg class="fl-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>`,
+    live: `<svg class="fl-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path><circle cx="12" cy="12" r="2"></circle><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"></path></svg>`,
+    mic: `<svg class="fl-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`,
+    plus: `<svg class="fl-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+    send: `<svg class="fl-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`,
+    headphones: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
+    book: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
+    file: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
+    zap: `<svg class="fl-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d8b4fe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`,
+  };
+
   const state = {
     mode: "chat", // chat | study
     studyTool: null, // null | podcast | lesson | helper
@@ -1508,8 +1526,10 @@
           msgs.length
             ? msgs.map((m, idx) => renderMessageBubble(m, idx)).join("")
             : `<div class="fl-empty-hero">
-                <div class="fl-empty-flag">🇫🇮</div>
-                <h1 class="fl-empty-title">Your Finnish AI Teacher</h1>
+                <div style="width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(14,165,233,0.28);margin-bottom:4px;">
+                  <img src="/assets/ilf-heart.png" alt="ILoveFinland" width="36" height="36" style="width:36px;height:36px;object-fit:contain;" />
+                </div>
+                <h1 class="fl-empty-title">ILoveFinland Finnish Lab</h1>
                 <p class="fl-empty-sub">
                   Ask anything, attach a photo or PDF, record class audio + question paper together, or tap <strong>🌐 Live</strong> for silent real-time written translation.
                 </p>
@@ -1582,18 +1602,18 @@
 
           <div class="fl-capsule-bar">
             <div class="fl-capsule-left">
-              <button type="button" class="fl-cap-btn" id="fl-plus-btn" title="Attach Photo, Camera, PDF or Audio" style="font-size:1.25rem;padding:0;width:36px;">+</button>
+              <button type="button" class="fl-cap-btn" id="fl-plus-btn" title="Attach Photo, Camera, PDF or Audio" style="padding:0;width:36px;">${ICO.plus}</button>
             </div>
             <div class="fl-capsule-right">
-              <button type="button" class="fl-cap-btn ${state.isLiveTranslating ? "active-live" : ""}" id="fl-live-btn" title="Silent Live Finnish → English Translation (written only)">
-                <span>🌐</span><span>${state.isLiveTranslating ? "Live ON" : "Live"}</span>
+              <button type="button" class="fl-cap-btn ${state.isLiveTranslating ? "active-live" : ""}" id="fl-live-btn" title="Silent Live Finnish → English Subtitles">
+                ${ICO.live}<span>${state.isLiveTranslating ? "Live ON" : "Live"}</span>
               </button>
               ${
                 state.isRecording
                   ? `<button type="button" class="fl-cap-btn active-rec" id="fl-stop-rec" title="Stop Recording"><span class="fl-rec-dot"></span><span class="fl-rec-timer">00:00</span></button>`
-                  : `<button type="button" class="fl-cap-btn" id="fl-start-rec" title="Record Audio (teacher, listening track, or voice)" style="padding:0;width:36px;">🎙️</button>`
+                  : `<button type="button" class="fl-cap-btn" id="fl-start-rec" title="Record Audio" style="padding:0;width:36px;">${ICO.mic}</button>`
               }
-              <button type="button" class="fl-send-circle" id="fl-chat-send" ${state.isSending ? "disabled" : ""} title="Send">↑</button>
+              <button type="button" class="fl-send-circle" id="fl-chat-send" ${state.isSending ? "disabled" : ""} title="Send">${ICO.send}</button>
             </div>
           </div>
         </div>
@@ -1624,21 +1644,21 @@
           ? `<div class="fl-msg-actions" style="margin-top:6px;">
                ${
                  isSpeakingThis
-                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.25);border-color:rgba(248,113,113,0.6);color:#fecaca;font-weight:700;">⏹️ Stop</button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🔊</button>`
+                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.2);color:#fca5a5;">${ICO.stop} Stop</button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">${ICO.listen} Listen</button>`
                }
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}">⭐ Cards</button>
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}">${ICO.cards} Cards</button>
              </div>`
           : `<div class="fl-msg-actions">
                ${
                  isSpeakingThis
-                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.25);border-color:rgba(248,113,113,0.6);color:#fecaca;font-weight:700;">⏹️ Stop</button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🔊 Listen</button>`
+                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" style="background:rgba(239,68,68,0.2);color:#fca5a5;">${ICO.stop} Stop</button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">${ICO.listen} Listen</button>`
                }
-               <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">🐢 Slow</button>
-               <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}">Explain more</button>
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Extract Finnish words to Flashcards & Podcast">⭐ Save Words</button>
-               <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">💾 Save</button>
+               <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}">${ICO.slow} Slow</button>
+               <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}">${ICO.explain} Explain</button>
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Extract Finnish words to Flashcards & Podcast">${ICO.cards} Words</button>
+               <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}">${ICO.save} Save</button>
              </div>`
         : "";
     const roastHtml = m.roastBanner ? `<div class="fl-roast-banner">${esc(m.roastBanner)}</div>` : "";
@@ -1669,7 +1689,7 @@
           <div class="fl-study-grid" style="gap:14px;">
             <button type="button" class="fl-study-tile" data-fl-study="podcast" style="border-color:rgba(56,189,248,0.42);background:radial-gradient(circle at 85% 15%, rgba(56,189,248,0.2), transparent 60%), rgba(13,24,46,0.92);">
               <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">🎧</div>
+                <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.headphones}</div>
                 <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:800;">AI VOICE</span>
               </div>
               <strong style="font-size:1rem;">Walk &amp; Listen Podcast</strong>
@@ -1677,20 +1697,20 @@
             </button>
 
             <button type="button" class="fl-study-tile" data-fl-study="lesson">
-              <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">📖</div>
+              <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.book}</div>
               <strong style="font-size:1rem;">Today's 5-Min Lesson</strong>
               <span style="font-size:0.8rem;color:#94a3b8;line-height:1.45;">5 daily words (human voice) → 1 simple grammar rule → 1 quick check.</span>
             </button>
 
             <button type="button" class="fl-study-tile" data-fl-study="helper">
-              <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;">📝</div>
+              <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.file}</div>
               <strong style="font-size:1rem;">Homework &amp; Vocab Snap</strong>
               <span style="font-size:0.8rem;color:#94a3b8;line-height:1.45;">Worksheet helper, photo-to-flashcards, 17 A1 grammar guides &amp; roleplay.</span>
             </button>
 
             <button type="button" class="fl-study-tile" data-fl-study="game" style="border-color:rgba(168,85,247,0.38);background:radial-gradient(circle at 85% 15%, rgba(168,85,247,0.18), transparent 60%), rgba(13,22,40,0.92);">
               <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                <div class="fl-study-icon-badge" style="width:46px;height:46px;font-size:1.35rem;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">⚡</div>
+                <div class="fl-study-icon-badge" style="width:46px;height:46px;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">${ICO.zap}</div>
                 <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(168,85,247,0.22);color:#e9d5ff;font-weight:800;">FUN</span>
               </div>
               <strong style="font-size:1rem;">Street Game &amp; Speak</strong>

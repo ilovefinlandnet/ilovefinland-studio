@@ -367,8 +367,18 @@ body.fl-focus-mode .sidebar {
 }
 
 .fl-mini-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.12);
+  color: #e0f2fe;
+}
+
+.fl-svg {
+  display: inline-block;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+
+.fl-mini-btn .fl-svg {
+  color: #7dd3fc;
 }
 
 /* Live Silent Translation Banner */
