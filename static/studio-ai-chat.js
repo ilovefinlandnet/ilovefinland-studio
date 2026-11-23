@@ -464,7 +464,12 @@
           <div style="display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:0.96rem;color:#fff;">
             ${ICO.sparkle}<span>Studio AI</span>
           </div>
-          <button type="button" class="fl-new-chat-pill" id="sai-new-chat">+ New</button>
+          <div style="display:inline-flex;align-items:center;gap:8px;margin-left:auto;">
+            <button type="button" class="fl-btn sm" id="sai-open-newtab-btn" title="Open Studio AI in new tab for easy side-by-side copy/paste" style="background:rgba(56,189,248,0.14);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:999px;font-size:0.75rem;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-weight:700;">
+              <span>↗ Open in New Tab</span>
+            </button>
+            <button type="button" class="fl-new-chat-pill" id="sai-new-chat">+ New</button>
+          </div>
         </header>
 
         ${
@@ -630,6 +635,9 @@
       render();
     };
     root.querySelector("#sai-new-chat")?.addEventListener("click", startNew);
+    root.querySelector("#sai-open-newtab-btn")?.addEventListener("click", () => {
+      window.open("/#studio-ai", "_blank");
+    });
     root.querySelector("#sai-drawer-new")?.addEventListener("click", startNew);
     root.querySelector("#sai-open-drawer")?.addEventListener("click", () => { state.drawerOpen = true; render(); });
     root.querySelector("#sai-close-drawer")?.addEventListener("click", () => { state.drawerOpen = false; render(); });

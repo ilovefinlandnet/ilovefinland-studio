@@ -931,7 +931,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if not self._require_auth():
                 return
 
-        if path == "/" or path == "/index.html" or path == "/finnish-lab" or path.startswith("/finnish-lab/") or path == "/finnish-student" or path.startswith("/finnish-student/"):
+        if path == "/" or path == "/index.html" or path == "/studio-ai" or path.startswith("/studio-ai/") or path == "/finnish-lab" or path.startswith("/finnish-lab/") or path == "/finnish-student" or path.startswith("/finnish-student/"):
             self._send_file(os.path.join(STATIC_DIR, "index.html"))
             return
 

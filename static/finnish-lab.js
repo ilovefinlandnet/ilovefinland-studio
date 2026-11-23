@@ -2330,8 +2330,14 @@
     launcher.id = "fl-floating-launcher";
     launcher.type = "button";
     launcher.className = "fl-floating-launcher";
-    launcher.innerHTML = `${ICO.explain}<span>Studio AI</span>`;
-    launcher.onclick = () => {
+    launcher.innerHTML = `${ICO.explain}<span>Studio AI</span> <span id="sai-float-open-tab" title="Open Studio AI in New Tab" style="margin-left:6px;padding:1px 6px;background:rgba(255,255,255,0.22);border-radius:6px;font-size:0.75rem;font-weight:800;display:inline-block;">↗</span>`;
+    launcher.onclick = (e) => {
+      if (e.target && e.target.id === "sai-float-open-tab") {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open("/#studio-ai", "_blank");
+        return;
+      }
       if (window.openStudioAIChatView) window.openStudioAIChatView();
       else toggleSidePanel(true);
     };

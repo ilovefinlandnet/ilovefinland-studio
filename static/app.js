@@ -1438,6 +1438,11 @@
     if (ig.card_style && $("ai-select-card-style")) {
       $("ai-select-card-style").value = ig.card_style;
     }
+    if ($("social-caption-textarea")) $("social-caption-textarea").value = ig.caption || "";
+    if ($("static-edit-hashtags")) {
+      const tags = Array.isArray(ig.hashtags) ? ig.hashtags.join(" ") : (ig.hashtags || "");
+      $("static-edit-hashtags").value = tags;
+    }
     if (Array.isArray(ig.carousel_slides) && ig.carousel_slides.length > 0 && typeof carouselSlidesData !== "undefined") {
       ig.carousel_slides.forEach((s) => {
         const num = s.slide_number;
@@ -5559,6 +5564,8 @@
     if (window.location.pathname === "/finnish-student" || window.location.pathname.startsWith("/finnish-student/")) {
       document.body.classList.add("fl-student-only");
       switchView("finnish-lab", false, true);
+    } else if (window.location.pathname === "/studio-ai" || window.location.pathname.startsWith("/studio-ai/")) {
+      switchView("studio-ai", false, true);
     } else if (window.location.pathname === "/finnish-lab" || window.location.pathname.startsWith("/finnish-lab/")) {
       switchView("finnish-lab", false, true);
     } else if (initialHash && ["projects", "ideas", "calendar", "inbox", "research", "performance", "connections", "ai-media", "reel-studio", "assignments", "finnish-lab", "studio-ai"].includes(initialHash)) {
@@ -7282,6 +7289,23 @@
     $("carousel-check-swipe-arrow")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
 
     // Dedicated Save Changes to Article & Post from Carousel Deck
+    $("btn-copy-static-caption")?.addEventListener("click", () => {
+      const cap = $("social-caption-textarea")?.value || $("static-edit-caption")?.value || "";
+      if (!cap) {
+        showToast("⚠️ Caption is empty", "warning");
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(cap).then(() => {
+          showToast("📋 Copied viral caption to clipboard!");
+        });
+      } else {
+        $("social-caption-textarea")?.select();
+        document.execCommand("copy");
+        showToast("📋 Copied viral caption to clipboard!");
+      }
+    });
+
     $("btn-save-carousel-changes")?.addEventListener("click", async () => {
       if (!currentPackageId) {
         showToast("⚠️ No active package loaded to save.", "warning");
@@ -7296,22 +7320,23 @@
       try {
         saveActiveCarouselSlideInputs();
         const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
+        const activeFs = parseInt($("carousel-edit-fontsize")?.value, 10) || 44;
         const adjustments = {
-          badge_text: $("static-edit-badge")?.value || "NEWS",
-          headline_line1: $("static-edit-line1")?.value || "",
-          headline_line2: $("static-edit-line2")?.value || "",
-          headline_line3: $("static-edit-line3")?.value || "",
-          cta_text: $("static-edit-cta")?.value || "",
-          cta_color: $("static-edit-cta-color")?.value || "white",
-          line1_font_size: fs,
-          line2_font_size: fs,
-          line3_font_size: fs,
-          caption: $("static-edit-caption")?.value || "",
+          badge_text: $("carousel-edit-badge")?.value || $("static-edit-badge")?.value || "NEWS",
+          headline_line1: $("carousel-edit-line1")?.value || $("static-edit-line1")?.value || "",
+          headline_line2: $("carousel-edit-line2")?.value || $("static-edit-line2")?.value || "",
+          headline_line3: $("carousel-edit-line3")?.value || $("static-edit-line3")?.value || "",
+          cta_text: $("carousel-edit-cta")?.value || $("static-edit-cta")?.value || "",
+          cta_color: $("carousel-edit-cta-color")?.value || $("static-edit-cta-color")?.value || "blue",
+          line1_font_size: activeFs,
+          line2_font_size: activeFs,
+          line3_font_size: activeFs,
+          caption: $("social-caption-textarea")?.value || $("static-edit-caption")?.value || "",
           hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
           carousel_slides: getCleanCarouselSlidesForSave(),
-          show_swipe_arrow: $("ai-check-swipe-arrow")?.checked || false,
-          location_stamp: $("ai-input-location")?.value || "",
-          card_style: $("ai-select-card-style")?.value || "frosted",
+          show_swipe_arrow: $("carousel-check-swipe-arrow")?.checked !== false,
+          location_stamp: $("carousel-input-location")?.value || "",
+          card_style: $("carousel-select-card-style")?.value || "frosted",
         };
 
         await api("/api/package/adjust-static-post", {
