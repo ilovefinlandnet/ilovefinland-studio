@@ -112,6 +112,7 @@
     const msgs = (chat && chat.messages) || [];
     let photos = [];
     let generated_image = null;
+    let uploaded_image = null;
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (!photos.length && msgs[i].photos && msgs[i].photos.length) {
         photos = msgs[i].photos;
@@ -119,9 +120,15 @@
       if (!generated_image && msgs[i].generated_image) {
         generated_image = msgs[i].generated_image;
       }
-      if (photos.length && generated_image) break;
+      if (!uploaded_image && msgs[i].attImages && msgs[i].attImages.length) {
+        const lastImg = msgs[i].attImages[msgs[i].attImages.length - 1];
+        if (lastImg && lastImg.data_url) {
+          uploaded_image = { data_url: lastImg.data_url, title: lastImg.name || "Uploaded Photo", source: "ILF", photographer: "ILF" };
+        }
+      }
+      if (photos.length && generated_image && uploaded_image) break;
     }
-    return { photos, generated_image };
+    return { photos, generated_image, uploaded_image };
   }
 
   function readFileAsCompressedAttachment(file) {
@@ -148,7 +155,7 @@
           c.width = w; c.height = h;
           c.getContext("2d").drawImage(img, 0, 0, w, h);
           const dataUrl = c.toDataURL("image/jpeg", 0.82);
-          resolve({ name: file.name, mime_type: "image/jpeg", data_base64: dataUrl.split(",")[1] || "" });
+          resolve({ name: file.name, mime_type: "image/jpeg", data_base64: dataUrl.split(",")[1] || "", previewUrl: dataUrl });
         };
         img.onerror = () => resolve(null);
         img.src = r.result;
@@ -248,10 +255,15 @@
       (chat.linkedArticle && chat.linkedArticle.id) ||
       (window.getActiveStudioPackageId ? window.getActiveStudioPackageId() : null);
 
+    const attImages = atts
+      .filter((a) => a.previewUrl || (a.mime_type || "").startsWith("image/"))
+      .map((a) => ({ name: a.name, data_url: a.previewUrl || `data:${a.mime_type};base64,${a.data_base64}` }));
+
     chat.messages.push({
       role: "user",
-      text: clean || "(Attached file)",
-      attNames: atts.map((a) => a.name),
+      text: clean || (attImages.length ? "" : "(Attached file)"),
+      attNames: atts.filter((a) => !(a.mime_type || "").startsWith("image/")).map((a) => a.name),
+      attImages,
     });
     state.isSending = true;
     saveChats();
@@ -393,10 +405,28 @@
          </div>`
       : "";
 
+    const userImgsHtml = (m.attImages || []).length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:${m.text ? "8px" : "0"};">
+           ${m.attImages
+             .map(
+               (img, imgIdx) => `
+             <div style="background:#0b1120;border:1px solid rgba(255,255,255,0.16);border-radius:12px;overflow:hidden;max-width:220px;">
+               <img src="${esc(img.data_url)}" alt="${esc(img.name || "Photo")}" style="width:100%;max-height:200px;object-fit:cover;display:block;" />
+               <div style="padding:5px 8px;display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                 <span style="font-size:0.68rem;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(img.name || "Photo")}</span>
+                 <button type="button" data-sai-attach-user-img="${msgIdx}:${imgIdx}" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.45);color:#e0f2fe;font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:6px;cursor:pointer;white-space:nowrap;">+ Article</button>
+               </div>
+             </div>`
+             )
+             .join("")}
+         </div>`
+      : "";
+
     return `
       <div class="fl-msg ${m.role === "user" ? "user" : "assistant"}">
+        ${userImgsHtml}
         ${m.attNames && m.attNames.length ? `<div style="font-size:0.72rem;opacity:0.85;margin-bottom:4px;">📎 ${esc(m.attNames.join(", "))}</div>` : ""}
-        <div>${renderMd(m.text)}</div>
+        ${m.text ? `<div>${renderMd(m.text)}</div>` : ""}
         ${photosHtml}
         ${genHtml}
         ${actionHtml}
@@ -478,8 +508,17 @@
           <div class="fl-capsule">
             ${
               state.pendingAtts.length
-                ? `<div class="fl-att-row" style="margin-bottom:6px;">
-                     ${state.pendingAtts.map((a, i) => `<span class="fl-att-chip">📎 ${esc(a.name.slice(0, 18))} <button type="button" class="fl-mini-btn" style="padding:0 4px;" data-sai-rm-att="${i}">✕</button></span>`).join("")}
+                ? `<div class="fl-att-row" style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                     ${state.pendingAtts
+                       .map((a, i) =>
+                         a.previewUrl
+                           ? `<div style="position:relative;width:54px;height:54px;border-radius:10px;overflow:hidden;border:1px solid rgba(56,189,248,0.4);">
+                                <img src="${esc(a.previewUrl)}" alt="${esc(a.name)}" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                                <button type="button" data-sai-rm-att="${i}" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(5,8,15,0.82);color:#fff;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                              </div>`
+                           : `<span class="fl-att-chip">📎 ${esc(a.name.slice(0, 18))} <button type="button" class="fl-mini-btn" style="padding:0 4px;" data-sai-rm-att="${i}">✕</button></span>`
+                       )
+                       .join("")}
                    </div>`
                 : ""
             }
@@ -626,6 +665,15 @@
         const mi = Number(b.getAttribute("data-sai-attach-gen"));
         const gen = chat?.messages?.[mi]?.generated_image;
         if (gen) openArticlePicker("attach", gen);
+      };
+    });
+    root.querySelectorAll("[data-sai-attach-user-img]").forEach((b) => {
+      b.onclick = () => {
+        const [mi, ii] = String(b.getAttribute("data-sai-attach-user-img") || "").split(":").map(Number);
+        const uImg = chat?.messages?.[mi]?.attImages?.[ii];
+        if (uImg && uImg.data_url) {
+          openArticlePicker("attach", { data_url: uImg.data_url, title: uImg.name || "Uploaded Photo", source: "ILF", photographer: "ILF" });
+        }
       };
     });
 

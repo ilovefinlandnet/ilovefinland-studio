@@ -413,10 +413,27 @@ def _find_matching_package(
     return None
 
 
-def _pick_photo_from_recent(message: str, recent_media: Dict[str, Any]) -> Optional[Tuple[Dict[str, Any], str]]:
+def _pick_photo_from_recent(
+    message: str,
+    recent_media: Dict[str, Any],
+    attachments: Optional[List[Dict[str, Any]]] = None,
+) -> Optional[Tuple[Dict[str, Any], str]]:
     low = (message or "").lower()
     photos = recent_media.get("photos") or []
     gen = recent_media.get("generated_image")
+    uploaded = recent_media.get("uploaded_image")
+
+    # 0. If user attached an image directly in THIS message, prioritize it!
+    for att in attachments or []:
+        mime = (att.get("mime_type") or "").lower()
+        b64 = att.get("data_base64") or ""
+        if mime.startswith("image/") and b64:
+            return {
+                "data_url": f"data:{mime};base64,{b64}",
+                "title": (att.get("name") or "Uploaded Photo")[:80],
+                "source": "ILF",
+                "photographer": "ILF",
+            }, "your uploaded photo"
 
     idx: Optional[int] = None
     word_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6}
@@ -433,6 +450,8 @@ def _pick_photo_from_recent(message: str, recent_media: Dict[str, Any]) -> Optio
 
     if idx is not None and 1 <= idx <= len(photos):
         return photos[idx - 1], f"Photo #{idx}"
+    if uploaded and idx is None:
+        return uploaded, "your uploaded photo"
     if gen and (idx is None or "ai" in low or "generated" in low):
         return gen, "your AI image"
     if photos:
@@ -673,7 +692,8 @@ def handle_studio_chat(
         return {"ok": False, "error": "EMPTY", "message": "Type a message or attach a photo/PDF."}, 400
 
     linked_article = _load_linked_article_context(active_package_id, db_path=db_path)
-    has_recent_media = bool((recent_media.get("photos") or []) or recent_media.get("generated_image"))
+    has_att_image = any((a.get("mime_type") or "").lower().startswith("image/") and a.get("data_base64") for a in attachments)
+    has_recent_media = bool((recent_media.get("photos") or []) or recent_media.get("generated_image") or recent_media.get("uploaded_image") or has_att_image)
     intent = forced_action or _detect_intent(message, has_recent_media=has_recent_media, has_linked_article=bool(linked_article))
 
     # 1. DIRECT DRAFT UPDATE (Headline / Excerpt / Instagram Caption)
@@ -724,7 +744,7 @@ def handle_studio_chat(
 
     # 2. ATTACH PHOTO TO ARTICLE
     if intent == "attach_photo":
-        picked = _pick_photo_from_recent(message, recent_media)
+        picked = _pick_photo_from_recent(message, recent_media, attachments=attachments)
         if not picked:
             return {
                 "ok": True,
@@ -804,7 +824,7 @@ def handle_studio_chat(
 
             attached_note = ""
             if pkg_id and any(k in message.lower() for k in ("with this photo", "use photo", "use this photo", "use this image", "with photo", "use picture")):
-                picked = _pick_photo_from_recent(message, recent_media)
+                picked = _pick_photo_from_recent(message, recent_media, attachments=attachments)
                 if picked:
                     p_obj, p_lbl = picked
                     _, a_code = attach_photo_to_article(pkg_id, p_obj, mode="featured", db_path=db_path, author=author)
