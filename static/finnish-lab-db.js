@@ -5,11 +5,23 @@
 (function () {
   "use strict";
 
-  const DB_NAME = "finnish_lab_db";
+  const DEFAULT_DB_NAME = "finnish_lab_db";
   const DB_VERSION = 1;
-  const LS_PREFIX = "finnish_lab_";
-
+  let _dbName = DEFAULT_DB_NAME;
+  let _lsPrefix = "finnish_lab_";
   let _dbPromise = null;
+
+  function setActiveUser(email) {
+    const clean = String(email || "").trim().toLowerCase();
+    // Preserve Binod's existing local DB name; give every other user a 100% isolated per-email IndexedDB & localStorage namespace!
+    const nextDb = !clean || clean === "binodoli721@gmail.com" ? DEFAULT_DB_NAME : `finnish_lab_db_${clean.replace(/[^a-z0-9]/g, "_")}`;
+    const nextLs = !clean || clean === "binodoli721@gmail.com" ? "finnish_lab_" : `finnish_lab_${clean.replace(/[^a-z0-9]/g, "_")}_`;
+    if (nextDb !== _dbName || nextLs !== _lsPrefix) {
+      _dbName = nextDb;
+      _lsPrefix = nextLs;
+      _dbPromise = null;
+    }
+  }
 
   function openDB() {
     if (_dbPromise) return _dbPromise;
@@ -18,7 +30,7 @@
         resolve(null);
         return;
       }
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      const req = indexedDB.open(_dbName, DB_VERSION);
       req.onupgradeneeded = (ev) => {
         const db = ev.target.result;
         if (!db.objectStoreNames.contains("conversations")) {
@@ -45,7 +57,7 @@
 
   function lsGet(key, fallback) {
     try {
-      const raw = localStorage.getItem(LS_PREFIX + key);
+      const raw = localStorage.getItem(_lsPrefix + key);
       return raw ? JSON.parse(raw) : fallback;
     } catch (_) {
       return fallback;
@@ -54,7 +66,7 @@
 
   function lsSet(key, val) {
     try {
-      localStorage.setItem(LS_PREFIX + key, JSON.stringify(val));
+      localStorage.setItem(_lsPrefix + key, JSON.stringify(val));
     } catch (_) {
       // ignore storage quota error
     }
@@ -400,6 +412,7 @@
   }
 
   window.FinnishLabDB = {
+    setActiveUser,
     getSettings,
     saveSettings,
     getProgress,

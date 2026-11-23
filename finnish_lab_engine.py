@@ -743,10 +743,13 @@ def handle_ask(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> T
         roast_mode = roast_mode.lower() not in ("0", "false", "no", "off")
     roast_mode = bool(roast_mode)
 
-    # Check if cacheable (text-only single-turn or deterministic query without large binary attachments)
+    # Check if cacheable — strictly scoped to THIS individual user's email & never caches live weather or personalized memory
     cache_key = None
-    if not attachments and len(history) == 0 and prompt_text:
-        raw_sig = f"ask|{mode}|{level}|roast={int(roast_mode)}|{prompt_text.lower()}"
+    user_email_scope = (payload.get("_user_email") or "anon").strip().lower()
+    has_personal_ctx = bool(payload.get("user_memory") or payload.get("user_name"))
+    is_live_weather = any(w in prompt_text.lower() for w in ("weather", "sää", "saa", "temperature", "forecast", "tomorrow", "huomenna"))
+    if not attachments and len(history) == 0 and prompt_text and not has_personal_ctx and not is_live_weather:
+        raw_sig = f"ask|{user_email_scope}|{mode}|{level}|roast={int(roast_mode)}|{prompt_text.lower()}"
         cache_key = hashlib.sha256(raw_sig.encode("utf-8")).hexdigest()
         cached = _cache_lookup(cache_key, db_path)
         if cached:

@@ -583,6 +583,9 @@
       state.role = r.role || "guest";
       state.userEmail = r.email || "";
       state.userName = r.name || "";
+      if (state.userEmail && DB.setActiveUser) {
+        DB.setActiveUser(state.userEmail);
+      }
       state.studentEnabled = r.student_enabled !== false;
       state.emailDeliveryConfigured = Boolean(r.email_delivery_configured);
       if (r.invite_code) state.inviteCode = r.invite_code;
@@ -646,6 +649,7 @@
 
   async function refreshAuthAndSync() {
     await refreshRole();
+    await loadAllData();
     if (state.role !== "guest") {
       await Promise.all([refreshStatus(), autoPullSync()]);
     }
@@ -2801,7 +2805,8 @@
 
   /* ---------- INIT ---------- */
   async function initFinnishLab() {
-    await Promise.all([loadAllData(), refreshRole()]);
+    await refreshRole();
+    await loadAllData();
     mountFloatingAndSidePanel();
     renderActiveView();
     startSmartAutoRefresh();

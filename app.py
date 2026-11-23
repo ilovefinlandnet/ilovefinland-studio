@@ -512,7 +512,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "app": "ILoveFinland Studio",
-                    "app_version": "74.0",
+                    "app_version": "74.1",
                     "milestone": 2,
                     "integrations": INTEGRATIONS_STATUS,
                 }
@@ -2629,7 +2629,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
 
             if path == "/api/finnish-lab/ask":
-                res, status_code = finnish_lab_engine.handle_ask(body or {})
+                ask_payload = dict(body or {})
+                ask_payload["_user_email"] = user
+                res, status_code = finnish_lab_engine.handle_ask(ask_payload)
                 self._send_json(res, status=status_code)
                 return
 
