@@ -97,6 +97,7 @@
     speakRecorder: null,
     speakResult: null,
     knownAppVersion: null,
+    cardSearch: "",
   };
 
   const STREET_GAME_QUESTIONS = [
@@ -2114,14 +2115,47 @@
                           <button type="button" class="fl-btn danger sm" data-fl-rate-card="${activeCard.id}" data-fl-rating="again">Again</button>
                           <button type="button" class="fl-btn primary sm" data-fl-rate-card="${activeCard.id}" data-fl-rating="good">Good</button>
                           <button type="button" class="fl-btn success sm" data-fl-rate-card="${activeCard.id}" data-fl-rating="easy">Easy</button>
-                        </div>`
-                      : `<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:10px;">No flashcards yet. Add one below!</div>`
+                        </div>
+                        <button type="button" class="fl-btn sm" id="fl-cards-to-podcast" style="width:100%;margin-top:8px;">${ICO.headphones} Listen to Saved Words as Podcast</button>`
+                      : `<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:10px;">No flashcards yet. Tap the Star icon on any reply or add a word below!</div>`
                   }
-                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px;">
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
                     <input type="text" id="fl-new-card-fi" class="fl-input" placeholder="Finnish word" />
                     <input type="text" id="fl-new-card-en" class="fl-input" placeholder="English meaning" />
                     <button type="button" class="fl-btn primary sm" id="fl-add-custom-card">+ Save Flashcard</button>
                   </div>
+                  ${
+                    state.flashcards.length
+                      ? `<div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
+                           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                             <strong style="font-size:0.8rem;color:#e2e8f0;">All Saved Words (${state.flashcards.length})</strong>
+                           </div>
+                           <input type="text" id="fl-card-search" class="fl-input" value="${esc(state.cardSearch || "")}" placeholder="Search Finnish or English..." style="margin-bottom:8px;font-size:0.78rem;padding:7px 10px;" />
+                           <div style="display:flex;flex-direction:column;gap:6px;">
+                             ${state.flashcards
+                               .filter((c) => {
+                                 const q = (state.cardSearch || "").trim().toLowerCase();
+                                 return !q || (c.fi || "").toLowerCase().includes(q) || (c.en || "").toLowerCase().includes(q);
+                               })
+                               .map(
+                                 (c) => `
+                               <div class="fl-vocab-row" style="padding:8px 10px;margin:0;">
+                                 <div style="min-width:0;flex:1;">
+                                   <div style="font-size:0.82rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.fi)}</div>
+                                   <div style="font-size:0.73rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.en)}</div>
+                                 </div>
+                                 <div style="display:flex;gap:2px;flex-shrink:0;">
+                                   <button type="button" class="fl-mini-btn" data-fl-speak="${esc(c.fi)}" title="Hear pronunciation">${ICO.listen}</button>
+                                   <button type="button" class="fl-mini-btn" data-fl-del-card="${c.id}" title="Delete card" style="color:#fca5a5;">✕</button>
+                                 </div>
+                               </div>
+                             `
+                               )
+                               .join("")}
+                           </div>
+                         </div>`
+                      : ""
+                  }
                 </div>`
               : t === "notes"
               ? `<div>
@@ -2584,9 +2618,19 @@
       b.onclick = async () => {
         const w = CURR.getTodayVocabPack().words[Number(b.getAttribute("data-fl-save-vocab"))];
         if (!w) return;
-        await DB.addFlashcard({ fi: w.fi, en: w.en, baseForm: w.base, example: `${w.exFi} (${w.exEn})` });
-        state.flashcards = await DB.listFlashcards();
-        toast(`Saved "${w.fi}" to Flashcards! ⭐`, "success");
+        const existing = (state.flashcards || []).find((c) => (c.fi || "").toLowerCase() === (w.fi || "").toLowerCase());
+        if (existing) {
+          await DB.deleteFlashcard(existing.id);
+          state.flashcards = await DB.listFlashcards();
+          scheduleAutoSync();
+          toast(`Removed "${w.fi}" from Flashcards.`, "info");
+        } else {
+          await DB.addFlashcard({ fi: w.fi, en: w.en, baseForm: w.base, example: `${w.exFi} (${w.exEn})` });
+          state.flashcards = await DB.listFlashcards();
+          scheduleAutoSync();
+          toast(`Saved "${w.fi}" to Flashcards!`, "success");
+        }
+        renderActiveView();
       };
     });
     root.querySelectorAll("[data-fl-quiz-ans]").forEach((b) => {
@@ -2674,7 +2718,32 @@
       if (!fi || !en) return;
       await DB.addFlashcard({ fi, en });
       state.flashcards = await DB.listFlashcards();
+      scheduleAutoSync();
       toast("Card saved!", "success");
+      renderActiveView();
+    });
+    root.querySelector("#fl-card-search")?.addEventListener("input", (e) => {
+      state.cardSearch = e.target.value || "";
+      renderActiveView();
+      const inp = document.getElementById("fl-card-search");
+      if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    });
+    root.querySelectorAll("[data-fl-del-card]").forEach((b) => {
+      b.onclick = async () => {
+        const id = b.getAttribute("data-fl-del-card");
+        await DB.deleteFlashcard(id);
+        state.flashcards = await DB.listFlashcards();
+        scheduleAutoSync();
+        toast("Flashcard removed.", "info");
+        renderActiveView();
+      };
+    });
+    root.querySelector("#fl-cards-to-podcast")?.addEventListener("click", () => {
+      state.drawerOpen = false;
+      state.mode = "study";
+      state.studyTool = "podcast";
+      state.podcastEpisodeId = "pod_cards";
+      state.podcastAudioUrl = null;
       renderActiveView();
     });
     root.querySelectorAll("[data-fl-export-note]").forEach((b) => {
