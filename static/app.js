@@ -1752,7 +1752,6 @@
       ctx.fillText(leftCtaText, cardX + cardPad, footY);
     }
 
-    const showSwipeArrow = $("ai-check-swipe-arrow") && $("ai-check-swipe-arrow").checked;
     if (showSwipeArrow) {
       ctx.fillStyle = "#38BDF8";
       ctx.textAlign = "right";
