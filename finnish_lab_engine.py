@@ -1460,15 +1460,19 @@ _WMO_CODES = {
 
 
 def _maybe_fetch_live_weather(prompt_text: str, history: List[Dict[str, Any]], user_memory: Optional[List[str]] = None) -> str:
-    """If the user asks about weather/sää in a Finnish city, fetch live weather from Open-Meteo (€0, no key)."""
-    recent_text = " ".join([prompt_text] + [str(h.get("text") or "") for h in (history or [])[-4:]]).lower()
-    mem_text = " ".join([str(x) for x in (user_memory or [])]).lower()
-    weather_words = ("weather", "sää", "saa", "temperature", "cold", "snow", "rain", "forecast", "degrees", "tomorrow morning", "huomenna")
-    if not any(w in recent_text for w in weather_words):
+    """Only fetch live weather when the CURRENT message actually asks about weather/sää (never leak into unrelated questions!)."""
+    cur_low = (prompt_text or "").lower()
+    weather_words = ("weather", "sää", "saa", "temperature", "forecast", "degrees", "raining", "snowing", "freezing", "cold outside")
+    # Also allow short city-only follow-ups like "In pori" if the immediately previous message was about weather
+    prev_text = str((history or [{}])[-1].get("text") or "").lower() if history else ""
+    is_city_followup = (len(cur_low) <= 32 and any(c in cur_low for c in FINLAND_CITY_COORDS) and any(w in prev_text for w in ("weather", "sää", "°c", "forecast", "temperature")))
+    if not any(w in cur_low for w in weather_words) and not is_city_followup:
         return ""
+    recent_text = " ".join([cur_low] + [str(h.get("text") or "").lower() for h in (history or [])[-2:]])
+    mem_text = " ".join([str(x) for x in (user_memory or [])]).lower()
     city_info = None
     # Prefer city mentioned in current message -> recent history -> saved friend memory -> Helsinki
-    for search_text in (prompt_text.lower(), recent_text, mem_text):
+    for search_text in (cur_low, recent_text, mem_text):
         for key, val in FINLAND_CITY_COORDS.items():
             if key in search_text:
                 city_info = val

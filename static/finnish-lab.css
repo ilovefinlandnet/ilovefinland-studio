@@ -112,11 +112,18 @@ body.fl-focus-mode .sidebar {
   max-height: 100dvh !important;
 }
 
-/* Admin mobile header offset ONLY <= 768px where Studio mobile-header is position:fixed (exact 52px flush!) */
-@media (max-width: 768px) {
+/* On ALL phones/tablets, make .mobile-header in-flow flex-shrink:0 inside .workspace-wrap
+   so .workspace ALWAYS starts at the EXACT pixel .mobile-header ends (0px overlap on Dynamic Island / Notch / Safari / iPad!) */
+@media (max-width: 1024px) {
+  body:not(.fl-student-only):has(#view-finnish-lab:not(.hidden)) .mobile-header {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    flex-shrink: 0 !important;
+  }
   body:not(.fl-student-only) .workspace:has(#view-finnish-lab:not(.hidden)) {
-    padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
-    box-sizing: border-box !important;
+    padding-top: 0 !important;
   }
   .fl-app {
     padding: 0 12px;
