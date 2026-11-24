@@ -1691,14 +1691,22 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
    and Walk & Listen episodes scroll smoothly on touchscreens.
    ============================================================================ */
 @media (max-width: 768px) {
-  html,
+  html {
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: clip !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
   body,
   body:has(#view-finnish-lab:not(.hidden)),
   body:has(#view-studio-ai:not(.hidden)) {
     min-height: 100dvh !important;
     height: auto !important;
     max-height: none !important;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
     overflow-x: clip !important;
     -webkit-overflow-scrolling: touch !important;
   }

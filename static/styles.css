@@ -293,7 +293,7 @@ body {
 
 /* App Shell */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
   width: 100%;
 }
@@ -1234,7 +1234,7 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border);
     padding: 14px 12px 120px;
     max-width: 100%;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
   }
   .panel {
@@ -5398,9 +5398,9 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
    MOBILE SCREENS: IPHONE / ANDROID VIEWPORTS (<= 767px)
    ========================================================================= */
 @media (max-width: 767px) {
-  /* Prevent horizontal screen scrolling */
+  /* Prevent horizontal screen scrolling without breaking position: sticky */
   html, body, #studio-shell, .workspace-wrap {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     width: 100% !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
@@ -6267,9 +6267,9 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 .pill, .badge { max-width: 100%; white-space: normal; }
 
 @media (max-width: 767px) {
-  /* Nothing may ever push the page sideways */
+  /* Nothing may ever push the page sideways (clip preserves position: sticky) */
   .view, .view > *, .card, .panel { max-width: 100% !important; box-sizing: border-box !important; }
-  .view { overflow-x: hidden !important; }
+  .view { overflow-x: clip !important; }
   .view .panel-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
 
   /* AI Media Studio: stack all form grids, scroll tabs */
@@ -6447,16 +6447,16 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 }
 
 @media (max-width: 768px) {
-  /* Strict mobile viewport bounds */
+  /* Strict mobile viewport bounds (clip preserves position: sticky) */
   html, body {
     max-width: 100vw !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
   }
   .app-shell, .workspace, #view-review {
     max-width: 100vw !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
   }
 
   /* Pin Mobile Header permanently at top */
@@ -6473,7 +6473,7 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
     width: 100% !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
   }
 
   /* When back button is visible on mobile, hide hamburger to prevent cramming */
@@ -6911,7 +6911,7 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   border: 1px solid var(--ilf-border-subtle);
   border-radius: 10px;
   margin-top: 12px;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .inspector-drawer summary {
@@ -7155,14 +7155,47 @@ body:has(#view-finnish-lab:not(.hidden)) .studio-utility-bar {
   display: none !important;
 }
 
-/* Mobile & iPad Native Scrolling Guarantee (v99.0) */
+/* Mobile & iPad Native Scrolling Guarantee (v101.0) + Compact Sticky Social Preview */
+@media (min-width: 769px) {
+  #design-1-workspace.studio-app-grid,
+  #design-2-workspace.studio-app-grid {
+    grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  #design-1-workspace .studio-stage-column,
+  #design-2-workspace .studio-stage-column {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    z-index: 12;
+  }
+
+  #design-1-workspace #static-post-canvas,
+  #design-2-workspace #carousel-canvas {
+    max-height: calc(100dvh - 185px);
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 auto;
+  }
+}
+
 @media (max-width: 768px) {
-  html,
-  body {
+  html {
     min-height: 100dvh !important;
     height: auto !important;
     max-height: none !important;
     overflow-y: auto !important;
+    overflow-x: clip !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body {
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
     overflow-x: clip !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -7177,5 +7210,127 @@ body:has(#view-finnish-lab:not(.hidden)) .studio-utility-bar {
     max-height: none !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Let secondary review tabs scroll away cleanly on mobile so sticky 1080x1350 preview has zero top overlap */
+  .mobile-tabs {
+    position: static !important;
+  }
+
+  /* Compact Sticky Top Preview on Mobile while editing Zoom, Framing, Headline Lines, Colors & Font Size */
+  #design-1-workspace.studio-app-grid,
+  #design-2-workspace.studio-app-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #design-1-workspace .studio-stage-column,
+  #design-2-workspace .studio-stage-column {
+    position: sticky !important;
+    top: 52px !important;
+    z-index: 30 !important;
+    align-self: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #design-1-workspace .studio-stage-card,
+  #design-2-workspace .studio-stage-card {
+    padding: 8px 10px !important;
+    background: rgba(6, 18, 36, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.6) !important;
+    border-color: rgba(56, 189, 248, 0.45) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #design-1-workspace #static-post-canvas,
+  #design-1-workspace #static-crop-canvas,
+  #design-2-workspace #carousel-canvas {
+    max-height: 195px !important;
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  #design-1-workspace #static-fb-canvas {
+    max-height: 155px !important;
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  #design-1-workspace .btn-save-photos-direct,
+  #design-2-workspace .btn-save-photos-direct {
+    margin-top: 6px !important;
+    padding: 6px 10px !important;
+    min-height: 32px !important;
+    font-size: 0.74rem !important;
+  }
+
+  #design-1-workspace .static-dl-row,
+  #design-2-workspace .static-dl-row {
+    margin-top: 5px !important;
+    gap: 5px !important;
+  }
+
+  #design-1-workspace .static-dl-row .btn,
+  #design-2-workspace .static-dl-row .btn {
+    min-height: 30px !important;
+    padding: 4px 6px !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Zero Right-Edge Overflow inside Mobile Social Inspector (390px iPhone safe) */
+  #panel-ig,
+  #panel-ig .studio-inspector-card,
+  #panel-ig .inspector-drawer,
+  #panel-ig .inspector-drawer-body,
+  #panel-ig .wp-field-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #panel-ig .studio-inspector-card {
+    padding: 12px !important;
+    overflow: visible !important;
+  }
+
+  #panel-ig .social-format-tabs {
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    gap: 5px !important;
+    max-width: 100% !important;
+  }
+
+  #panel-ig .social-tab-btn {
+    flex: 1 1 44% !important;
+    min-height: 34px !important;
+    padding: 5px 6px !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap;
+  }
+
+  #panel-ig .wp-field-label-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    max-width: 100% !important;
+  }
+
+  #panel-ig .wp-field-label-row select {
+    width: auto !important;
+    max-width: 155px !important;
+    font-size: 0.78rem !important;
+    padding: 4px 8px !important;
   }
 }

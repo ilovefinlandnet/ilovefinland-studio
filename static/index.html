@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=100.0" />
+  <link rel="stylesheet" href="/styles.css?v=103.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=100.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=102.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -2131,19 +2131,29 @@
                   </div>
                 </div>
 
-                <!-- Right: Social Caption (Gemini Polish + Copy), Hashtags & Save -->
+                <!-- Right: Caption + Design-1 Framing/Text/Typography Controls (Always side-by-side with Sticky 1080×1350 Preview!) -->
                 <div class="studio-inspector-card" style="padding:18px;gap:14px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                    <strong style="color:#fff;font-size:0.95rem;">📝 Social Caption &amp; Hashtags</strong>
-                    <span class="badge" style="background:rgba(2,156,216,0.2);color:#38BDF8;font-size:0.7rem;padding:2px 8px;">1080×1350 • Auto-Synced Photo</span>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <strong style="color:#fff;font-size:0.95rem;">📝 Caption &amp; Graphic Controls</strong>
+                    <span class="badge" style="background:rgba(2,156,216,0.2);color:#38BDF8;font-size:0.7rem;padding:2px 8px;">1080×1350 • Live Preview Left</span>
                   </div>
+
+                  <!-- Format Switcher + Safe-Zone Guide (Updates sticky preview immediately!) -->
+                  <div class="social-format-tabs" role="tablist" style="background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;">
+                    <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📱 Feed (4:5)</button>
+                    <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📘 Facebook (1200×630)</button>
+                    <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">🔍 Grid (3:4)</button>
+                    <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐 Guide</button>
+                  </div>
+
+                  <!-- Caption & Hashtags -->
                   <div id="d1-pane-caption" class="inspector-pane active" style="display:block;padding:0;">
                     <div class="wp-field-wrap">
                       <div class="wp-field-label-row">
                         <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
                         <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption</button>
                       </div>
-                      <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
+                      <textarea id="static-edit-caption" class="wp-textarea" rows="6" style="line-height:1.5;font-size:0.86rem;"></textarea>
                     </div>
 
                     <div class="wp-field-wrap">
@@ -2162,6 +2172,156 @@
                       </button>
                     </div>
                   </div>
+
+                  <!-- Design-1 Photo Framing, Zoom, Headline Lines, Colors & Font Size (Directly beside sticky preview!) -->
+                  <details id="d1-style-controls-drawer" class="inspector-drawer" open style="margin-top:4px;">
+                    <summary style="padding:11px 14px;font-size:0.84rem;">
+                      <span>🎨 Photo Framing, Headline Lines, Colors &amp; Font Size</span>
+                      <span style="font-size:0.72rem;color:#94A3B8;font-weight:500;">Live Preview ▾</span>
+                    </summary>
+                    <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:14px;">
+                      <div id="d1-pane-photo" style="display:block;">
+                        <!-- Photo Upload Box -->
+                        <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:12px;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
+                            <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
+                          </div>
+                          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                            <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                              <span>📷 Upload / Replace Photo</span>
+                            </button>
+                            <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
+                          </div>
+                        </div>
+
+                        <!-- Picture Adjustment (Zoom & Framing) -->
+                        <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:0;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
+                            <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
+                          </div>
+                          <!-- Zoom -->
+                          <div style="margin-bottom:10px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                              <span>🔍 Zoom Picture:</span>
+                              <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
+                            </div>
+                            <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
+                          </div>
+                          <!-- Horizontal Pan -->
+                          <div style="margin-bottom:10px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;flex-wrap:wrap;gap:4px;">
+                              <span>↔️ Show Left / Center / Right:</span>
+                              <div style="display:flex;gap:4px;">
+                                <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
+                                <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                                <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
+                              </div>
+                            </div>
+                            <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                          </div>
+                          <!-- Vertical Pan -->
+                          <div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;flex-wrap:wrap;gap:4px;">
+                              <span>↕️ Vertical Framing (Pan):</span>
+                              <div style="display:flex;gap:4px;">
+                                <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
+                                <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                                <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
+                              </div>
+                            </div>
+                            <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div id="d1-pane-text" style="display:block;border-top:1px solid rgba(75,137,188,0.22);padding-top:12px;">
+                        <div style="font-size:0.78rem;font-weight:800;color:#38BDF8;margin-bottom:10px;">✍️ Headline Lines, Colors &amp; Typography</div>
+                        <!-- Category Badge -->
+                        <div class="wp-field-wrap">
+                          <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
+                          <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
+                        </div>
+
+                        <!-- Line 1 -->
+                        <div class="wp-field-wrap">
+                          <div class="wp-field-label-row">
+                            <label class="label-sm" for="static-edit-line1">Headline Line 1</label>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                              <select id="static-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                                <option value="white" selected>⚪ White</option>
+                                <option value="blue">🔵 Electric Blue</option>
+                              </select>
+                            </div>
+                          </div>
+                          <input type="text" id="static-edit-line1" class="wp-input" />
+                        </div>
+
+                        <!-- Line 2 -->
+                        <div class="wp-field-wrap">
+                          <div class="wp-field-label-row">
+                            <label class="label-sm" for="static-edit-line2">Headline Line 2</label>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                              <select id="static-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                                <option value="white" selected>⚪ White</option>
+                                <option value="blue">🔵 Electric Blue</option>
+                              </select>
+                            </div>
+                          </div>
+                          <input type="text" id="static-edit-line2" class="wp-input" />
+                        </div>
+
+                        <!-- Line 3 -->
+                        <div class="wp-field-wrap">
+                          <div class="wp-field-label-row">
+                            <label class="label-sm" for="static-edit-line3">Headline Line 3 (Optional)</label>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                              <select id="static-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                                <option value="blue" selected>🔵 Electric Blue</option>
+                                <option value="white">⚪ White</option>
+                              </select>
+                            </div>
+                          </div>
+                          <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
+                        </div>
+
+                        <!-- CTA Line -->
+                        <div class="wp-field-wrap">
+                          <div class="wp-field-label-row">
+                            <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                              <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                                <option value="white" selected>⚪ White (Default)</option>
+                                <option value="blue">🔵 Electric Blue</option>
+                              </select>
+                            </div>
+                          </div>
+                          <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
+                          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE</button>
+                            <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
+                            <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear</button>
+                          </div>
+                        </div>
+
+                        <!-- Typography Font Size Slider -->
+                        <div class="wp-field-wrap" style="margin-bottom:0;">
+                          <div class="wp-field-label-row">
+                            <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Badge)</label>
+                            <span class="hint-inline" id="static-line2-size-val">32px</span>
+                          </div>
+                          <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;cursor:pointer;" />
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
                   <div class="inspector-sticky-save" style="border-radius:10px;">
                     <button type="button" id="btn-save-static-post" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
                       <span>💾 Save Changes to Article &amp; Post</span>
@@ -2170,170 +2330,15 @@
                 </div>
               </div>
 
-              <!-- CLOSED ACCORDION: 6-SLIDE CAROUSEL & STYLE OPTIONS -->
+              <!-- CLOSED ACCORDION: 6-SLIDE CAROUSEL DECK (DESIGN - 2) -->
               <details id="carousel-and-style-drawer" class="inspector-drawer" style="margin-top:18px;">
                 <summary style="padding:12px 16px;font-size:0.86rem;">
-                  <span>🎨 6-Slide Carousel &amp; Style Options (Zoom, Framing, Per-Line Colors, Font Size, Darkness, Arrow, FB/Grid Formats &amp; Slides 1–6)</span>
+                  <span>📑 6-Slide Carousel Story Deck (Design - 2: Slides 1–6, Frosted Glass Cards, Darkness &amp; Batch Export)</span>
                   <span style="font-size:0.74rem;color:#94A3B8;font-weight:500;">Click to expand ▾</span>
                 </summary>
-                <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:18px;">
-                  <!-- Format Switcher + Safe-Zone Guide -->
-                  <div class="social-format-tabs" role="tablist" style="background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;max-width:520px;">
-                    <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📱 Feed (4:5)</button>
-                    <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📘 Facebook (1200×630)</button>
-                    <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">🔍 Grid (3:4)</button>
-                    <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐 Guide</button>
-                  </div>
-
-                  <!-- Design-1 Fine Controls (Photo Framing & Per-Line Typography) -->
-                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
-                    <div class="studio-inspector-card" style="padding:14px;">
-                      <div style="font-size:0.78rem;font-weight:800;color:#38BDF8;margin-bottom:10px;">📸 Design-1 Photo &amp; Framing</div>
-                      <div id="d1-pane-photo" style="display:block;">
-                    <!-- Photo Upload Box -->
-                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
-                        <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
-                      </div>
-                      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                        <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
-                          <span>📷 Upload / Replace Photo</span>
-                        </button>
-                        <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                        <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
-                      </div>
-                    </div>
-
-                    <!-- Picture Adjustment (Zoom & Framing) -->
-                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
-                        <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
-                      </div>
-                      <!-- Zoom -->
-                      <div style="margin-bottom:10px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                          <span>🔍 Zoom Picture:</span>
-                          <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
-                        </div>
-                        <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
-                      </div>
-                      <!-- Horizontal Pan -->
-                      <div style="margin-bottom:10px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                          <span>↔️ Show Left / Center / Right:</span>
-                          <div style="display:flex;gap:4px;">
-                            <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
-                            <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                            <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
-                          </div>
-                        </div>
-                        <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
-                      </div>
-                      <!-- Vertical Pan -->
-                      <div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                          <span>↕️ Vertical Framing (Pan):</span>
-                          <div style="display:flex;gap:4px;">
-                            <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
-                            <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                            <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
-                          </div>
-                        </div>
-                        <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
-                      </div>
-                    </div>
-                  </div>
-                    </div>
-                    <div class="studio-inspector-card" style="padding:14px;">
-                      <div style="font-size:0.78rem;font-weight:800;color:#38BDF8;margin-bottom:10px;">✍️ Design-1 Per-Line Text, Colors &amp; Size</div>
-                      <div id="d1-pane-text" style="display:block;">
-                    <!-- Category Badge -->
-                    <div class="wp-field-wrap">
-                      <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
-                      <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
-                    </div>
-
-                    <!-- Line 1 -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-line1">Headline Line 1</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="static-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="white" selected>⚪ White</option>
-                            <option value="blue">🔵 Electric Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="static-edit-line1" class="wp-input" />
-                    </div>
-
-                    <!-- Line 2 -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-line2">Headline Line 2</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="static-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="white" selected>⚪ White</option>
-                            <option value="blue">🔵 Electric Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="static-edit-line2" class="wp-input" />
-                    </div>
-
-                    <!-- Line 3 -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-line3">Headline Line 3 (Optional)</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="static-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="blue" selected>🔵 Electric Blue</option>
-                            <option value="white">⚪ White</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
-                    </div>
-
-                    <!-- CTA Line -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="white" selected>⚪ White (Default)</option>
-                            <option value="blue">🔵 Electric Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
-                      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE</button>
-                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
-                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear</button>
-                      </div>
-                    </div>
-
-                    <!-- Typography Font Size Slider -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Badge)</label>
-                        <span class="hint-inline" id="static-line2-size-val">32px</span>
-                      </div>
-                      <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;cursor:pointer;" />
-                    </div>
-                  </div>
-                    </div>
-                  </div>
-
+                <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:14px;">
                   <!-- Design-2: 6-Slide Story Deck -->
-                  <div style="border-top:1px solid rgba(75,137,188,0.28);padding-top:16px;">
+                  <div>
                     <div style="font-size:0.9rem;font-weight:800;color:#fff;margin-bottom:10px;">📑 Design - 2: 6-Slide Story Deck (Slides 1–6)</div>
                     <!-- WORKSPACE: DESIGN - 2 (6-SLIDE INSTAGRAM CAROUSEL DECK)        -->
               <!-- ============================================================== -->
