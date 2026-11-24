@@ -1,16 +1,21 @@
 """SQLite persistence and Milestone 2 seed data for ILoveFinland Studio."""
 
+import base64
 import copy
 import csv
 import io
 import json
+import logging
 import os
 import re
 import secrets
 import sqlite3
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 import env_loader
 import editorial_engine

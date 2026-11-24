@@ -1554,15 +1554,18 @@
             ...defaultSlideData(num),
             ...s,
           };
-          if (s.photoDataUrl) {
+          const slideSrc = s.photoDataUrl || s.photo_url || "";
+          if (slideSrc) {
+            carouselSlidesData[num].photoDataUrl = slideSrc;
             const img = new Image();
+            img.crossOrigin = "anonymous";
             img.onload = () => {
               carouselSlidesData[num].photoImg = img;
               if (typeof activeCarouselSlide !== "undefined" && activeCarouselSlide === num && typeof renderActiveCarouselSlideCanvas === "function") {
                 renderActiveCarouselSlideCanvas();
               }
             };
-            img.src = s.photoDataUrl;
+            img.src = slideSrc;
           }
         }
       });
@@ -7193,39 +7196,69 @@
     });
 
     $("btn-save-static-post")?.addEventListener("click", async () => {
-      if (!currentPackageId || !currentStaticPost) return;
-      if (typeof saveActiveCarouselSlideInputs === "function") {
-        saveActiveCarouselSlideInputs();
+      if (!currentPackageId || !currentStaticPost) {
+        showToast("⚠️ No active post loaded to save.", "warning");
+        return;
       }
-      const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
-      const adjustments = {
-        badge_text: $("static-edit-badge")?.value || "NEWS",
-        headline_line1: $("static-edit-line1")?.value || "",
-        headline_line2: $("static-edit-line2")?.value || "",
-        headline_line3: $("static-edit-line3")?.value || "",
-        line1_color: $("static-edit-line1-color")?.value || "white",
-        line2_color: $("static-edit-line2-color")?.value || "white",
-        line3_color: $("static-edit-line3-color")?.value || "blue",
-        cta_text: $("static-edit-cta")?.value || "",
-        cta_color: $("static-edit-cta-color")?.value || "white",
-        line1_font_size: fs,
-        line2_font_size: fs,
-        line3_font_size: fs,
-        caption: $("static-edit-caption")?.value || "",
-        hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
-        photo_zoom: parseInt($("photo-zoom-range")?.value, 10) || 100,
-        photo_shift_x: parseInt($("photo-shift-x-range")?.value, 10) || 0,
-        photo_shift_y: parseInt($("photo-shift-y-range")?.value, 10) || 0,
-        carousel_slides: typeof getCleanCarouselSlidesForSave === "function" ? getCleanCarouselSlidesForSave() : [],
-        show_swipe_arrow: $("ai-check-swipe-arrow")?.checked || false,
-        location_stamp: $("ai-input-location")?.value || "",
-        card_style: $("ai-select-card-style")?.value || "frosted",
-      };
-      const res = await api("/api/package/adjust-static-post", {
-        method: "POST",
-        body: JSON.stringify({ package_id: currentPackageId, adjustments }),
-      });
-      loadPackage(currentPackageId);
+      const saveBtn = $("btn-save-static-post");
+      const origHtml = saveBtn ? saveBtn.innerHTML : "";
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span>⏳ Saving...</span>`;
+      }
+      try {
+        if (typeof saveActiveCarouselSlideInputs === "function") {
+          saveActiveCarouselSlideInputs();
+        }
+        const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
+        const adjustments = {
+          badge_text: $("static-edit-badge")?.value || "NEWS",
+          headline_line1: $("static-edit-line1")?.value || "",
+          headline_line2: $("static-edit-line2")?.value || "",
+          headline_line3: $("static-edit-line3")?.value || "",
+          line1_color: $("static-edit-line1-color")?.value || "white",
+          line2_color: $("static-edit-line2-color")?.value || "white",
+          line3_color: $("static-edit-line3-color")?.value || "blue",
+          cta_text: $("static-edit-cta")?.value || "",
+          cta_color: $("static-edit-cta-color")?.value || "white",
+          line1_font_size: fs,
+          line2_font_size: fs,
+          line3_font_size: fs,
+          caption: $("static-edit-caption")?.value || "",
+          hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
+          photo_zoom: parseInt($("photo-zoom-range")?.value, 10) || 100,
+          photo_shift_x: parseInt($("photo-shift-x-range")?.value, 10) || 0,
+          photo_shift_y: parseInt($("photo-shift-y-range")?.value, 10) || 0,
+          carousel_slides: typeof getCleanCarouselSlidesForSave === "function" ? getCleanCarouselSlidesForSave() : [],
+          show_swipe_arrow: $("ai-check-swipe-arrow")?.checked || false,
+          location_stamp: $("ai-input-location")?.value || "",
+          card_style: $("ai-select-card-style")?.value || "frosted",
+        };
+        await api("/api/package/adjust-static-post", {
+          method: "POST",
+          body: JSON.stringify({ package_id: currentPackageId, adjustments }),
+        });
+        const drawerWasOpen = Boolean($("carousel-and-style-drawer")?.open);
+        const prevSlide = activeCarouselSlide;
+        await loadPackage(currentPackageId);
+        if (drawerWasOpen && $("carousel-and-style-drawer")) $("carousel-and-style-drawer").open = true;
+        if (prevSlide && typeof loadActiveCarouselSlideInputs === "function") loadActiveCarouselSlideInputs(prevSlide);
+        showToast("✅ Saved Post & Carousel changes!", "success");
+        if (saveBtn) {
+          saveBtn.innerHTML = `<span>✓ Saved!</span>`;
+          setTimeout(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = origHtml;
+          }, 1800);
+        }
+      } catch (err) {
+        console.error("Save static post error:", err);
+        showToast(`❌ Failed to save: ${err.message || err}`, "error");
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = origHtml;
+        }
+      }
     });
 
     // ==============================================================
@@ -7769,28 +7802,48 @@
       });
     });
 
-    // Upload photo for active carousel slide (with Auto-Draft LocalStorage backup)
+    // Compress huge phone/camera photos cleanly to <=1600px JPEG (~220KB) so saves & localStorage never fail
+    function compressSlideImageToDataUrl(img, maxDim = 1600, quality = 0.88) {
+      const w = img.naturalWidth || img.width || 1080;
+      const h = img.naturalHeight || img.height || 1350;
+      const scale = Math.min(1, maxDim / Math.max(w, h));
+      const tw = Math.max(1, Math.round(w * scale));
+      const th = Math.max(1, Math.round(h * scale));
+      const c = document.createElement("canvas");
+      c.width = tw;
+      c.height = th;
+      c.getContext("2d").drawImage(img, 0, 0, tw, th);
+      return c.toDataURL("image/jpeg", quality);
+    }
+
+    // Upload photo for active carousel slide (compressed cleanly + Auto-Draft LocalStorage backup)
     $("input-upload-carousel-photo")?.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const dataUrl = evt.target.result;
+        const rawDataUrl = evt.target.result;
         const img = new Image();
         img.onload = () => {
-          carouselSlidesData[activeCarouselSlide].photoDataUrl = dataUrl;
-          carouselSlidesData[activeCarouselSlide].photoImg = img;
-          try {
-            if (currentPackageId) {
-              localStorage.setItem(`ilf_d2_photo_${currentPackageId}_${activeCarouselSlide}`, dataUrl);
-            }
-          } catch (err) {}
-          loadActiveCarouselSlideInputs(activeCarouselSlide);
-          showToast(`Photo uploaded & backed up for Slide ${activeCarouselSlide}!`);
+          const optimizedUrl = compressSlideImageToDataUrl(img, 1600, 0.88);
+          const optImg = new Image();
+          optImg.onload = () => {
+            carouselSlidesData[activeCarouselSlide].photoDataUrl = optimizedUrl;
+            carouselSlidesData[activeCarouselSlide].photoImg = optImg;
+            try {
+              if (currentPackageId) {
+                localStorage.setItem(`ilf_d2_photo_${currentPackageId}_${activeCarouselSlide}`, optimizedUrl);
+              }
+            } catch (err) {}
+            loadActiveCarouselSlideInputs(activeCarouselSlide);
+            showToast(`✅ Photo uploaded for Slide ${activeCarouselSlide}!`, "success");
+          };
+          optImg.src = optimizedUrl;
         };
-        img.src = dataUrl;
+        img.src = rawDataUrl;
       };
       reader.readAsDataURL(file);
+      e.target.value = "";
     });
 
     // Individual downloads for active slide
@@ -7808,28 +7861,183 @@
       downloadCanvas("carousel-canvas", `ilovefinland-slide-${activeCarouselSlide}.png`, "image/png");
     });
 
-    // Group Download (all slides 1 to 6)
-    async function downloadAllCarouselSlides() {
-      const offscreen = document.createElement("canvas");
-      offscreen.width = 1080;
-      offscreen.height = 1350;
+    // Pure-JS Uncompressed ZIP builder (CRC-32 + STORE) — 100% Safari, Chrome & iOS Downloads compatible!
+    function buildUncompressedZipBlob(files) {
+      const crcTable = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        crcTable[n] = c >>> 0;
+      }
+      const crc32 = (bytes) => {
+        let c = 0xFFFFFFFF;
+        for (let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+        return (c ^ 0xFFFFFFFF) >>> 0;
+      };
+      const enc = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+      const now = new Date();
+      const dosTime = ((now.getHours() & 31) << 11) | ((now.getMinutes() & 63) << 5) | ((now.getSeconds() >> 1) & 31);
+      const dosDate = (((Math.max(1980, now.getFullYear()) - 1980) & 127) << 9) | (((now.getMonth() + 1) & 15) << 5) | (now.getDate() & 31);
 
-      let count = 0;
-      for (let i = 1; i <= 6; i++) {
-        const s = carouselSlidesData[i];
-        if (s && (s.photoImg || s.photoDataUrl || s.headline_line1 || s.headline_line2 || i === 1)) {
-          count++;
-          await new Promise((r) => setTimeout(r, 260));
+      for (const f of files) {
+        const nameBytes = enc.encode(f.name);
+        const data = f.bytes;
+        const crc = crc32(data);
+
+        const lh = new ArrayBuffer(30 + nameBytes.length);
+        const lv = new DataView(lh);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0x0800, true);
+        lv.setUint16(8, 0, true); // STORE
+        lv.setUint16(10, dosTime, true);
+        lv.setUint16(12, dosDate, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, data.length, true);
+        lv.setUint32(22, data.length, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        new Uint8Array(lh, 30).set(nameBytes);
+        localParts.push(new Uint8Array(lh), data);
+
+        const ch = new ArrayBuffer(46 + nameBytes.length);
+        const cv = new DataView(ch);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, dosTime, true);
+        cv.setUint16(14, dosDate, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, data.length, true);
+        cv.setUint32(24, data.length, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        new Uint8Array(ch, 46).set(nameBytes);
+        centralParts.push(new Uint8Array(ch));
+
+        offset += 30 + nameBytes.length + data.length;
+      }
+
+      const centralSize = centralParts.reduce((sum, p) => sum + p.length, 0);
+      const eocd = new ArrayBuffer(22);
+      const ev = new DataView(eocd);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, files.length, true);
+      ev.setUint16(10, files.length, true);
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      return new Blob([...localParts, ...centralParts, new Uint8Array(eocd)], { type: "application/zip" });
+    }
+
+    function ensureSlideImageLoaded(slideObj) {
+      return new Promise((resolve) => {
+        if (!slideObj) { resolve(); return; }
+        if (slideObj.photoImg && slideObj.photoImg.complete && slideObj.photoImg.naturalWidth > 0) {
+          resolve();
+          return;
+        }
+        const src = slideObj.photoDataUrl || slideObj.photo_url || "";
+        if (!src) { resolve(); return; }
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => { slideObj.photoImg = img; resolve(); };
+        img.onerror = () => resolve();
+        img.src = src;
+      });
+    }
+
+    function dataUrlToUint8Array(dataUrl) {
+      const b64 = dataUrl.split(",")[1] || "";
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return arr;
+    }
+
+    // Group Download: Bundles ALL 6 slides + caption into ONE .ZIP file straight to Downloads (works in Safari & Chrome!)
+    async function downloadAllCarouselSlides() {
+      const btn = $("btn-download-all-carousel-slides");
+      const origHtml = btn ? btn.innerHTML : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳ Building 6-Slide .ZIP…</span>`;
+      }
+      try {
+        saveActiveCarouselSlideInputs();
+        const offscreen = document.createElement("canvas");
+        offscreen.width = 1080;
+        offscreen.height = 1350;
+
+        const zipFiles = [];
+        for (let i = 1; i <= 6; i++) {
+          const s = carouselSlidesData[i];
+          if (!s) continue;
+          await ensureSlideImageLoaded(s);
           renderSingleSlideToCanvas(offscreen, s, i);
-          const a = document.createElement("a");
-          a.download = `0${i}_slide_design2_4x5.jpg`;
-          a.href = offscreen.toDataURL("image/jpeg", 0.94);
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          const jpgUrl = offscreen.toDataURL("image/jpeg", 0.93);
+          const label = i === 1 ? "cover" : i === 6 ? "cta" : `slide${i}`;
+          zipFiles.push({
+            name: `0${i}_${label}_1080x1350.jpg`,
+            bytes: dataUrlToUint8Array(jpgUrl),
+          });
+        }
+
+        const captionText = ($("static-edit-caption")?.value || $("social-caption-textarea")?.value || "").trim();
+        const hashtagsText = ($("static-edit-hashtags")?.value || "").trim();
+        const combinedCaption = [captionText, hashtagsText].filter(Boolean).join("\n\n");
+        if (combinedCaption) {
+          zipFiles.push({
+            name: "caption.txt",
+            bytes: new TextEncoder().encode(combinedCaption),
+          });
+        }
+
+        if (!zipFiles.length) {
+          showToast("⚠️ No carousel slides available to download yet.", "warning");
+          return;
+        }
+
+        const zipBlob = buildUncompressedZipBlob(zipFiles);
+        const slugBase = (($("wp-field-headline")?.value || $("static-edit-line1")?.value || `post-${currentPackageId || "ilf"}`)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 40)) || "ilovefinland-carousel";
+        const zipName = `${slugBase}-6-slides.zip`;
+
+        const blobUrl = URL.createObjectURL(zipBlob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = zipName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+
+        showToast(`✅ Downloaded ${zipName} (${zipFiles.filter((f) => f.name.endsWith(".jpg")).length} slides + caption) to Downloads!`, "success");
+      } catch (err) {
+        console.error("Batch ZIP download error:", err);
+        showToast(`❌ Failed to build ZIP download: ${err.message || err}`, "error");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
         }
       }
-      showToast(`Downloaded all ${count} Design - 2 carousel slides!`);
     }
     $("btn-download-all-carousel-slides")?.addEventListener("click", downloadAllCarouselSlides);
 
@@ -8013,22 +8221,28 @@
       }
       try {
         saveActiveCarouselSlideInputs();
+        // Compress any oversized raw data URLs in slides before POSTing so 6 photos save cleanly & fast
+        for (let i = 1; i <= 6; i++) {
+          const sl = carouselSlidesData[i];
+          if (sl && typeof sl.photoDataUrl === "string" && sl.photoDataUrl.startsWith("data:image/") && sl.photoDataUrl.length > 600000 && sl.photoImg && sl.photoImg.complete && sl.photoImg.naturalWidth > 0) {
+            sl.photoDataUrl = compressSlideImageToDataUrl(sl.photoImg, 1600, 0.86);
+          }
+        }
         const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
-        const activeFs = parseInt($("carousel-edit-fontsize")?.value, 10) || 44;
         const adjustments = {
-          badge_text: $("carousel-edit-badge")?.value || $("static-edit-badge")?.value || "NEWS",
-          headline_line1: $("carousel-edit-line1")?.value || $("static-edit-line1")?.value || "",
-          headline_line2: $("carousel-edit-line2")?.value || $("static-edit-line2")?.value || "",
-          headline_line3: $("carousel-edit-line3")?.value || $("static-edit-line3")?.value || "",
-          line1_color: $("carousel-edit-line1-color")?.value || $("static-edit-line1-color")?.value || "white",
-          line2_color: $("carousel-edit-line2-color")?.value || $("static-edit-line2-color")?.value || "white",
-          line3_color: $("carousel-edit-line3-color")?.value || $("static-edit-line3-color")?.value || "blue",
-          cta_text: $("carousel-edit-cta")?.value || $("static-edit-cta")?.value || "",
-          cta_color: $("carousel-edit-cta-color")?.value || $("static-edit-cta-color")?.value || "blue",
-          line1_font_size: activeFs,
-          line2_font_size: activeFs,
-          line3_font_size: activeFs,
-          caption: $("social-caption-textarea")?.value || $("static-edit-caption")?.value || "",
+          badge_text: $("static-edit-badge")?.value || $("carousel-edit-badge")?.value || "NEWS",
+          headline_line1: $("static-edit-line1")?.value || $("carousel-edit-line1")?.value || "",
+          headline_line2: $("static-edit-line2")?.value || $("carousel-edit-line2")?.value || "",
+          headline_line3: $("static-edit-line3")?.value || $("carousel-edit-line3")?.value || "",
+          line1_color: $("static-edit-line1-color")?.value || "white",
+          line2_color: $("static-edit-line2-color")?.value || "white",
+          line3_color: $("static-edit-line3-color")?.value || "blue",
+          cta_text: $("static-edit-cta")?.value || "",
+          cta_color: $("static-edit-cta-color")?.value || "white",
+          line1_font_size: fs,
+          line2_font_size: fs,
+          line3_font_size: fs,
+          caption: $("static-edit-caption")?.value || $("social-caption-textarea")?.value || "",
           hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
           photo_zoom: parseInt($("photo-zoom-range")?.value, 10) || 100,
           photo_shift_x: parseInt($("photo-shift-x-range")?.value, 10) || 0,
@@ -8068,8 +8282,13 @@
           });
         }
 
+        const prevSlide = activeCarouselSlide;
         await loadPackage(currentPackageId);
-        showToast("✅ Saved Carousel & Post changes to database!", "success");
+        if ($("carousel-and-style-drawer")) $("carousel-and-style-drawer").open = true;
+        if (prevSlide && typeof loadActiveCarouselSlideInputs === "function") {
+          loadActiveCarouselSlideInputs(prevSlide);
+        }
+        showToast("✅ Saved all Carousel & Post changes to database!", "success");
         if (saveBtn) {
           saveBtn.innerHTML = `<span>✓ Saved Changes!</span>`;
           setTimeout(() => {
