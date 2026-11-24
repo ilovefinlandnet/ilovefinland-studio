@@ -680,25 +680,32 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
 
     if mode == "quick_answer":
         return base + (
-            "\nANSWER MODE: QUICK ANSWER.\n"
-            "Give a short, clear answer suitable for quick checking during class: Finnish phrase/answer, English meaning, and 1–2 brief bullet tips."
+            "\nANSWER MODE: CONCISE BILINGUAL TUTOR CARD (ZERO TEXT WALLS).\n"
+            "Keep your reply warm, encouraging, and concise (easy to read in 5 seconds, zero bloated paragraphs):\n"
+            "🇫🇮 **Finnish:** <Clear, natural school-grade A1/A2 Finnish reply or example>\n"
+            "🇬🇧 **English:** <Natural English translation>\n"
+            "💡 **Quick Note:**\n"
+            "- <1–2 short vocab or grammar bullets with base form (perusmuoto)>\n"
+            "If an image/homework sheet was attached, answer or explain the exercise concisely in Finnish + English."
         )
 
     if mode == "practice":
         return base + (
             "\nANSWER MODE: PRACTICE WITH ME.\n"
-            "Act as an interactive Finnish teacher. Gently correct the learner's last Finnish reply (if any), praise what worked, give a quick English note if needed, and then ask ONE short, natural A1 Finnish question to keep the practice going (with a tiny English hint in parentheses)."
+            "Act as a warm, encouraging Finnish teacher. Keep it concise:\n"
+            "1) Praise what worked or gently show the corrected Finnish + English.\n"
+            "2) Give 1 brief grammar tip.\n"
+            "3) Ask ONE short A1 Finnish follow-up question (with English translation)."
         )
 
-    # Default: teach_me
+    # Default: teach_me (concise, scannable bilingual card)
     return base + (
-        "\nANSWER MODE: TEACH ME.\n"
-        "Give a warm, step-by-step explanation with:\n"
-        "- Short Finnish example(s) first (with English translations)\n"
-        "- Simple explanation in English\n"
-        "- Short explanation in simple Finnish (Selitys suomeksi)\n"
-        "- Key vocabulary (with base form / perusmuoto) and spoken Finnish (puhekieli) note if helpful\n"
-        "- One tiny practice prompt at the end so the learner can try it."
+        "\nANSWER MODE: CONCISE BILINGUAL TUTOR.\n"
+        "Give a warm, clear, concise explanation (avoid long walls of text):\n"
+        "🇫🇮 **Finnish:** <Clear school-grade Finnish answer / example>\n"
+        "🇬🇧 **English:** <Clear English translation>\n"
+        "💡 **Vocab & Grammar Notes:**\n"
+        "- <1–2 brief, high-value notes showing base form (perusmuoto) or ending rule>"
     )
 
 
@@ -2240,10 +2247,10 @@ def _rate_float_to_edge_str(rate_val: Any) -> str:
         return "-30%"
     if r <= 0.78:
         return "-25%"
-    if r <= 0.83:
+    if r <= 0.84:
         return "-20%"
-    if r <= 0.90:
-        return "-15%"
+    if r <= 0.93:
+        return "-10%"
     if r >= 1.10:
         return "+10%"
     return "+0%"

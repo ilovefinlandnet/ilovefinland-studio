@@ -32,8 +32,10 @@
   };
 
   const state = {
-    mode: "chat", // chat | study
-    studyTool: null, // null | podcast | lesson | helper
+    activeTab: "chat", // "chat" | "walk" | "notebook"
+    notebookTableId: "olla", // "olla" | "onko" | "days" | "everyday"
+    mode: "chat", // legacy alias synced with activeTab
+    studyTool: null,
     podcastEpisodeId: "pod_cafe",
     podcastAudioUrl: null,
     podcastLoading: false,
@@ -445,6 +447,13 @@
       ],
     },
     {
+      id: "pod_today_a1",
+      title: "🌅 Today's A1 Words",
+      duration: "~10–14 min",
+      dynamicToday: true,
+      items: [],
+    },
+    {
       id: "pod_cards",
       title: "⭐ Saved Flashcards",
       duration: "Personal",
@@ -720,10 +729,14 @@
     const nowTitle = document.getElementById("fl-walk-now-fi");
     const nowEn = document.getElementById("fl-walk-now-en");
     const nowCounter = document.getElementById("fl-walk-now-counter");
+    const miniFi = document.getElementById("fl-mini-now-fi");
+    const miniEn = document.getElementById("fl-mini-now-en");
     if (cur) {
       if (nowTitle) nowTitle.textContent = `🇫🇮 ${cur.fi}`;
-      if (nowEn) nowEn.textContent = `🇬🇧 means: ${cur.en}`;
-      if (nowCounter) nowCounter.textContent = `Item ${newIdx + 1} / ${items.length}`;
+      if (nowEn) nowEn.textContent = `🇬🇧 ${cur.en}`;
+      if (nowCounter) nowCounter.textContent = `Phrase ${newIdx + 1} of ${items.length}`;
+      if (miniFi) miniFi.textContent = cur.fi;
+      if (miniEn) miniEn.textContent = cur.en;
     }
     document.querySelectorAll("[data-fl-pod-row]").forEach((row) => {
       const rIdx = Number(row.getAttribute("data-fl-pod-row"));
@@ -875,6 +888,24 @@
 
   function getPodcastItems(ep) {
     if (!ep) return [];
+    if (ep.dynamicToday) {
+      const saved = (state.flashcards || []).map((c) => ({ fi: c.fi, en: c.en }));
+      const todayPack = (CURR && typeof CURR.getTodayVocabPack === "function")
+        ? (CURR.getTodayVocabPack().words || []).map((w) => ({ fi: w.fi, en: w.en }))
+        : [];
+      const fallbackCore = (PODCAST_EPISODES.find((p) => p.id === "pod_objects")?.items || []);
+      const seen = new Set();
+      const merged = [];
+      for (const it of [...saved, ...todayPack, ...fallbackCore]) {
+        const k = String(it.fi || "").trim().toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          merged.push({ fi: it.fi, en: it.en });
+          if (merged.length >= 24) break;
+        }
+      }
+      return merged;
+    }
     if (ep.dynamic) {
       return (state.flashcards || []).slice(0, 30).map((c) => ({ fi: c.fi, en: c.en }));
     }
@@ -2049,25 +2080,76 @@
     const settings = DB.getSettings();
     const prog = DB.getProgress();
     const dueCount = state.flashcards.filter((c) => (c.dueAt || 0) <= Date.now()).length;
+    const activeTab = state.activeTab || "chat";
+    const showMiniPlayer = activeTab === "walk" || state.podcastPlaying || state.podcastPaused;
+
+    const allEps = getAllPodcastEpisodes();
+    const curEp = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
+    const curItems = getPodcastItems(curEp);
+    const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, curItems.length - 1));
+    const curWalkItem = curItems[activeIdx] || { fi: "Hyvää huomenta", en: "Good morning" };
 
     root.innerHTML = `
-      <div class="fl-app">
-        <!-- Top Bar: [☰]    [ Chat | Study ]    [+] -->
-        <header class="fl-header">
-          <button type="button" class="fl-icon-circle" id="fl-open-drawer" title="Saved Chats, Flashcards, Notes & Settings" aria-label="Open Finnish Lab menu">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-          </button>
-
-          <div class="fl-segment" role="tablist">
-            <button type="button" class="fl-seg-btn ${state.mode === "chat" ? "active" : ""}" data-fl-mode="chat">Chat</button>
-            <button type="button" class="fl-seg-btn ${state.mode === "study" ? "active" : ""}" data-fl-mode="study">Study</button>
+      <div class="fl3-shell ${showMiniPlayer ? "has-mini-player" : ""}">
+        <!-- Official Brand Top Bar + 3 Clean Pill Tabs Only -->
+        <header class="fl3-topbar">
+          <div class="fl3-brand-group">
+            <button type="button" class="fl3-menu-btn" id="fl-open-drawer" title="Saved Chats, Flashcards, Notes &amp; Settings" aria-label="Open Finnish Lab menu">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <div class="fl3-title-wrap">
+              <div class="fl3-title">
+                <span>🇫🇮</span>
+                <span>Finnish Study Lab</span>
+              </div>
+              <div class="fl3-subtitle">CEFR ${esc(settings.level || "A1")} • Neural Voice (Noora) • $0 Free Tier</div>
+            </div>
           </div>
 
-          <button type="button" class="fl-new-chat-pill" id="fl-new-chat-top" title="Start a new chat">+ New</button>
+          <nav class="fl3-tabs-nav" role="tablist" aria-label="Finnish Study Lab Tabs">
+            <button type="button" role="tab" aria-selected="${activeTab === "chat"}" class="fl3-tab-pill ${activeTab === "chat" ? "active" : ""}" data-fl-tab="chat">
+              <span>💬</span><span>Chat &amp; Class</span>
+            </button>
+            <button type="button" role="tab" aria-selected="${activeTab === "walk"}" class="fl3-tab-pill ${activeTab === "walk" ? "active" : ""}" data-fl-tab="walk">
+              <span>🎧</span><span>Walk &amp; Listen</span>
+            </button>
+            <button type="button" role="tab" aria-selected="${activeTab === "notebook"}" class="fl3-tab-pill ${activeTab === "notebook" ? "active" : ""}" data-fl-tab="notebook">
+              <span>📓</span><span>Notebook &amp; Drills</span>
+            </button>
+          </nav>
+
+          <div class="fl3-actions-group">
+            <button type="button" class="fl3-btn" id="fl-new-chat-top" title="Start a fresh tutor chat">+ New Chat</button>
+          </div>
         </header>
 
-        ${state.mode === "chat" ? renderChatMode() : `<div class="fl-study-scroll">${renderStudyMode(prog)}</div>`}
+        ${
+          activeTab === "chat"
+            ? renderTabChatAndClass()
+            : activeTab === "walk"
+            ? renderTabWalkAndListen()
+            : renderTabNotebookAndDrills()
+        }
       </div>
+
+      ${
+        showMiniPlayer
+          ? `<div class="fl3-mobile-mini-player" role="region" aria-label="Walk &amp; Listen Mini Player">
+              <div style="min-width:0;flex:1;">
+                <div id="fl-mini-now-fi" style="font-size:0.88rem;font-weight:800;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(curWalkItem.fi)}</div>
+                <div id="fl-mini-now-en" style="font-size:0.75rem;color:#38BDF8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(curWalkItem.en)}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                ${
+                  state.podcastPlaying && !state.podcastPaused
+                    ? `<button type="button" class="fl3-btn primary" id="fl-mini-pause-btn" style="padding:8px 12px;" aria-label="Pause Walk &amp; Listen">⏸</button>`
+                    : `<button type="button" class="fl3-btn primary" id="fl-mini-play-btn" style="padding:8px 12px;" aria-label="Play Walk &amp; Listen">▶</button>`
+                }
+                <button type="button" class="fl3-btn" id="fl-mini-next-btn" style="padding:8px 11px;" aria-label="Next phrase">⏭</button>
+              </div>
+            </div>`
+          : ""
+      }
 
       ${state.drawerOpen ? renderSlideDrawer(settings, prog, dueCount) : ""}
     `;
@@ -2075,154 +2157,91 @@
     bindMainEvents();
   }
 
-  /* ---------- MODE 1: UNIVERSAL CHAT + SILENT LIVE TRANSLATION ---------- */
-  function renderChatMode() {
-    const conv = getActiveConv();
-    const msgs = conv ? conv.messages || [] : [];
+  /* ---------- PARSE SILENT CLASSROOM LIVE HELPER CARD ---------- */
+  function parseLatestLiveCard(msgs) {
+    const liveMsgs = (msgs || []).filter((m) => m.role === "assistant" && m.isLiveSubtitle && !m.isError);
+    const latest = liveMsgs.length ? liveMsgs[liveMsgs.length - 1] : null;
+    const defaultReplies = [
+      { fi: "Anteeksi, voitko toistaa hitaasti?", en: "Excuse me, can you repeat slowly?" },
+      { fi: "Kyllä, minä ymmärrän.", en: "Yes, I understand." },
+      { fi: "Mikä sivu kirjassa on?", en: "What page in the book is it?" },
+    ];
+    if (!latest || !latest.text) {
+      return {
+        hasCapture: false,
+        fiHeard: "",
+        enMeaning: "",
+        replies: defaultReplies,
+      };
+    }
+    const raw = String(latest.text || "");
+    let fiHeard = "";
+    let enMeaning = "";
+    const mFi = raw.match(/(?:What was said\s*\(Finnish\)|Finnish)[:*]*\s*([^\n]+)/i);
+    const mEn = raw.match(/(?:What it means\s*\(English\)|English)[:*]*\s*([^\n]+)/i);
+    if (mFi) fiHeard = mFi[1].replace(/\*+/g, "").trim();
+    if (mEn) enMeaning = mEn[1].replace(/\*+/g, "").trim();
 
-    return `
-      <div class="fl-chat-stage" id="fl-chat-stage">
-        ${
-          msgs.length
-            ? msgs.map((m, idx) => renderMessageBubble(m, idx)).join("")
-            : `<div class="fl-empty-hero">
-                <div style="width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(14,165,233,0.28);margin-bottom:4px;">
-                  <img src="/assets/ilf-heart.png" alt="ILoveFinland" width="36" height="36" style="width:36px;height:36px;object-fit:contain;" />
-                </div>
-                <h1 class="fl-empty-title">ILoveFinland Finnish Lab</h1>
-                <p class="fl-empty-sub">
-                  Ask anything, attach a photo or PDF, record class audio + question paper together, or tap <strong>🌐 Live</strong> for silent real-time written translation.
-                </p>
-                <div class="fl-starter-row">
-                  <button type="button" class="fl-starter-pill" data-fl-starter="Mitä kuuluu? How do I reply simply?">Mitä kuuluu?</button>
-                  <button type="button" class="fl-starter-pill" data-fl-starter="Teach me 5 useful phrases for Finnish class.">5 class phrases</button>
-                  <button type="button" class="fl-starter-pill" data-fl-starter="Explain the difference between kirjakieli and puhekieli simply.">Spoken Finnish</button>
-                </div>
-              </div>`
-        }
-        ${state.isSending ? `<div class="fl-msg assistant">⏳ Thinking...</div>` : ""}
-      </div>
-
-      <!-- ChatGPT-Style Floating Jump-to-Bottom Button -->
-      <button type="button" id="fl-scroll-down-btn" class="fl-scroll-down-btn hidden" title="Jump to latest message" aria-label="Scroll to bottom">↓</button>
-
-      <!-- Sleek Bottom Input Capsule (Exact Screenshot 1 Feel) -->
-      <div class="fl-dock">
-        ${
-          state.isLiveTranslating
-            ? `<div class="fl-live-bar">
-                <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-                  <span class="fl-live-dot"></span>
-                  <span id="fl-live-interim" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(state.liveInterimText)}</span>
-                </div>
-                <div style="display:flex;gap:6px;flex-shrink:0;">
-                  <button type="button" class="fl-btn primary sm" id="fl-live-now" title="Translate what was just said right now">⚡ Now</button>
-                  <button type="button" class="fl-btn danger sm" id="fl-stop-live">Stop</button>
-                </div>
-              </div>`
-            : ""
-        }
-
-        <div class="fl-capsule">
-          ${
-            state.plusMenuOpen
-              ? `<div class="fl-plus-menu" id="fl-plus-menu">
-                  <label class="fl-plus-item">
-                    <span>📷</span><span>Take Photo</span>
-                    <input type="file" id="fl-input-camera" accept="image/*" capture="environment" style="display:none;" />
-                  </label>
-                  <label class="fl-plus-item">
-                    <span>📎</span><span>Photo, PDF or Audio</span>
-                    <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
-                  </label>
-                </div>`
-              : ""
-          }
-
-          ${
-            state.pendingAttachments.length
-              ? `<div class="fl-att-row">
-                  ${state.pendingAttachments
-                    .map(
-                      (a, i) => `
-                    <div class="fl-att-chip">
-                      ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" class="fl-att-thumb" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
-                      <span>${esc(a.name.slice(0, 16))}</span>
-                      ${a.previewUrl && a.mime_type.startsWith("image/") ? `<button type="button" class="fl-mini-btn" style="padding:1px 5px;" data-fl-crop-pending="${i}">✂️</button>` : ""}
-                      <button type="button" class="fl-mini-btn" style="padding:1px 5px;" data-fl-rm-pending="${i}">✕</button>
-                    </div>
-                  `
-                    )
-                    .join("")}
-                </div>`
-              : ""
-          }
-
-          <textarea id="fl-chat-input" class="fl-capsule-input" rows="1" placeholder="Ask anything in Finnish or English..."></textarea>
-
-          <div class="fl-capsule-bar">
-            <div class="fl-capsule-left">
-              <button type="button" class="fl-cap-btn" id="fl-plus-btn" title="Attach Photo, Camera, PDF or Audio" style="padding:0;width:36px;">${ICO.plus}</button>
-            </div>
-            <div class="fl-capsule-right">
-              <button type="button" class="fl-cap-btn ${state.isLiveTranslating ? "active-live" : ""}" id="fl-live-btn" title="Silent Live Finnish → English Subtitles">
-                ${ICO.live}<span>${state.isLiveTranslating ? "Live ON" : "Live"}</span>
-              </button>
-              ${
-                state.isRecording
-                  ? `<button type="button" class="fl-cap-btn active-rec" id="fl-stop-rec" title="Stop Recording"><span class="fl-rec-dot"></span><span class="fl-rec-timer">00:00</span></button>`
-                  : `<button type="button" class="fl-cap-btn" id="fl-start-rec" title="Record Audio" style="padding:0;width:36px;">${ICO.mic}</button>`
-              }
-              <button type="button" class="fl-send-circle" id="fl-chat-send" ${state.isSending ? "disabled" : ""} title="Send">${ICO.send}</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    const replies = [];
+    const bulletRe = /^[*-]\s*\*\*([^*]+)\*\*\s*(?:—|-|–|:)\s*\*?([^*\n]+)\*?/gm;
+    let bm;
+    while ((bm = bulletRe.exec(raw)) !== null) {
+      replies.push({ fi: bm[1].trim(), en: bm[2].trim() });
+    }
+    if (!fiHeard) {
+      const firstLines = raw.split("\n").map((l) => l.replace(/[*#>]/g, "").trim()).filter(Boolean);
+      fiHeard = firstLines[0] || raw.slice(0, 140);
+      enMeaning = firstLines[1] || "";
+    }
+    return {
+      hasCapture: true,
+      fiHeard,
+      enMeaning,
+      replies: replies.length ? replies.slice(0, 3) : defaultReplies,
+    };
   }
 
+  /* ---------- MESSAGE BUBBLE RENDERER (SHARED BY TUTOR CARD & SIDE PANEL) ---------- */
   function renderMessageBubble(m, idx) {
+    const hasImgAtt = (m.attachments || []).some((a) => (a.mime_type || "").startsWith("image/"));
     const attHtml = (m.attachments || []).length
-      ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+      ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
           ${m.attachments
             .map((a) =>
               a.previewUrl && (a.mime_type || "").startsWith("image/")
-                ? `<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;">
-                    <img src="${a.previewUrl}" style="max-width:150px;max-height:115px;border-radius:10px;" alt="" />
-                    ${a.refLabel ? `<span style="font-size:0.68rem;color:#cbd5e1;font-weight:700;">📷 ${esc(a.refLabel)}</span>` : ""}
+                ? `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;">
+                    <img src="${a.previewUrl}" style="max-width:160px;max-height:115px;border-radius:8px;border:1px solid #1E3A5F;" alt="" />
+                    ${a.refLabel ? `<span style="font-size:0.68rem;color:#94A3B8;font-weight:700;">📷 ${esc(a.refLabel)}</span>` : ""}
                   </div>`
                 : `<span class="fl-att-chip">${(a.mime_type || "").startsWith("audio/") ? "🎙️" : "📄"} ${esc(a.refLabel || a.name || "File")}</span>`
             )
             .join("")}
+          ${
+            m.role === "user" && hasImgAtt
+              ? `<button type="button" class="fl3-btn" style="padding:6px 10px;font-size:0.75rem;min-height:34px;" data-fl-msg-to-walk="${idx}" title="Build a Walk &amp; Listen audio episode from this photo">🎧 Send to Walk &amp; Listen</button>`
+              : ""
+          }
         </div>`
       : "";
     const isSpeakingThis = Boolean(m.id && state.speakingMsgId === m.id);
-    const fullSpeakText = (m.text || "").slice(0, 1200);
+    const fullSpeakText = (m.finnishTts || m.text || "").slice(0, 900);
     const actionsHtml =
       m.role === "assistant" && !m.isError
-        ? m.isLiveSubtitle
-          ? `<div class="fl-msg-actions" style="margin-top:8px;">
-               <span style="font-size:0.68rem;color:#34D399;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);">🔇 Silent Classroom Helper</span>
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save vocabulary to Flashcards" aria-label="Save Words">${ICO.cards} Save Words</button>
-             </div>`
-          : `<div class="fl-msg-actions">
-               ${
-                 state.isLiveTranslating
-                   ? `<span style="font-size:0.68rem;color:#94a3b8;">🔇 Muted (Live ON)</span>`
-                   : isSpeakingThis
-                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" title="Stop audio" aria-label="Stop" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${ICO.stop}<span>Stop</span></button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen in Finnish voice (1.0x)" aria-label="Listen">${ICO.listen}</button>
-                      <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen slowly (0.75×)" aria-label="Slow">${ICO.slow}<span style="font-size:0.68rem;">0.75×</span></button>`
-               }
-               <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}" title="Explain in more detail" aria-label="Explain">${ICO.explain}</button>
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save words to Flashcards" aria-label="Save Words">${ICO.cards}</button>
-               <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}" title="Save to Notes" aria-label="Save">${ICO.save}</button>
-             </div>`
+        ? `<div class="fl-msg-actions" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+            ${
+              state.isLiveTranslating
+                ? `<span class="fl3-badge silent">🔇 Muted (Silent Live ON)</span>`
+                : isSpeakingThis
+                ? `<button type="button" class="fl3-speaker-btn" data-fl-stop-speak="1" style="color:#FCA5A5;border-color:rgba(248,113,113,0.5);">⏹ Stop</button>`
+                : `<button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen slowly (0.75× Neural Finnish)">🔊 0.75×</button>
+                   <button type="button" class="fl3-speaker-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen normal speed (1.0× Neural Finnish)">🔊 1.0×</button>`
+            }
+            <button type="button" class="fl3-speaker-btn" data-fl-extract-cards="${idx}" title="Save words to Vocabulary &amp; Drills">⭐ Save Words</button>
+            <button type="button" class="fl3-speaker-btn" data-fl-save-note="${idx}" title="Save to Notes">💾 Note</button>
+          </div>`
         : "";
-    const roastHtml = m.roastBanner ? `<div class="fl-roast-banner">${esc(m.roastBanner)}</div>` : "";
     return `
-      <div class="fl-msg ${m.role === "user" ? "user" : "assistant"}${m.isLiveSubtitle ? " live-sub" : ""}">
-        ${roastHtml}
+      <div class="fl3-bubble ${m.role === "user" ? "user" : "assistant"}">
         ${attHtml}
         <div>${renderMarkdownLite(m.text)}</div>
         ${actionsHtml}
@@ -2230,454 +2249,530 @@
     `;
   }
 
-  /* ---------- MODE 2: HIGH-END STUDY HUB (UNIFIED 2x2 LUXURY GRID) ---------- */
-  function renderStudyMode(prog) {
-    if (!state.studyTool) {
-      const cardCount = (state.flashcards || []).length;
-      return `
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <!-- Sleek Top Progress Strip -->
-          <div class="fl-study-stats-pill">
-            <span style="display:inline-flex;align-items:center;gap:5px;">${ICO.flame} <strong>${prog.streakDays || 0} day</strong> streak</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;">${ICO.cards} <strong>${cardCount}</strong> saved cards</span>
-            <span style="color:#38bdf8;font-weight:700;">CEFR ${esc(DB.getSettings().level || "A1")}</span>
-          </div>
-
-          <!-- Unified 2x2 Luxury Card Grid (Equal Heights & Consistent Spacing on iPhone, iPad & PC!) -->
-          <div class="fl-study-grid" style="gap:14px;">
-            <button type="button" class="fl-study-tile" data-fl-study="podcast" style="border-color:rgba(56,189,248,0.42);background:radial-gradient(circle at 85% 15%, rgba(56,189,248,0.2), transparent 60%), rgba(13,24,46,0.92);">
-              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.headphones}</div>
-                <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-weight:800;">AI VOICE</span>
-              </div>
-              <strong style="font-size:1rem;">Walk &amp; Listen Podcast</strong>
-              <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Human-voice episodes + make custom episodes on any topic while walking.</span>
-            </button>
-
-            <button type="button" class="fl-study-tile" data-fl-study="lesson">
-              <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.book}</div>
-              <strong style="font-size:1rem;">Today's 5-Min Lesson</strong>
-              <span style="font-size:0.8rem;color:#94a3b8;line-height:1.45;">5 daily words (human voice) → 1 simple grammar rule → 1 quick check.</span>
-            </button>
-
-            <button type="button" class="fl-study-tile" data-fl-study="helper">
-              <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.file}</div>
-              <strong style="font-size:1rem;">Homework &amp; Vocab Snap</strong>
-              <span style="font-size:0.8rem;color:#94a3b8;line-height:1.45;">Worksheet helper, photo-to-flashcards, 17 A1 grammar guides &amp; roleplay.</span>
-            </button>
-
-            <button type="button" class="fl-study-tile" data-fl-study="game" style="border-color:rgba(168,85,247,0.38);background:radial-gradient(circle at 85% 15%, rgba(168,85,247,0.18), transparent 60%), rgba(13,22,40,0.92);">
-              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                <div class="fl-study-icon-badge" style="width:46px;height:46px;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">${ICO.zap}</div>
-                <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.22);color:#6ee7b7;font-weight:800;">SCHOOL A1</span>
-              </div>
-              <strong style="font-size:1rem;">🏫 School Finnish &amp; Speak</strong>
-              <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Standard beginner school grammar &amp; vocab drill (Finnish + English) + pronunciation practice.</span>
-            </button>
-          </div>
-
-          <!-- Extra Study Modules (All neatly inside Study — zero top clutter above Chat / Study!) -->
-          <div style="margin-top:16px;">
-            <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#7dd3fc;margin:0 0 8px 4px;">Interactive Study Tools ($0 Gemini Free Tier)</div>
-            <div class="fl-study-grid" style="gap:10px;">
-              <button type="button" class="fl-study-tile" data-fl-pro-tool="srs" style="padding:13px 14px;">
-                <strong style="font-size:0.9rem;">🎯 10-Min SRS Drills</strong>
-                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Active-recall sentence building &amp; ending drills saved to your study DB.</span>
-              </button>
-              <button type="button" class="fl-study-tile" data-fl-pro-tool="grammar" style="padding:13px 14px;">
-                <strong style="font-size:0.9rem;">⚖️ Kirjakieli ↔ Puhekieli</strong>
-                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Side-by-side written vs. spoken grammar tables + Goodnotes PDF export.</span>
-              </button>
-              <button type="button" class="fl-study-tile" data-fl-pro-tool="snap" style="padding:13px 14px;">
-                <strong style="font-size:0.9rem;">📷 Snap &amp; Ask Vision</strong>
-                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Upload a textbook, sign, or worksheet photo for instant Finnish breakdown.</span>
-              </button>
-              <button type="button" class="fl-study-tile" data-fl-pro-tool="roleplay" style="padding:13px 14px;">
-                <strong style="font-size:0.9rem;">🏙️ Pori &amp; Finland Roleplay</strong>
-                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Everyday café, grocery &amp; Kela scenarios with click-to-save vocabulary.</span>
-              </button>
-              <button type="button" class="fl-study-tile" data-fl-pro-tool="story" style="padding:13px 14px;">
-                <strong style="font-size:0.9rem;">📰 Story-to-Lesson Bridge</strong>
-                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Turn any ilovefinland.net article into an A1/A2 Selkosuomi reading quiz.</span>
-              </button>
-              <button type="button" class="fl-study-tile" data-fl-pro-tool="vocab" style="padding:13px 14px;">
-                <strong style="font-size:0.9rem;">📚 Saved Vocab Deck</strong>
-                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Review your saved words with neural Finnish audio &amp; Goodnotes export.</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    const back = `<button type="button" class="fl-btn sm" id="fl-study-back" style="margin-bottom:10px;">← Back to Study</button>`;
-    if (state.studyTool === "podcast") return back + renderPodcastTool();
-    if (state.studyTool === "lesson") return back + renderLessonTool();
-    if (state.studyTool === "game") return back + renderGameAndSpeakTool();
-    return back + renderHelperHubTool();
-  }
-
-  function renderGameAndSpeakTool() {
-    const q = SCHOOL_FINNISH_QUESTIONS[state.streetIdx % SCHOOL_FINNISH_QUESTIONS.length];
-    const sp = SPEAK_PHRASES[state.speakPhraseIdx % SPEAK_PHRASES.length];
-    return `
-      <div class="fl-card" style="padding:18px;border-radius:20px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
-          <button type="button" class="fl-btn sm ${state.gameTab === "street" ? "active" : ""}" data-fl-gtab="street">🏫 School Finnish Practice</button>
-          <button type="button" class="fl-btn sm ${state.gameTab === "speak" ? "active" : ""}" data-fl-gtab="speak">${ICO.mic} Say It Out Loud</button>
-        </div>
-
-        ${
-          state.gameTab === "street"
-            ? `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:#94a3b8;margin-bottom:10px;">
-                 <span>Question ${(state.streetIdx % SCHOOL_FINNISH_QUESTIONS.length) + 1} / ${SCHOOL_FINNISH_QUESTIONS.length} • <strong style="color:#7dd3fc;">${esc(q.topic)}</strong></span>
-                 <span style="color:#6ee7b7;font-weight:700;">Score: ${state.streetScore}</span>
-               </div>
-               <div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
-                 <div style="font-size:0.72rem;color:#7dd3fc;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Complete the School Finnish Sentence:</div>
-                 <div style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:6px;">🇫🇮 ${esc(q.promptFi)}</div>
-                 <div style="font-size:0.88rem;color:#cbd5e1;margin-bottom:10px;">🇬🇧 ${esc(q.promptEn)}</div>
-                 <div style="display:flex;justify-content:center;gap:6px;">
-                   <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(q.fullFi)}">🐢 0.75×</button>
-                   <button type="button" class="fl-mini-btn" data-fl-speak="${esc(q.fullFi)}">🔊 1.0×</button>
-                 </div>
-               </div>
-               <div style="display:flex;flex-direction:column;gap:8px;">
-                 ${q.opts
-                   .map(
-                     (opt) => `<button type="button" class="fl-btn" style="text-align:left;padding:12px 14px;" data-fl-street-ans="${esc(opt)}">${esc(opt)}</button>`
-                   )
-                   .join("")}
-               </div>
-               ${
-                 state.streetFeedback
-                   ? `<div style="margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.05);font-size:0.84rem;">
-                        ${state.streetFeedback.roast ? `<div class="fl-roast-banner" style="background:rgba(56,189,248,0.14);border-color:rgba(56,189,248,0.35);color:#e0f2fe;">${esc(state.streetFeedback.roast)}</div>` : ""}
-                        <div style="font-weight:700;color:${state.streetFeedback.ok ? "#6ee7b7" : "#fca5a5"};">${state.streetFeedback.ok ? "✅ Oikein! (Correct!)" : `❌ Answer: ${esc(q.answer)}`}</div>
-                        <div style="color:#ffffff;margin-top:5px;font-weight:700;">🇫🇮 ${esc(q.fullFi)}</div>
-                        <div style="color:#7dd3fc;margin-top:2px;">🇬🇧 ${esc(q.fullEn)}</div>
-                        <div style="color:#cbd5e1;margin-top:4px;font-size:0.78rem;">💡 ${esc(q.tip)}</div>
-                        <button type="button" class="fl-btn primary sm" id="fl-street-next" style="margin-top:10px;width:100%;">Next Question →</button>
-                      </div>`
-                   : ""
-               }`
-            : `<div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
-                 <div style="font-size:0.72rem;color:#7dd3fc;margin-bottom:4px;">SAY THIS OUT LOUD (${(state.speakPhraseIdx % SPEAK_PHRASES.length) + 1}/${SPEAK_PHRASES.length})</div>
-                 <div style="font-size:1.35rem;font-weight:800;color:#fff;">🇫🇮 ${esc(sp.fi)}</div>
-                 <div style="font-size:0.84rem;color:#94a3b8;margin-top:4px;">🇬🇧 ${esc(sp.en)}</div>
-                 <div style="font-size:0.74rem;color:#fde047;margin-top:4px;">Focus: ${esc(sp.focus)}</div>
-                 <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
-                   <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(sp.fi)}">🐢 0.75×</button>
-                   <button type="button" class="fl-btn sm" data-fl-speak="${esc(sp.fi)}">🔊 1.0×</button>
-                   <button type="button" class="fl-btn sm" id="fl-speak-next-phrase">Next Phrase →</button>
-                 </div>
-               </div>
-               <div style="text-align:center;">
-                 ${
-                   state.speakRecording
-                     ? `<button type="button" class="fl-btn danger" id="fl-speak-stop-btn" style="padding:13px 26px;border-radius:999px;font-weight:800;">⏹️ Stop &amp; Check My Voice</button>`
-                     : `<button type="button" class="fl-pod-play-cta" id="fl-speak-start-btn">🎙️ Tap &amp; Say It Out Loud</button>`
-                 }
-               </div>
-               ${
-                 state.speakResult
-                   ? `<div style="margin-top:14px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.06);font-size:0.86rem;line-height:1.5;">
-                        ${state.speakResult.roast ? `<div class="fl-roast-banner" style="background:rgba(56,189,248,0.14);border-color:rgba(56,189,248,0.35);color:#e0f2fe;">${esc(state.speakResult.roast)}</div>` : ""}
-                        <div style="font-size:1.05rem;font-weight:800;color:${state.speakResult.score >= 7 ? "#6ee7b7" : "#fde047"};">Score: ${state.speakResult.score}/10</div>
-                        <div style="color:#fff;margin-top:4px;"><strong>${esc(state.speakResult.verdict)}</strong></div>
-                        ${state.speakResult.heard ? `<div style="color:#94a3b8;margin-top:4px;">Heard: <em>"${esc(state.speakResult.heard)}"</em></div>` : ""}
-                        ${state.speakResult.tip ? `<div style="color:#7dd3fc;margin-top:4px;">💡 ${esc(state.speakResult.tip)}</div>` : ""}
-                      </div>`
-                   : ""
-               }`
-        }
-      </div>
-    `;
-  }
-
-  function renderPodcastTool() {
-    const allEps = getAllPodcastEpisodes();
-    const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
-    const items = getPodcastItems(ep);
-    const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, items.length - 1));
-    const currentItem = items[activeIdx];
+  /* ---------- TAB 1: CHAT & CLASS (BILINGUAL TUTOR + SILENT CLASSROOM LIVE) ---------- */
+  function renderTabChatAndClass() {
+    const conv = getActiveConv();
+    const allMsgs = conv ? conv.messages || [] : [];
+    const tutorMsgs = allMsgs
+      .map((m, idx) => ({ m, idx }))
+      .filter(({ m }) => !m.isLiveSubtitle && !(m.role === "user" && String(m.text || "").startsWith("🌐 ")));
+    const liveData = parseLatestLiveCard(allMsgs);
+    const hasPendingPhoto = state.pendingAttachments.some((a) => (a.mime_type || "").startsWith("image/"));
 
     return `
-      <div class="fl-card" style="padding:18px;border-radius:20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.headphones}</div>
-            <div>
-              <strong style="font-size:1.05rem;display:block;color:#fff;">🎧 Walk &amp; Listen — Beginner Audio Course (10–20 Min)</strong>
-              <span style="font-size:0.78rem;color:#94a3b8;">100% Free Passive Memorization • Slow Finnish → "means English" → Pause → Repeat</span>
-            </div>
+      <div class="fl3-grid-chat">
+        <!-- LEFT PANEL: AI FINNISH TUTOR CARD -->
+        <section class="fl3-card fl3-tutor-card" aria-label="AI Finnish Tutor">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>💬</span><span>AI Finnish Tutor</span>
+            </h2>
+            <span class="fl3-badge">Bilingual A1–A2 • Concise</span>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button type="button" class="fl-btn sm" id="fl-pod-export-pdf" title="Print / Save PDF to Goodnotes">📄 Goodnotes PDF</button>
-            <button type="button" class="fl-btn sm" id="fl-pod-export-md" title="Download Markdown Study Sheet">⬇️ Export .md</button>
-          </div>
-        </div>
 
-        <!-- Custom Course Creator (Topic OR Upload Homework Photo -> 20-30 items via $0 Gemini) -->
-        <div class="fl-pod-creator" style="margin-bottom:14px;">
-          <div style="font-size:0.76rem;font-weight:700;color:#7dd3fc;display:inline-flex;align-items:center;gap:5px;">${ICO.explain} Generate 24-Item Beginner Audio Course (Topic or Homework Photo)</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <input type="text" id="fl-pod-custom-topic" class="fl-input" placeholder="e.g. Colors & Numbers, Food & Drinks, Family..." style="flex:1;min-width:190px;font-size:0.84rem;" />
-            <button type="button" class="fl-btn primary sm" id="fl-pod-create-btn" ${state.podcastCreating ? "disabled" : ""} style="white-space:nowrap;">${state.podcastCreating ? "⏳ Building 24 items..." : "✨ Generate Course"}</button>
-            <label class="fl-btn sm" style="cursor:pointer;white-space:nowrap;border-color:rgba(56,189,248,0.45);color:#7dd3fc;" title="Upload a Finnish homework photo to turn it into a Walk & Listen audio course">
-              📷 Upload Homework Photo
-              <input type="file" id="fl-pod-hw-photo" accept="image/*" style="display:none;" />
-            </label>
-          </div>
-        </div>
-
-        <!-- One-Tap Beginner Presets (22-24 items each + Saved Flashcards) -->
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-          ${allEps.map(
-            (p) => `<button type="button" class="fl-btn sm ${p.id === ep.id ? "active" : ""}" data-fl-pod-ep="${p.id}">${esc(p.title)}</button>`
-          ).join("")}
-        </div>
-
-        <!-- Cards List (Scrolls Smoothly Above Sticky Bottom Audio Bar on Mobile!) -->
-        ${
-          state.podcastShowScript
-            ? `<div class="fl-walk-cards-list" style="margin-top:8px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;">
-                ${items
-                  .map(
-                    (it, idx) => `
-                  <div class="fl-vocab-row ${state.podcastPlaying && idx === activeIdx ? "is-active-walk" : ""}" data-fl-pod-row="${idx}">
-                    <div>
-                      <strong style="color:#fff;">${idx + 1}. 🇫🇮 ${esc(it.fi)}</strong>
-                      <div style="font-size:0.78rem;color:#7dd3fc;">🇬🇧 ${esc(it.en)}</div>
+          <div class="fl3-chat-feed" id="fl-chat-stage">
+            ${
+              tutorMsgs.length
+                ? tutorMsgs.map(({ m, idx }) => renderMessageBubble(m, idx)).join("")
+                : `<div style="margin:auto 0;padding:24px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                    <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🇫🇮</div>
+                    <strong style="font-size:1.05rem;color:#FFFFFF;">Hei! Ready to practice school Finnish?</strong>
+                    <p style="margin:0;font-size:0.85rem;color:#94A3B8;max-width:440px;line-height:1.5;">
+                      Ask any question in English or Finnish, or tap <strong>+ Photo</strong> to snap your homework sheet for a concise bilingual breakdown or send it straight to <strong>Walk &amp; Listen</strong>.
+                    </p>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+                      <button type="button" class="fl3-btn" data-fl-starter="Mitä kuuluu? How do I reply politely in class?">Mitä kuuluu?</button>
+                      <button type="button" class="fl3-btn" data-fl-starter="Teach me 5 polite phrases to say to my Finnish teacher.">5 class phrases</button>
+                      <button type="button" class="fl3-btn" data-fl-starter="Show how verb olla works in A1 sentences.">Verb olla</button>
                     </div>
-                    <button type="button" class="fl-mini-btn" data-fl-pod-jump="${idx}" title="Play from item ${idx + 1}">▶</button>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>`
-            : ""
-        }
+                  </div>`
+            }
+            ${state.isSending ? `<div class="fl3-bubble assistant">⏳ Thinking...</div>` : ""}
+          </div>
 
-        <!-- Sticky Bottom Walk & Listen Player Bar (Lock-Screen iPhone / iPad Ready) -->
-        <div class="fl-pod-player-card fl-walk-sticky-player">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-            <div style="text-align:left;min-width:0;flex:1;">
-              <div style="font-size:0.88rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(ep.title)}</div>
-              <div id="fl-walk-now-counter" style="font-size:0.72rem;color:#34D399;font-weight:700;">
-                ${state.podcastLoading ? esc(state.podcastPhase) : state.podcastPlaying ? `Item ${activeIdx + 1} / ${items.length} • ${esc(state.podcastVoiceLabel || "NooraNeural")}` : `${items.length} items • ${esc(ep.duration || "~12–15 min")} • Lock-Screen MP3 Ready`}
+          <div class="fl3-composer">
+            ${
+              state.pendingAttachments.length
+                ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    ${state.pendingAttachments
+                      .map(
+                        (a, i) => `
+                      <div class="fl-att-chip" style="background:#112240;border:1px solid #1E3A5F;border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;">
+                        ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
+                        <span style="font-size:0.76rem;color:#E2E8F0;">${esc(a.name.slice(0, 18))}</span>
+                        <button type="button" class="fl-mini-btn" style="padding:2px 5px;" data-fl-rm-pending="${i}" aria-label="Remove attachment">✕</button>
+                      </div>
+                    `
+                      )
+                      .join("")}
+                    ${
+                      hasPendingPhoto
+                        ? `<button type="button" class="fl3-btn primary" id="fl-pending-to-walk" style="padding:6px 12px;font-size:0.78rem;">🎧 Send Photo to Walk &amp; Listen</button>`
+                        : ""
+                    }
+                  </div>`
+                : ""
+            }
+
+            <textarea id="fl-chat-input" class="fl3-composer-input" rows="2" placeholder="Ask in Finnish or English, or attach a homework photo..."></textarea>
+
+            <div class="fl3-composer-bar">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <label class="fl3-btn" style="cursor:pointer;padding:8px 12px;" title="Upload homework, textbook photo, or PDF">
+                  <span>+ Photo / Homework</span>
+                  <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
+                </label>
+                <label class="fl3-btn" style="cursor:pointer;padding:8px 11px;" title="Take camera photo">
+                  <span>📷</span>
+                  <input type="file" id="fl-input-camera" accept="image/*" capture="environment" style="display:none;" />
+                </label>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                ${
+                  state.isRecording
+                    ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" title="Stop Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
+                    : `<button type="button" class="fl3-btn" id="fl-start-rec" title="Record voice question" aria-label="Record Audio">🎙️</button>`
+                }
+                <button type="button" class="fl3-btn primary" id="fl-chat-send" ${state.isSending ? "disabled" : ""}>Send ↑</button>
               </div>
             </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              ${
-                state.podcastLoading
-                  ? `<span style="font-size:0.78rem;color:#7dd3fc;font-weight:700;">⏳ Building MP3...</span>`
-                  : state.podcastPlaying && !state.podcastPaused
-                  ? `<button type="button" class="fl-btn sm" id="fl-pod-pause-btn" style="background:rgba(2,156,216,0.25);border-color:#38BDF8;color:#fff;font-weight:800;">⏸ Pause</button>
-                     <button type="button" class="fl-btn danger sm" id="fl-pod-stop-btn" style="font-weight:800;">⏹ Stop</button>`
-                  : `<button type="button" class="fl-pod-play-cta" id="fl-pod-play-btn" style="padding:8px 16px;font-size:0.82rem;">▶ ${state.podcastPaused ? "Resume" : "Start Walk & Listen"}</button>`
-              }
+          </div>
+        </section>
+
+        <!-- RIGHT PANEL: STRICTLY SILENT CLASSROOM LIVE CARD -->
+        <section class="fl3-card accent fl3-live-card" aria-label="Silent Classroom Live Helper">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>🔇</span><span>Silent Classroom Live</span>
+            </h2>
+            <span class="fl3-badge silent">Never Speaks Out Loud</span>
+          </div>
+
+          <div class="fl3-waveform-box ${state.isLiveTranslating ? "active" : ""}">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+              <div class="fl3-wave-bars" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div style="min-width:0;">
+                <div id="fl-live-interim" style="font-size:0.82rem;font-weight:700;color:${state.isLiveTranslating ? "#6EE7B7" : "#CBD5E1"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  ${esc(state.isLiveTranslating ? (state.liveInterimText || "Listening silently for Finnish...") : "Ready for silent classroom listening")}
+                </div>
+                <div style="font-size:0.71rem;color:#94A3B8;">Speaker output is 100% hard-muted while active</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              ${state.isLiveTranslating && state.liveForceCutFn ? `<button type="button" class="fl3-btn" id="fl-live-now" style="padding:7px 10px;" title="Translate captured audio right now">⚡</button>` : ""}
+              <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn">
+                ${state.isLiveTranslating ? "⏹ Stop Live" : "🎙️ Start Live"}
+              </button>
             </div>
           </div>
 
-          ${
-            currentItem && (state.podcastPlaying || state.podcastPaused)
-              ? `<div style="background:rgba(6,18,36,0.88);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:8px 10px;margin-bottom:8px;text-align:left;">
-                   <div id="fl-walk-now-fi" style="font-size:0.96rem;font-weight:800;color:#fff;">🇫🇮 ${esc(currentItem.fi)}</div>
-                   <div id="fl-walk-now-en" style="font-size:0.78rem;color:#7dd3fc;">🇬🇧 means: ${esc(currentItem.en)}</div>
-                 </div>`
-              : ""
-          }
-
-          <!-- Controls Row: Prev/Next, Loop Episode, Speed (0.70x / 0.80x / 1.0x) -->
-          <div style="display:flex;justify-content:center;gap:5px;flex-wrap:wrap;align-items:center;">
-            <button type="button" class="fl-btn sm" id="fl-pod-prev" title="Previous item">⏮</button>
-            <button type="button" class="fl-btn sm" id="fl-pod-next" title="Next item">⏭</button>
-            <button type="button" class="fl-btn sm ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop">🔁 Loop: ${state.podcastLoop ? "ON" : "OFF"}</button>
-            ${[0.70, 0.80, 1.0].map((spd) => `<button type="button" class="fl-btn sm ${Math.abs((state.podcastSpeed || 0.75) - spd) < 0.06 ? "active" : ""}" data-fl-pod-speed="${spd}">${spd.toFixed(2)}×</button>`).join("")}
-            <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide" : "👁️ List"}</button>
+          <div class="fl3-live-field">
+            <div class="fl3-live-label">🇫🇮 Finnish Heard</div>
+            <div style="font-size:0.95rem;font-weight:700;color:#FFFFFF;line-height:1.45;">
+              ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Live" when your teacher speaks Finnish...</span>`}
+            </div>
           </div>
-        </div>
-      </div>
-    `;
-  }
 
-  function renderHelperHubTool() {
-    const ht = state.helperTab || "homework";
-    return `
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-        <button type="button" class="fl-btn sm ${ht === "homework" ? "active" : ""}" data-fl-htab="homework">📝 Homework</button>
-        <button type="button" class="fl-btn sm ${ht === "lookup" ? "active" : ""}" data-fl-htab="lookup">🔎 Word &amp; Grammar</button>
-        <button type="button" class="fl-btn sm ${ht === "practice" ? "active" : ""}" data-fl-htab="practice">🗣️ Writing &amp; Roleplay</button>
-      </div>
-      ${ht === "homework" ? renderHomeworkTool() : ht === "lookup" ? renderLookupTool() : renderPracticeTool()}
-    `;
-  }
+          <div class="fl3-live-field">
+            <div class="fl3-live-label">🇬🇧 English Meaning</div>
+            <div style="font-size:0.92rem;color:#38BDF8;font-weight:600;line-height:1.45;">
+              ${liveData.hasCapture ? esc(liveData.enMeaning || "See translation above") : `<span style="color:#64748B;font-weight:500;">Instant English translation appears silently here.</span>`}
+            </div>
+          </div>
 
-  function renderHomeworkTool() {
-    return `
-      <div class="fl-card">
-        <strong style="font-size:1rem;display:block;margin-bottom:10px;">📝 Homework Helper</strong>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <label class="fl-btn primary" style="cursor:pointer;">
-            📷 Upload Worksheet / PDF
-            <input type="file" id="fl-hw-files" accept="image/*,application/pdf" multiple style="display:none;" />
-          </label>
-          ${state.hwAttachments.length ? `<button type="button" class="fl-btn sm" id="fl-hw-clear">Clear</button>` : ""}
-        </div>
-        ${
-          state.hwAttachments.length
-            ? `<div class="fl-att-row">
-                ${state.hwAttachments
-                  .map(
-                    (p, i) => `
-                  <div class="fl-att-chip">
-                    ${p.previewUrl ? `<img src="${p.previewUrl}" class="fl-att-thumb" alt="" />` : "📄"}
-                    <span>${esc(p.name.slice(0, 16))}</span>
-                    ${p.previewUrl ? `<button type="button" class="fl-mini-btn" style="padding:1px 5px;" data-fl-crop-hw="${i}">✂️</button>` : ""}
-                    <button type="button" class="fl-mini-btn" style="padding:1px 5px;" data-fl-rm-hw="${i}">✕</button>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>`
-            : ""
-        }
-        <input type="text" id="fl-hw-exercise" class="fl-input" style="margin-bottom:8px;" placeholder="Which exercise? (e.g. Exercise 3)" />
-        <textarea id="fl-hw-answer" class="fl-textarea" rows="2" style="margin-bottom:10px;" placeholder="Optional: write your Finnish answer to check..."></textarea>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-          <button type="button" class="fl-btn" data-fl-hw="hint">💡 Hint</button>
-          <button type="button" class="fl-btn success" data-fl-hw="check">✅ Check</button>
-          <button type="button" class="fl-btn primary" data-fl-hw="answer">👁️ Answer</button>
-        </div>
-        <button type="button" class="fl-btn sm" id="fl-hw-to-cards" style="width:100%;margin-top:8px;border-color:rgba(250,204,21,0.35);color:#fef08a;">
-          ⭐ Snap Vocab Photo → Save All Words to Flashcards
-        </button>
-      </div>
-    `;
-  }
-
-  function renderLessonTool() {
-    const pack = CURR.getTodayVocabPack();
-    const gram = CURR.getTodayGrammarTopic();
-    const step = state.lessonStep;
-    return `
-      <div class="fl-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <strong style="font-size:1rem;display:inline-flex;align-items:center;gap:6px;">${ICO.book} Today's Lesson — Step ${step}/3</strong>
-          <span style="font-size:0.76rem;color:#7dd3fc;">${step === 1 ? pack.topic : step === 2 ? "1 Simple Rule" : "Quick Check"}</span>
-        </div>
-        ${
-          step === 1
-            ? `${pack.words
+          <div>
+            <div class="fl3-live-label" style="margin-bottom:8px;">💬 Tap-to-Use School Finnish Replies</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              ${liveData.replies
                 .map(
-                  (w, i) => `
-                <div class="fl-vocab-row">
-                  <div>
-                    <strong>${esc(w.fi)}</strong> — <span style="color:#7dd3fc;">${esc(w.en)}</span>
-                    <div style="font-size:0.74rem;color:#94a3b8;">${esc(w.exFi)} <em>(${esc(w.exEn)})</em></div>
-                  </div>
-                  <div style="display:flex;gap:4px;">
-                    <button type="button" class="fl-mini-btn" data-fl-speak="${esc(w.fi + ". " + w.exFi)}" title="Listen">${ICO.listen}</button>
-                    <button type="button" class="fl-mini-btn" data-fl-save-vocab="${i}" title="Save card">${ICO.cards}</button>
-                  </div>
-                </div>
+                  (r) => `
+                <button type="button" class="fl3-reply-chip" data-fl-use-reply="${esc(r.fi)}" title="Tap to copy &amp; place in chat input (silent)">
+                  <strong style="font-size:0.88rem;color:#FFFFFF;">🇫🇮 ${esc(r.fi)}</strong>
+                  <span style="font-size:0.77rem;color:#94A3B8;">🇬🇧 ${esc(r.en)}</span>
+                </button>
               `
                 )
                 .join("")}
-              <button type="button" class="fl-btn primary" id="fl-lesson-next" style="width:100%;margin-top:8px;">Next: 1 Simple Rule →</button>`
-            : step === 2
-            ? `<strong style="color:#7dd3fc;">${esc(gram.title)}</strong>
-              <p style="font-size:0.88rem;line-height:1.55;">${esc(gram.en)}</p>
-              <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:10px;font-size:0.84rem;color:#6ee7b7;"><strong>🇫🇮 Suomeksi:</strong> ${esc(gram.fi)}</div>
-              <ul style="padding-left:18px;font-size:0.84rem;margin-bottom:12px;">${(gram.pos || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-              <div style="display:flex;gap:8px;">
-                <button type="button" class="fl-btn" id="fl-lesson-prev">← Back</button>
-                <button type="button" class="fl-btn primary" id="fl-lesson-next" style="flex:1;">Next: Quick Check →</button>
-              </div>`
-            : `<div style="font-weight:700;margin-bottom:10px;">${esc(gram.quiz.q)}</div>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
-                ${gram.quiz.options.map((o, i) => `<button type="button" class="fl-btn" style="justify-content:flex-start;" data-fl-quiz-ans="${i === gram.quiz.ans ? "1" : "0"}" data-fl-quiz-exp="${esc(gram.quiz.exp)}">${esc(o)}</button>`).join("")}
-              </div>
-              <div id="fl-quiz-out" style="font-size:0.84rem;margin-bottom:10px;"></div>
-              <div style="display:flex;gap:8px;">
-                <button type="button" class="fl-btn" id="fl-lesson-prev">← Back</button>
-                <button type="button" class="fl-btn success" id="fl-lesson-done" style="flex:1;">✓ Finish Lesson</button>
-              </div>`
-        }
+            </div>
+          </div>
+        </section>
       </div>
     `;
   }
 
-  function renderPracticeTool() {
-    const sk = state.practiceSkill;
-    const r = state.currentReading || CURR.SAMPLE_READINGS[0];
-    const l = state.currentListening || CURR.SAMPLE_LISTENING[0];
-    const fullFi = (l.lines || []).map((x) => x.fi).join(". ");
+  /* ---------- TAB 2: WALK & LISTEN (POCKET AUDIO COURSE + LOCK-SCREEN PLAYBACK) ---------- */
+  function renderTabWalkAndListen() {
+    const allEps = getAllPodcastEpisodes();
+    const customHwEp = (state.customPodcastEpisodes || [])[0] || null;
+    const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
+    const items = getPodcastItems(ep);
+    const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, items.length - 1));
+    const currentItem = items[activeIdx] || { fi: "kevät", en: "spring" };
+    const isCustomActive = Boolean(customHwEp && ep.id === customHwEp.id);
+
     return `
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-        <button type="button" class="fl-btn sm ${sk === "reading" ? "active" : ""}" data-fl-skill="reading">📰 Reading</button>
-        <button type="button" class="fl-btn sm ${sk === "writing" ? "active" : ""}" data-fl-skill="writing">✍️ Writing</button>
-        <button type="button" class="fl-btn sm ${sk === "listening" ? "active" : ""}" data-fl-skill="listening">${ICO.headphones} Listening</button>
-        <button type="button" class="fl-btn sm ${sk === "speaking" ? "active" : ""}" data-fl-skill="speaking">🗣️ Roleplay</button>
-      </div>
-      ${
-        sk === "reading"
-          ? `<div class="fl-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <strong>${esc(r.title)}</strong>
-                <div style="display:flex;gap:4px;">
-                  <button type="button" class="fl-mini-btn" data-fl-speak="${esc((r.sentences || []).map((s) => s.fi).join(" "))}" title="Listen">${ICO.listen}</button>
-                  <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc((r.sentences || []).map((s) => s.fi).join(" "))}" title="Slow">${ICO.slow}</button>
+      <div class="fl3-grid-walk">
+        <!-- LEFT PANEL: POCKET PLAYER CARD -->
+        <section class="fl3-card" aria-label="Walk and Listen Pocket Player">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>🎧</span><span>Pocket Audio Player</span>
+            </h2>
+            <span class="fl3-badge">Noora Neural • Lock-Screen</span>
+          </div>
+
+          <div style="font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;margin-bottom:8px;">Choose Episode Topic</div>
+          <div class="fl3-topic-grid" style="margin-bottom:16px;">
+            <button type="button" class="fl3-topic-pill ${isCustomActive ? "active" : ""}" id="fl-walk-topic-photo">
+              <span>📷</span><span>${state.podcastCreating ? "Building Course..." : "From Homework Photo"}</span>
+            </button>
+            <button type="button" class="fl3-topic-pill ${ep.id === "pod_today_a1" ? "active" : ""}" data-fl-pod-ep="pod_today_a1">
+              <span>🌅</span><span>Today's A1 Words</span>
+            </button>
+            <button type="button" class="fl3-topic-pill ${ep.id === "pod_olla_q" ? "active" : ""}" data-fl-pod-ep="pod_olla_q">
+              <span>🧩</span><span>Olla &amp; Questions</span>
+            </button>
+            <button type="button" class="fl3-topic-pill ${ep.id === "pod_seasons" ? "active" : ""}" data-fl-pod-ep="pod_seasons">
+              <span>🍂</span><span>Seasons &amp; Everyday</span>
+            </button>
+          </div>
+          <input type="file" id="fl-pod-hw-photo" accept="image/*" style="display:none;" />
+
+          ${
+            customHwEp
+              ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;padding:8px 11px;background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;font-size:0.78rem;">
+                  <span style="color:#CBD5E1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(customHwEp.title)} (${(customHwEp.items || []).length} items)</span>
+                  <button type="button" class="fl3-speaker-btn" id="fl-walk-upload-new-photo">📷 New Photo</button>
+                </div>`
+              : ""
+          }
+
+          <!-- Center Transport: Prev | Large Play/Pause Circle | Next -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:12px 0 16px;">
+            <button type="button" class="fl3-btn" id="fl-pod-prev" style="width:46px;height:46px;border-radius:50%;padding:0;" title="Previous phrase" aria-label="Previous phrase">⏮</button>
+            ${
+              state.podcastLoading
+                ? `<button type="button" class="fl3-play-circle" disabled title="Preparing Neural MP3">⏳</button>`
+                : state.podcastPlaying && !state.podcastPaused
+                ? `<button type="button" class="fl3-play-circle" id="fl-pod-pause-btn" title="Pause Walk &amp; Listen" aria-label="Pause">⏸</button>`
+                : `<button type="button" class="fl3-play-circle" id="fl-pod-play-btn" title="Play Walk &amp; Listen" aria-label="Play">▶</button>`
+            }
+            <button type="button" class="fl3-btn" id="fl-pod-next" style="width:46px;height:46px;border-radius:50%;padding:0;" title="Next phrase" aria-label="Next phrase">⏭</button>
+          </div>
+
+          <div style="text-align:center;font-size:0.76rem;color:#94A3B8;margin-bottom:14px;">
+            ${state.podcastLoading ? esc(state.podcastPhase || "Preparing neural audio...") : state.podcastPlaying ? `Playing • ${esc(state.podcastVoiceLabel || "fi-FI-NooraNeural")}` : `${items.length} phrases • Continues playing when iPhone screen locks`}
+          </div>
+
+          <!-- Loop Episode + Speed Selector (0.75x / 0.90x / 1.0x) -->
+          <div style="display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid #1E3A5F;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:0.8rem;color:#CBD5E1;font-weight:700;">Repeat &amp; Loop</span>
+              <button type="button" class="fl3-btn ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop" style="padding:7px 14px;">
+                🔁 Loop Episode: ${state.podcastLoop ? "ON" : "OFF"}
+              </button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:0.8rem;color:#CBD5E1;font-weight:700;">Finnish Speed</span>
+              <div style="display:flex;gap:6px;">
+                ${[0.75, 0.90, 1.0].map((spd) => {
+                  const isAct = Math.abs((Number(state.podcastSpeed) || 0.75) - spd) < 0.05;
+                  const lbl = spd === 1.0 ? "1.0×" : `${spd.toFixed(2)}×`;
+                  return `<button type="button" class="fl3-btn ${isAct ? "active" : ""}" data-fl-pod-speed="${spd}" style="padding:7px 12px;">${lbl}</button>`;
+                }).join("")}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT PANEL: LARGE HIGH-CONTRAST PLAYING NOW CARD -->
+        <section class="fl3-card accent" aria-label="Playing Now">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>🔊</span><span>Playing Now — ${esc(ep.title)}</span>
+            </h2>
+            <span id="fl-walk-now-counter" class="fl3-badge">Phrase ${activeIdx + 1} of ${items.length}</span>
+          </div>
+
+          <div class="fl3-playing-hero">
+            <div style="font-size:0.72rem;font-weight:700;color:#94A3B8;background:rgba(17,34,64,0.85);border:1px solid #1E3A5F;padding:4px 10px;border-radius:999px;">
+              Slow Finnish (${(Number(state.podcastSpeed) || 0.75).toFixed(2)}×) → English meaning → Pause → Repeat Finnish
+            </div>
+            <div id="fl-walk-now-fi" class="fl3-now-fi" style="margin-top:6px;">🇫🇮 ${esc(currentItem.fi)}</div>
+            <div id="fl-walk-now-en" class="fl3-now-en">🇬🇧 ${esc(currentItem.en)}</div>
+            <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+              <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(currentItem.fi)}">🔊 Hear Phrase (0.75×)</button>
+              <button type="button" class="fl3-speaker-btn" id="fl-pod-export-md">📄 Export List (.md)</button>
+            </div>
+          </div>
+
+          <div class="fl3-tracklist" aria-label="Episode Phrases">
+            ${items
+              .map(
+                (it, idx) => `
+              <div class="fl3-track-row ${idx === activeIdx ? "is-active-walk" : ""}" data-fl-pod-row="${idx}" data-fl-pod-jump="${idx}">
+                <div style="min-width:0;flex:1;">
+                  <strong style="color:#FFFFFF;font-size:0.88rem;">${idx + 1}. ${esc(it.fi)}</strong>
+                  <span style="color:#94A3B8;font-size:0.82rem;"> — ${esc(it.en)}</span>
                 </div>
+                <span style="color:#38BDF8;font-size:0.78rem;font-weight:700;flex-shrink:0;">▶</span>
               </div>
-              ${(r.sentences || []).map((s) => `<div style="padding:9px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:8px;"><strong>${esc(s.fi)}</strong><div style="font-size:0.8rem;color:#7dd3fc;">${esc(s.en)}</div>${s.spoken_fi ? `<div style="font-size:0.76rem;color:#6ee7b7;">Spoken: ${esc(s.spoken_fi)}</div>` : ""}</div>`).join("")}
-            </div>`
-          : sk === "writing"
-          ? `<div class="fl-card">
-              <strong style="display:block;margin-bottom:8px;">✍️ Check Your Finnish Writing</strong>
-              <textarea id="fl-write-text" class="fl-textarea" rows="3" placeholder="Write 1–3 Finnish sentences..."></textarea>
-              <button type="button" class="fl-btn primary" id="fl-write-submit" style="margin-top:8px;">✅ Check</button>
-              <div id="fl-write-out" style="margin-top:10px;"></div>
-            </div>`
-          : sk === "listening"
-          ? `<div class="fl-card">
-              <strong style="display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;">${ICO.headphones} ${esc(l.title)}</strong>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-                <button type="button" class="fl-btn primary sm" data-fl-speak="${esc(fullFi)}">${ICO.listen} Play</button>
-                <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(fullFi)}">${ICO.slow} Slow</button>
-                <button type="button" class="fl-btn sm" id="fl-listen-toggle-tr">${state.listeningShowTranscript ? "Hide Text" : "Show Text"}</button>
-              </div>
-              ${state.listeningShowTranscript ? (l.lines || []).map((ln) => `<div style="margin-bottom:6px;"><strong>${esc(ln.speaker)}:</strong> ${esc(ln.fi)}<div style="font-size:0.78rem;color:#7dd3fc;">${esc(ln.en)}</div></div>`).join("") : `<div style="font-size:0.8rem;color:#94a3b8;">Listen first, then tap Show Text!</div>`}
-            </div>`
-          : `<div class="fl-card">
-              <strong style="display:block;margin-bottom:10px;">🗣️ Everyday Roleplay</strong>
-              ${CURR.ROLEPLAY_SCENARIOS.map((rp) => `<div class="fl-vocab-row"><span>${esc(rp.title)}</span><button type="button" class="fl-btn primary sm" data-fl-start-roleplay="${rp.id}">Start →</button></div>`).join("")}
-            </div>`
-      }
+            `
+              )
+              .join("")}
+          </div>
+        </section>
+      </div>
     `;
   }
 
-  function renderLookupTool() {
-    const topic = CURR.GRAMMAR_TOPICS.find((t) => t.id === state.selectedGrammarId) || CURR.GRAMMAR_TOPICS[0];
-    return `
-      <div class="fl-card" style="margin-bottom:12px;">
-        <strong style="display:block;margin-bottom:8px;">🔎 Look Up Any Finnish Word</strong>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="fl-anatomy-input" class="fl-input" placeholder="e.g. kaupassa, ymmärrän, kahvia..." />
-          <button type="button" class="fl-btn primary" id="fl-anatomy-search">Look Up</button>
-        </div>
-        <div id="fl-anatomy-out" style="margin-top:10px;"></div>
+  /* ---------- TAB 3: NOTEBOOK & DRILLS (GOODNOTES MASTER TABLES + QUICK A1 QUIZ) ---------- */
+  const NOTEBOOK_MASTER_TABLES = {
+    olla: {
+      title: "Olla-verb & Pronouns",
+      rows: [
+        { fi: "Minä olen", note: "spoken: mä oon", en: "I am" },
+        { fi: "Sinä olet", note: "spoken: sä oot", en: "You are" },
+        { fi: "Hän on", note: "spoken: se on", en: "He / She is" },
+        { fi: "Me olemme", note: "spoken: me ollaan", en: "We are" },
+        { fi: "Te olette", note: "spoken: te ootte", en: "You (plural) are" },
+        { fi: "He ovat", note: "spoken: ne on", en: "They are" },
+        { fi: "Minä en ole", note: "negative stem: ole", en: "I am not" },
+        { fi: "Minä olen opiskelija.", note: "school A1", en: "I am a student." },
+      ],
+    },
+    onko: {
+      title: "Onko & -ko/-kö Questions",
+      rows: [
+        { fi: "Onko sinulla kysymys?", note: "Minulla / sinulla on", en: "Do you have a question?" },
+        { fi: "Oletko sinä valmis?", note: "olet + -ko", en: "Are you ready?" },
+        { fi: "Puhutko sinä suomea?", note: "back vowel u → -ko", en: "Do you speak Finnish?" },
+        { fi: "Asutko sinä Porissa?", note: "-ssa = in", en: "Do you live in Pori?" },
+        { fi: "Ymmärrätkö sinä?", note: "front vowel ä → -kö", en: "Do you understand?" },
+        { fi: "Voitko toistaa hitaasti?", note: "polite class question", en: "Can you repeat slowly?" },
+        { fi: "Saisinko yhden kahvin?", note: "polite request", en: "Could I have one coffee?" },
+      ],
+    },
+    days: {
+      title: "Days & Time",
+      rows: [
+        { fi: "maanantai", note: "maanantaina = on Monday", en: "Monday" },
+        { fi: "tiistai", note: "tiistaina = on Tuesday", en: "Tuesday" },
+        { fi: "keskiviikko", note: "middle of week", en: "Wednesday" },
+        { fi: "torstai", note: "torstaina = on Thursday", en: "Thursday" },
+        { fi: "perjantai", note: "perjantaina = on Friday", en: "Friday" },
+        { fi: "lauantai ja sunnuntai", note: "viikonloppu", en: "Saturday and Sunday (weekend)" },
+        { fi: "tänään • huomenna • eilen", note: "core time words", en: "today • tomorrow • yesterday" },
+        { fi: "Mihin aikaan kurssi alkaa?", note: "class schedule", en: "What time does the course start?" },
+      ],
+    },
+    everyday: {
+      title: "Everyday Vocabulary",
+      rows: [
+        { fi: "Hyvää huomenta!", note: "morning greeting", en: "Good morning!" },
+        { fi: "Kiitos paljon!", note: "ole hyvä = you're welcome", en: "Thank you very much!" },
+        { fi: "Anteeksi", note: "polite attention / sorry", en: "Excuse me / Sorry" },
+        { fi: "kirja, vihko ja kynä", note: "classroom objects", en: "book, notebook, and pen" },
+        { fi: "kauppa → kaupassa", note: "inessive -ssa", en: "store → in the store" },
+        { fi: "koti → kotona", note: "special at-home form", en: "home → at home" },
+        { fi: "Tänään on kaunis päivä.", note: "everyday weather", en: "Today is a beautiful day." },
+      ],
+    },
+  };
+
+  function getNotebookRows(tableId) {
+    const tbl = NOTEBOOK_MASTER_TABLES[tableId] || NOTEBOOK_MASTER_TABLES.olla;
+    if (tableId !== "everyday") return tbl.rows;
+    const customRows = (state.flashcards || []).slice(0, 20).map((c) => ({
+      fi: c.fi,
+      note: c.baseForm ? `base: ${c.baseForm}` : "saved word",
+      en: c.en,
+    }));
+    const seen = new Set(customRows.map((r) => String(r.fi || "").toLowerCase()));
+    const merged = [...customRows];
+    for (const r of tbl.rows) {
+      if (!seen.has(r.fi.toLowerCase())) merged.push(r);
+    }
+    return merged;
+  }
+
+  function exportNotebookGoodnotes(format) {
+    const today = DB.todayStr();
+    const keys = ["olla", "onko", "days", "everyday"];
+    if (format === "md") {
+      let md = `# 🇫🇮 ILoveFinland — Finnish Master Study Sheet (${today})\n\n`;
+      for (const k of keys) {
+        const t = NOTEBOOK_MASTER_TABLES[k];
+        const rows = getNotebookRows(k);
+        md += `## ${t.title}\n\n| Finnish (Suomi) | English |\n|---|---|\n`;
+        rows.forEach((r) => {
+          md += `| **${r.fi}** ${r.note ? `*(${r.note})*` : ""} | ${r.en} |\n`;
+        });
+        md += "\n";
+      }
+      downloadTextFile(`finnish-goodnotes-study-sheet-${today}.md`, md);
+      toast("⬇️ Exported Goodnotes Markdown (.md) sheet!", "success");
+      return;
+    }
+    const win = window.open("", "_blank", "width=880,height=760");
+    if (!win) {
+      toast("Pop-up blocked — use Export .md or allow pop-ups.", "warning");
+      return;
+    }
+    let sectionsHtml = "";
+    for (const k of keys) {
+      const t = NOTEBOOK_MASTER_TABLES[k];
+      const rows = getNotebookRows(k);
+      sectionsHtml += `<h2>${esc(t.title)}</h2><table><thead><tr><th>Finnish (Suomi)</th><th>English</th></tr></thead><tbody>` +
+        rows.map((r) => `<tr><td><strong>${esc(r.fi)}</strong>${r.note ? ` <span style="color:#475569;font-size:12px;">(${esc(r.note)})</span>` : ""}</td><td>${esc(r.en)}</td></tr>`).join("") +
+        `</tbody></table>`;
+    }
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Finnish Goodnotes Study Sheet (${today})</title>
+      <style>
+        body { font-family: 'Inter', -apple-system, sans-serif; color: #0A192F; padding: 28px; max-width: 860px; margin: 0 auto; }
+        h1 { color: #003580; font-size: 21px; border-bottom: 3px solid #003580; padding-bottom: 8px; }
+        h2 { color: #003580; font-size: 15px; margin-top: 20px; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th { background: #0A192F; color: #fff; padding: 9px 12px; text-align: left; }
+        td { border: 1px solid #CBD5E1; padding: 8px 12px; }
+        @media print { .no-print { display: none; } }
+      </style></head><body>
+      <div class="no-print" style="text-align:right;margin-bottom:12px;">
+        <button onclick="window.print()" style="background:#003580;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;">🖨️ Print / Save PDF to Goodnotes</button>
       </div>
-      <div class="fl-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-          <strong>📐 Simple A1 Grammar</strong>
-          <select id="fl-grammar-select" class="fl-select" style="width:auto;max-width:100%;">
-            ${CURR.GRAMMAR_TOPICS.map((t) => `<option value="${t.id}" ${t.id === topic.id ? "selected" : ""}>${esc(t.title)}</option>`).join("")}
-          </select>
-        </div>
-        <p style="font-size:0.85rem;line-height:1.5;">${esc(topic.en)}</p>
-        <div style="background:rgba(255,255,255,0.05);padding:9px;border-radius:9px;font-size:0.82rem;color:#6ee7b7;margin-bottom:8px;"><strong>🇫🇮 Suomeksi:</strong> ${esc(topic.fi)}</div>
-        <ul style="padding-left:18px;font-size:0.84rem;">${(topic.pos || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      <h1>🇫🇮 ILoveFinland — Master A1 Finnish Study Sheet (${today})</h1>
+      ${sectionsHtml}
+    </body></html>`);
+    win.document.close();
+  }
+
+  function getCombinedQuizPool() {
+    const dynamicQs = (state.flashcards || []).slice(0, 10).map((c, i, arr) => {
+      const distractors = [
+        arr[(i + 1) % arr.length]?.en,
+        arr[(i + 2) % arr.length]?.en,
+        "good morning",
+        "in the store",
+        "thank you",
+      ].filter((x) => x && x.toLowerCase() !== String(c.en || "").toLowerCase());
+      const opts = [c.en, distractors[0] || "water", distractors[1] || "tomorrow"];
+      return {
+        topic: "Saved Vocabulary",
+        promptFi: `Mitä tarkoittaa "${c.fi}"?`,
+        promptEn: `Choose the English meaning of "${c.fi}":`,
+        answer: c.en,
+        fullFi: c.fi,
+        fullEn: c.en,
+        tip: c.example || `Saved in your personal Finnish vocabulary deck.`,
+        opts,
+      };
+    });
+    return [...SCHOOL_FINNISH_QUESTIONS, ...dynamicQs];
+  }
+
+  function renderTabNotebookAndDrills() {
+    const tblId = state.notebookTableId || "olla";
+    const rows = getNotebookRows(tblId);
+    const quizPool = getCombinedQuizPool();
+    const q = quizPool[state.streetIdx % quizPool.length];
+
+    return `
+      <div class="fl3-stack-notebook">
+        <!-- TOP CARD: GOODNOTES MASTER TABLES -->
+        <section class="fl3-card" aria-label="Goodnotes Master Tables">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>📓</span><span>Goodnotes Master Tables</span>
+            </h2>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="fl3-btn" id="fl-nb-export-md">📄 Export .md</button>
+              <button type="button" class="fl3-btn primary" id="fl-nb-export-pdf">🖨️ Export to Goodnotes (PDF)</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            ${Object.entries(NOTEBOOK_MASTER_TABLES).map(([id, meta]) => `
+              <button type="button" class="fl3-btn ${tblId === id ? "active" : ""}" data-fl-nb-table="${id}">${esc(meta.title)}</button>
+            `).join("")}
+          </div>
+
+          <div class="fl3-table-wrap">
+            <table class="fl3-table">
+              <thead>
+                <tr>
+                  <th style="width:56%;">Finnish (Suomi)</th>
+                  <th>English</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows
+                  .map(
+                    (r) => `
+                  <tr>
+                    <td>
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                        <div>
+                          <strong style="color:#FFFFFF;font-size:0.94rem;">${esc(r.fi)}</strong>
+                          ${r.note ? `<div style="font-size:0.74rem;color:#94A3B8;margin-top:2px;">${esc(r.note)}</div>` : ""}
+                        </div>
+                        <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(r.fi)}" title="Listen slowly (0.75×)">🔊 0.75×</button>
+                      </div>
+                    </td>
+                    <td style="color:#38BDF8;font-weight:600;">${esc(r.en)}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- BOTTOM CARD: QUICK A1 PRACTICE QUIZ -->
+        <section class="fl3-card accent" aria-label="Quick A1 Practice Quiz">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>🎯</span><span>Quick A1 Practice Quiz</span>
+            </h2>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="fl3-badge">${esc(q.topic)}</span>
+              <span class="fl3-badge">Score: ${state.streetScore}</span>
+            </div>
+          </div>
+
+          <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:10px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:1.22rem;font-weight:800;color:#FFFFFF;margin-bottom:4px;">🇫🇮 ${esc(q.promptFi)}</div>
+              <div style="font-size:0.88rem;color:#94A3B8;">🇬🇧 ${esc(q.promptEn)}</div>
+            </div>
+            <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(q.fullFi)}">🔊 0.75×</button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${q.opts
+              .map(
+                (opt) => `<button type="button" class="fl3-quiz-opt" data-fl-street-ans="${esc(opt)}">${esc(opt)}</button>`
+              )
+              .join("")}
+          </div>
+
+          ${
+            state.streetFeedback
+              ? `<div style="margin-top:14px;padding:14px;border-radius:10px;background:#0A192F;border:1px solid ${state.streetFeedback.ok ? "rgba(52,211,153,0.5)" : "rgba(56,189,248,0.45)"};">
+                   ${state.streetFeedback.roast ? `<div style="color:#E0F2FE;font-size:0.82rem;margin-bottom:6px;">${esc(state.streetFeedback.roast)}</div>` : ""}
+                   <div style="font-weight:800;color:${state.streetFeedback.ok ? "#6EE7B7" : "#FCA5A5"};font-size:0.94rem;">
+                     ${state.streetFeedback.ok ? "✅ Oikein! Great job!" : `💡 Correct answer: ${esc(q.answer)}`}
+                   </div>
+                   <div style="color:#FFFFFF;font-weight:700;margin-top:6px;">🇫🇮 ${esc(q.fullFi)}</div>
+                   <div style="color:#38BDF8;font-size:0.86rem;margin-top:2px;">🇬🇧 ${esc(q.fullEn)}</div>
+                   <div style="color:#CBD5E1;font-size:0.8rem;margin-top:5px;">${esc(q.tip)}</div>
+                   <button type="button" class="fl3-btn primary" id="fl-street-next" style="margin-top:12px;width:100%;">Next Question →</button>
+                 </div>`
+              : ""
+          }
+        </section>
       </div>
     `;
   }
@@ -2972,49 +3067,27 @@
     const root = document.getElementById("finnish-lab-root");
     if (!root) return;
 
-    // iOS Safari Keyboard Fix: keep the entire chat capsule cleanly ABOVE the keyboard (zero clipping!)
-    if (window.visualViewport && !window.__flViewportBound) {
-      window.__flViewportBound = true;
-      const syncKeyboardDock = () => {
-        const dock = document.querySelector("#view-finnish-lab .fl-dock");
-        if (!dock || window.innerWidth > 768) return;
-        const vv = window.visualViewport;
-        const kbInset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-        dock.style.bottom = kbInset > 40 ? `${kbInset + 10}px` : "";
+    // 3 Clean Pill Tabs switching
+    root.querySelectorAll("[data-fl-tab]").forEach((b) => {
+      b.onclick = () => {
+        const nextTab = b.getAttribute("data-fl-tab") || "chat";
+        state.activeTab = nextTab;
+        state.mode = nextTab === "chat" ? "chat" : "study";
+        state.plusMenuOpen = false;
+        renderActiveView();
       };
-      window.visualViewport.addEventListener("resize", syncKeyboardDock);
-      window.visualViewport.addEventListener("scroll", syncKeyboardDock);
-    }
-
-    // Floating ChatGPT-style ↓ jump-to-bottom button (tracks inner #fl-chat-stage scroll!)
-    root.querySelector("#fl-scroll-down-btn")?.addEventListener("click", () => scrollChatsToBottom(false));
-    root.querySelector("#fl-chat-stage")?.addEventListener("scroll", updateScrollDownButton, { passive: true });
-    updateScrollDownButton();
-
-    // iOS & iPadOS Safari Keyboard Lock: shrink app shell cleanly to visualViewport.height when keyboard opens
-    if (window.visualViewport && !window.__flViewportBound) {
-      window.__flViewportBound = true;
-      const syncAppViewport = () => {
-        const ws = document.querySelector(".workspace");
-        const lab = document.getElementById("view-finnish-lab");
-        if (!ws || !lab || lab.classList.contains("hidden")) return;
-        const vv = window.visualViewport;
-        if (vv && vv.height > 260) {
-          ws.style.height = `${Math.round(vv.height)}px`;
-          window.scrollTo(0, 0);
-        }
-      };
-      window.visualViewport.addEventListener("resize", syncAppViewport);
-      window.visualViewport.addEventListener("scroll", syncAppViewport);
-    }
-    root.querySelector("#fl-open-drawer")?.addEventListener("click", () => { state.drawerOpen = true; renderActiveView(); });
-    root.querySelectorAll("[data-fl-mode]").forEach((b) => {
-      b.onclick = () => { state.mode = b.getAttribute("data-fl-mode"); state.plusMenuOpen = false; renderActiveView(); };
     });
+
+    root.querySelector("#fl-open-drawer")?.addEventListener("click", () => {
+      state.drawerOpen = true;
+      renderActiveView();
+    });
+
     const startFreshChat = async () => {
       const c = await DB.saveConversation({ title: "New Chat", kind: "chat", messages: [] });
       state.conversations.unshift(c);
       state.activeConvId = c.id;
+      state.activeTab = "chat";
       state.mode = "chat";
       state.drawerOpen = false;
       renderActiveView();
@@ -3022,8 +3095,7 @@
     root.querySelector("#fl-new-chat-top")?.addEventListener("click", startFreshChat);
     root.querySelector("#fl-drawer-new-chat")?.addEventListener("click", startFreshChat);
 
-    // Chat capsule
-    root.querySelector("#fl-plus-btn")?.addEventListener("click", () => { state.plusMenuOpen = !state.plusMenuOpen; renderActiveView(); });
+    // Tab 1: AI Finnish Tutor attachments & Send Photo to Walk & Listen
     const handleFileUpload = async (e) => {
       state.plusMenuOpen = false;
       for (const f of Array.from(e.target.files || [])) {
@@ -3035,29 +3107,82 @@
     };
     root.querySelector("#fl-input-camera")?.addEventListener("change", handleFileUpload);
     root.querySelector("#fl-input-files")?.addEventListener("change", handleFileUpload);
-    root.querySelectorAll("[data-fl-rm-pending]").forEach((b) => { b.onclick = () => { state.pendingAttachments.splice(Number(b.getAttribute("data-fl-rm-pending")), 1); renderActiveView(); }; });
-    root.querySelectorAll("[data-fl-crop-pending]").forEach((b) => { b.onclick = () => openCropModal("pending", Number(b.getAttribute("data-fl-crop-pending"))); });
+    root.querySelectorAll("[data-fl-rm-pending]").forEach((b) => {
+      b.onclick = () => {
+        state.pendingAttachments.splice(Number(b.getAttribute("data-fl-rm-pending")), 1);
+        renderActiveView();
+      };
+    });
+
+    root.querySelector("#fl-pending-to-walk")?.addEventListener("click", async () => {
+      const imgAtts = state.pendingAttachments.filter((a) => (a.mime_type || "").startsWith("image/"));
+      if (!imgAtts.length) return;
+      state.pendingAttachments = [];
+      state.activeTab = "walk";
+      state.mode = "study";
+      renderActiveView();
+      await createCustomPodcastEpisode("Homework Photo Course", imgAtts);
+    });
+
+    root.querySelectorAll("[data-fl-msg-to-walk]").forEach((b) => {
+      b.onclick = async () => {
+        const conv = getActiveConv();
+        const m = conv && conv.messages[Number(b.getAttribute("data-fl-msg-to-walk"))];
+        if (!m) return;
+        const resolvedAtts = [];
+        for (const a of m.attachments || []) {
+          if (!(a.mime_type || "").startsWith("image/")) continue;
+          const cached = a.id ? state.sessionMediaMap[a.id] : null;
+          if (cached && cached.data_base64) {
+            resolvedAtts.push({ mime_type: cached.mime_type, data_base64: cached.data_base64 });
+          } else if (a.previewUrl && a.previewUrl.startsWith("data:image/")) {
+            const b64 = a.previewUrl.split(",")[1] || "";
+            if (b64) resolvedAtts.push({ mime_type: "image/jpeg", data_base64: b64 });
+          }
+        }
+        if (!resolvedAtts.length) {
+          toast("Upload a fresh homework photo to build a Walk & Listen episode.", "warning");
+          return;
+        }
+        state.activeTab = "walk";
+        state.mode = "study";
+        renderActiveView();
+        await createCustomPodcastEpisode("Homework Photo Course", resolvedAtts);
+      };
+    });
 
     root.querySelector("#fl-start-rec")?.addEventListener("click", startRecording);
     root.querySelector("#fl-stop-rec")?.addEventListener("click", stopRecording);
+
+    // Tab 1 Right Panel: Silent Classroom Live Card controls (100% silent — never speaks!)
     root.querySelector("#fl-live-btn")?.addEventListener("click", toggleLiveTranslation);
     root.querySelector("#fl-live-now")?.addEventListener("click", () => { if (state.liveForceCutFn) state.liveForceCutFn(); });
     root.querySelector("#fl-stop-live")?.addEventListener("click", stopLiveTranslation);
+    root.querySelectorAll("[data-fl-use-reply]").forEach((b) => {
+      b.onclick = async () => {
+        const phrase = b.getAttribute("data-fl-use-reply") || "";
+        if (!phrase) return;
+        const inp = document.getElementById("fl-chat-input");
+        if (inp) inp.value = phrase;
+        if (navigator.clipboard?.writeText) {
+          try { await navigator.clipboard.writeText(phrase); } catch (_) {}
+        }
+        toast(`Copied silent reply: "${phrase}"`, "success");
+      };
+    });
 
     const autoResizeChatInput = (el) => {
       if (!el) return;
       el.style.height = "auto";
-      const maxH = 168;
+      const maxH = 120;
       const nextH = Math.min(el.scrollHeight, maxH);
-      el.style.height = nextH + "px";
+      el.style.height = Math.max(40, nextH) + "px";
       el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
     };
     const chatInputEl = root.querySelector("#fl-chat-input");
     if (chatInputEl) {
       autoResizeChatInput(chatInputEl);
       chatInputEl.addEventListener("input", () => autoResizeChatInput(chatInputEl));
-      chatInputEl.addEventListener("focus", () => document.body.classList.add("fl-kb-open"));
-      chatInputEl.addEventListener("blur", () => document.body.classList.remove("fl-kb-open"));
       chatInputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doSend(); }
       });
@@ -3068,15 +3193,11 @@
       const v = inp.value.trim();
       inp.value = "";
       autoResizeChatInput(inp);
-      state.plusMenuOpen = false;
       sendMessage(v);
     };
     root.querySelector("#fl-chat-send")?.addEventListener("click", doSend);
     root.querySelectorAll("[data-fl-starter]").forEach((b) => {
       b.onclick = () => sendMessage(b.getAttribute("data-fl-starter"));
-    });
-    root.querySelectorAll("[data-fl-explain-more]").forEach((b) => {
-      b.onclick = () => sendMessage("Explain this in more detail: simple Finnish (selkosuomi), English grammar tip, and 2 examples.", { mode: "teach_me" });
     });
     root.querySelectorAll("[data-fl-extract-cards]").forEach((b) => {
       b.onclick = () => {
@@ -3098,113 +3219,31 @@
       };
     });
 
-    // Study mode
-    root.querySelectorAll("[data-fl-study]").forEach((b) => { b.onclick = () => { state.studyTool = b.getAttribute("data-fl-study"); state.lessonStep = 1; renderActiveView(); }; });
-    root.querySelectorAll("[data-fl-pro-tool]").forEach((b) => {
-      b.onclick = () => {
-        const toolId = b.getAttribute("data-fl-pro-tool");
-        if (window.FinnishLabPro && typeof window.FinnishLabPro.openTab === "function") {
-          window.FinnishLabPro.openTab(toolId);
-        }
-      };
-    });
-    root.querySelector("#fl-study-back")?.addEventListener("click", () => { state.studyTool = null; renderActiveView(); });
-
-    // School Finnish Practice & Pronunciation Check events
-    root.querySelectorAll("[data-fl-gtab]").forEach((b) => { b.onclick = () => { state.gameTab = b.getAttribute("data-fl-gtab"); renderActiveView(); }; });
-    root.querySelectorAll("[data-fl-street-ans]").forEach((b) => {
-      b.onclick = () => {
-        const q = SCHOOL_FINNISH_QUESTIONS[state.streetIdx % SCHOOL_FINNISH_QUESTIONS.length];
-        const picked = (b.getAttribute("data-fl-street-ans") || "").trim();
-        const ok = picked.toLowerCase().startsWith(q.answer.toLowerCase());
-        if (ok) {
-          state.streetScore++;
-          getRoastLine(false);
-          state.streetFeedback = { ok: true, roast: "" };
-        } else {
-          state.streetFeedback = { ok: false, roast: getRoastLine(true) };
-        }
+    // Tab 2: Walk & Listen Pocket Player + Mobile Mini-Player controls
+    root.querySelector("#fl-walk-topic-photo")?.addEventListener("click", () => {
+      const existingCustom = (state.customPodcastEpisodes || [])[0];
+      if (existingCustom) {
+        stopPodcastPlayback(true);
+        state.podcastEpisodeId = existingCustom.id;
+        state.podcastItemIdx = 0;
         renderActiveView();
-      };
-    });
-    root.querySelector("#fl-street-next")?.addEventListener("click", () => {
-      state.streetIdx++;
-      state.streetFeedback = null;
-      renderActiveView();
-    });
-    root.querySelector("#fl-speak-next-phrase")?.addEventListener("click", () => {
-      state.speakPhraseIdx++;
-      state.speakResult = null;
-      renderActiveView();
-    });
-    root.querySelector("#fl-speak-start-btn")?.addEventListener("click", async () => {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast("Microphone not supported here.", "error");
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "audio/webm";
-        const cleanMime = mimeType.split(";")[0];
-        const rec = new MediaRecorder(stream, { mimeType });
-        const chunks = [];
-        state.speakRecorder = rec;
-        state.speakRecording = true;
-        state.speakResult = null;
-        rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
-        rec.onstop = async () => {
-          stream.getTracks().forEach((t) => t.stop());
-          state.speakRecording = false;
-          renderActiveView();
-          const blob = new Blob(chunks, { type: cleanMime });
-          const b64 = await blobToBase64(blob);
-          const sp = SPEAK_PHRASES[state.speakPhraseIdx % SPEAK_PHRASES.length];
-          toast("⏳ Checking your Finnish pronunciation...", "info");
-          try {
-            const res = await flApi("/api/finnish-lab/pronunciation-check", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ target_phrase: sp.fi, audio_base64: b64, mime_type: cleanMime, roast_mode: isRoastEnabled() }),
-            });
-            const fb = res.feedback || {};
-            const roast = (fb.score || 7) < 6 ? getRoastLine(true) : (getRoastLine(false), "");
-            state.speakResult = { ...fb, roast };
-          } catch (err) {
-            toast(err.message || "Could not check pronunciation.", "error");
-          }
-          renderActiveView();
-        };
-        rec.start();
-        renderActiveView();
-      } catch (_) {
-        toast("Microphone permission denied.", "error");
+      } else {
+        document.getElementById("fl-pod-hw-photo")?.click();
       }
     });
-    root.querySelector("#fl-speak-stop-btn")?.addEventListener("click", () => {
-      if (state.speakRecorder && state.speakRecording) {
-        try { state.speakRecorder.stop(); } catch (_) {}
+    root.querySelector("#fl-walk-upload-new-photo")?.addEventListener("click", () => {
+      document.getElementById("fl-pod-hw-photo")?.click();
+    });
+    root.querySelector("#fl-pod-hw-photo")?.addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const att = await fileToAttachment(f);
+      e.target.value = "";
+      if (att) {
+        createCustomPodcastEpisode(f.name.replace(/\.[^.]+$/, "") || "Homework Photo", [att]);
       }
     });
 
-    // Walk & Listen Podcast controls
-    root.querySelector("#fl-pod-create-btn")?.addEventListener("click", () => {
-      createCustomPodcastEpisode(document.getElementById("fl-pod-custom-topic")?.value || "");
-    });
-    root.querySelector("#fl-pod-custom-topic")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); createCustomPodcastEpisode(e.target.value || ""); }
-    });
-    root.querySelectorAll("[data-fl-pod-quick]").forEach((b) => {
-      b.onclick = () => createCustomPodcastEpisode(b.getAttribute("data-fl-pod-quick") || "");
-    });
-    root.querySelector("#fl-hw-to-cards")?.addEventListener("click", () => {
-      if (!state.hwAttachments.length) {
-        toast("Upload a textbook or whiteboard photo above first!", "warning");
-        return;
-      }
-      extractAndSaveFlashcards({
-        attachments: state.hwAttachments.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
-      });
-    });
     root.querySelectorAll("[data-fl-pod-ep]").forEach((b) => {
       b.onclick = () => {
         stopPodcastPlayback(true);
@@ -3213,18 +3252,8 @@
         renderActiveView();
       };
     });
-    root.querySelector("#fl-pod-hw-photo")?.addEventListener("change", async (e) => {
-      const f = e.target.files && e.target.files[0];
-      if (!f) return;
-      const att = await fileToAttachment(f);
-      e.target.value = "";
-      if (att) {
-        const customTopic = document.getElementById("fl-pod-custom-topic")?.value || f.name.replace(/\.[^.]+$/, "");
-        createCustomPodcastEpisode(customTopic, [att]);
-      }
-    });
-    root.querySelector("#fl-pod-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx));
-    root.querySelector("#fl-pod-pause-btn")?.addEventListener("click", () => {
+
+    const handlePauseWalk = () => {
       if (_walkAudioEl && !_walkAudioEl.paused) {
         try { _walkAudioEl.pause(); } catch (_) {}
         state.podcastPlaying = false;
@@ -3236,30 +3265,8 @@
       } else {
         stopPodcastPlayback();
       }
-    });
-    root.querySelector("#fl-pod-stop-btn")?.addEventListener("click", () => stopPodcastPlayback());
-    root.querySelector("#fl-pod-loop")?.addEventListener("click", () => {
-      state.podcastLoop = !state.podcastLoop;
-      if (_walkAudioEl) _walkAudioEl.loop = Boolean(state.podcastLoop);
-      renderActiveView();
-    });
-    root.querySelector("#fl-pod-prev")?.addEventListener("click", () => {
-      const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
-      const items = getPodcastItems(ep);
-      if (!items.length) return;
-      state.podcastItemIdx = (state.podcastItemIdx - 1 + items.length) % items.length;
-      if (state.podcastAudioUrl && _walkAudioEl && state.podcastItemOffsets && state.podcastItemOffsets[state.podcastItemIdx] != null) {
-        _walkAudioEl.currentTime = state.podcastItemOffsets[state.podcastItemIdx];
-        updateWalkActiveCardHighlight(state.podcastItemIdx);
-        if (state.podcastPlaying) _walkAudioEl.play().catch(() => {});
-        else renderActiveView();
-      } else if (state.podcastPlaying) {
-        generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
-      } else {
-        renderActiveView();
-      }
-    });
-    root.querySelector("#fl-pod-next")?.addEventListener("click", () => {
+    };
+    const handleNextWalk = () => {
       const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
       const items = getPodcastItems(ep);
       if (!items.length) return;
@@ -3274,6 +3281,36 @@
       } else {
         renderActiveView();
       }
+    };
+    const handlePrevWalk = () => {
+      const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
+      const items = getPodcastItems(ep);
+      if (!items.length) return;
+      state.podcastItemIdx = (state.podcastItemIdx - 1 + items.length) % items.length;
+      if (state.podcastAudioUrl && _walkAudioEl && state.podcastItemOffsets && state.podcastItemOffsets[state.podcastItemIdx] != null) {
+        _walkAudioEl.currentTime = state.podcastItemOffsets[state.podcastItemIdx];
+        updateWalkActiveCardHighlight(state.podcastItemIdx);
+        if (state.podcastPlaying) _walkAudioEl.play().catch(() => {});
+        else renderActiveView();
+      } else if (state.podcastPlaying) {
+        generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      } else {
+        renderActiveView();
+      }
+    };
+
+    root.querySelector("#fl-pod-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx));
+    root.querySelector("#fl-pod-pause-btn")?.addEventListener("click", handlePauseWalk);
+    root.querySelector("#fl-pod-prev")?.addEventListener("click", handlePrevWalk);
+    root.querySelector("#fl-pod-next")?.addEventListener("click", handleNextWalk);
+    root.querySelector("#fl-mini-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx));
+    root.querySelector("#fl-mini-pause-btn")?.addEventListener("click", handlePauseWalk);
+    root.querySelector("#fl-mini-next-btn")?.addEventListener("click", handleNextWalk);
+
+    root.querySelector("#fl-pod-loop")?.addEventListener("click", () => {
+      state.podcastLoop = !state.podcastLoop;
+      if (_walkAudioEl) _walkAudioEl.loop = Boolean(state.podcastLoop);
+      renderActiveView();
     });
     root.querySelectorAll("[data-fl-pod-speed]").forEach((b) => {
       b.onclick = () => {
@@ -3281,7 +3318,7 @@
         const wasPlaying = Boolean(state.podcastPlaying);
         state.podcastSpeed = nextSpeed;
         state.podcastTrackKey = "";
-        toast(`Walk & Listen speed set to ${state.podcastSpeed.toFixed(2)}×`, "info");
+        toast(`Speed set to ${state.podcastSpeed === 1 ? "1.0×" : state.podcastSpeed.toFixed(2) + "×"}`, "info");
         if (wasPlaying) {
           generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
         } else {
@@ -3301,113 +3338,38 @@
         }
       };
     });
-    root.querySelector("#fl-pod-export-pdf")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "print"));
     root.querySelector("#fl-pod-export-md")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "md"));
-    root.querySelector("#fl-pod-script-toggle")?.addEventListener("click", () => { state.podcastShowScript = !state.podcastShowScript; renderActiveView(); });
-    root.querySelectorAll("[data-fl-htab]").forEach((b) => { b.onclick = () => { state.helperTab = b.getAttribute("data-fl-htab"); renderActiveView(); }; });
-    root.querySelector("#fl-hw-files")?.addEventListener("change", async (e) => {
-      for (const f of Array.from(e.target.files || [])) { const att = await fileToAttachment(f); if (att) state.hwAttachments.push(att); }
-      e.target.value = "";
-      renderActiveView();
-    });
-    root.querySelector("#fl-hw-clear")?.addEventListener("click", () => { state.hwAttachments = []; renderActiveView(); });
-    root.querySelectorAll("[data-fl-rm-hw]").forEach((b) => { b.onclick = () => { state.hwAttachments.splice(Number(b.getAttribute("data-fl-rm-hw")), 1); renderActiveView(); }; });
-    root.querySelectorAll("[data-fl-crop-hw]").forEach((b) => { b.onclick = () => openCropModal("hw", Number(b.getAttribute("data-fl-crop-hw"))); });
-    root.querySelectorAll("[data-fl-hw]").forEach((b) => {
+
+    // Tab 3: Notebook & Drills (Goodnotes Master Tables + Quick A1 Practice Quiz)
+    root.querySelectorAll("[data-fl-nb-table]").forEach((b) => {
       b.onclick = () => {
-        const modeKey = b.getAttribute("data-fl-hw");
-        const ex = (document.getElementById("fl-hw-exercise")?.value || "").trim();
-        const ans = (document.getElementById("fl-hw-answer")?.value || "").trim();
-        if (!state.hwAttachments.length && !ex && !ans) { toast("Upload a worksheet or write your answer first.", "warning"); return; }
-        const parts = [];
-        if (ex) parts.push(`Exercise: ${ex}`);
-        if (ans) parts.push(`My answer: "${ans}"`);
-        if (!parts.length) parts.push("Help me with this homework.");
-        const map = { hint: "homework_hint", check: "homework_check", answer: "homework_answer" };
-        state.mode = "chat";
-        sendMessage(parts.join("\n"), { mode: map[modeKey] || "homework_hint", attachments: state.hwAttachments.slice(), keepAttachments: true });
+        state.notebookTableId = b.getAttribute("data-fl-nb-table") || "olla";
+        renderActiveView();
       };
     });
+    root.querySelector("#fl-nb-export-md")?.addEventListener("click", () => exportNotebookGoodnotes("md"));
+    root.querySelector("#fl-nb-export-pdf")?.addEventListener("click", () => exportNotebookGoodnotes("pdf"));
 
-    root.querySelector("#fl-lesson-next")?.addEventListener("click", () => { state.lessonStep = Math.min(3, state.lessonStep + 1); renderActiveView(); });
-    root.querySelector("#fl-lesson-prev")?.addEventListener("click", () => { state.lessonStep = Math.max(1, state.lessonStep - 1); renderActiveView(); });
-    root.querySelector("#fl-lesson-done")?.addEventListener("click", () => { DB.recordLessonCompleted("daily_" + DB.todayStr()); toast("Mahtavaa! Lesson done! 🔥", "success"); state.studyTool = null; renderActiveView(); });
-    root.querySelectorAll("[data-fl-save-vocab]").forEach((b) => {
-      b.onclick = async () => {
-        const w = CURR.getTodayVocabPack().words[Number(b.getAttribute("data-fl-save-vocab"))];
-        if (!w) return;
-        const existing = (state.flashcards || []).find((c) => (c.fi || "").toLowerCase() === (w.fi || "").toLowerCase());
-        if (existing) {
-          await DB.deleteFlashcard(existing.id);
-          state.flashcards = await DB.listFlashcards();
-          scheduleAutoSync();
-          toast(`Removed "${w.fi}" from Flashcards.`, "info");
+    root.querySelectorAll("[data-fl-street-ans]").forEach((b) => {
+      b.onclick = () => {
+        const pool = getCombinedQuizPool();
+        const q = pool[state.streetIdx % pool.length];
+        const picked = (b.getAttribute("data-fl-street-ans") || "").trim();
+        const ok = picked.toLowerCase().startsWith(String(q.answer || "").toLowerCase());
+        if (ok) {
+          state.streetScore++;
+          getRoastLine(false);
+          state.streetFeedback = { ok: true, roast: "" };
         } else {
-          await DB.addFlashcard({ fi: w.fi, en: w.en, baseForm: w.base, example: `${w.exFi} (${w.exEn})` });
-          state.flashcards = await DB.listFlashcards();
-          scheduleAutoSync();
-          toast(`Saved "${w.fi}" to Flashcards!`, "success");
+          state.streetFeedback = { ok: false, roast: getRoastLine(true) };
         }
         renderActiveView();
       };
     });
-    root.querySelectorAll("[data-fl-quiz-ans]").forEach((b) => {
-      b.onclick = () => {
-        const ok = b.getAttribute("data-fl-quiz-ans") === "1";
-        const out = document.getElementById("fl-quiz-out");
-        if (out) {
-          if (ok) {
-            getRoastLine(false);
-            out.style.color = "#6ee7b7";
-            out.innerHTML = `✅ Oikein! ${esc(b.getAttribute("data-fl-quiz-exp") || "")}`;
-          } else {
-            const roast = getRoastLine(true);
-            out.style.color = "#fca5a5";
-            out.innerHTML = `${roast ? `<div class="fl-roast-banner">${esc(roast)}</div>` : ""}❌ Try again — ${esc(b.getAttribute("data-fl-quiz-exp") || "")}`;
-          }
-        }
-      };
-    });
-
-    root.querySelectorAll("[data-fl-skill]").forEach((b) => { b.onclick = () => { state.practiceSkill = b.getAttribute("data-fl-skill"); renderActiveView(); }; });
-    root.querySelector("#fl-listen-toggle-tr")?.addEventListener("click", () => { state.listeningShowTranscript = !state.listeningShowTranscript; renderActiveView(); });
-    root.querySelector("#fl-write-submit")?.addEventListener("click", async () => {
-      const txt = (document.getElementById("fl-write-text")?.value || "").trim();
-      const out = document.getElementById("fl-write-out");
-      if (!txt || !out) return;
-      out.innerHTML = "<div style='color:#7dd3fc;'>⏳ Checking...</div>";
-      try {
-        const res = await flApi("/api/finnish-lab/writing-check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: txt, level: DB.getSettings().level }) });
-        const fb = res.feedback || {};
-        const hasMistakes = (fb.mistakes || []).length > 0;
-        const roast = getRoastLine(hasMistakes);
-        out.innerHTML = `<div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;font-size:0.86rem;">${roast ? `<div class="fl-roast-banner">${esc(roast)}</div>` : ""}<div style="color:#6ee7b7;font-weight:700;">✅ ${esc(fb.corrected || "")}</div><div style="color:#7dd3fc;margin-top:4px;">🇬🇧 ${esc(fb.english_meaning || "")}</div>${(fb.mistakes || []).map((m) => `<div style="margin-top:5px;">• <span style="color:#fca5a5;">${esc(m.wrong)}</span> → <strong>${esc(m.right)}</strong>: ${esc(m.why_en)}</div>`).join("")}</div>`;
-      } catch (err) { out.innerHTML = `<div style="color:#fca5a5;">⚠️ ${esc(err.message)}</div>`; }
-    });
-    root.querySelectorAll("[data-fl-start-roleplay]").forEach((b) => {
-      b.onclick = async () => {
-        const rp = CURR.ROLEPLAY_SCENARIOS.find((x) => x.id === b.getAttribute("data-fl-start-roleplay"));
-        if (!rp) return;
-        const c = await DB.saveConversation({ title: rp.title, kind: "chat", messages: [] });
-        state.conversations.unshift(c);
-        state.activeConvId = c.id;
-        state.mode = "chat";
-        sendMessage(rp.prompt, { mode: "practice" });
-      };
-    });
-
-    root.querySelector("#fl-grammar-select")?.addEventListener("change", (e) => { state.selectedGrammarId = e.target.value; renderActiveView(); });
-    root.querySelector("#fl-anatomy-search")?.addEventListener("click", async () => {
-      const w = (document.getElementById("fl-anatomy-input")?.value || "").trim();
-      const out = document.getElementById("fl-anatomy-out");
-      if (!w || !out) return;
-      out.innerHTML = "<div style='color:#7dd3fc;'>⏳ Looking up...</div>";
-      try {
-        const res = await flApi("/api/finnish-lab/word-anatomy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ word: w, level: DB.getSettings().level }) });
-        const a = res.anatomy || {};
-        const f = a.forms || {};
-        out.innerHTML = `<div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:10px;font-size:0.84rem;line-height:1.55;"><div><strong style="font-size:1.05rem;">${esc(a.original_word || w)}</strong> — <span style="color:#7dd3fc;">${esc(a.english_meaning || "")}</span></div><div><strong>Base:</strong> ${esc(a.base_form || "—")} • <strong>Syllables:</strong> ${esc(a.syllables || "—")}</div><div>Partitive: ${esc(f.partitive || "—")} | Genitive: ${esc(f.genitive || "—")} | In: ${esc(f.inessive || "—")}</div>${a.spoken_finnish ? `<div><strong>Spoken:</strong> ${esc(a.spoken_finnish)}</div>` : ""}</div>`;
-      } catch (err) { out.innerHTML = `<div style="color:#fca5a5;">⚠️ ${esc(err.message)}</div>`; }
+    root.querySelector("#fl-street-next")?.addEventListener("click", () => {
+      state.streetIdx++;
+      state.streetFeedback = null;
+      renderActiveView();
     });
 
     // Slide Drawer events
@@ -3415,7 +3377,15 @@
     root.querySelector("#fl-drawer-backdrop")?.addEventListener("click", (e) => { if (e.target.id === "fl-drawer-backdrop") { state.drawerOpen = false; renderActiveView(); } });
     root.querySelectorAll("[data-fl-dtab]").forEach((b) => { b.onclick = () => { state.drawerTab = b.getAttribute("data-fl-dtab"); renderActiveView(); }; });
     root.querySelectorAll("[data-fl-select-conv]").forEach((el) => {
-      el.onclick = (e) => { if (e.target.closest("button")) return; state.activeConvId = el.getAttribute("data-fl-select-conv"); state.drawerOpen = false; state.mode = "chat"; renderActiveView(); scrollChatsToBottom(); };
+      el.onclick = (e) => {
+        if (e.target.closest("button")) return;
+        state.activeConvId = el.getAttribute("data-fl-select-conv");
+        state.drawerOpen = false;
+        state.activeTab = "chat";
+        state.mode = "chat";
+        renderActiveView();
+        scrollChatsToBottom();
+      };
     });
     root.querySelectorAll("[data-fl-del-conv]").forEach((b) => {
       b.onclick = async () => {
@@ -3458,9 +3428,9 @@
     });
     root.querySelector("#fl-cards-to-podcast")?.addEventListener("click", () => {
       state.drawerOpen = false;
+      state.activeTab = "walk";
       state.mode = "study";
-      state.studyTool = "podcast";
-      state.podcastEpisodeId = "pod_cards";
+      state.podcastEpisodeId = "pod_today_a1";
       state.podcastAudioUrl = null;
       renderActiveView();
     });
@@ -3556,25 +3526,16 @@
       renderActiveView();
       return true;
     }
-    if (state.plusMenuOpen) {
-      state.plusMenuOpen = false;
-      renderActiveView();
-      return true;
-    }
-    if (state.mode === "study" && state.studyTool) {
-      state.studyTool = null;
-      renderActiveView();
-      return true;
-    }
-    if (state.mode === "study") {
+    if (state.activeTab !== "chat") {
+      state.activeTab = "chat";
       state.mode = "chat";
       renderActiveView();
       return true;
     }
     if (state.isStudentRoute) {
-      return true; // Never leave Finnish Lab in student-only view
+      return true;
     }
-    return false; // Let Studio goBack() return to previous Studio tab
+    return false;
   }
 
   /* ---------- SMART AUTO-REFRESH (NEW VERSION & ADMIN PENDING USERS) ---------- */
@@ -3582,7 +3543,6 @@
     if (window.__flAutoRefreshStarted) return;
     window.__flAutoRefreshStarted = true;
 
-    // 1. Check for new app version every 60s (auto-reloads safely only when completely idle!)
     const checkVersion = async () => {
       try {
         const res = await fetch("/api/health", { cache: "no-store" });
@@ -3605,7 +3565,6 @@
     checkVersion();
     setInterval(checkVersion, 60000);
 
-    // 2. Auto-refresh Admin pending users list every 15s while Settings drawer is open
     setInterval(async () => {
       if (state.role === "admin" && state.drawerOpen && state.drawerTab === "settings") {
         const prevLen = (state.adminUsers || []).length;
@@ -3617,6 +3576,18 @@
     }, 15000);
   }
 
+  async function openStoryInTutor(payload) {
+    state.activeTab = "chat";
+    state.mode = "chat";
+    renderActiveView();
+    const title = (payload && (payload.headline || payload.title)) || "Finnish Article";
+    const summary = (payload && (payload.summary || payload.body || "")).slice(0, 600);
+    await sendMessage(
+      `Turn this ilovefinland.net story into a concise A1 Finnish study card (3 simple Finnish sentences + English meanings + 4 key vocabulary words):\nTitle: ${title}\n${summary}`,
+      { mode: "quick_answer" }
+    );
+  }
+
   /* ---------- INIT ---------- */
   async function initFinnishLab() {
     await refreshRole();
@@ -3624,6 +3595,11 @@
     mountFloatingAndSidePanel();
     renderActiveView();
     startSmartAutoRefresh();
+    if (window.__pendingStoryLesson) {
+      const p = window.__pendingStoryLesson;
+      window.__pendingStoryLesson = null;
+      openStoryInTutor(p);
+    }
     if (state.role !== "guest") {
       refreshStatus();
       autoPullSync();
@@ -3636,6 +3612,12 @@
     refreshAuth: refreshAuthAndSync,
     toggleSidePanel,
     handleBack,
+    openStoryInTutor,
+    setTab(tabId) {
+      state.activeTab = tabId || "chat";
+      state.mode = state.activeTab === "chat" ? "chat" : "study";
+      renderActiveView();
+    },
     isRecording: () => state.isRecording || state.isLiveTranslating,
   };
 
