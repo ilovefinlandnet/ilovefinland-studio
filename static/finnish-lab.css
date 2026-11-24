@@ -2036,12 +2036,12 @@ body:has(#view-finnish-lab:not(.hidden)),
   color: #FCA5A5;
 }
 
-/* Tab 1: Chat & Class Multi-Panel Grid */
+/* Tab 1: Full-Width Clean Chat (Silent Classroom Live opens on demand) */
 .fl3-grid-chat {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(330px, 0.95fr);
-  gap: 18px;
-  align-items: start;
+  display: block;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
 }
 
 .fl3-tutor-card {
@@ -2657,4 +2657,87 @@ body:has(#view-finnish-lab:not(.hidden)),
 
 .fl3-scroll-latest-btn:hover {
   filter: brightness(1.1);
+}
+
+/* v107.0 Official Branding Icon, On-Demand Silent Live Drawer & Single-Line Composer */
+.fl3-brand-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 2px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.fl3-brand-icon-sm {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 2px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.fl3-live-drawer {
+  background: rgba(10, 25, 47, 0.86);
+  border: 1px solid #0052B4;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.14);
+}
+
+.fl3-live-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fl3-reply-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fl3-composer-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.fl3-composer-inline .fl3-composer-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .fl3-live-split,
+  .fl3-reply-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fl3-composer-inline {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .fl3-composer-inline .fl3-composer-input {
+    order: -1;
+    flex: 1 0 100%;
+    width: 100%;
+  }
+
+  .fl3-composer-inline #fl-chat-send {
+    margin-left: auto;
+  }
+
+  .fl3-scroll-latest-btn {
+    bottom: 132px;
+    right: 16px;
+  }
 }

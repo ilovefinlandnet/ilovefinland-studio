@@ -681,11 +681,13 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
     if mode == "quick_answer":
         return base + (
             "\nANSWER MODE: NATURAL EVERYDAY BILINGUAL TUTOR (CONCISE, ZERO TEXT WALLS).\n"
-            "The learner may ask ANY everyday question (like weather, time, food, shopping, daily life) OR a Finnish language question.\n"
+            "The learner may ask ANY everyday question (like weather, time, food, shopping, daily life), start a 2-minute real-life roleplay, OR ask a Finnish language question.\n"
             "- If they ask a real-life question (e.g. 'How is the weather today?'), ALWAYS answer their real question naturally first (using any [LIVE REAL-TIME WEATHER DATA] provided), AND immediately teach the exact Finnish for both asking and saying it!\n"
+            "- If they ask to roleplay (e.g. café, store, doctor, teacher), play the Finn with ONE short A1 Finnish line (+ English translation) + 2 tiny reply hints, then wait for their reply.\n"
             "Use this clean, scannable format:\n"
             "🇬🇧 **Answer:** <Short, warm real answer in English>\n"
             "🇫🇮 **In Finnish:** <How to ask and/or say it in clear school-grade A1 Finnish, with English meaning>\n"
+            "🗣️ **Spoken (only if different):** <Brief everyday spoken Finnish note, omit if identical>\n"
             "💡 **Key Words:**\n"
             "- **<word>** (*<base form>*) — <English meaning> (1–3 brief bullets max)\n"
             "If an image/homework sheet was attached, answer or explain it concisely in Finnish + English."
@@ -703,9 +705,10 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
     # Default: teach_me (natural everyday bilingual card)
     return base + (
         "\nANSWER MODE: NATURAL EVERYDAY BILINGUAL TUTOR.\n"
-        "Answer any real-world or Finnish question warmly and concisely (no long walls of text):\n"
+        "Answer any real-world, roleplay, or Finnish question warmly and concisely (no long walls of text):\n"
         "🇬🇧 **Answer:** <Clear English answer or explanation>\n"
         "🇫🇮 **In Finnish:** <Natural school-grade A1 Finnish way to ask/say it + English translation>\n"
+        "🗣️ **Spoken (only if different):** <Brief everyday spoken Finnish note, omit if identical>\n"
         "💡 **Key Words:**\n"
         "- <1–3 brief vocab/grammar bullets with base form (perusmuoto)>"
     )
@@ -2087,7 +2090,7 @@ def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINN
         }
         for it in raw_items
         if str(it.get("fi") or "").strip() and str(it.get("en") or "").strip()
-    ][:30]
+    ][:40]
     if not items:
         return {"ok": False, "error": "EMPTY_EPISODE", "message": "Could not generate items for that topic/photo."}, 502
 
@@ -2454,9 +2457,10 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
 
     rate = payload.get("rate", 0.75)
     rate_str = _rate_float_to_edge_str(rate)
+    audio_mode = "recall" if str(payload.get("mode") or "").strip().lower() == "recall" else "normal"
     cache_dir = _resolve_tts_cache_dir()
 
-    sig = json.dumps({"v": 2, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
+    sig = json.dumps({"v": 3, "mode": audio_mode, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
     digest = hashlib.sha256(sig.encode("utf-8")).hexdigest()[:20]
     out_mp3_name = f"walk_course_{digest}.mp3"
     out_mp3_path = os.path.join(cache_dir, out_mp3_name)
@@ -2473,6 +2477,7 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
 
     sil_short = _ensure_silence_mp3(0.35, cache_dir)
     sil_pause = _ensure_silence_mp3(1.25, cache_dir)
+    sil_recall = _ensure_silence_mp3(2.60, cache_dir) if audio_mode == "recall" else None
     sil_gap = _ensure_silence_mp3(0.85, cache_dir)
 
     segment_paths: List[str] = []
@@ -2487,7 +2492,8 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
         fi_p, _, v_fi, e_fi = synthesize_edge_tts_mp3(it_obj["fi"], lang="fi", rate=rate_str)
         if e_fi or not fi_p:
             return None, None, None, e_fi or "Neural TTS unavailable."
-        en_p, _, _, e_en = synthesize_edge_tts_mp3(f"means {it_obj['en']}", lang="en", rate="+0%")
+        en_text = it_obj["en"] if audio_mode == "recall" else f"means {it_obj['en']}"
+        en_p, _, _, e_en = synthesize_edge_tts_mp3(en_text, lang="en", rate="+0%")
         if e_en or not en_p:
             return None, None, None, e_en or "English neural TTS unavailable."
         return fi_p, en_p, v_fi, None
@@ -2506,26 +2512,40 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
 
         item_offsets.append(round(running_sec, 2))
 
-        # 1. Slow Finnish
-        segment_paths.append(fi_path)
-        running_sec += fi_dur
-        if sil_short:
-            segment_paths.append(sil_short)
-            running_sec += 0.35
-        # 2. "means [English meaning]"
-        segment_paths.append(en_path)
-        running_sec += en_dur
-        # 3. Short memorization pause
-        if sil_pause:
-            segment_paths.append(sil_pause)
-            running_sec += 1.25
-        # 4. Second slow Finnish repeat
-        segment_paths.append(fi_path)
-        running_sec += fi_dur
-        # 5. Transition pause
-        if sil_gap:
-            segment_paths.append(sil_gap)
-            running_sec += 0.85
+        if audio_mode == "recall":
+            # Recall Mode: English FIRST -> 2.6s silent pause (user says Finnish out loud) -> Slow Finnish -> Repeat Finnish
+            segment_paths.append(en_path)
+            running_sec += en_dur
+            if sil_recall:
+                segment_paths.append(sil_recall)
+                running_sec += 2.60
+            segment_paths.append(fi_path)
+            running_sec += fi_dur
+            if sil_gap:
+                segment_paths.append(sil_gap)
+                running_sec += 0.85
+            segment_paths.append(fi_path)
+            running_sec += fi_dur
+            if sil_gap:
+                segment_paths.append(sil_gap)
+                running_sec += 0.85
+        else:
+            # Normal Mode: Slow Finnish -> "means [English]" -> Pause -> Repeat Finnish
+            segment_paths.append(fi_path)
+            running_sec += fi_dur
+            if sil_short:
+                segment_paths.append(sil_short)
+                running_sec += 0.35
+            segment_paths.append(en_path)
+            running_sec += en_dur
+            if sil_pause:
+                segment_paths.append(sil_pause)
+                running_sec += 1.25
+            segment_paths.append(fi_path)
+            running_sec += fi_dur
+            if sil_gap:
+                segment_paths.append(sil_gap)
+                running_sec += 0.85
 
     # Concatenate into single seamless MP3 (ffmpeg concat demuxer first, pure-Python MP3 byte join fallback)
     ffmpeg_bin = shutil.which("ffmpeg")
