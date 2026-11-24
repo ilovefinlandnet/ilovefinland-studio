@@ -28,10 +28,15 @@
     font_size: 44,
     location: "",
     card_style: "frosted",
+    card_opacity: 86,
+    arrow_style: "brand",
     show_swipe_arrow: num !== 6,
     line1_color: "white",
     line2_color: "white",
     line3_color: "blue",
+    photo_zoom: 100,
+    photo_shift_x: 0,
+    photo_shift_y: 0,
     photoDataUrl: "",
     photoImg: null,
   });
@@ -1455,6 +1460,15 @@
       const tags = Array.isArray(ig.hashtags) ? ig.hashtags.join(" ") : (ig.hashtags || "");
       $("static-edit-hashtags").value = tags;
     }
+
+    // Photo Framing & Zoom Controls for Design - 1
+    const pZoom = ig.photo_zoom !== undefined ? parseInt(ig.photo_zoom, 10) : 100;
+    const pShiftX = ig.photo_shift_x !== undefined ? parseInt(ig.photo_shift_x, 10) : 0;
+    const pShiftY = ig.photo_shift_y !== undefined ? parseInt(ig.photo_shift_y, 10) : 0;
+    if ($("photo-zoom-range")) $("photo-zoom-range").value = pZoom;
+    if ($("photo-zoom-val")) $("photo-zoom-val").textContent = `${pZoom}%`;
+    if ($("photo-shift-x-range")) $("photo-shift-x-range").value = pShiftX;
+    if ($("photo-shift-y-range")) $("photo-shift-y-range").value = pShiftY;
     if (Array.isArray(ig.carousel_slides) && ig.carousel_slides.length > 0 && typeof carouselSlidesData !== "undefined") {
       ig.carousel_slides.forEach((s) => {
         const num = s.slide_number;
@@ -1869,18 +1883,26 @@
       if (hasPhoto && photoImg) {
         imgAspect = photoImg.width / photoImg.height;
         const canvasAspect = w / h;
-        let drawW, drawH, drawX, drawY;
+        const zoom = Math.max(1.0, Math.min(3.0, (parseFloat(ig.photo_zoom) || 100) / 100));
+        const shiftX = Math.max(-100, Math.min(100, parseFloat(ig.photo_shift_x) || 0)) / 100;
+        const shiftY = Math.max(-100, Math.min(100, parseFloat(ig.photo_shift_y) || 0)) / 100;
+
+        let baseW, baseH;
         if (imgAspect > canvasAspect) {
-          drawH = h;
-          drawW = h * imgAspect;
-          drawX = (w - drawW) / 2;
-          drawY = 0;
+          baseH = h;
+          baseW = h * imgAspect;
         } else {
-          drawW = w;
-          drawH = w / imgAspect;
-          drawX = 0;
-          drawY = (h - drawH) / 2;
+          baseW = w;
+          baseH = w / imgAspect;
         }
+
+        const drawW = baseW * zoom;
+        const drawH = baseH * zoom;
+        const maxShiftX = Math.max(0, (drawW - w) / 2);
+        const maxShiftY = Math.max(0, (drawH - h) / 2);
+        const drawX = ((w - drawW) / 2) - (shiftX * maxShiftX);
+        const drawY = ((h - drawH) / 2) - (shiftY * maxShiftY);
+
         ctx45.drawImage(photoImg, drawX, drawY, drawW, drawH);
 
         // Dark navy bottom gradient scrim
@@ -6748,6 +6770,84 @@
     $("static-edit-cta-color")?.addEventListener("change", updateStaticPostLive);
     $("static-edit-fontsize")?.addEventListener("input", updateStaticPostLive);
 
+    // Design - 1 Picture Adjustment Listeners
+    $("photo-zoom-range")?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10) || 100;
+      if ($("photo-zoom-val")) $("photo-zoom-val").textContent = `${val}%`;
+      if (currentStaticPost) {
+        currentStaticPost.photo_zoom = val;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("photo-shift-x-range")?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10) || 0;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_x = val;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("photo-shift-y-range")?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10) || 0;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_y = val;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-photo-pan-left")?.addEventListener("click", () => {
+      if ($("photo-shift-x-range")) $("photo-shift-x-range").value = -100;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_x = -100;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-photo-pan-center-x")?.addEventListener("click", () => {
+      if ($("photo-shift-x-range")) $("photo-shift-x-range").value = 0;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_x = 0;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-photo-pan-right")?.addEventListener("click", () => {
+      if ($("photo-shift-x-range")) $("photo-shift-x-range").value = 100;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_x = 100;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-photo-pan-top")?.addEventListener("click", () => {
+      if ($("photo-shift-y-range")) $("photo-shift-y-range").value = -100;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_y = -100;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-photo-pan-center-y")?.addEventListener("click", () => {
+      if ($("photo-shift-y-range")) $("photo-shift-y-range").value = 0;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_y = 0;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-photo-pan-bottom")?.addEventListener("click", () => {
+      if ($("photo-shift-y-range")) $("photo-shift-y-range").value = 100;
+      if (currentStaticPost) {
+        currentStaticPost.photo_shift_y = 100;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+    $("btn-reset-photo-framing")?.addEventListener("click", () => {
+      if ($("photo-zoom-range")) $("photo-zoom-range").value = 100;
+      if ($("photo-zoom-val")) $("photo-zoom-val").textContent = "100%";
+      if ($("photo-shift-x-range")) $("photo-shift-x-range").value = 0;
+      if ($("photo-shift-y-range")) $("photo-shift-y-range").value = 0;
+      if (currentStaticPost) {
+        currentStaticPost.photo_zoom = 100;
+        currentStaticPost.photo_shift_x = 0;
+        currentStaticPost.photo_shift_y = 0;
+        drawStaticPostCanvases(currentStaticPost);
+      }
+    });
+
     document.querySelectorAll(".btn-preset-static-cta").forEach((btn) => {
       btn.addEventListener("click", () => {
         const ctaVal = btn.dataset.cta || "";
@@ -6780,6 +6880,9 @@
         line3_font_size: fs,
         caption: $("static-edit-caption")?.value || "",
         hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
+        photo_zoom: parseInt($("photo-zoom-range")?.value, 10) || 100,
+        photo_shift_x: parseInt($("photo-shift-x-range")?.value, 10) || 0,
+        photo_shift_y: parseInt($("photo-shift-y-range")?.value, 10) || 0,
         carousel_slides: typeof getCleanCarouselSlidesForSave === "function" ? getCleanCarouselSlidesForSave() : [],
         show_swipe_arrow: $("ai-check-swipe-arrow")?.checked || false,
         location_stamp: $("ai-input-location")?.value || "",
@@ -6815,6 +6918,11 @@
             font_size: s.font_size || 44,
             location: s.location || "",
             card_style: s.card_style || "frosted",
+            card_opacity: s.card_opacity !== undefined ? s.card_opacity : 86,
+            arrow_style: s.arrow_style || "brand",
+            photo_zoom: s.photo_zoom !== undefined ? s.photo_zoom : 100,
+            photo_shift_x: s.photo_shift_x !== undefined ? s.photo_shift_x : 0,
+            photo_shift_y: s.photo_shift_y !== undefined ? s.photo_shift_y : 0,
             show_swipe_arrow: s.show_swipe_arrow !== false,
             photoDataUrl: s.photoDataUrl || "",
           });
@@ -6838,6 +6946,11 @@
       s.font_size = parseInt($("carousel-edit-fontsize")?.value, 10) || 44;
       s.location = $("carousel-input-location")?.value || "";
       s.card_style = $("carousel-select-card-style")?.value || "frosted";
+      s.card_opacity = parseInt($("carousel-range-card-opacity")?.value, 10) || 86;
+      s.arrow_style = $("carousel-select-arrow-style")?.value || "brand";
+      s.photo_zoom = parseInt($("carousel-photo-zoom-range")?.value, 10) || 100;
+      s.photo_shift_x = parseInt($("carousel-photo-shift-x-range")?.value, 10) || 0;
+      s.photo_shift_y = parseInt($("carousel-photo-shift-y-range")?.value, 10) || 0;
       s.show_swipe_arrow = $("carousel-check-swipe-arrow") ? $("carousel-check-swipe-arrow").checked : (activeCarouselSlide !== 6);
 
       // If editing Slide 1, sync back to Design - 1 controls and canvases ONLY if non-empty
@@ -6917,6 +7030,26 @@
       if ($("carousel-select-card-style")) $("carousel-select-card-style").value = s.card_style || "frosted";
       if ($("carousel-check-swipe-arrow")) $("carousel-check-swipe-arrow").checked = s.show_swipe_arrow !== false;
 
+      const op = s.card_opacity !== undefined ? s.card_opacity : 86;
+      if ($("carousel-range-card-opacity")) $("carousel-range-card-opacity").value = op;
+      if ($("carousel-card-opacity-val")) $("carousel-card-opacity-val").textContent = `${op}%`;
+      if ($("carousel-select-card-tone")) {
+        const toneSelect = $("carousel-select-card-tone");
+        const hasOption = Array.from(toneSelect.options).some((o) => o.value == op);
+        toneSelect.value = hasOption ? String(op) : "custom";
+      }
+      if ($("carousel-select-arrow-style")) $("carousel-select-arrow-style").value = s.arrow_style || "brand";
+
+      const zoom = s.photo_zoom !== undefined ? s.photo_zoom : 100;
+      if ($("carousel-photo-zoom-range")) $("carousel-photo-zoom-range").value = zoom;
+      if ($("carousel-photo-zoom-val")) $("carousel-photo-zoom-val").textContent = `${zoom}%`;
+
+      const sx = s.photo_shift_x !== undefined ? s.photo_shift_x : 0;
+      if ($("carousel-photo-shift-x-range")) $("carousel-photo-shift-x-range").value = sx;
+
+      const sy = s.photo_shift_y !== undefined ? s.photo_shift_y : 0;
+      if ($("carousel-photo-shift-y-range")) $("carousel-photo-shift-y-range").value = sy;
+
       const statusBadge = $("carousel-photo-status-badge");
       const nameEl = $("carousel-photo-name");
       if (s.photoImg || s.photoDataUrl) {
@@ -6948,18 +7081,26 @@
         const p = s.photoImg;
         const imgAspect = p.width / p.height;
         const canvasAspect = w / h;
-        let drawW, drawH, drawX, drawY;
+        const zoom = Math.max(1.0, Math.min(3.0, (parseFloat(s.photo_zoom) || 100) / 100));
+        const shiftX = Math.max(-100, Math.min(100, parseFloat(s.photo_shift_x) || 0)) / 100;
+        const shiftY = Math.max(-100, Math.min(100, parseFloat(s.photo_shift_y) || 0)) / 100;
+
+        let baseW, baseH;
         if (imgAspect > canvasAspect) {
-          drawH = h;
-          drawW = h * imgAspect;
-          drawX = (w - drawW) / 2;
-          drawY = 0;
+          baseH = h;
+          baseW = h * imgAspect;
         } else {
-          drawW = w;
-          drawH = w / imgAspect;
-          drawX = 0;
-          drawY = (h - drawH) / 2;
+          baseW = w;
+          baseH = w / imgAspect;
         }
+
+        const drawW = baseW * zoom;
+        const drawH = baseH * zoom;
+        const maxShiftX = Math.max(0, (drawW - w) / 2);
+        const maxShiftY = Math.max(0, (drawH - h) / 2);
+        const drawX = ((w - drawW) / 2) - (shiftX * maxShiftX);
+        const drawY = ((h - drawH) / 2) - (shiftY * maxShiftY);
+
         ctx.drawImage(p, drawX, drawY, drawW, drawH);
 
         // Vignette
@@ -7096,7 +7237,14 @@
       ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
       ctx.shadowBlur = 35;
       ctx.shadowOffsetY = 16;
-      ctx.fillStyle = s.card_style === "minimal" ? "rgba(1, 37, 71, 0.92)" : "rgba(2, 24, 48, 0.86)";
+      // Frosted Glass Card Opacity / Tone (Custom Lighter or Darker)
+      const opVal = (s.card_opacity !== undefined && !isNaN(parseInt(s.card_opacity, 10)))
+        ? Math.min(100, Math.max(25, parseInt(s.card_opacity, 10))) / 100
+        : 0.86;
+      const r = opVal > 0.90 ? 1 : 2;
+      const g = opVal > 0.90 ? 16 : 24;
+      const b = opVal > 0.90 ? 36 : 48;
+      ctx.fillStyle = s.card_style === "minimal" ? `rgba(1, 37, 71, ${opVal})` : `rgba(${r}, ${g}, ${b}, ${opVal})`;
       ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -7200,10 +7348,43 @@
         ctx.fillText(footerCta, cardX + cardPad, footY);
       }
 
-      ctx.fillStyle = showArrow ? "#38BDF8" : "#94A3B8";
-      ctx.textAlign = "right";
-      ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-      ctx.fillText(ctaText, cardX + cardW - cardPad, footY);
+      if (showArrow) {
+        const arrowStyle = s.arrow_style || "brand";
+        let promptText = "ILoveFinland";
+        if (arrowStyle === "swipe") promptText = "Swipe";
+        else if (arrowStyle === "next") promptText = "Next";
+        else if (arrowStyle === "arrow_only") promptText = "";
+
+        const arrowGlyph = "➔";
+        const rightEdge = cardX + cardW - cardPad;
+        const arrowY = footY - 1;
+
+        // Big, prominent bold electric blue arrow with vibrant neon glow
+        ctx.save();
+        ctx.textAlign = "right";
+        ctx.font = '900 40px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillStyle = "#38BDF8";
+        ctx.shadowColor = "rgba(0, 163, 255, 0.95)";
+        ctx.shadowBlur = 14;
+        ctx.fillText(arrowGlyph, rightEdge, arrowY);
+        const arrowW = ctx.measureText(arrowGlyph).width;
+        ctx.restore();
+
+        // Optional prompt text next to arrow
+        if (promptText) {
+          ctx.save();
+          ctx.textAlign = "right";
+          ctx.font = '800 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+          ctx.fillStyle = "#E2E8F0";
+          ctx.fillText(promptText, rightEdge - arrowW - 10, footY - 5);
+          ctx.restore();
+        }
+      } else {
+        ctx.textAlign = "right";
+        ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        ctx.fillStyle = "#94A3B8";
+        ctx.fillText("ilovefinland.net", cardX + cardW - cardPad, footY - 4);
+      }
       ctx.restore();
     }
 
@@ -7366,6 +7547,85 @@
     $("carousel-select-card-style")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-check-swipe-arrow")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
 
+    // Card Darkness / Tone Listeners
+    $("carousel-select-card-tone")?.addEventListener("change", (e) => {
+      const val = parseInt(e.target.value, 10);
+      if (!isNaN(val)) {
+        if ($("carousel-range-card-opacity")) $("carousel-range-card-opacity").value = val;
+        if ($("carousel-card-opacity-val")) $("carousel-card-opacity-val").textContent = `${val}%`;
+        saveActiveCarouselSlideInputs();
+        renderActiveCarouselSlideCanvas();
+      }
+    });
+    $("carousel-range-card-opacity")?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10) || 86;
+      if ($("carousel-card-opacity-val")) $("carousel-card-opacity-val").textContent = `${val}%`;
+      if ($("carousel-select-card-tone")) {
+        const hasOption = Array.from($("carousel-select-card-tone").options).some((o) => o.value == val);
+        $("carousel-select-card-tone").value = hasOption ? String(val) : "custom";
+      }
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("carousel-select-arrow-style")?.addEventListener("change", () => {
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+
+    // Active Carousel Slide Photo Framing & Zoom Listeners
+    $("carousel-photo-zoom-range")?.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10) || 100;
+      if ($("carousel-photo-zoom-val")) $("carousel-photo-zoom-val").textContent = `${val}%`;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("carousel-photo-shift-x-range")?.addEventListener("input", () => {
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("carousel-photo-shift-y-range")?.addEventListener("input", () => {
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-photo-pan-left")?.addEventListener("click", () => {
+      if ($("carousel-photo-shift-x-range")) $("carousel-photo-shift-x-range").value = -100;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-photo-pan-center-x")?.addEventListener("click", () => {
+      if ($("carousel-photo-shift-x-range")) $("carousel-photo-shift-x-range").value = 0;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-photo-pan-right")?.addEventListener("click", () => {
+      if ($("carousel-photo-shift-x-range")) $("carousel-photo-shift-x-range").value = 100;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-photo-pan-top")?.addEventListener("click", () => {
+      if ($("carousel-photo-shift-y-range")) $("carousel-photo-shift-y-range").value = -100;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-photo-pan-center-y")?.addEventListener("click", () => {
+      if ($("carousel-photo-shift-y-range")) $("carousel-photo-shift-y-range").value = 0;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-photo-pan-bottom")?.addEventListener("click", () => {
+      if ($("carousel-photo-shift-y-range")) $("carousel-photo-shift-y-range").value = 100;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+    $("btn-carousel-reset-photo-framing")?.addEventListener("click", () => {
+      if ($("carousel-photo-zoom-range")) $("carousel-photo-zoom-range").value = 100;
+      if ($("carousel-photo-zoom-val")) $("carousel-photo-zoom-val").textContent = "100%";
+      if ($("carousel-photo-shift-x-range")) $("carousel-photo-shift-x-range").value = 0;
+      if ($("carousel-photo-shift-y-range")) $("carousel-photo-shift-y-range").value = 0;
+      saveActiveCarouselSlideInputs();
+      renderActiveCarouselSlideCanvas();
+    });
+
     // Dedicated Save Changes to Article & Post from Carousel Deck
     $("btn-copy-static-caption")?.addEventListener("click", () => {
       const cap = $("social-caption-textarea")?.value || $("static-edit-caption")?.value || "";
@@ -7414,10 +7674,15 @@
           line3_font_size: activeFs,
           caption: $("social-caption-textarea")?.value || $("static-edit-caption")?.value || "",
           hashtags: ($("static-edit-hashtags")?.value || "").split(/\s+/).filter((h) => h.startsWith("#")),
+          photo_zoom: parseInt($("photo-zoom-range")?.value, 10) || 100,
+          photo_shift_x: parseInt($("photo-shift-x-range")?.value, 10) || 0,
+          photo_shift_y: parseInt($("photo-shift-y-range")?.value, 10) || 0,
           carousel_slides: getCleanCarouselSlidesForSave(),
           show_swipe_arrow: $("carousel-check-swipe-arrow")?.checked !== false,
           location_stamp: $("carousel-input-location")?.value || "",
           card_style: $("carousel-select-card-style")?.value || "frosted",
+          card_opacity: parseInt($("carousel-range-card-opacity")?.value, 10) || 86,
+          arrow_style: $("carousel-select-arrow-style")?.value || "brand",
         };
 
         await api("/api/package/adjust-static-post", {

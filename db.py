@@ -3763,6 +3763,28 @@ def adjust_static_post(
             ig_post["location_stamp"] = adjustments["location_stamp"]
         if "card_style" in adjustments:
             ig_post["card_style"] = adjustments["card_style"]
+        if "card_opacity" in adjustments:
+            try:
+                ig_post["card_opacity"] = int(adjustments["card_opacity"])
+            except (ValueError, TypeError):
+                pass
+        if "arrow_style" in adjustments:
+            ig_post["arrow_style"] = str(adjustments["arrow_style"])[:30]
+        if "photo_zoom" in adjustments:
+            try:
+                ig_post["photo_zoom"] = int(adjustments["photo_zoom"])
+            except (ValueError, TypeError):
+                pass
+        if "photo_shift_x" in adjustments:
+            try:
+                ig_post["photo_shift_x"] = int(adjustments["photo_shift_x"])
+            except (ValueError, TypeError):
+                pass
+        if "photo_shift_y" in adjustments:
+            try:
+                ig_post["photo_shift_y"] = int(adjustments["photo_shift_y"])
+            except (ValueError, TypeError):
+                pass
 
         now = utc_now_iso()
         new_ver = cur_ver + 1

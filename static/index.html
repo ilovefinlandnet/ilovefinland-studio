@@ -1925,6 +1925,46 @@
                     </div>
                   </div>
 
+                  <!-- Picture Adjustment (Zoom & Framing) for Design - 1 -->
+                  <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                      <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
+                      <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
+                    </div>
+                    <!-- Zoom -->
+                    <div style="margin-bottom:10px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                        <span>🔍 Zoom Picture:</span>
+                        <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
+                      </div>
+                      <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
+                    </div>
+                    <!-- Horizontal Pan (Shift Left / Right) -->
+                    <div style="margin-bottom:10px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                        <span>↔️ Show Left / Center / Right:</span>
+                        <div style="display:flex;gap:4px;">
+                          <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
+                          <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                          <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
+                        </div>
+                      </div>
+                      <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                    </div>
+                    <!-- Vertical Pan (Shift Top / Bottom) -->
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                        <span>↕️ Vertical Framing (Pan):</span>
+                        <div style="display:flex;gap:4px;">
+                          <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
+                          <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                          <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
+                        </div>
+                      </div>
+                      <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                    </div>
+                  </div>
+
                   <!-- Category Badge & Headlines -->
                   <div class="wp-field-wrap">
                     <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
@@ -2120,12 +2160,45 @@
                             </select>
                           </div>
 
-                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-check-swipe-arrow">👉 Next Slide Arrow:</label>
-                            <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
-                              <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
-                              <span>Show "ILoveFinland ➔"</span>
-                            </label>
+                          <!-- Card Tone / Darkness (Lighter / Darker Option) -->
+                          <div style="display:flex;flex-direction:column;gap:5px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                              <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-select-card-tone">🎨 Card Tone / Darkness:</label>
+                              <select id="carousel-select-card-tone" class="wp-input" style="flex:1;max-width:210px;font-size:0.78rem;padding:5px 8px;border-radius:6px;">
+                                <option value="86" selected>Dark Navy (86% Default)</option>
+                                <option value="96">Deep Midnight (96% Darker)</option>
+                                <option value="100">Solid Navy (100% Max Dark)</option>
+                                <option value="70">Medium Translucent (70%)</option>
+                                <option value="50">Light Translucent (50%)</option>
+                                <option value="35">Soft Glass (35% Lightest)</option>
+                                <option value="custom">Custom Opacity</option>
+                              </select>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;padding-left:2px;">
+                              <span style="font-size:0.72rem;color:#94A3B8;">Darkness:</span>
+                              <input type="range" id="carousel-range-card-opacity" min="25" max="100" step="5" value="86" style="flex:1;cursor:pointer;" />
+                              <span id="carousel-card-opacity-val" style="font-size:0.74rem;color:#38BDF8;font-weight:700;min-width:34px;">86%</span>
+                            </div>
+                          </div>
+
+                          <!-- Next Slide Arrow with Prominent Styling -->
+                          <div style="display:flex;flex-direction:column;gap:6px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                              <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-check-swipe-arrow">👉 Next Slide Arrow:</label>
+                              <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
+                                <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
+                                <span>Show Slide Arrow</span>
+                              </label>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                              <label style="font-size:0.72rem;color:#94A3B8;margin:0;" for="carousel-select-arrow-style">Arrow Style:</label>
+                              <select id="carousel-select-arrow-style" class="wp-input" style="flex:1;max-width:210px;font-size:0.76rem;padding:4px 6px;border-radius:6px;">
+                                <option value="brand" selected>ILoveFinland ➔ (Brand Slide)</option>
+                                <option value="swipe">Swipe ➔ (Action Prompt)</option>
+                                <option value="next">Next ➔ (Story Flow)</option>
+                                <option value="arrow_only">➔ (Large Glowing Arrow Only)</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2145,6 +2218,46 @@
                           </button>
                           <input type="file" id="input-upload-carousel-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
                           <span id="carousel-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
+                        </div>
+                      </div>
+
+                      <!-- Picture Adjustment (Zoom & Framing) for Active Slide -->
+                      <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                          <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
+                          <button type="button" id="btn-carousel-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
+                        </div>
+                        <!-- Zoom -->
+                        <div style="margin-bottom:10px;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                            <span>🔍 Zoom Picture:</span>
+                            <span id="carousel-photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
+                          </div>
+                          <input type="range" id="carousel-photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
+                        </div>
+                        <!-- Horizontal Pan (Shift Left / Right) -->
+                        <div style="margin-bottom:10px;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                            <span>↔️ Show Left / Center / Right:</span>
+                            <div style="display:flex;gap:4px;">
+                              <button type="button" id="btn-carousel-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
+                              <button type="button" id="btn-carousel-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                              <button type="button" id="btn-carousel-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
+                            </div>
+                          </div>
+                          <input type="range" id="carousel-photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                        </div>
+                        <!-- Vertical Pan (Shift Top / Bottom) -->
+                        <div>
+                          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                            <span>↕️ Vertical Framing (Pan):</span>
+                            <div style="display:flex;gap:4px;">
+                              <button type="button" id="btn-carousel-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
+                              <button type="button" id="btn-carousel-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                              <button type="button" id="btn-carousel-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
+                            </div>
+                          </div>
+                          <input type="range" id="carousel-photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
                         </div>
                       </div>
 
@@ -3421,7 +3534,7 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=93.0"></script>
+  <script src="/app.js?v=94.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
   <script src="/finnish-lab.js?v=85.1"></script>
