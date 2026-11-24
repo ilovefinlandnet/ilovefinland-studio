@@ -3732,6 +3732,12 @@ def adjust_static_post(
             ig_post["headline_line2"] = adjustments["headline_line2"].strip()
         if "headline_line3" in adjustments:
             ig_post["headline_line3"] = adjustments["headline_line3"].strip()
+        if "line1_color" in adjustments:
+            ig_post["line1_color"] = adjustments["line1_color"].strip().lower()
+        if "line2_color" in adjustments:
+            ig_post["line2_color"] = adjustments["line2_color"].strip().lower()
+        if "line3_color" in adjustments:
+            ig_post["line3_color"] = adjustments["line3_color"].strip().lower()
         if "cta_text" in adjustments:
             ig_post["cta_text"] = adjustments["cta_text"].strip()
         if "cta_color" in adjustments:

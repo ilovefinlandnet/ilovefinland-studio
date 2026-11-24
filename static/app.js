@@ -29,6 +29,9 @@
     location: "",
     card_style: "frosted",
     show_swipe_arrow: num !== 6,
+    line1_color: "white",
+    line2_color: "white",
+    line3_color: "blue",
     photoDataUrl: "",
     photoImg: null,
   });
@@ -1423,6 +1426,9 @@
     if ($("static-edit-line3")) $("static-edit-line3").value = ig.headline_line3 || "";
     if ($("static-edit-cta")) $("static-edit-cta").value = ig.cta_text != null ? ig.cta_text : (ig.website_cta || "DISCOVER MORE AT ILOVEFINLAND.NET");
     if ($("static-edit-cta-color")) $("static-edit-cta-color").value = (ig.cta_color || "white").toLowerCase() === "blue" ? "blue" : "white";
+    if ($("static-edit-line1-color")) $("static-edit-line1-color").value = (ig.line1_color || "white").toLowerCase() === "blue" ? "blue" : "white";
+    if ($("static-edit-line2-color")) $("static-edit-line2-color").value = (ig.line2_color || "white").toLowerCase() === "blue" ? "blue" : "white";
+    if ($("static-edit-line3-color")) $("static-edit-line3-color").value = (ig.line3_color || "blue").toLowerCase() === "white" ? "white" : "blue";
     if ($("static-edit-fontsize")) $("static-edit-fontsize").value = curFs;
     if ($("static-line2-size-val")) $("static-line2-size-val").textContent = `${curFs}px`;
     if ($("static-edit-caption")) $("static-edit-caption").value = capText;
@@ -1770,10 +1776,6 @@
     ctx.fillStyle = "#FFFFFF";
     ctx.fillText(catText, catX + 12, catY + 25);
 
-    // Subtitle / Season alongside Category Pill
-    ctx.fillStyle = "#94A3B8";
-    ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-    ctx.fillText(" • Finnish Highlights", catX + catW + 10, catY + 25);
     ctx.restore();
 
     // Multi-line Title inside Card
@@ -2005,32 +2007,42 @@
         const fit3 = has3Lines ? fitHeadlineFontSize(ctx45, line3, baseLineSize, maxTextWidth) : fit2;
         const unifiedSize = has3Lines ? Math.min(fit1, fit2, fit3) : Math.min(fit1, fit2);
 
+        const col1 = (ig.line1_color === "blue") ? "#00A3FF" : "#ffffff";
+        const col2 = (ig.line2_color === "blue") ? "#00A3FF" : "#ffffff";
+        const col3 = (ig.line3_color === "white") ? "#ffffff" : "#00A3FF";
+
         if (has3Lines) {
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-          ctx45.fillStyle = "#ffffff";
+          ctx45.fillStyle = col1;
+          ctx45.shadowColor = (col1 === "#00A3FF") ? "rgba(0, 56, 130, 0.85)" : "rgba(0, 0, 0, 0.85)";
+          ctx45.shadowBlur = Math.round((col1 === "#00A3FF" ? 10 : 8) * fontScale);
           ctx45.fillText(line1, badgeX, currentY);
 
           currentY += unifiedSize + lineGap;
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-          ctx45.fillStyle = "#ffffff";
+          ctx45.fillStyle = col2;
+          ctx45.shadowColor = (col2 === "#00A3FF") ? "rgba(0, 56, 130, 0.85)" : "rgba(0, 0, 0, 0.85)";
+          ctx45.shadowBlur = Math.round((col2 === "#00A3FF" ? 10 : 8) * fontScale);
           ctx45.fillText(line2, badgeX, currentY);
 
           currentY += unifiedSize + lineGap;
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-          ctx45.fillStyle = "#00A3FF";
-          ctx45.shadowColor = "rgba(0, 56, 130, 0.85)";
-          ctx45.shadowBlur = Math.round(10 * fontScale);
+          ctx45.fillStyle = col3;
+          ctx45.shadowColor = (col3 === "#00A3FF") ? "rgba(0, 56, 130, 0.85)" : "rgba(0, 0, 0, 0.85)";
+          ctx45.shadowBlur = Math.round((col3 === "#00A3FF" ? 10 : 8) * fontScale);
           ctx45.fillText(line3, badgeX, currentY);
         } else {
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-          ctx45.fillStyle = "#ffffff";
+          ctx45.fillStyle = col1;
+          ctx45.shadowColor = (col1 === "#00A3FF") ? "rgba(0, 56, 130, 0.85)" : "rgba(0, 0, 0, 0.85)";
+          ctx45.shadowBlur = Math.round((col1 === "#00A3FF" ? 10 : 8) * fontScale);
           ctx45.fillText(line1, badgeX, currentY);
 
           currentY += unifiedSize + lineGap + 4;
           ctx45.font = `900 ${unifiedSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-          ctx45.fillStyle = "#00A3FF";
-          ctx45.shadowColor = "rgba(0, 56, 130, 0.85)";
-          ctx45.shadowBlur = Math.round(10 * fontScale);
+          ctx45.fillStyle = col2;
+          ctx45.shadowColor = (col2 === "#00A3FF") ? "rgba(0, 56, 130, 0.85)" : "rgba(0, 0, 0, 0.85)";
+          ctx45.shadowBlur = Math.round((col2 === "#00A3FF" ? 10 : 8) * fontScale);
           ctx45.fillText(line2, badgeX, currentY);
         }
 
@@ -6698,6 +6710,9 @@
       currentStaticPost.headline_line1 = $("static-edit-line1")?.value || "";
       currentStaticPost.headline_line2 = $("static-edit-line2")?.value || "";
       currentStaticPost.headline_line3 = $("static-edit-line3")?.value || "";
+      currentStaticPost.line1_color = $("static-edit-line1-color")?.value || "white";
+      currentStaticPost.line2_color = $("static-edit-line2-color")?.value || "white";
+      currentStaticPost.line3_color = $("static-edit-line3-color")?.value || "blue";
       currentStaticPost.cta_text = $("static-edit-cta")?.value || "";
       currentStaticPost.cta_color = $("static-edit-cta-color")?.value || "white";
       const fs = parseInt($("static-edit-fontsize")?.value, 10) || 32;
@@ -6726,6 +6741,9 @@
     $("static-edit-line1")?.addEventListener("input", updateStaticPostLive);
     $("static-edit-line2")?.addEventListener("input", updateStaticPostLive);
     $("static-edit-line3")?.addEventListener("input", updateStaticPostLive);
+    $("static-edit-line1-color")?.addEventListener("change", updateStaticPostLive);
+    $("static-edit-line2-color")?.addEventListener("change", updateStaticPostLive);
+    $("static-edit-line3-color")?.addEventListener("change", updateStaticPostLive);
     $("static-edit-cta")?.addEventListener("input", updateStaticPostLive);
     $("static-edit-cta-color")?.addEventListener("change", updateStaticPostLive);
     $("static-edit-fontsize")?.addEventListener("input", updateStaticPostLive);
@@ -6752,6 +6770,9 @@
         headline_line1: $("static-edit-line1")?.value || "",
         headline_line2: $("static-edit-line2")?.value || "",
         headline_line3: $("static-edit-line3")?.value || "",
+        line1_color: $("static-edit-line1-color")?.value || "white",
+        line2_color: $("static-edit-line2-color")?.value || "white",
+        line3_color: $("static-edit-line3-color")?.value || "blue",
         cta_text: $("static-edit-cta")?.value || "",
         cta_color: $("static-edit-cta-color")?.value || "white",
         line1_font_size: fs,
@@ -6786,6 +6807,9 @@
             headline_line1: s.headline_line1 || "",
             headline_line2: s.headline_line2 || "",
             headline_line3: s.headline_line3 || "",
+            line1_color: s.line1_color || "white",
+            line2_color: s.line2_color || "white",
+            line3_color: s.line3_color || "blue",
             cta_text: s.cta_text || "",
             cta_color: s.cta_color || "white",
             font_size: s.font_size || 44,
@@ -6806,6 +6830,9 @@
       s.headline_line1 = $("carousel-edit-line1")?.value || "";
       s.headline_line2 = $("carousel-edit-line2")?.value || "";
       s.headline_line3 = $("carousel-edit-line3")?.value || "";
+      s.line1_color = $("carousel-edit-line1-color")?.value || "white";
+      s.line2_color = $("carousel-edit-line2-color")?.value || "white";
+      s.line3_color = $("carousel-edit-line3-color")?.value || "blue";
       s.cta_text = $("carousel-edit-cta")?.value || "";
       s.cta_color = $("carousel-edit-cta-color")?.value || "white";
       s.font_size = parseInt($("carousel-edit-fontsize")?.value, 10) || 44;
@@ -6879,6 +6906,9 @@
       if ($("carousel-edit-line1")) $("carousel-edit-line1").value = s.headline_line1 || "";
       if ($("carousel-edit-line2")) $("carousel-edit-line2").value = s.headline_line2 || "";
       if ($("carousel-edit-line3")) $("carousel-edit-line3").value = s.headline_line3 || "";
+      if ($("carousel-edit-line1-color")) $("carousel-edit-line1-color").value = s.line1_color || "white";
+      if ($("carousel-edit-line2-color")) $("carousel-edit-line2-color").value = s.line2_color || "white";
+      if ($("carousel-edit-line3-color")) $("carousel-edit-line3-color").value = s.line3_color || "blue";
       if ($("carousel-edit-cta")) $("carousel-edit-cta").value = s.cta_text || "";
       if ($("carousel-edit-cta-color")) $("carousel-edit-cta-color").value = s.cta_color || "white";
       if ($("carousel-edit-fontsize")) $("carousel-edit-fontsize").value = s.font_size || 44;
@@ -7101,9 +7131,6 @@
       ctx.fillStyle = "#FFFFFF";
       ctx.fillText(catText, catX + 12, catY + 25);
 
-      ctx.fillStyle = "#94A3B8";
-      ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-      ctx.fillText(" • Finnish Highlights", catX + catW + 10, catY + 25);
       ctx.restore();
 
       // Headline Lines
@@ -7127,12 +7154,14 @@
       ctx.save();
       ctx.font = `800 ${fs}px -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif`;
       let titleY = catY + catH + Math.round(fs * 0.95);
+      const slideLineColors = [
+        s.line1_color || "white",
+        s.line2_color || "white",
+        s.line3_color || (rawLine3 ? "blue" : "white")
+      ];
       for (let i = 0; i < Math.min(titleLines.length, 3); i++) {
-        if (i === 2 && rawLine3) {
-          ctx.fillStyle = "#00A3FF";
-        } else {
-          ctx.fillStyle = "#FFFFFF";
-        }
+        const curCol = slideLineColors[i] || "white";
+        ctx.fillStyle = (curCol === "blue") ? "#00A3FF" : "#FFFFFF";
         let lineToDraw = titleLines[i];
         if (ctx.measureText(lineToDraw).width > maxTitleW) {
           while (lineToDraw.length > 3 && ctx.measureText(lineToDraw + "…").width > maxTitleW) {
@@ -7316,6 +7345,9 @@
     $("carousel-edit-line3")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-edit-cta")?.addEventListener("input", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-edit-cta-color")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-line1-color")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-line2-color")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
+    $("carousel-edit-line3-color")?.addEventListener("change", () => { saveActiveCarouselSlideInputs(); renderActiveCarouselSlideCanvas(); });
     $("carousel-edit-fontsize")?.addEventListener("input", (e) => {
       const val = e.target.value;
       if ($("carousel-fontsize-val")) $("carousel-fontsize-val").textContent = `${val}px`;
@@ -7372,6 +7404,9 @@
           headline_line1: $("carousel-edit-line1")?.value || $("static-edit-line1")?.value || "",
           headline_line2: $("carousel-edit-line2")?.value || $("static-edit-line2")?.value || "",
           headline_line3: $("carousel-edit-line3")?.value || $("static-edit-line3")?.value || "",
+          line1_color: $("carousel-edit-line1-color")?.value || $("static-edit-line1-color")?.value || "white",
+          line2_color: $("carousel-edit-line2-color")?.value || $("static-edit-line2-color")?.value || "white",
+          line3_color: $("carousel-edit-line3-color")?.value || $("static-edit-line3-color")?.value || "blue",
           cta_text: $("carousel-edit-cta")?.value || $("static-edit-cta")?.value || "",
           cta_color: $("carousel-edit-cta-color")?.value || $("static-edit-cta-color")?.value || "blue",
           line1_font_size: activeFs,
