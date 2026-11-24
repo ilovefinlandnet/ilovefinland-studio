@@ -715,21 +715,18 @@
     const view = document.getElementById("view-finnish-lab");
     if (!view) return;
 
-    let bar = document.getElementById("flp-pro-header");
+    // Remove legacy duplicate top mode-chip bar above Chat / Study if present
+    const legacyBar = document.getElementById("flp-pro-header");
+    if (legacyBar) legacyBar.remove();
+
     let panel = document.getElementById("flp-pro-workspace");
     const classicRoot = document.getElementById("finnish-lab-root");
 
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.id = "flp-pro-header";
-      bar.className = "flp-pro-header";
-      view.prepend(bar);
-    }
     if (!panel) {
       panel = document.createElement("div");
       panel.id = "flp-pro-workspace";
       panel.className = "flp-pro-workspace";
-      bar.after(panel);
+      view.appendChild(panel);
     }
     if (!document.getElementById("flp-toast")) {
       const t = document.createElement("div");
@@ -738,55 +735,40 @@
       document.body.appendChild(t);
     }
 
-    const tabs = [
-      { id: "tutor", label: "💬 Classic Tutor" },
-      { id: "srs", label: "🎯 10-Min SRS Drills" },
-      { id: "grammar", label: "⚖️ Kirjakieli ↔ Puhekieli" },
-      { id: "snap", label: "📷 Snap & Ask" },
-      { id: "roleplay", label: "🏙️ Pori Roleplay" },
-      { id: "story", label: "📰 Story-to-Lesson" },
-      { id: "vocab", label: `📚 Vocab Deck (${state.vocabWords.length})` },
-    ];
-
-    bar.innerHTML = `
-      <div class="flp-tab-row">
-        ${tabs.map((t) => `<button type="button" class="flp-tab-btn ${state.activeProTab === t.id ? "active" : ""}" data-pro-tab="${t.id}">${t.label}</button>`).join("")}
-      </div>
-      <label class="flp-sbs-toggle" title="Show Written Finnish (Kirjakieli) next to Spoken Finnish (Puhekieli)">
-        <input type="checkbox" id="flp-toggle-sbs" ${state.showSideBySide ? "checked" : ""} />
-        <span>Kirjakieli ↔ Puhekieli</span>
-      </label>
-    `;
-
     const isClassic = state.activeProTab === "tutor";
     if (classicRoot) classicRoot.style.display = isClassic ? "" : "none";
     panel.style.display = isClassic ? "none" : "block";
 
     if (!isClassic) {
-      if (state.activeProTab === "srs") panel.innerHTML = renderSrsView();
-      else if (state.activeProTab === "grammar") panel.innerHTML = renderGrammarView();
-      else if (state.activeProTab === "snap") panel.innerHTML = renderSnapView();
-      else if (state.activeProTab === "roleplay") panel.innerHTML = renderRoleplayView();
-      else if (state.activeProTab === "story") panel.innerHTML = renderStoryView();
-      else if (state.activeProTab === "vocab") panel.innerHTML = renderVocabView();
+      const topNav = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(56,189,248,0.2);">
+          <button type="button" class="fl-btn sm" id="flp-btn-back-study">← Back to Study</button>
+          <label class="flp-sbs-toggle" title="Show Written Finnish (Kirjakieli) next to Spoken Finnish (Puhekieli)">
+            <input type="checkbox" id="flp-toggle-sbs" ${state.showSideBySide ? "checked" : ""} />
+            <span>Kirjakieli ↔ Puhekieli</span>
+          </label>
+        </div>
+      `;
+      let bodyHtml = "";
+      if (state.activeProTab === "srs") bodyHtml = renderSrsView();
+      else if (state.activeProTab === "grammar") bodyHtml = renderGrammarView();
+      else if (state.activeProTab === "snap") bodyHtml = renderSnapView();
+      else if (state.activeProTab === "roleplay") bodyHtml = renderRoleplayView();
+      else if (state.activeProTab === "story") bodyHtml = renderStoryView();
+      else if (state.activeProTab === "vocab") bodyHtml = renderVocabView();
+      panel.innerHTML = topNav + bodyHtml;
     }
 
-    bindProEvents(bar, panel);
+    bindProEvents(panel);
   }
 
-  function bindProEvents(bar, panel) {
-    bar.querySelectorAll("[data-pro-tab]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const next = btn.dataset.proTab;
-        state.activeProTab = next;
-        renderProShell();
-        if (next === "srs" && state.srsQueue.length === 0) loadSrsQueue();
-        if (next === "vocab") loadVocabDeck();
-        if (next === "story" && state.studioArticles.length === 0) loadStudioArticlesForPicker();
-      });
+  function bindProEvents(panel) {
+    panel.querySelector("#flp-btn-back-study")?.addEventListener("click", () => {
+      state.activeProTab = "tutor";
+      renderProShell();
     });
 
-    bar.querySelector("#flp-toggle-sbs")?.addEventListener("change", (e) => {
+    panel.querySelector("#flp-toggle-sbs")?.addEventListener("change", (e) => {
       state.showSideBySide = e.target.checked;
       renderProShell();
     });
@@ -927,6 +909,12 @@
     render: renderProShell,
     speak: speakFi,
     openStoryLesson: runStoryToLesson,
+    closeTool() {
+      if (state.activeProTab !== "tutor") {
+        state.activeProTab = "tutor";
+        renderProShell();
+      }
+    },
     openTab(tabId) {
       state.activeProTab = tabId;
       renderProShell();

@@ -522,7 +522,60 @@
     }
   }
 
-  function fallbackBrowserSpeak(text, slow, msgId) {
+  /* ---------- SMART BROWSER VOICE SELECTOR (onvoiceschanged + Best fi-FI) ---------- */
+  let _cachedSpeechVoices = [];
+  function refreshSpeechVoices() {
+    if (!("speechSynthesis" in window)) return [];
+    try {
+      const list = window.speechSynthesis.getVoices() || [];
+      if (list.length) _cachedSpeechVoices = list;
+    } catch (_) {}
+    return _cachedSpeechVoices;
+  }
+  if ("speechSynthesis" in window) {
+    refreshSpeechVoices();
+    try {
+      window.speechSynthesis.onvoiceschanged = () => { refreshSpeechVoices(); };
+    } catch (_) {}
+  }
+
+  function pickBestFinnishVoice() {
+    const voices = refreshSpeechVoices();
+    const fiVoices = voices.filter((v) => {
+      const lang = (v.lang || "").toLowerCase();
+      const name = (v.name || "").toLowerCase();
+      return lang.startsWith("fi") || name.includes("finnish") || name.includes("suomi") || /\b(satu|noora|selma|harri)\b/i.test(name);
+    });
+    if (!fiVoices.length) return null;
+    const score = (v) => {
+      const n = (v.name || "").toLowerCase();
+      let s = 0;
+      if (n.includes("enhanced") || n.includes("premium") || n.includes("neural") || n.includes("natural")) s += 50;
+      if (n.includes("satu")) s += 40;
+      if (n.includes("noora") || n.includes("selma")) s += 38;
+      if (n.includes("harri")) s += 25;
+      if (v.localService) s += 5;
+      if ((v.lang || "").toLowerCase() === "fi-fi") s += 10;
+      return s;
+    };
+    return fiVoices.slice().sort((a, b) => score(b) - score(a))[0];
+  }
+
+  function pickBestEnglishVoice() {
+    const voices = refreshSpeechVoices();
+    const enVoices = voices.filter((v) => (v.lang || "").toLowerCase().startsWith("en"));
+    if (!enVoices.length) return null;
+    const score = (v) => {
+      const n = (v.name || "").toLowerCase();
+      let s = 0;
+      if (n.includes("enhanced") || n.includes("premium") || n.includes("neural") || n.includes("natural")) s += 40;
+      if (n.includes("samantha") || n.includes("aria") || n.includes("daniel") || n.includes("karen")) s += 25;
+      return s;
+    };
+    return enVoices.slice().sort((a, b) => score(b) - score(a))[0];
+  }
+
+  function fallbackBrowserSpeak(text, slow, msgId, customRate) {
     // CRITICAL SILENT CLASSROOM GUARD: Never speak out loud while Live Classroom mode is ON!
     if (state.isLiveTranslating) { stopActiveAudio(true); return; }
     if (!("speechSynthesis" in window)) { stopActiveAudio(); return; }
@@ -530,10 +583,9 @@
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "fi-FI";
-      utter.rate = slow ? 0.75 : 1.0;
-      const voices = window.speechSynthesis.getVoices() || [];
-      const fiVoice = voices.find((v) => (v.lang || "").toLowerCase().startsWith("fi"));
-      if (fiVoice) utter.voice = fiVoice;
+      utter.rate = typeof customRate === "number" ? customRate : (slow ? 0.75 : 1.0);
+      const bestFi = pickBestFinnishVoice();
+      if (bestFi) utter.voice = bestFi;
       utter.onend = () => { if (state.speakingMsgId === msgId) stopActiveAudio(); };
       utter.onerror = () => { if (state.speakingMsgId === msgId) stopActiveAudio(); };
       window.speechSynthesis.speak(utter);
@@ -542,21 +594,59 @@
     }
   }
 
-  window.flSpeakFi = function (text, rate) {
+  async function playEdgeNeuralClip(cleanText, rateNum, msgId, onDone) {
+    if (state.isLiveTranslating) return false;
+    const key = `edge|fi|${Number(rateNum).toFixed(2)}|${cleanText}`;
+    let audioUrl = _audioMemCache.get(key) || null;
+    if (!audioUrl) {
+      try {
+        const res = await flApi("/api/finnish-lab/edge-tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: cleanText, lang: "fi", rate: rateNum }),
+        });
+        if (res && res.ok && res.audio_url) {
+          audioUrl = res.audio_url;
+          _audioMemCache.set(key, audioUrl);
+        }
+      } catch (_) {
+        audioUrl = null;
+      }
+    }
+    if (!audioUrl || state.isLiveTranslating) return false;
+    if (msgId && state.speakingMsgId !== msgId) return true; // cancelled while fetching
+    try {
+      const el = new Audio(audioUrl);
+      el.setAttribute("playsinline", "");
+      el.playsInline = true;
+      _activeAudioEl = el;
+      el.onended = () => {
+        if (!msgId || state.speakingMsgId === msgId) stopActiveAudio();
+        if (typeof onDone === "function") onDone();
+      };
+      el.onerror = () => {
+        if (!state.isLiveTranslating) fallbackBrowserSpeak(cleanText, rateNum < 0.9, msgId, rateNum);
+      };
+      await el.play();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  window.flSpeakFi = async function (text, rate) {
     // CRITICAL SILENT CLASSROOM GUARD
     if (state.isLiveTranslating) return;
     const clean = cleanTtsText(text);
-    if (!clean || !("speechSynthesis" in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(clean);
-      utter.lang = "fi-FI";
-      utter.rate = typeof rate === "number" ? rate : 1.0;
-      const voices = window.speechSynthesis.getVoices() || [];
-      const fiVoice = voices.find((v) => (v.lang || "").toLowerCase().startsWith("fi"));
-      if (fiVoice) utter.voice = fiVoice;
-      window.speechSynthesis.speak(utter);
-    } catch (_) {}
+    if (!clean) return;
+    const rateNum = typeof rate === "number" ? rate : 1.0;
+    stopActiveAudio(true);
+    const tid = "flsp_" + Date.now();
+    state.speakingMsgId = tid;
+    const ok = await playEdgeNeuralClip(clean, rateNum, tid);
+    if (!ok && !state.isLiveTranslating && state.speakingMsgId === tid) {
+      fallbackBrowserSpeak(clean, rateNum < 0.9, tid, rateNum);
+    }
   };
 
   const _audioInflight = new Map();
@@ -570,9 +660,7 @@
       .slice(0, 1200);
   }
 
-  function prewarmFinnishAudio(_text) {
-    // 100% Free Browser Web Speech API (fi-FI) — zero paid TTS calls
-  }
+  function prewarmFinnishAudio(_text) {}
 
   async function speakFinnish(text, slow, msgId) {
     // CRITICAL SILENT CLASSROOM GUARD: Never speak out loud when Live mode is active!
@@ -593,9 +681,14 @@
     renderActiveView();
     renderSidePanel();
 
-    // 100% Free Browser Web Speech API (fi-FI, 0.75x slow / 1.0x normal)
+    const rateNum = slow ? 0.75 : 1.0;
+    const playedNeural = await playEdgeNeuralClip(clean, rateNum, targetId);
+    if (playedNeural) return;
+    if (state.speakingMsgId !== targetId || state.isLiveTranslating) return;
+
+    // Clean fallback to best available fi-FI browser voice ONLY if server edge-tts is unreachable
     if ("speechSynthesis" in window) {
-      fallbackBrowserSpeak(clean, slow, targetId);
+      fallbackBrowserSpeak(clean, slow, targetId, rateNum);
       return;
     }
     if (state.speakingMsgId === targetId) {
@@ -607,13 +700,97 @@
     return [...(state.customPodcastEpisodes || []), ...PODCAST_EPISODES];
   }
 
+  let _walkAudioEl = null;
+  function getWalkAudioEl() {
+    if (!_walkAudioEl) {
+      _walkAudioEl = new Audio();
+      _walkAudioEl.setAttribute("playsinline", "");
+      _walkAudioEl.playsInline = true;
+      _walkAudioEl.preload = "auto";
+    }
+    return _walkAudioEl;
+  }
+
+  function updateWalkActiveCardHighlight(newIdx) {
+    if (state.podcastItemIdx === newIdx) return;
+    state.podcastItemIdx = newIdx;
+    const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
+    const items = getPodcastItems(ep);
+    const cur = items[newIdx];
+    const nowTitle = document.getElementById("fl-walk-now-fi");
+    const nowEn = document.getElementById("fl-walk-now-en");
+    const nowCounter = document.getElementById("fl-walk-now-counter");
+    if (cur) {
+      if (nowTitle) nowTitle.textContent = `🇫🇮 ${cur.fi}`;
+      if (nowEn) nowEn.textContent = `🇬🇧 means: ${cur.en}`;
+      if (nowCounter) nowCounter.textContent = `Item ${newIdx + 1} / ${items.length}`;
+    }
+    document.querySelectorAll("[data-fl-pod-row]").forEach((row) => {
+      const rIdx = Number(row.getAttribute("data-fl-pod-row"));
+      row.classList.toggle("is-active-walk", rIdx === newIdx);
+    });
+  }
+
+  function setupWalkMediaSession(ep, items) {
+    if (!("mediaSession" in navigator)) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: ep.title || "Walk & Listen Finnish",
+        artist: "ILoveFinland Finnish Lab • Noora Neural (fi-FI)",
+        album: "Beginner Walk & Listen Course",
+        artwork: [{ src: "/assets/ilf-heart.png", sizes: "512x512", type: "image/png" }],
+      });
+      const aud = getWalkAudioEl();
+      navigator.mediaSession.setActionHandler("play", () => {
+        if (state.isLiveTranslating) return;
+        aud.play().catch(() => {});
+        state.podcastPlaying = true;
+        state.podcastPaused = false;
+        renderActiveView();
+      });
+      navigator.mediaSession.setActionHandler("pause", () => {
+        aud.pause();
+        state.podcastPaused = true;
+        renderActiveView();
+      });
+      navigator.mediaSession.setActionHandler("seekbackward", (d) => {
+        const step = (d && d.seekOffset) || 10;
+        aud.currentTime = Math.max(0, (aud.currentTime || 0) - step);
+      });
+      navigator.mediaSession.setActionHandler("seekforward", (d) => {
+        const step = (d && d.seekOffset) || 10;
+        aud.currentTime = Math.min(aud.duration || 9999, (aud.currentTime || 0) + step);
+      });
+      navigator.mediaSession.setActionHandler("previoustrack", () => {
+        const offs = state.podcastItemOffsets || [];
+        if (offs.length) {
+          const prevIdx = (state.podcastItemIdx - 1 + items.length) % items.length;
+          aud.currentTime = offs[prevIdx] || 0;
+          updateWalkActiveCardHighlight(prevIdx);
+        }
+      });
+      navigator.mediaSession.setActionHandler("nexttrack", () => {
+        const offs = state.podcastItemOffsets || [];
+        if (offs.length) {
+          const nextIdx = (state.podcastItemIdx + 1) % items.length;
+          aud.currentTime = offs[nextIdx] || 0;
+          updateWalkActiveCardHighlight(nextIdx);
+        }
+      });
+    } catch (_) {}
+  }
+
   function stopPodcastPlayback(skipRender) {
     state.podcastPlaying = false;
     state.podcastPaused = false;
+    state.podcastLoading = false;
     state.podcastPhase = "";
     if (state.podcastTimer) {
       clearTimeout(state.podcastTimer);
       state.podcastTimer = null;
+    }
+    if (_walkAudioEl) {
+      try { _walkAudioEl.pause(); } catch (_) {}
     }
     if ("speechSynthesis" in window) {
       try { window.speechSynthesis.cancel(); } catch (_) {}
@@ -715,9 +892,7 @@
         const u = new SpeechSynthesisUtterance(cleanTtsText(text));
         u.lang = lang;
         u.rate = rate;
-        const voices = window.speechSynthesis.getVoices() || [];
-        const prefix = lang.slice(0, 2).toLowerCase();
-        const matched = voices.find((v) => (v.lang || "").toLowerCase().startsWith(prefix));
+        const matched = lang.toLowerCase().startsWith("fi") ? pickBestFinnishVoice() : pickBestEnglishVoice();
         if (matched) u.voice = matched;
         u.onend = () => resolve(true);
         u.onerror = () => resolve(true);
@@ -738,15 +913,11 @@
     });
   }
 
-  // Passive Memorization Loop ($0 Free Browser Web Speech API):
-  // Slow Finnish -> "means [English]" -> 1.2s pause -> Second Slow Finnish repeat
+  // Passive Memorization Course ($0 Free Neural edge-tts MP3 + HTML5 <audio playsinline> + MediaSession Lock-Screen Audio)
+  // Clean fallback to Smart fi-FI Browser SpeechSynthesis ONLY if server TTS is unreachable!
   async function generateAndPlayPodcast(epId, startIndex) {
     if (state.isLiveTranslating) {
       toast("🔇 Stop Silent Classroom Live mode first before playing audio.", "warning");
-      return;
-    }
-    if (!("speechSynthesis" in window)) {
-      toast("Browser speech synthesis is unavailable on this device.", "error");
       return;
     }
     const ep = getAllPodcastEpisodes().find((x) => x.id === epId) || PODCAST_EPISODES[0];
@@ -756,47 +927,132 @@
       return;
     }
 
+    const fiSpeed = Number(state.podcastSpeed) || 0.75;
+    const targetIdx = typeof startIndex === "number" ? Math.max(0, Math.min(items.length - 1, startIndex)) : (state.podcastItemIdx || 0);
+
+    // If same track + speed is already loaded in HTML5 <audio>, seek & resume instantaneously!
+    const trackKey = `${ep.id}|${fiSpeed.toFixed(2)}|${items.length}`;
+    if (state.podcastTrackKey === trackKey && state.podcastAudioUrl && _walkAudioEl && _walkAudioEl.src) {
+      const aud = getWalkAudioEl();
+      const offs = state.podcastItemOffsets || [];
+      if (typeof startIndex === "number" && offs[targetIdx] != null) {
+        aud.currentTime = offs[targetIdx];
+      }
+      aud.loop = Boolean(state.podcastLoop);
+      state.podcastPlaying = true;
+      state.podcastPaused = false;
+      state.podcastItemIdx = targetIdx;
+      setupWalkMediaSession(ep, items);
+      aud.play().catch(() => {});
+      renderActiveView();
+      return;
+    }
+
     stopActiveAudio(true);
     stopPodcastPlayback(true);
     state.podcastEpisodeId = ep.id;
-    state.podcastPlaying = true;
-    state.podcastPaused = false;
-    state.podcastItemIdx = typeof startIndex === "number" ? Math.max(0, Math.min(items.length - 1, startIndex)) : (state.podcastItemIdx || 0);
+    state.podcastItemIdx = targetIdx;
+    state.podcastLoading = true;
+    state.podcastPhase = "🎙️ Preparing Neural Finnish MP3 (NooraNeural)...";
     DB.touchStudyStreak("listening");
     renderActiveView();
 
+    // Priority 1: Seamless server-side edge-tts MP3 track (works on iPhone/iPad Lock Screen!)
+    try {
+      const res = await flApi("/api/finnish-lab/walk-listen-audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: ep.title, items, rate: fiSpeed }),
+        timeoutMs: 90000,
+      });
+      if (res && res.ok && res.audio_url && !state.isLiveTranslating) {
+        state.podcastLoading = false;
+        state.podcastTrackKey = trackKey;
+        state.podcastAudioUrl = res.audio_url;
+        state.podcastItemOffsets = res.item_offsets || [];
+        state.podcastVoiceLabel = res.voice || "fi-FI-NooraNeural";
+        state.podcastPlaying = true;
+        state.podcastPaused = false;
+        state.podcastPhase = `🎧 Neural Lock-Screen Audio (${fiSpeed.toFixed(2)}×)`;
+
+        const aud = getWalkAudioEl();
+        aud.src = res.audio_url;
+        aud.loop = Boolean(state.podcastLoop);
+        aud.onloadedmetadata = () => {
+          const offs = state.podcastItemOffsets || [];
+          if (targetIdx > 0 && offs[targetIdx] != null) {
+            aud.currentTime = offs[targetIdx];
+          }
+        };
+        aud.ontimeupdate = () => {
+          const offs = state.podcastItemOffsets || [];
+          if (!offs.length) return;
+          const t = aud.currentTime || 0;
+          let found = 0;
+          for (let i = 0; i < offs.length; i++) {
+            if (t + 0.15 >= offs[i]) found = i;
+            else break;
+          }
+          updateWalkActiveCardHighlight(found);
+        };
+        aud.onended = () => {
+          if (!aud.loop) {
+            state.podcastPlaying = false;
+            state.podcastPaused = false;
+            renderActiveView();
+            toast("🎉 Completed Walk & Listen session!", "success");
+          }
+        };
+        setupWalkMediaSession(ep, items);
+        await aud.play();
+        renderActiveView();
+        return;
+      }
+    } catch (_) {
+      // Fall back smoothly to smart fi-FI browser speechSynthesis below
+    }
+
+    // Priority 2: Fallback Passive Memorization Loop (Smart fi-FI Browser Voice)
+    state.podcastLoading = false;
+    state.podcastAudioUrl = null;
+    state.podcastVoiceLabel = "Browser fi-FI Fallback";
+    if (!("speechSynthesis" in window)) {
+      toast("Audio playback unavailable on this device.", "error");
+      renderActiveView();
+      return;
+    }
+
+    state.podcastPlaying = true;
+    state.podcastPaused = false;
+    renderActiveView();
     const runId = Date.now();
     state._podcastRunId = runId;
 
-    while (state.podcastPlaying && state._podcastRunId === runId) {
+    while (state.podcastPlaying && state._podcastRunId === runId && !state.isLiveTranslating) {
       const it = items[state.podcastItemIdx];
       if (!it) break;
-      const fiSpeed = Number(state.podcastSpeed) || 0.75;
+      const spd = Number(state.podcastSpeed) || 0.75;
 
-      // Step 1: Slow Finnish
-      state.podcastPhase = `🇫🇮 Slow Finnish (${fiSpeed.toFixed(2)}×)`;
+      state.podcastPhase = `🇫🇮 Slow Finnish (${spd.toFixed(2)}×)`;
       renderActiveView();
-      await speakUtteranceAsync(it.fi, "fi-FI", fiSpeed);
+      await speakUtteranceAsync(it.fi, "fi-FI", spd);
       if (!state.podcastPlaying || state._podcastRunId !== runId) break;
-      await waitPodcastMs(450);
+      await waitPodcastMs(400);
       if (!state.podcastPlaying || state._podcastRunId !== runId) break;
 
-      // Step 2: "means [English meaning]"
       state.podcastPhase = "🇬🇧 English meaning";
       renderActiveView();
       await speakUtteranceAsync(`means ${it.en}`, "en-US", 0.95);
       if (!state.podcastPlaying || state._podcastRunId !== runId) break;
 
-      // Step 3: Short memorization pause
       state.podcastPhase = "🧠 Memorize pause...";
       renderActiveView();
       await waitPodcastMs(1250);
       if (!state.podcastPlaying || state._podcastRunId !== runId) break;
 
-      // Step 4: Second slow Finnish repeat
-      state.podcastPhase = `🔁 Repeat Finnish (${fiSpeed.toFixed(2)}×)`;
+      state.podcastPhase = `🔁 Repeat Finnish (${spd.toFixed(2)}×)`;
       renderActiveView();
-      await speakUtteranceAsync(it.fi, "fi-FI", fiSpeed);
+      await speakUtteranceAsync(it.fi, "fi-FI", spd);
       if (!state.podcastPlaying || state._podcastRunId !== runId) break;
 
       await waitPodcastMs(850);
@@ -860,11 +1116,14 @@
   /* ---------- SECURE API CLIENT ---------- */
   async function flApi(path, opts) {
     const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-    const timer = controller ? setTimeout(() => controller.abort(), 35000) : null;
+    const timeoutMs = (opts && opts.timeoutMs) ? opts.timeoutMs : 35000;
+    const fetchOpts = Object.assign({}, opts || {});
+    delete fetchOpts.timeoutMs;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
     try {
       const res = await fetch(
         path,
-        Object.assign({ credentials: "same-origin", signal: controller ? controller.signal : undefined }, opts || {})
+        Object.assign({ credentials: "same-origin", signal: controller ? controller.signal : undefined }, fetchOpts)
       );
       const data = await res.json().catch(() => ({ error: "BAD_RESPONSE", message: "Unexpected server response." }));
       if (!res.ok) {
@@ -2016,6 +2275,37 @@
               <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Standard beginner school grammar &amp; vocab drill (Finnish + English) + pronunciation practice.</span>
             </button>
           </div>
+
+          <!-- Extra Study Modules (All neatly inside Study — zero top clutter above Chat / Study!) -->
+          <div style="margin-top:16px;">
+            <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#7dd3fc;margin:0 0 8px 4px;">Interactive Study Tools ($0 Gemini Free Tier)</div>
+            <div class="fl-study-grid" style="gap:10px;">
+              <button type="button" class="fl-study-tile" data-fl-pro-tool="srs" style="padding:13px 14px;">
+                <strong style="font-size:0.9rem;">🎯 10-Min SRS Drills</strong>
+                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Active-recall sentence building &amp; ending drills saved to your study DB.</span>
+              </button>
+              <button type="button" class="fl-study-tile" data-fl-pro-tool="grammar" style="padding:13px 14px;">
+                <strong style="font-size:0.9rem;">⚖️ Kirjakieli ↔ Puhekieli</strong>
+                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Side-by-side written vs. spoken grammar tables + Goodnotes PDF export.</span>
+              </button>
+              <button type="button" class="fl-study-tile" data-fl-pro-tool="snap" style="padding:13px 14px;">
+                <strong style="font-size:0.9rem;">📷 Snap &amp; Ask Vision</strong>
+                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Upload a textbook, sign, or worksheet photo for instant Finnish breakdown.</span>
+              </button>
+              <button type="button" class="fl-study-tile" data-fl-pro-tool="roleplay" style="padding:13px 14px;">
+                <strong style="font-size:0.9rem;">🏙️ Pori &amp; Finland Roleplay</strong>
+                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Everyday café, grocery &amp; Kela scenarios with click-to-save vocabulary.</span>
+              </button>
+              <button type="button" class="fl-study-tile" data-fl-pro-tool="story" style="padding:13px 14px;">
+                <strong style="font-size:0.9rem;">📰 Story-to-Lesson Bridge</strong>
+                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Turn any ilovefinland.net article into an A1/A2 Selkosuomi reading quiz.</span>
+              </button>
+              <button type="button" class="fl-study-tile" data-fl-pro-tool="vocab" style="padding:13px 14px;">
+                <strong style="font-size:0.9rem;">📚 Saved Vocab Deck</strong>
+                <span style="font-size:0.76rem;color:#94a3b8;line-height:1.4;">Review your saved words with neural Finnish audio &amp; Goodnotes export.</span>
+              </button>
+            </div>
+          </div>
         </div>
       `;
     }
@@ -2147,47 +2437,14 @@
           ).join("")}
         </div>
 
-        <!-- Passive Memorization Player Card -->
-        <div class="fl-pod-player-card">
-          <div style="font-size:1.08rem;font-weight:800;color:#fff;margin-bottom:4px;">${esc(ep.title)}</div>
-          <div style="font-size:0.78rem;color:#7dd3fc;margin-bottom:12px;">${items.length} items • ${esc(ep.duration || "~12–15 min")} • Free Web Speech (fi-FI)</div>
-
-          ${
-            state.podcastPlaying && currentItem
-              ? `<div style="background:rgba(6,18,36,0.9);border:1.5px solid rgba(56,189,248,0.45);border-radius:14px;padding:14px;margin-bottom:12px;">
-                   <div style="font-size:0.72rem;color:#34D399;font-weight:800;margin-bottom:4px;">Item ${activeIdx + 1} / ${items.length} • ${esc(state.podcastPhase || "Playing...")}</div>
-                   <div style="font-size:1.35rem;font-weight:800;color:#fff;">🇫🇮 ${esc(currentItem.fi)}</div>
-                   <div style="font-size:0.9rem;color:#7dd3fc;margin-top:4px;">🇬🇧 means: ${esc(currentItem.en)}</div>
-                 </div>`
-              : ""
-          }
-
-          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-            ${
-              state.podcastPlaying
-                ? `<button type="button" class="fl-btn danger" id="fl-pod-stop-btn" style="padding:10px 22px;border-radius:999px;font-weight:800;">⏹️ Stop Playback</button>`
-                : `<button type="button" class="fl-pod-play-cta" id="fl-pod-play-btn">▶ Start Passive Walk &amp; Listen</button>`
-            }
-          </div>
-
-          <!-- Speed (0.70x / 0.80x / 1.0x), Loop Episode & Prev/Next Controls -->
-          <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;align-items:center;">
-            <button type="button" class="fl-btn sm" id="fl-pod-prev" title="Previous item">⏮ Prev</button>
-            <button type="button" class="fl-btn sm" id="fl-pod-next" title="Next item">Next ⏭</button>
-            <button type="button" class="fl-btn sm ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop">🔁 Loop Episode: ${state.podcastLoop ? "ON" : "OFF"}</button>
-            <span style="font-size:0.72rem;color:#94a3b8;margin-left:4px;">Speed:</span>
-            ${[0.70, 0.80, 1.0].map((spd) => `<button type="button" class="fl-btn sm ${Math.abs((state.podcastSpeed || 0.75) - spd) < 0.06 ? "active" : ""}" data-fl-pod-speed="${spd}">${spd.toFixed(2)}×</button>`).join("")}
-            <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide List" : "👁️ Show All"}</button>
-          </div>
-        </div>
-
+        <!-- Cards List (Scrolls Smoothly Above Sticky Bottom Audio Bar on Mobile!) -->
         ${
           state.podcastShowScript
-            ? `<div style="margin-top:12px;max-height:360px;overflow-y:auto;">
+            ? `<div class="fl-walk-cards-list" style="margin-top:8px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;">
                 ${items
                   .map(
                     (it, idx) => `
-                  <div class="fl-vocab-row" style="${state.podcastPlaying && idx === activeIdx ? "border-color:#38BDF8;background:rgba(2,156,216,0.18);" : ""}">
+                  <div class="fl-vocab-row ${state.podcastPlaying && idx === activeIdx ? "is-active-walk" : ""}" data-fl-pod-row="${idx}">
                     <div>
                       <strong style="color:#fff;">${idx + 1}. 🇫🇮 ${esc(it.fi)}</strong>
                       <div style="font-size:0.78rem;color:#7dd3fc;">🇬🇧 ${esc(it.en)}</div>
@@ -2200,6 +2457,46 @@
               </div>`
             : ""
         }
+
+        <!-- Sticky Bottom Walk & Listen Player Bar (Lock-Screen iPhone / iPad Ready) -->
+        <div class="fl-pod-player-card fl-walk-sticky-player">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+            <div style="text-align:left;min-width:0;flex:1;">
+              <div style="font-size:0.88rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(ep.title)}</div>
+              <div id="fl-walk-now-counter" style="font-size:0.72rem;color:#34D399;font-weight:700;">
+                ${state.podcastLoading ? esc(state.podcastPhase) : state.podcastPlaying ? `Item ${activeIdx + 1} / ${items.length} • ${esc(state.podcastVoiceLabel || "NooraNeural")}` : `${items.length} items • ${esc(ep.duration || "~12–15 min")} • Lock-Screen MP3 Ready`}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${
+                state.podcastLoading
+                  ? `<span style="font-size:0.78rem;color:#7dd3fc;font-weight:700;">⏳ Building MP3...</span>`
+                  : state.podcastPlaying && !state.podcastPaused
+                  ? `<button type="button" class="fl-btn sm" id="fl-pod-pause-btn" style="background:rgba(2,156,216,0.25);border-color:#38BDF8;color:#fff;font-weight:800;">⏸ Pause</button>
+                     <button type="button" class="fl-btn danger sm" id="fl-pod-stop-btn" style="font-weight:800;">⏹ Stop</button>`
+                  : `<button type="button" class="fl-pod-play-cta" id="fl-pod-play-btn" style="padding:8px 16px;font-size:0.82rem;">▶ ${state.podcastPaused ? "Resume" : "Start Walk & Listen"}</button>`
+              }
+            </div>
+          </div>
+
+          ${
+            currentItem && (state.podcastPlaying || state.podcastPaused)
+              ? `<div style="background:rgba(6,18,36,0.88);border:1px solid rgba(56,189,248,0.35);border-radius:10px;padding:8px 10px;margin-bottom:8px;text-align:left;">
+                   <div id="fl-walk-now-fi" style="font-size:0.96rem;font-weight:800;color:#fff;">🇫🇮 ${esc(currentItem.fi)}</div>
+                   <div id="fl-walk-now-en" style="font-size:0.78rem;color:#7dd3fc;">🇬🇧 means: ${esc(currentItem.en)}</div>
+                 </div>`
+              : ""
+          }
+
+          <!-- Controls Row: Prev/Next, Loop Episode, Speed (0.70x / 0.80x / 1.0x) -->
+          <div style="display:flex;justify-content:center;gap:5px;flex-wrap:wrap;align-items:center;">
+            <button type="button" class="fl-btn sm" id="fl-pod-prev" title="Previous item">⏮</button>
+            <button type="button" class="fl-btn sm" id="fl-pod-next" title="Next item">⏭</button>
+            <button type="button" class="fl-btn sm ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop">🔁 Loop: ${state.podcastLoop ? "ON" : "OFF"}</button>
+            ${[0.70, 0.80, 1.0].map((spd) => `<button type="button" class="fl-btn sm ${Math.abs((state.podcastSpeed || 0.75) - spd) < 0.06 ? "active" : ""}" data-fl-pod-speed="${spd}">${spd.toFixed(2)}×</button>`).join("")}
+            <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide" : "👁️ List"}</button>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -2803,6 +3100,14 @@
 
     // Study mode
     root.querySelectorAll("[data-fl-study]").forEach((b) => { b.onclick = () => { state.studyTool = b.getAttribute("data-fl-study"); state.lessonStep = 1; renderActiveView(); }; });
+    root.querySelectorAll("[data-fl-pro-tool]").forEach((b) => {
+      b.onclick = () => {
+        const toolId = b.getAttribute("data-fl-pro-tool");
+        if (window.FinnishLabPro && typeof window.FinnishLabPro.openTab === "function") {
+          window.FinnishLabPro.openTab(toolId);
+        }
+      };
+    });
     root.querySelector("#fl-study-back")?.addEventListener("click", () => { state.studyTool = null; renderActiveView(); });
 
     // School Finnish Practice & Pronunciation Check events
@@ -2919,33 +3224,82 @@
       }
     });
     root.querySelector("#fl-pod-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx));
+    root.querySelector("#fl-pod-pause-btn")?.addEventListener("click", () => {
+      if (_walkAudioEl && !_walkAudioEl.paused) {
+        try { _walkAudioEl.pause(); } catch (_) {}
+        state.podcastPlaying = false;
+        state.podcastPaused = true;
+        if ("mediaSession" in navigator) {
+          try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
+        }
+        renderActiveView();
+      } else {
+        stopPodcastPlayback();
+      }
+    });
     root.querySelector("#fl-pod-stop-btn")?.addEventListener("click", () => stopPodcastPlayback());
-    root.querySelector("#fl-pod-loop")?.addEventListener("click", () => { state.podcastLoop = !state.podcastLoop; renderActiveView(); });
+    root.querySelector("#fl-pod-loop")?.addEventListener("click", () => {
+      state.podcastLoop = !state.podcastLoop;
+      if (_walkAudioEl) _walkAudioEl.loop = Boolean(state.podcastLoop);
+      renderActiveView();
+    });
     root.querySelector("#fl-pod-prev")?.addEventListener("click", () => {
       const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
       const items = getPodcastItems(ep);
       if (!items.length) return;
       state.podcastItemIdx = (state.podcastItemIdx - 1 + items.length) % items.length;
-      if (state.podcastPlaying) generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
-      else renderActiveView();
+      if (state.podcastAudioUrl && _walkAudioEl && state.podcastItemOffsets && state.podcastItemOffsets[state.podcastItemIdx] != null) {
+        _walkAudioEl.currentTime = state.podcastItemOffsets[state.podcastItemIdx];
+        updateWalkActiveCardHighlight(state.podcastItemIdx);
+        if (state.podcastPlaying) _walkAudioEl.play().catch(() => {});
+        else renderActiveView();
+      } else if (state.podcastPlaying) {
+        generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      } else {
+        renderActiveView();
+      }
     });
     root.querySelector("#fl-pod-next")?.addEventListener("click", () => {
       const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
       const items = getPodcastItems(ep);
       if (!items.length) return;
       state.podcastItemIdx = (state.podcastItemIdx + 1) % items.length;
-      if (state.podcastPlaying) generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
-      else renderActiveView();
+      if (state.podcastAudioUrl && _walkAudioEl && state.podcastItemOffsets && state.podcastItemOffsets[state.podcastItemIdx] != null) {
+        _walkAudioEl.currentTime = state.podcastItemOffsets[state.podcastItemIdx];
+        updateWalkActiveCardHighlight(state.podcastItemIdx);
+        if (state.podcastPlaying) _walkAudioEl.play().catch(() => {});
+        else renderActiveView();
+      } else if (state.podcastPlaying) {
+        generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      } else {
+        renderActiveView();
+      }
     });
     root.querySelectorAll("[data-fl-pod-speed]").forEach((b) => {
       b.onclick = () => {
-        state.podcastSpeed = parseFloat(b.getAttribute("data-fl-pod-speed")) || 0.75;
+        const nextSpeed = parseFloat(b.getAttribute("data-fl-pod-speed")) || 0.75;
+        const wasPlaying = Boolean(state.podcastPlaying);
+        state.podcastSpeed = nextSpeed;
+        state.podcastTrackKey = "";
         toast(`Walk & Listen speed set to ${state.podcastSpeed.toFixed(2)}×`, "info");
-        renderActiveView();
+        if (wasPlaying) {
+          generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+        } else {
+          renderActiveView();
+        }
       };
     });
     root.querySelectorAll("[data-fl-pod-jump]").forEach((b) => {
-      b.onclick = () => generateAndPlayPodcast(state.podcastEpisodeId, Number(b.getAttribute("data-fl-pod-jump") || 0));
+      b.onclick = () => {
+        const idx = Number(b.getAttribute("data-fl-pod-jump") || 0);
+        if (state.podcastAudioUrl && _walkAudioEl && state.podcastItemOffsets && state.podcastItemOffsets[idx] != null && state.podcastPlaying) {
+          _walkAudioEl.currentTime = state.podcastItemOffsets[idx];
+          updateWalkActiveCardHighlight(idx);
+          _walkAudioEl.play().catch(() => {});
+        } else {
+          generateAndPlayPodcast(state.podcastEpisodeId, idx);
+        }
+      };
     });
     root.querySelector("#fl-pod-export-pdf")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "print"));
     root.querySelector("#fl-pod-export-md")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "md"));

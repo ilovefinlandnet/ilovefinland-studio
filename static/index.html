@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=96.0" />
+  <link rel="stylesheet" href="/styles.css?v=100.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=97.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=100.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -147,6 +147,36 @@
           <span>Finnish Study Lab</span>
           <span class="badge" style="margin-left:auto;font-size:0.62rem;padding:2px 6px;background:#10b981;color:#022c22;border-radius:6px;font-weight:800;">A1</span>
         </button>
+
+        <!-- Collapsible TOOLS Group in Left Sidebar -->
+        <details class="sidebar-tools-group" id="sidebar-tools-group">
+          <summary class="sidebar-tools-summary">
+            <span>TOOLS</span>
+            <span class="sidebar-tools-caret">▾</span>
+          </summary>
+          <div class="sidebar-tools-list">
+            <button type="button" class="nav-item nav-item-sub" data-view="calendar">
+              <span>📅</span><span>Publishing Calendar</span>
+            </button>
+            <button type="button" class="nav-item nav-item-sub" data-view="ai-media">
+              <span>🎨</span><span>AI Media Studio</span>
+            </button>
+            <button type="button" class="nav-item nav-item-sub" data-view="research">
+              <span>🔍</span><span>Official Finnish Sources</span>
+            </button>
+            <button type="button" class="nav-item nav-item-sub" data-view="inbox">
+              <span>📥</span><span>Reader Inbox &amp; Voice</span>
+            </button>
+            <button type="button" class="nav-item nav-item-sub" data-view="performance">
+              <span>📈</span><span>Performance &amp; Stats</span>
+            </button>
+            <button type="button" id="btn-cloud-sync-desktop" class="nav-item nav-item-sub" style="color:#34D399;">
+              <span>☁️</span><span>Cloud Auto-Sync</span>
+              <span id="desktop-sync-status-badge" class="pill pill-approved" style="margin-left:auto;font-size:0.6rem;padding:1px 6px;">Live 🟢</span>
+            </button>
+          </div>
+        </details>
+
         <!-- Dynamic module slot for future registered workspaces -->
         <div id="sidebar-dynamic-modules"></div>
       </nav>
@@ -218,23 +248,6 @@
             <button type="button" class="btn-utility-pill is-ai" data-view="studio-ai" id="nav-item-studio-ai" title="Open Studio AI Co-Pilot Chat">
               <span>✨ Studio AI</span>
             </button>
-            <div class="utility-more-wrap">
-              <button type="button" class="btn-utility-pill" id="btn-utility-more-toggle" aria-expanded="false" title="More Editorial & Sync Tools">
-                <span>⋯ Tools</span>
-              </button>
-              <div id="utility-more-menu" class="utility-more-menu hidden">
-                <button type="button" class="utility-more-item" data-view="calendar">📅 Publishing Calendar</button>
-                <button type="button" class="utility-more-item" data-view="ai-media">🎨 AI Media Studio</button>
-                <button type="button" class="utility-more-item" data-view="research">🔍 Official Finnish Sources</button>
-                <button type="button" class="utility-more-item" data-view="inbox">📥 Reader Inbox &amp; Voice</button>
-                <button type="button" class="utility-more-item" data-view="performance">📈 Performance &amp; Stats</button>
-                <div style="height:1px;background:var(--ilf-border-subtle);margin:4px 0;"></div>
-                <button type="button" id="btn-cloud-sync-desktop" class="utility-more-item" style="color:#34D399;">
-                  <span>☁️ Cloud Auto-Sync</span>
-                  <span id="desktop-sync-status-badge" class="pill pill-approved" style="margin-left:auto;font-size:0.62rem;padding:1px 6px;">Live 🟢</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
         <!-- VIEW 0: UNIFIED ARTICLES & POSTS WORKSPACE -->
@@ -1588,7 +1601,7 @@
                         <input type="file" id="input-upload-featured" accept="image/jpeg,image/png,image/webp" style="display:none;" />
                       </label>
                       <button type="button" id="btn-quick-ai-photo" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
-                        <span>✨ Generate AI Photo (Gemini / Nano Banana)</span>
+                        <span>🖼️ Browse Archive / Media</span>
                       </button>
                     </div>
                   </div>
@@ -2065,7 +2078,7 @@
                     <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                   </div>
                   <div>
-                    <h2 class="panel-title">3. Instagram &amp; Facebook Post Studio</h2>
+                    <h2 class="panel-title">2. Instagram &amp; Facebook Post (1080×1350)</h2>
                     <div class="panel-subtitle-row">
                       <span class="badge" style="background:#0284c7;color:#fff;font-weight:700;">Design - 1: Default Post</span>
                       <span class="badge" style="background:#10B981;color:#fff;font-weight:700;">Design - 2: 6-Slide Deck</span>
@@ -2941,14 +2954,20 @@
               <span class="pill pill-approved">Safe Sandbox Mode</span>
             </div>
             
-            <!-- SECURE OPENAI CONNECTION PROBE & SPENDING PROTECTION -->
-            <div id="openai-spending-guard" class="probe-guard-panel" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:16px;margin-bottom:20px;">
+            <!-- OPTIONAL LEGACY FALLBACK: OPENAI CONNECTION PROBE (Collapsed by default; Studio uses $0 Google Gemini Free Tier) -->
+            <details class="inspector-drawer" style="margin-bottom:20px;">
+              <summary style="padding:12px 16px;font-size:0.84rem;">
+                <span>🔒 Optional Legacy Fallback: OpenAI Connection Probe (Inactive — Using Google Gemini $0 Free Tier)</span>
+                <span style="font-size:0.74rem;color:#94A3B8;font-weight:500;">Click to expand ▾</span>
+              </summary>
+              <div class="inspector-drawer-body">
+            <div id="openai-spending-guard" class="probe-guard-panel" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:16px;margin-bottom:0;">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                   <span style="font-size:1.2rem;">🔒</span>
                   <div>
-                    <h3 style="margin:0;font-size:1rem;color:#FFFFFF;">Secure OpenAI Connection Probe (Strict Spending Protection)</h3>
-                    <p class="hint-text" style="margin:2px 0 0;color:#B8C4D4;">Zero automatic calls on load • Single-request spending limiter • Lowest-cost model: <code>gpt-4o-mini</code></p>
+                    <h3 style="margin:0;font-size:1rem;color:#FFFFFF;">Optional Legacy Fallback Connection Probe</h3>
+                    <p class="hint-text" style="margin:2px 0 0;color:#B8C4D4;">Not used by default • Primary Studio AI runs on Google Gemini ($0 Free Tier)</p>
                   </div>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
@@ -2998,6 +3017,8 @@
 
               <div id="probe-result-box" class="conn-test-box hidden" style="margin-top:12px;background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;"></div>
             </div>
+              </div>
+            </details>
 
             <div id="connections-catalog" class="connections-catalog-grid"></div>
 
@@ -3598,11 +3619,11 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=98.0"></script>
+  <script src="/app.js?v=100.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
-  <script src="/finnish-lab.js?v=97.0"></script>
-  <script src="/finnish-lab-pro.js?v=96.0"></script>
+  <script src="/finnish-lab.js?v=100.0"></script>
+  <script src="/finnish-lab-pro.js?v=100.0"></script>
   <script src="/studio-ai-chat.js?v=96.0"></script>
   <script>
     function updateHelsinkiClock() {

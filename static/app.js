@@ -8327,13 +8327,13 @@ ${content}`;
       }
     });
 
-    // Replacement photo upload for Article
+    // Replacement photo upload for Article (auto-syncs to 1080x1350 Post & auto-fills alt text + Photo: credit)
     $("input-upload-featured")?.addEventListener("change", async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file || !currentPackageId) return;
       const labelSpan = e.target.closest("label")?.querySelector("span");
       const origText = labelSpan ? labelSpan.innerHTML : "";
-      if (labelSpan) labelSpan.innerHTML = "⏳ Uploading Replacement Photo…";
+      if (labelSpan) labelSpan.innerHTML = "⏳ Uploading & Syncing Photo…";
       try {
         const base64 = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -8344,6 +8344,14 @@ ${content}`;
         try {
           if (currentPackageId) localStorage.setItem(`ilf_d1_photo_${currentPackageId}`, base64);
         } catch (err) {}
+        const existingAlt = ($("wp-field-img-alt")?.value || "").trim();
+        const headlineFallback = ($("wp-field-title")?.value || "").trim();
+        const cleanFileFallback = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+        const autoAlt = existingAlt || headlineFallback || cleanFileFallback;
+        const existingCredit = ($("wp-field-img-credit")?.value || "").trim();
+        const creditStr = existingCredit || "Photo: ILF";
+        const photog = creditStr.replace(/^photo:\s*/i, "").trim() || "ILF";
+
         await api("/api/package/upload-featured-image", {
           method: "POST",
           body: JSON.stringify({
@@ -8351,16 +8359,18 @@ ${content}`;
             image_data: {
               data_url: base64,
               filename: file.name,
-              photographer: "ILF",
+              photographer: photog,
+              credit_string: creditStr,
               source_url: "https://ilovefinland.net",
               licence: "Editorial Rights (ILF)",
-              alt_text: $("wp-field-img-alt")?.value || file.name.replace(/\.[^.]+$/, ""),
+              alt_text: autoAlt,
             },
           }),
         });
         await loadPackage(currentPackageId);
+        if (typeof renderStaticPostCanvas === "function") renderStaticPostCanvas();
         switchReviewWorkspaceTab("article");
-        alert("✅ Replacement photo uploaded and set as featured image!");
+        alert("✅ Photo uploaded, saved to /data/uploads/, and auto-synced to both Article & 1080×1350 Post!");
       } catch (err) {
         alert(`Failed to upload replacement photo: ${err.message}`);
       } finally {
@@ -8369,14 +8379,14 @@ ${content}`;
       }
     });
 
-    // Direct photo upload for Social Post
+    // Direct photo upload for Social Post (auto-syncs to Article & auto-fills alt text + Photo: credit)
     $("input-upload-post-photo")?.addEventListener("change", async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file || !currentPackageId) return;
       const statusBadge = $("static-photo-status-badge");
       const nameSpan = $("static-post-photo-name");
       if (statusBadge) statusBadge.textContent = "Uploading…";
-      if (nameSpan) nameSpan.textContent = "⏳ Uploading " + file.name + "…";
+      if (nameSpan) nameSpan.textContent = "⏳ Uploading & syncing " + file.name + "…";
       try {
         const base64 = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -8387,6 +8397,14 @@ ${content}`;
         try {
           if (currentPackageId) localStorage.setItem(`ilf_d1_photo_${currentPackageId}`, base64);
         } catch (err) {}
+        const existingAlt = ($("wp-field-img-alt")?.value || "").trim();
+        const headlineFallback = ($("wp-field-title")?.value || "").trim();
+        const cleanFileFallback = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+        const autoAlt = existingAlt || headlineFallback || cleanFileFallback;
+        const existingCredit = ($("wp-field-img-credit")?.value || "").trim();
+        const creditStr = existingCredit || "Photo: ILF";
+        const photog = creditStr.replace(/^photo:\s*/i, "").trim() || "ILF";
+
         await api("/api/package/upload-featured-image", {
           method: "POST",
           body: JSON.stringify({
@@ -8394,16 +8412,18 @@ ${content}`;
             image_data: {
               data_url: base64,
               filename: file.name,
-              photographer: "ILF",
+              photographer: photog,
+              credit_string: creditStr,
               source_url: "https://ilovefinland.net",
               licence: "Editorial Rights (ILF)",
-              alt_text: $("static-edit-badge")?.value || file.name.replace(/\.[^.]+$/, ""),
+              alt_text: autoAlt,
             },
           }),
         });
         await loadPackage(currentPackageId);
+        if (typeof renderStaticPostCanvas === "function") renderStaticPostCanvas();
         switchReviewWorkspaceTab("ig");
-        alert("✅ Photo uploaded successfully for your Social Post!");
+        alert("✅ Photo uploaded, saved to /data/uploads/, and auto-synced to both 1080×1350 Post & Article!");
       } catch (err) {
         alert(`Failed to upload photo: ${err.message}`);
       } finally {

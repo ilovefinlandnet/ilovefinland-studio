@@ -6936,15 +6936,24 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   border-top: 1px solid var(--ilf-border-subtle);
 }
 
-/* Zone 2 + Zone 3 Layout for Article & Web Publisher (1600x900) */
+/* Zone 2 + Zone 3 Layout for Article & Web Publisher (1600x900) — Zero Right-Edge Clipping */
 .article-3zone-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 410px);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 440px);
+  gap: 20px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1080px) {
+.article-3zone-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1180px) {
   .article-3zone-grid {
     grid-template-columns: 1fr;
   }
@@ -6956,11 +6965,115 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   border-radius: var(--ilf-radius-lg);
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .article-inspector-column {
   position: sticky;
   top: 16px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Stack Featured Photo + Alt Text + Credit cleanly vertically inside Inspector so ZERO labels/buttons clip */
+.article-inspector-column .studio-inspector-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.article-inspector-column .wp-image-card {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.article-inspector-column .wp-image-preview-col,
+.article-inspector-column .wp-image-meta-col,
+.article-inspector-column .wp-credit-box,
+.article-inspector-column .wp-field-wrap {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.article-inspector-column .wp-field-label-row,
+.article-inspector-column .wp-credit-row,
+.article-inspector-column .wp-image-downloads-row {
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  max-width: 100%;
+}
+
+.article-inspector-column .meta-val,
+.article-inspector-column .meta-link {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Collapsible TOOLS Group inside Left Sidebar */
+.sidebar-tools-group {
+  margin-top: 10px;
+  border-top: 1px solid rgba(75, 137, 188, 0.22);
+  padding-top: 8px;
+}
+
+.sidebar-tools-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-tools-summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar-tools-summary:hover {
+  background: rgba(56, 189, 248, 0.08);
+  color: #E2E8F0;
+}
+
+.sidebar-tools-group[open] .sidebar-tools-caret {
+  transform: rotate(180deg);
+}
+
+.sidebar-tools-caret {
+  transition: transform 0.16s ease;
+  font-size: 0.72rem;
+}
+
+.sidebar-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.nav-item.nav-item-sub {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  color: #CBD5E1;
 }
 
 /* Safe-Zone Guide Overlay for 1080x1350 Social Canvases */
@@ -7040,4 +7153,29 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
 /* Hide utility bar cleanly when Finnish Lab is full-screen */
 body:has(#view-finnish-lab:not(.hidden)) .studio-utility-bar {
   display: none !important;
+}
+
+/* Mobile & iPad Native Scrolling Guarantee (v99.0) */
+@media (max-width: 768px) {
+  html,
+  body {
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: clip !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .studio-shell,
+  .workspace-wrap,
+  .workspace,
+  .main-content,
+  .view-panel:not(.hidden) {
+    min-height: 100dvh;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
 }

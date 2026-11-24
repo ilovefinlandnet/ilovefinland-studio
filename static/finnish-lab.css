@@ -1661,3 +1661,107 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
 .fl-msg.live-sub em {
   color: #7DD3FC;
 }
+
+/* ============================================================================
+   WALK & LISTEN STICKY BOTTOM PLAYER + ACTIVE CARD HIGHLIGHT (v99.0)
+   ============================================================================ */
+.fl-walk-sticky-player {
+  position: sticky;
+  bottom: 0;
+  z-index: 45;
+  margin-top: 14px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-radius: 16px;
+  background: rgba(6, 18, 36, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(56, 189, 248, 0.42);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.fl-vocab-row.is-active-walk {
+  border-color: rgba(56, 189, 248, 0.78) !important;
+  background: rgba(2, 132, 199, 0.16) !important;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+/* ============================================================================
+   MOBILE & IPAD SCROLL FIX (iPhone / iPad Safari Native Momentum Scrolling)
+   Unlocks fixed 100dvh / overflow:hidden desktop shell so all pages, cards,
+   and Walk & Listen episodes scroll smoothly on touchscreens.
+   ============================================================================ */
+@media (max-width: 768px) {
+  html,
+  body,
+  body:has(#view-finnish-lab:not(.hidden)),
+  body:has(#view-studio-ai:not(.hidden)) {
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: clip !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .studio-shell,
+  .studio-shell:has(#view-finnish-lab:not(.hidden)) .workspace-wrap,
+  .studio-shell:has(#view-studio-ai:not(.hidden)) .workspace-wrap,
+  .workspace:has(#view-finnish-lab:not(.hidden)),
+  .workspace:has(#view-studio-ai:not(.hidden)),
+  #view-finnish-lab,
+  #view-studio-ai,
+  #finnish-lab-root,
+  #studio-ai-root,
+  .fl-app {
+    min-height: 100dvh !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .fl-study-scroll,
+  .fl-chat-stage,
+  .flp-pro-workspace,
+  .flp-body {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    flex: 1 0 auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .fl-study-scroll:has(.fl-walk-sticky-player) {
+    padding-bottom: 200px !important;
+  }
+
+  .fl-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 60 !important;
+  }
+
+  .fl-composer-dock {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 50 !important;
+    background: rgba(5, 8, 15, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .fl-walk-sticky-player {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 80 !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

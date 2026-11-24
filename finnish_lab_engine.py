@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import secrets
 import sqlite3
 import threading
@@ -2211,3 +2212,389 @@ def handle_pronunciation_check(payload: Dict[str, Any], db_path: str = FINNISH_L
 
 
 
+
+# =============================================================================
+# NATURAL NEURAL FINNISH & ENGLISH TTS (edge-tts — $0 Free, No API Key Required)
+# Cached persistently in /data/uploads/finnish_tts/
+# =============================================================================
+EDGE_FI_VOICES = ("fi-FI-NooraNeural", "fi-FI-SelmaNeural")
+EDGE_EN_VOICES = ("en-US-AriaNeural", "en-GB-SoniaNeural")
+
+
+def _resolve_tts_cache_dir() -> str:
+    data_dir = "/data"
+    if os.path.exists(data_dir) and os.path.isdir(data_dir):
+        target = os.path.join(data_dir, "uploads", "finnish_tts")
+    else:
+        target = os.path.join(BASE_DIR, "static", "assets", "uploads", "finnish_tts")
+    os.makedirs(target, exist_ok=True)
+    return target
+
+
+def _rate_float_to_edge_str(rate_val: Any) -> str:
+    try:
+        r = float(rate_val)
+    except Exception:
+        r = 1.0
+    if r <= 0.72:
+        return "-30%"
+    if r <= 0.78:
+        return "-25%"
+    if r <= 0.83:
+        return "-20%"
+    if r <= 0.90:
+        return "-15%"
+    if r >= 1.10:
+        return "+10%"
+    return "+0%"
+
+
+def _estimate_mp3_duration_sec(mp3_path: str) -> float:
+    """Estimate MP3 duration cleanly using ffprobe if available, else bitrate fallback (~24kbps/48kbps edge-tts)."""
+    import shutil
+    import subprocess
+
+    ffprobe = shutil.which("ffprobe")
+    if ffprobe and os.path.exists(mp3_path):
+        try:
+            out = subprocess.check_output(
+                [
+                    ffprobe,
+                    "-v",
+                    "error",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    mp3_path,
+                ],
+                stderr=subprocess.DEVNULL,
+                timeout=8,
+            ).decode("utf-8", errors="ignore").strip()
+            val = float(out)
+            if val > 0:
+                return val
+        except Exception:
+            pass
+    try:
+        # edge-tts emits 24kHz 48kbps mono MP3 (~6000 bytes/sec)
+        sz = os.path.getsize(mp3_path)
+        return max(0.35, round(sz / 6000.0, 2))
+    except Exception:
+        return 1.2
+
+
+def _run_edge_tts_sync(text: str, voice: str, rate_str: str, dest_path: str) -> None:
+    import asyncio
+    import edge_tts
+
+    async def _gen():
+        comm = edge_tts.Communicate(text=text, voice=voice, rate=rate_str)
+        await comm.save(dest_path)
+
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(_gen())
+    finally:
+        loop.close()
+
+
+def synthesize_edge_tts_mp3(
+    text: str,
+    lang: str = "fi",
+    rate: Any = 1.0,
+    voice: Optional[str] = None,
+) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    """Synthesize or retrieve cached neural MP3 clip in /data/uploads/finnish_tts/.
+
+    Returns: (local_path, public_url, voice_used, error_msg)
+    """
+    clean = re.sub(r"[*_`#>]+", "", str(text or "")).strip()[:800]
+    if not clean:
+        return None, None, None, "Empty text."
+
+    rate_str = rate if isinstance(rate, str) and rate.endswith("%") else _rate_float_to_edge_str(rate)
+    is_en = str(lang or "fi").lower().startswith("en")
+    voices_to_try = [voice] if voice else list(EDGE_EN_VOICES if is_en else EDGE_FI_VOICES)
+
+    cache_dir = _resolve_tts_cache_dir()
+    key_sig = f"edge_v1|{voices_to_try[0]}|{rate_str}|{clean}"
+    fname = f"tts_{hashlib.sha256(key_sig.encode('utf-8')).hexdigest()[:20]}.mp3"
+    dest_path = os.path.join(cache_dir, fname)
+    public_url = f"/assets/uploads/finnish_tts/{fname}"
+
+    if os.path.exists(dest_path) and os.path.getsize(dest_path) > 400:
+        return dest_path, public_url, voices_to_try[0], None
+
+    try:
+        import edge_tts  # noqa: F401
+    except ImportError:
+        return None, None, None, "edge-tts package is not installed on this server."
+
+    last_err = "edge-tts synthesis failed."
+    tmp_path = dest_path + f".tmp_{os.getpid()}_{threading.get_ident()}"
+    for v_name in voices_to_try:
+        if not v_name:
+            continue
+        try:
+            _run_edge_tts_sync(clean, v_name, rate_str, tmp_path)
+            if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 400:
+                os.replace(tmp_path, dest_path)
+                # Mirror to static/assets/uploads/finnish_tts if separate from /data/uploads
+                local_mirror_dir = os.path.join(BASE_DIR, "static", "assets", "uploads", "finnish_tts")
+                if os.path.abspath(cache_dir) != os.path.abspath(local_mirror_dir):
+                    try:
+                        import shutil
+                        os.makedirs(local_mirror_dir, exist_ok=True)
+                        shutil.copy2(dest_path, os.path.join(local_mirror_dir, fname))
+                    except Exception:
+                        pass
+                return dest_path, public_url, v_name, None
+        except Exception as exc:
+            last_err = str(exc)
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+            continue
+
+    return None, None, None, last_err
+
+
+def handle_edge_tts(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
+    """$0 Free Neural Finnish/English TTS endpoint returning cached MP3 URL."""
+    text = (payload.get("text") or "").strip()
+    if not text:
+        return {"ok": False, "error": "EMPTY_TEXT", "message": "Text is required."}, 400
+    lang = (payload.get("lang") or "fi").strip().lower()
+    rate = payload.get("rate", 1.0)
+    voice = (payload.get("voice") or "").strip() or None
+
+    local_path, public_url, used_voice, err = synthesize_edge_tts_mp3(
+        text=text, lang=lang, rate=rate, voice=voice
+    )
+    if err or not public_url:
+        return {"ok": False, "error": "TTS_UNAVAILABLE", "message": err or "Neural TTS unavailable."}, 503
+
+    return {
+        "ok": True,
+        "audio_url": public_url,
+        "voice": used_voice,
+        "rate": _rate_float_to_edge_str(rate),
+        "duration_sec": _estimate_mp3_duration_sec(local_path or ""),
+    }, 200
+
+
+def _ensure_silence_mp3(duration_sec: float, cache_dir: str) -> Optional[str]:
+    """Generate a tiny cached silence MP3 matching edge-tts 24kHz mono 48kbps format."""
+    import shutil
+    import subprocess
+
+    ms = int(round(duration_sec * 1000))
+    sil_path = os.path.join(cache_dir, f"silence_{ms}ms.mp3")
+    if os.path.exists(sil_path) and os.path.getsize(sil_path) > 100:
+        return sil_path
+    ffmpeg_bin = shutil.which("ffmpeg")
+    if not ffmpeg_bin:
+        return None
+    try:
+        res = subprocess.run(
+            [
+                ffmpeg_bin,
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "anullsrc=r=24000:cl=mono",
+                "-t",
+                f"{duration_sec:.2f}",
+                "-c:a",
+                "libmp3lame",
+                "-b:a",
+                "48k",
+                sil_path,
+            ],
+            capture_output=True,
+            timeout=10,
+        )
+        if res.returncode == 0 and os.path.exists(sil_path) and os.path.getsize(sil_path) > 100:
+            return sil_path
+    except Exception:
+        pass
+    return None
+
+
+def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
+    """Build a single continuous seamless MP3 track for Walk & Listen (lock-screen iPhone/iPad safe!).
+
+    Pattern per item:
+      Slow Finnish (selected speed) -> 0.35s pause -> "means [English]" -> 1.25s pause -> Second Slow Finnish repeat -> 0.85s pause
+    """
+    import shutil
+    import subprocess
+
+    raw_items = payload.get("items") or []
+    items = [
+        {"fi": str(it.get("fi") or "").strip(), "en": str(it.get("en") or "").strip()}
+        for it in raw_items
+        if str(it.get("fi") or "").strip() and str(it.get("en") or "").strip()
+    ][:30]
+    if not items:
+        return {"ok": False, "error": "EMPTY_ITEMS", "message": "No Walk & Listen items provided."}, 400
+
+    rate = payload.get("rate", 0.75)
+    rate_str = _rate_float_to_edge_str(rate)
+    cache_dir = _resolve_tts_cache_dir()
+
+    sig = json.dumps({"v": 2, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
+    digest = hashlib.sha256(sig.encode("utf-8")).hexdigest()[:20]
+    out_mp3_name = f"walk_course_{digest}.mp3"
+    out_mp3_path = os.path.join(cache_dir, out_mp3_name)
+    out_meta_path = os.path.join(cache_dir, f"walk_course_{digest}.json")
+    public_url = f"/assets/uploads/finnish_tts/{out_mp3_name}"
+
+    if os.path.exists(out_mp3_path) and os.path.getsize(out_mp3_path) > 1000 and os.path.exists(out_meta_path):
+        try:
+            meta = json.loads(open(out_meta_path, "r", encoding="utf-8").read())
+            meta["cached"] = True
+            return meta, 200
+        except Exception:
+            pass
+
+    sil_short = _ensure_silence_mp3(0.35, cache_dir)
+    sil_pause = _ensure_silence_mp3(1.25, cache_dir)
+    sil_gap = _ensure_silence_mp3(0.85, cache_dir)
+
+    segment_paths: List[str] = []
+    item_offsets: List[float] = []
+    running_sec = 0.0
+    used_voice = EDGE_FI_VOICES[0]
+
+    # Synthesize all Finnish + English clips concurrently (6 workers -> ~6s for 24 items, 0ms when cached)
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _synth_pair(it_obj: Dict[str, str]):
+        fi_p, _, v_fi, e_fi = synthesize_edge_tts_mp3(it_obj["fi"], lang="fi", rate=rate_str)
+        if e_fi or not fi_p:
+            return None, None, None, e_fi or "Neural TTS unavailable."
+        en_p, _, _, e_en = synthesize_edge_tts_mp3(f"means {it_obj['en']}", lang="en", rate="+0%")
+        if e_en or not en_p:
+            return None, None, None, e_en or "English neural TTS unavailable."
+        return fi_p, en_p, v_fi, None
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        pair_results = list(pool.map(_synth_pair, items))
+
+    for fi_path, en_path, v_fi, pair_err in pair_results:
+        if pair_err or not fi_path or not en_path:
+            return {"ok": False, "error": "TTS_UNAVAILABLE", "message": pair_err or "Neural TTS unavailable."}, 503
+        if v_fi:
+            used_voice = v_fi
+
+        fi_dur = _estimate_mp3_duration_sec(fi_path)
+        en_dur = _estimate_mp3_duration_sec(en_path)
+
+        item_offsets.append(round(running_sec, 2))
+
+        # 1. Slow Finnish
+        segment_paths.append(fi_path)
+        running_sec += fi_dur
+        if sil_short:
+            segment_paths.append(sil_short)
+            running_sec += 0.35
+        # 2. "means [English meaning]"
+        segment_paths.append(en_path)
+        running_sec += en_dur
+        # 3. Short memorization pause
+        if sil_pause:
+            segment_paths.append(sil_pause)
+            running_sec += 1.25
+        # 4. Second slow Finnish repeat
+        segment_paths.append(fi_path)
+        running_sec += fi_dur
+        # 5. Transition pause
+        if sil_gap:
+            segment_paths.append(sil_gap)
+            running_sec += 0.85
+
+    # Concatenate into single seamless MP3 (ffmpeg concat demuxer first, pure-Python MP3 byte join fallback)
+    ffmpeg_bin = shutil.which("ffmpeg")
+    built_ok = False
+    if ffmpeg_bin:
+        list_file = os.path.join(cache_dir, f"concat_{digest}.txt")
+        try:
+            with open(list_file, "w", encoding="utf-8") as lf:
+                for sp in segment_paths:
+                    safe_p = sp.replace("'", "'\\''")
+                    lf.write(f"file '{safe_p}'\n")
+            res = subprocess.run(
+                [
+                    ffmpeg_bin,
+                    "-y",
+                    "-f",
+                    "concat",
+                    "-safe",
+                    "0",
+                    "-i",
+                    list_file,
+                    "-c:a",
+                    "libmp3lame",
+                    "-ar",
+                    "24000",
+                    "-ac",
+                    "1",
+                    "-b:a",
+                    "48k",
+                    out_mp3_path,
+                ],
+                capture_output=True,
+                timeout=60,
+            )
+            if res.returncode == 0 and os.path.exists(out_mp3_path) and os.path.getsize(out_mp3_path) > 1000:
+                built_ok = True
+        except Exception:
+            pass
+        finally:
+            try:
+                if os.path.exists(list_file):
+                    os.remove(list_file)
+            except Exception:
+                pass
+
+    if not built_ok:
+        try:
+            with open(out_mp3_path, "wb") as out_f:
+                for sp in segment_paths:
+                    with open(sp, "rb") as in_f:
+                        out_f.write(in_f.read())
+            built_ok = os.path.exists(out_mp3_path) and os.path.getsize(out_mp3_path) > 1000
+        except Exception as exc:
+            return {"ok": False, "error": "CONCAT_FAILED", "message": str(exc)}, 500
+
+    # Mirror to static/assets/uploads/finnish_tts if separate from /data/uploads
+    local_mirror_dir = os.path.join(BASE_DIR, "static", "assets", "uploads", "finnish_tts")
+    if os.path.abspath(cache_dir) != os.path.abspath(local_mirror_dir):
+        try:
+            os.makedirs(local_mirror_dir, exist_ok=True)
+            shutil.copy2(out_mp3_path, os.path.join(local_mirror_dir, out_mp3_name))
+        except Exception:
+            pass
+
+    total_dur = _estimate_mp3_duration_sec(out_mp3_path)
+    meta = {
+        "ok": True,
+        "audio_url": public_url,
+        "voice": used_voice,
+        "rate": rate_str,
+        "item_offsets": item_offsets,
+        "total_duration": round(total_dur, 2),
+        "item_count": len(items),
+        "cached": False,
+    }
+    try:
+        with open(out_meta_path, "w", encoding="utf-8") as mf:
+            json.dump(meta, mf)
+    except Exception:
+        pass
+    return meta, 200

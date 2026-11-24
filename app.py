@@ -971,20 +971,27 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"error": "Unknown API endpoint"}, status=HTTPStatus.NOT_FOUND)
             return
 
-        # Protected media links (except heart logo used on sign-in screen)
-        if path.startswith("/assets/") and path != "/assets/ilf-heart.png":
+        # Protected media links (except heart logo and Finnish Lab cached neural TTS audio for signed-in admins/students)
+        if path.startswith("/assets/uploads/finnish_tts/"):
+            if not (self._current_user() or self._current_fl_student_account() or self._current_fl_student()):
+                self.send_error(HTTPStatus.UNAUTHORIZED, "Authentication required")
+                return
+        elif path.startswith("/assets/") and path != "/assets/ilf-heart.png":
             if not self._require_auth():
                 return
 
-        # Persistent uploads serving: check /data/uploads first, then static/assets/uploads
+        # Persistent uploads serving (supports subdirectories such as /assets/uploads/finnish_tts/<file>.mp3)
         if path.startswith("/assets/uploads/"):
-            fname = os.path.basename(path)
-            persistent_upload = os.path.join("/data", "uploads", fname)
-            if os.path.exists(persistent_upload):
+            rel_sub = os.path.normpath(path[len("/assets/uploads/"):]).lstrip("/\\")
+            if ".." in rel_sub.split(os.sep):
+                self.send_error(HTTPStatus.FORBIDDEN, "Invalid path")
+                return
+            persistent_upload = os.path.join("/data", "uploads", rel_sub)
+            if os.path.isfile(persistent_upload):
                 self._send_file(persistent_upload)
                 return
-            local_upload = os.path.join(STATIC_DIR, "assets", "uploads", fname)
-            if os.path.exists(local_upload):
+            local_upload = os.path.join(STATIC_DIR, "assets", "uploads", rel_sub)
+            if os.path.isfile(local_upload):
                 self._send_file(local_upload)
                 return
             self.send_error(HTTPStatus.NOT_FOUND, "Upload Not Found")
@@ -2857,8 +2864,13 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(res, status=status_code)
                 return
 
-            if path == "/api/finnish-lab/tts":
-                res, status_code = finnish_lab_engine.handle_tts(body or {})
+            if path == "/api/finnish-lab/tts" or path == "/api/finnish-lab/edge-tts":
+                res, status_code = finnish_lab_engine.handle_edge_tts(body or {})
+                self._send_json(res, status=status_code)
+                return
+
+            if path == "/api/finnish-lab/walk-listen-audio":
+                res, status_code = finnish_lab_engine.handle_walk_listen_audio(body or {})
                 self._send_json(res, status=status_code)
                 return
 
