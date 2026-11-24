@@ -2316,8 +2316,17 @@
     const settings = DB.getSettings();
     const prog = DB.getProgress();
     const dueCount = state.flashcards.filter((c) => (c.dueAt || 0) <= Date.now()).length;
-    const activeTab = state.activeTab || "chat";
-    const showMiniPlayer = activeTab === "walk" || state.podcastPlaying || state.podcastPaused;
+    // Normalize legacy 3-tab IDs into the clean 2-tab (Chat | Study) model
+    if (state.activeTab === "walk") {
+      state.activeTab = "study";
+      state.studySubTab = "walk";
+    } else if (state.activeTab === "notebook") {
+      state.activeTab = "study";
+      state.studySubTab = "notebook";
+    }
+    const activeTab = state.activeTab === "study" ? "study" : "chat";
+    const studySubTab = state.studySubTab === "notebook" ? "notebook" : "walk";
+    const showMiniPlayer = (activeTab === "study" && studySubTab === "walk") || state.podcastPlaying || state.podcastPaused;
 
     const allEps = getAllPodcastEpisodes();
     const curEp = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
@@ -2326,45 +2335,47 @@
     const curWalkItem = curItems[activeIdx] || { fi: "Hyvää huomenta", en: "Good morning" };
 
     root.innerHTML = `
-      <div class="fl3-shell ${showMiniPlayer ? "has-mini-player" : ""}">
-        <!-- Official Brand Top Bar + 3 Clean Pill Tabs Only -->
-        <header class="fl3-topbar">
+      <div class="fl3-shell ${activeTab === "chat" ? "is-chat-mode" : ""} ${showMiniPlayer ? "has-mini-player" : ""}">
+        <!-- Ultra-Slim Top Bar: Brand + 2 Clean Tabs (Chat | Study) + New Chat -->
+        <header class="fl3-topbar fl3-topbar-slim">
           <div class="fl3-brand-group">
             <button type="button" class="fl3-menu-btn" id="fl-open-drawer" title="Saved Chats, Flashcards, Notes &amp; Settings" aria-label="Open Finnish Lab menu">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
-            <div class="fl3-title-wrap">
-              <div class="fl3-title">
-                <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
-                <span>Finnish Study Lab</span>
-              </div>
-              <div class="fl3-subtitle">CEFR ${esc(settings.level || "A1")} • Neural Voice (Noora) • $0 Free Tier</div>
+            <div class="fl3-title">
+              <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
+              <span>Finnish Lab</span>
             </div>
           </div>
 
-          <nav class="fl3-tabs-nav" role="tablist" aria-label="Finnish Study Lab Tabs">
+          <nav class="fl3-tabs-nav fl3-tabs-2" role="tablist" aria-label="Finnish Study Lab Tabs">
             <button type="button" role="tab" aria-selected="${activeTab === "chat"}" class="fl3-tab-pill ${activeTab === "chat" ? "active" : ""}" data-fl-tab="chat">
-              <span>💬</span><span>Chat &amp; Class</span>
+              <span>💬</span><span>Chat</span>
             </button>
-            <button type="button" role="tab" aria-selected="${activeTab === "walk"}" class="fl3-tab-pill ${activeTab === "walk" ? "active" : ""}" data-fl-tab="walk">
-              <span>🎧</span><span>Walk &amp; Listen</span>
-            </button>
-            <button type="button" role="tab" aria-selected="${activeTab === "notebook"}" class="fl3-tab-pill ${activeTab === "notebook" ? "active" : ""}" data-fl-tab="notebook">
-              <span>📓</span><span>Notebook &amp; Drills</span>
+            <button type="button" role="tab" aria-selected="${activeTab === "study"}" class="fl3-tab-pill ${activeTab === "study" ? "active" : ""}" data-fl-tab="study">
+              <span>📚</span><span>Study</span>
             </button>
           </nav>
 
           <div class="fl3-actions-group">
-            <button type="button" class="fl3-btn" id="fl-new-chat-top" title="Start a fresh tutor chat">+ New Chat</button>
+            <button type="button" class="fl3-btn" id="fl-new-chat-top" style="padding:7px 12px;min-height:36px;" title="Start a fresh tutor chat">+ New</button>
           </div>
         </header>
 
         ${
           activeTab === "chat"
             ? renderTabChatAndClass()
-            : activeTab === "walk"
-            ? renderTabWalkAndListen()
-            : renderTabNotebookAndDrills()
+            : `<div class="fl3-study-wrap">
+                <div class="fl3-study-subnav" role="tablist" aria-label="Study Sections">
+                  <button type="button" role="tab" aria-selected="${studySubTab === "walk"}" class="fl3-sub-pill ${studySubTab === "walk" ? "active" : ""}" data-fl-study-sub="walk">
+                    <span>🎧</span><span>Walk &amp; Listen</span>
+                  </button>
+                  <button type="button" role="tab" aria-selected="${studySubTab === "notebook"}" class="fl3-sub-pill ${studySubTab === "notebook" ? "active" : ""}" data-fl-study-sub="notebook">
+                    <span>🎯</span><span>Notebook &amp; Drills</span>
+                  </button>
+                </div>
+                ${studySubTab === "walk" ? renderTabWalkAndListen() : renderTabNotebookAndDrills()}
+              </div>`
         }
       </div>
 
@@ -2509,7 +2520,7 @@
     `;
   }
 
-  /* ---------- TAB 1: CHAT & CLASS (FULL-WIDTH AI TUTOR + ON-DEMAND SILENT LIVE CLASS) ---------- */
+  /* ---------- TAB 1: CHATGPT-STYLE FULL-HEIGHT CHAT + ON-DEMAND SILENT LIVE CLASS ---------- */
   function renderTabChatAndClass() {
     const conv = getActiveConv();
     const allMsgs = conv ? conv.messages || [] : [];
@@ -2527,171 +2538,160 @@
     const showLiveDrawer = Boolean(state.livePanelOpen || state.isLiveTranslating);
 
     return `
-      <div class="fl3-grid-chat">
-        <section class="fl3-card fl3-tutor-card" aria-label="AI Finnish Tutor" style="position:relative;">
-          <div class="fl3-card-head">
-            <h2 class="fl3-card-title">
-              <img src="/assets/ilf-heart.png" alt="" class="fl3-brand-icon-sm" />
-              <span>AI Finnish Tutor</span>
-            </h2>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : showLiveDrawer ? "active" : ""}" id="fl-toggle-live-panel" style="padding:7px 12px;" title="Open Silent Classroom Live listener (100% muted)">
-                ${state.isLiveTranslating ? "🔴 Live Class ON" : showLiveDrawer ? "🔇 Hide Live Class" : "🔇 Live Class"}
-              </button>
-            </div>
-          </div>
-
-          ${
-            showLiveDrawer
-              ? `<div class="fl3-live-drawer" role="region" aria-label="Silent Classroom Live Helper">
-                  <div class="fl3-waveform-box ${state.isLiveTranslating ? "active" : ""}" style="margin-bottom:10px;">
-                    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-                      <div class="fl3-wave-bars" aria-hidden="true">
-                        <span></span><span></span><span></span><span></span><span></span>
-                      </div>
-                      <div style="min-width:0;">
-                        <div id="fl-live-interim" style="font-size:0.82rem;font-weight:700;color:${state.isLiveTranslating ? "#6EE7B7" : "#CBD5E1"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                          ${esc(state.isLiveTranslating ? (state.liveInterimText || "Listening silently for Finnish...") : "Silent Classroom Live • Speaker 100% muted")}
-                        </div>
+      <div class="fl3-chatgpt-wrap" aria-label="AI Finnish Tutor">
+        ${
+          showLiveDrawer
+            ? `<div class="fl3-live-drawer" role="region" aria-label="Silent Classroom Live Helper">
+                <div class="fl3-waveform-box ${state.isLiveTranslating ? "active" : ""}" style="margin-bottom:10px;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                    <div class="fl3-wave-bars" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <div style="min-width:0;">
+                      <div id="fl-live-interim" style="font-size:0.82rem;font-weight:700;color:${state.isLiveTranslating ? "#6EE7B7" : "#CBD5E1"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        ${esc(state.isLiveTranslating ? (state.liveInterimText || "Listening silently for Finnish...") : "Silent Classroom Live • Speaker 100% muted")}
                       </div>
                     </div>
-                    <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-                      ${state.isLiveTranslating && state.liveForceCutFn ? `<button type="button" class="fl3-btn" id="fl-live-now" style="padding:6px 9px;" title="Translate captured audio right now">⚡</button>` : ""}
-                      <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn" style="padding:7px 12px;">
-                        ${state.isLiveTranslating ? "⏹ Stop" : "🎙️ Start Live"}
+                  </div>
+                  <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
+                    ${state.isLiveTranslating && state.liveForceCutFn ? `<button type="button" class="fl3-btn" id="fl-live-now" style="padding:6px 9px;" title="Translate captured audio right now">⚡</button>` : ""}
+                    <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn" style="padding:7px 12px;">
+                      ${state.isLiveTranslating ? "⏹ Stop" : "🎙️ Start Live"}
+                    </button>
+                    ${!state.isLiveTranslating ? `<button type="button" class="fl3-btn" id="fl-close-live-panel" style="padding:6px 10px;" aria-label="Close Silent Classroom Live">✕</button>` : ""}
+                  </div>
+                </div>
+
+                <div class="fl3-live-split">
+                  <div class="fl3-live-field" style="margin:0;">
+                    <div class="fl3-live-label">🇫🇮 Finnish Heard</div>
+                    <div style="font-size:0.93rem;font-weight:700;color:#FFFFFF;line-height:1.4;">
+                      ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Live" when your teacher speaks Finnish...</span>`}
+                    </div>
+                  </div>
+                  <div class="fl3-live-field" style="margin:0;">
+                    <div class="fl3-live-label">🇬🇧 English Meaning</div>
+                    <div style="font-size:0.9rem;color:#38BDF8;font-weight:600;line-height:1.4;">
+                      ${liveData.hasCapture ? esc(liveData.enMeaning || "—") : `<span style="color:#64748B;font-weight:500;">Instant English translation appears silently here.</span>`}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top:10px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                    <div class="fl3-live-label" style="margin:0;">💬 Ready Written Finnish Answers (Tap to Copy)</div>
+                    ${
+                      liveData.hasCapture
+                        ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button type="button" class="fl3-speaker-btn" id="fl-live-save-words">⭐ Save Words</button>
+                            <button type="button" class="fl3-speaker-btn" id="fl-live-to-podcast">🎧 Class → Podcast</button>
+                          </div>`
+                        : ""
+                    }
+                  </div>
+                  <div class="fl3-reply-row">
+                    ${liveData.replies
+                      .map(
+                        (r) => `
+                      <button type="button" class="fl3-reply-chip" data-fl-use-reply="${esc(r.fi)}" title="Tap to copy &amp; place in chat input (silent)">
+                        <strong style="font-size:0.84rem;color:#FFFFFF;">${esc(r.fi)}</strong>
+                        <span style="font-size:0.74rem;color:#94A3B8;">${esc(r.en)}</span>
                       </button>
-                      ${!state.isLiveTranslating ? `<button type="button" class="fl3-btn" id="fl-close-live-panel" style="padding:6px 10px;" aria-label="Close Silent Classroom Live">✕</button>` : ""}
-                    </div>
+                    `
+                      )
+                      .join("")}
                   </div>
+                </div>
 
-                  <div class="fl3-live-split">
-                    <div class="fl3-live-field" style="margin:0;">
-                      <div class="fl3-live-label">🇫🇮 Finnish Heard</div>
-                      <div style="font-size:0.93rem;font-weight:700;color:#FFFFFF;line-height:1.4;">
-                        ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Live" when your teacher speaks Finnish...</span>`}
-                      </div>
-                    </div>
-                    <div class="fl3-live-field" style="margin:0;">
-                      <div class="fl3-live-label">🇬🇧 English Meaning</div>
-                      <div style="font-size:0.9rem;color:#38BDF8;font-weight:600;line-height:1.4;">
-                        ${liveData.hasCapture ? esc(liveData.enMeaning || "—") : `<span style="color:#64748B;font-weight:500;">Instant English translation appears silently here.</span>`}
-                      </div>
-                    </div>
+                ${
+                  liveHistory.length
+                    ? `<details style="margin-top:8px;">
+                        <summary style="cursor:pointer;font-size:0.75rem;font-weight:700;color:#94A3B8;user-select:none;">🕒 Earlier in Class (${liveHistory.length})</summary>
+                        <div style="display:flex;flex-direction:column;gap:5px;max-height:125px;overflow-y:auto;margin-top:6px;">
+                          ${liveHistory
+                            .map(
+                              (h) => `
+                            <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:7px 10px;">
+                              <div style="font-size:0.8rem;font-weight:700;color:#E2E8F0;">${esc(h.fiHeard)}</div>
+                              ${h.enMeaning ? `<div style="font-size:0.74rem;color:#38BDF8;margin-top:2px;">${esc(h.enMeaning)}</div>` : ""}
+                            </div>
+                          `
+                            )
+                            .join("")}
+                        </div>
+                      </details>`
+                    : ""
+                }
+              </div>`
+            : ""
+        }
+
+        <div class="fl3-chatgpt-feed" id="fl-chat-stage">
+          ${
+            tutorMsgs.length
+              ? tutorMsgs.map(({ m, idx }) => renderMessageBubble(m, idx)).join("")
+              : `<div style="margin:auto 0;padding:36px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+                  <div style="width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
+                    <img src="/assets/ilf-heart.png" alt="ILoveFinland" style="width:100%;height:100%;object-fit:contain;" />
                   </div>
-
-                  <div style="margin-top:10px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-                      <div class="fl3-live-label" style="margin:0;">💬 Ready Written Finnish Answers (Tap to Copy)</div>
-                      ${
-                        liveData.hasCapture
-                          ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
-                              <button type="button" class="fl3-speaker-btn" id="fl-live-save-words">⭐ Save Words</button>
-                              <button type="button" class="fl3-speaker-btn" id="fl-live-to-podcast">🎧 Class → Podcast</button>
-                            </div>`
-                          : ""
-                      }
-                    </div>
-                    <div class="fl3-reply-row">
-                      ${liveData.replies
-                        .map(
-                          (r) => `
-                        <button type="button" class="fl3-reply-chip" data-fl-use-reply="${esc(r.fi)}" title="Tap to copy &amp; place in chat input (silent)">
-                          <strong style="font-size:0.84rem;color:#FFFFFF;">${esc(r.fi)}</strong>
-                          <span style="font-size:0.74rem;color:#94A3B8;">${esc(r.en)}</span>
-                        </button>
-                      `
-                        )
-                        .join("")}
-                    </div>
+                  <strong style="font-size:1.15rem;color:#FFFFFF;">Hei! How can I help with your Finnish today?</strong>
+                  <p style="margin:0;font-size:0.86rem;color:#94A3B8;max-width:460px;line-height:1.5;">
+                    Ask anything, snap homework with <strong>+</strong>, tap <strong>🔇</strong> in class for silent live translation, or start a 2-minute practice:
+                  </p>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+                    <button type="button" class="fl3-btn" data-fl-starter="How is the weather today in Pori? Teach me how to ask and say it in Finnish.">🌤️ Weather</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am ordering coffee and food at a Finnish café. Start with 1 simple line.">🛒 Store / Café</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am at the doctor or Kela in Finland. Start with 1 simple line.">🏥 Doctor / Kela</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="Let's practice: you are my Finnish teacher asking me 1 easy A1 question. Wait for my reply.">🏫 Teacher Q&amp;A</button>
                   </div>
+                </div>`
+          }
+          ${state.isSending ? `<div class="fl3-bubble assistant">⏳ Thinking...</div>` : ""}
+        </div>
 
+        <button type="button" id="fl-scroll-down-btn" class="fl3-scroll-latest-btn" style="display:none;" title="Jump to latest message" aria-label="Jump to latest message">↓ Latest</button>
+
+        <div class="fl3-chatgpt-composer">
+          ${
+            state.pendingAttachments.length
+              ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+                  ${state.pendingAttachments
+                    .map(
+                      (a, i) => `
+                    <div class="fl-att-chip" style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;">
+                      ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
+                      <span style="font-size:0.76rem;color:#E2E8F0;">${esc(a.name.slice(0, 18))}</span>
+                      <button type="button" class="fl-mini-btn" style="padding:2px 5px;" data-fl-rm-pending="${i}" aria-label="Remove attachment">✕</button>
+                    </div>
+                  `
+                    )
+                    .join("")}
                   ${
-                    liveHistory.length
-                      ? `<details style="margin-top:8px;">
-                          <summary style="cursor:pointer;font-size:0.75rem;font-weight:700;color:#94A3B8;user-select:none;">🕒 Earlier in Class (${liveHistory.length})</summary>
-                          <div style="display:flex;flex-direction:column;gap:5px;max-height:125px;overflow-y:auto;margin-top:6px;">
-                            ${liveHistory
-                              .map(
-                                (h) => `
-                              <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:7px 10px;">
-                                <div style="font-size:0.8rem;font-weight:700;color:#E2E8F0;">${esc(h.fiHeard)}</div>
-                                ${h.enMeaning ? `<div style="font-size:0.74rem;color:#38BDF8;margin-top:2px;">${esc(h.enMeaning)}</div>` : ""}
-                              </div>
-                            `
-                              )
-                              .join("")}
-                          </div>
-                        </details>`
+                    hasPendingPhoto
+                      ? `<button type="button" class="fl3-btn primary" id="fl-pending-to-walk" style="padding:6px 12px;font-size:0.78rem;">🎧 Make 20-Min Podcast</button>`
                       : ""
                   }
                 </div>`
               : ""
           }
 
-          <div class="fl3-chat-feed" id="fl-chat-stage">
+          <div class="fl3-composer-inline">
+            <label class="fl3-btn" style="cursor:pointer;padding:0;width:40px;height:40px;min-height:40px;flex-shrink:0;" title="Add homework photo, camera snap, or PDF" aria-label="Add photo or file">
+              <span style="font-size:1.15rem;font-weight:700;">+</span>
+              <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
+            </label>
+            <textarea id="fl-chat-input" class="fl3-composer-input" rows="1" placeholder="Ask anything in English or Finnish..."></textarea>
+            <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : showLiveDrawer ? "active" : ""}" id="fl-toggle-live-panel" style="padding:0 10px;height:40px;min-height:40px;flex-shrink:0;" title="Silent Classroom Live (100% muted continuous teacher listener)" aria-label="Toggle Silent Classroom Live">
+              ${state.isLiveTranslating ? "🔴 Live" : "🔇"}
+            </button>
             ${
-              tutorMsgs.length
-                ? tutorMsgs.map(({ m, idx }) => renderMessageBubble(m, idx)).join("")
-                : `<div style="margin:auto 0;padding:24px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">
-                    <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
-                      <img src="/assets/ilf-heart.png" alt="ILoveFinland" style="width:100%;height:100%;object-fit:contain;" />
-                    </div>
-                    <strong style="font-size:1.08rem;color:#FFFFFF;">Hei! Ask anything or practice real Finnish</strong>
-                    <p style="margin:0;font-size:0.85rem;color:#94A3B8;max-width:480px;line-height:1.5;">
-                      Ask real-life questions, snap homework with <strong>+</strong>, or tap a 2-minute real-life practice below:
-                    </p>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
-                      <button type="button" class="fl3-btn" data-fl-starter="How is the weather today in Pori? Teach me how to ask and say it in Finnish.">🌤️ Weather</button>
-                      <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am ordering coffee and food at a Finnish café. Start with 1 simple line.">🛒 Store / Café</button>
-                      <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am at the doctor or Kela in Finland. Start with 1 simple line.">🏥 Doctor / Kela</button>
-                      <button type="button" class="fl3-btn" data-fl-starter="Let's practice: you are my Finnish teacher asking me 1 easy A1 question. Wait for my reply.">🏫 Teacher Q&amp;A</button>
-                    </div>
-                  </div>`
+              state.isRecording
+                ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 12px;height:40px;min-height:40px;flex-shrink:0;" title="Stop Voice Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
+                : `<button type="button" class="fl3-btn" id="fl-start-rec" style="padding:0;width:40px;height:40px;min-height:40px;flex-shrink:0;" title="Record voice message in Finnish or English" aria-label="Record Voice Message">🎙️</button>`
             }
-            ${state.isSending ? `<div class="fl3-bubble assistant">⏳ Thinking...</div>` : ""}
+            <button type="button" class="fl3-btn primary" id="fl-chat-send" style="padding:0 14px;height:40px;min-height:40px;flex-shrink:0;" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
           </div>
-
-          <button type="button" id="fl-scroll-down-btn" class="fl3-scroll-latest-btn" style="display:none;" title="Jump to latest message" aria-label="Jump to latest message">↓ Latest</button>
-
-          <div class="fl3-composer">
-            ${
-              state.pendingAttachments.length
-                ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                    ${state.pendingAttachments
-                      .map(
-                        (a, i) => `
-                      <div class="fl-att-chip" style="background:#112240;border:1px solid #1E3A5F;border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;">
-                        ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
-                        <span style="font-size:0.76rem;color:#E2E8F0;">${esc(a.name.slice(0, 18))}</span>
-                        <button type="button" class="fl-mini-btn" style="padding:2px 5px;" data-fl-rm-pending="${i}" aria-label="Remove attachment">✕</button>
-                      </div>
-                    `
-                      )
-                      .join("")}
-                    ${
-                      hasPendingPhoto
-                        ? `<button type="button" class="fl3-btn primary" id="fl-pending-to-walk" style="padding:6px 12px;font-size:0.78rem;">🎧 Make 20-Min Podcast</button>`
-                        : ""
-                    }
-                  </div>`
-                : ""
-            }
-
-            <div class="fl3-composer-inline">
-              <label class="fl3-btn" style="cursor:pointer;padding:0;width:42px;height:42px;flex-shrink:0;" title="Add homework photo, camera snap, or PDF" aria-label="Add photo or file">
-                <span style="font-size:1.15rem;font-weight:700;">+</span>
-                <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
-              </label>
-              <textarea id="fl-chat-input" class="fl3-composer-input" rows="1" placeholder="Ask anything in English or Finnish..."></textarea>
-              ${
-                state.isRecording
-                  ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 12px;height:42px;flex-shrink:0;" title="Stop Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
-                  : `<button type="button" class="fl3-btn" id="fl-start-rec" style="padding:0;width:42px;height:42px;flex-shrink:0;" title="Speak in Finnish or English" aria-label="Record Audio">🎙️</button>`
-              }
-              <button type="button" class="fl3-btn primary" id="fl-chat-send" style="padding:0 16px;height:42px;flex-shrink:0;" ${state.isSending ? "disabled" : ""}>Send ↑</button>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     `;
   }
@@ -3468,13 +3468,21 @@
     const root = document.getElementById("finnish-lab-root");
     if (!root) return;
 
-    // 3 Clean Pill Tabs switching
+    // 2 Clean Top Tabs (Chat | Study) + Study Sub-Tabs (Walk & Listen | Notebook & Drills)
     root.querySelectorAll("[data-fl-tab]").forEach((b) => {
       b.onclick = () => {
         const nextTab = b.getAttribute("data-fl-tab") || "chat";
-        state.activeTab = nextTab;
-        state.mode = nextTab === "chat" ? "chat" : "study";
+        state.activeTab = nextTab === "study" ? "study" : "chat";
+        state.mode = state.activeTab === "chat" ? "chat" : "study";
         state.plusMenuOpen = false;
+        renderActiveView();
+      };
+    });
+    root.querySelectorAll("[data-fl-study-sub]").forEach((b) => {
+      b.onclick = () => {
+        state.activeTab = "study";
+        state.studySubTab = b.getAttribute("data-fl-study-sub") === "notebook" ? "notebook" : "walk";
+        state.mode = "study";
         renderActiveView();
       };
     });
