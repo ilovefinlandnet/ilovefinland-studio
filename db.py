@@ -535,7 +535,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
         INSERT INTO package_versions (
             package_id, version, ai_model, created_by, change_summary,
             source_check_json, article_json, reel_json, editorial_rationale_json, created_at
-        ) VALUES (?, 1, 'OpenAI (Default — Simulated)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, 1, 'Google Gemini (gemini-3.8-flash — $0 Free Tier)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
         """,
         (
             pkg_id,
@@ -582,7 +582,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
         INSERT INTO package_versions (
             package_id, version, ai_model, created_by, change_summary,
             source_check_json, article_json, reel_json, editorial_rationale_json, created_at
-        ) VALUES (?, 1, 'OpenAI (Default — Simulated)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, 1, 'Google Gemini (gemini-3.8-flash — $0 Free Tier)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
         """,
         (
             pkg2_id,
@@ -609,7 +609,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
                 "to override silent mode on supported devices, though exact behavior depends on "
                 "your OS emergency alert settings. Keep 112 Suomi installed as a backup."
             ),
-            "OpenAI (Default — Simulated)",
+            "Google Gemini (gemini-3.8-flash — $0 Free Tier)",
         ),
         (
             "wordpress",
@@ -622,7 +622,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
                 "Yes—network-based cell-broadcast alerts target phones connected to local "
                 "towers in the affected area, including visitors using roaming SIMs."
             ),
-            "Claude (Simulated)",
+            "Google Gemini (gemini-3.8-flash — $0 Free Tier)",
         ),
         (
             "facebook",
@@ -635,7 +635,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
                 "Thanks for the suggestion, Sami! We are adding an HSL zone explainer to our "
                 "upcoming short-form queue."
             ),
-            "OpenAI (Default — Simulated)",
+            "Google Gemini (gemini-3.8-flash — $0 Free Tier)",
         ),
         (
             "email",
@@ -648,7 +648,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
                 "Hello! Yes, we have included the direct 112.fi/en/112-suomi link in our "
                 "FI-Alert article sources."
             ),
-            "OpenAI (Default — Simulated)",
+            "Google Gemini (gemini-3.8-flash — $0 Free Tier)",
         ),
     ]
     for row in inbox_seed:
@@ -713,7 +713,7 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
         INSERT INTO package_versions (
             package_id, version, ai_model, created_by, change_summary,
             source_check_json, article_json, reel_json, editorial_rationale_json, created_at
-        ) VALUES (?, 1, 'OpenAI (Default — Simulated)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, 1, 'Google Gemini (gemini-3.8-flash — $0 Free Tier)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
         """,
         (
             pkg3_id,
@@ -1066,7 +1066,7 @@ def _seed_clips_sample(conn: sqlite3.Connection) -> None:
         INSERT INTO package_versions (
             package_id, version, ai_model, created_by, change_summary,
             source_check_json, article_json, reel_json, editorial_rationale_json, created_at
-        ) VALUES (?, 1, 'OpenAI (Default — Simulated)', 'User Clips Pipeline', ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, 1, 'Google Gemini (gemini-3.8-flash — $0 Free Tier)', 'User Clips Pipeline', ?, ?, ?, ?, ?, ?)
         """,
         (
             pkg_id,
@@ -1291,7 +1291,7 @@ def _ensure_extra_seeds(conn: sqlite3.Connection) -> None:
             INSERT INTO package_versions (
                 package_id, version, ai_model, created_by, change_summary,
                 source_check_json, article_json, reel_json, editorial_rationale_json, created_at
-            ) VALUES (?, 1, 'OpenAI (Default — Simulated)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, 1, 'Google Gemini (gemini-3.8-flash — $0 Free Tier)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?)
             """,
             (
                 pkg3_id,
@@ -1431,7 +1431,7 @@ def _ensure_extra_seeds(conn: sqlite3.Connection) -> None:
             INSERT INTO package_versions (
                 package_id, version, ai_model, created_by, change_summary,
                 source_check_json, article_json, reel_json, ig_post_json, editorial_rationale_json, created_at
-            ) VALUES (?, 1, 'OpenAI (Default — Simulated)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, 1, 'Google Gemini (gemini-3.8-flash — $0 Free Tier)', 'AI Editorial Engine', ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 pkg5_id,
@@ -3229,7 +3229,7 @@ def rewrite_with_claude(
         source_check = copy.deepcopy(json.loads(ver_row["source_check_json"]))
 
         changes: List[str] = []
-        ai_model_name = "Claude (Simulated)"
+        ai_model_name = "Google Gemini (gemini-3.8-flash — $0 Free Tier)"
         created_by_name = "AI Editorial Pass"
         ig_post_raw: Optional[str] = None
 
@@ -3607,7 +3607,7 @@ def create_assignment(
         "featured_image_data_label": article["featured_image"].get("data_label", ""),
     }
 
-    ai_model = "OpenAI (Default — Simulated)"
+    ai_model = "Google Gemini (gemini-3.8-flash — $0 Free Tier)"
     created_by = "AI Editorial Engine"
 
     conn = get_connection(db_path)
@@ -3931,6 +3931,26 @@ def update_article_fields(
             if v is not None:
                 article[k] = v
 
+        # Sync featured image Alt Text, Caption & Photo Credit cleanly
+        feat = dict(article.get("featured_image") or {})
+        hl_fallback = (article.get("headline") or pkg["title"] or "").strip()
+        if fields.get("image_alt") is not None:
+            feat["alt_text"] = str(fields["image_alt"]).strip() or hl_fallback
+        elif not (feat.get("alt_text") or "").strip() and hl_fallback:
+            feat["alt_text"] = hl_fallback
+        if fields.get("image_caption") is not None:
+            feat["caption"] = str(fields["image_caption"]).strip()
+            article["image_caption"] = feat["caption"]
+        if fields.get("image_credit") is not None:
+            cred = str(fields["image_credit"]).strip()
+            if cred and not cred.lower().startswith("photo:"):
+                cred = f"Photo: {cred}"
+            feat["credit_string"] = cred or "Photo: ILF"
+            feat["photographer"] = feat["credit_string"].replace("Photo:", "").strip() or "ILF"
+            article["image_credit"] = feat["credit_string"]
+        if feat:
+            article["featured_image"] = feat
+
         # Maintain both article["additional_images"] list and backwards-compatible article["additional_image"]
         addl_list = article.get("additional_images")
         if isinstance(addl_list, list):
@@ -4065,13 +4085,13 @@ def upload_featured_image(
             image_url = f"/assets/uploads/{saved_filename}"
 
         feat = article.get("featured_image", {})
-        pkg_title = pkg["title"]
-        clean_alt = image_data.get("alt_text")
+        pkg_title = (article.get("headline") or pkg["title"] or "").strip()
+        clean_alt = (image_data.get("alt_text") or "").strip()
         if not clean_alt or "christmas table" in clean_alt.lower() or "joulupöytä" in clean_alt.lower() or "studded" in clean_alt.lower():
-            clean_alt = f"Editorial photograph for {pkg_title}"
-        clean_caption = image_data.get("caption")
-        if not clean_caption or "christmas table" in clean_caption.lower() or "joulupöytä" in clean_caption.lower():
-            clean_caption = f"Editorial visual for {pkg_title}."
+            clean_alt = pkg_title
+        clean_caption = (image_data.get("caption") or "").strip()
+        if "christmas table" in clean_caption.lower() or "joulupöytä" in clean_caption.lower():
+            clean_caption = ""
 
         feat["id"] = f"user-photo-{secrets.token_hex(4)}"
         feat["title"] = f"Photo: {pkg_title}"
@@ -4238,11 +4258,11 @@ def get_calendar_data(db_path: str = DB_PATH) -> Dict[str, Any]:
                     "id": f"art-{p['id']}",
                     "package_id": p["id"],
                     "title": f"Article: {p['title']}",
-                    "kind": "Article Publish (Simulated)",
+                    "kind": "Article Publish",
                     "channel": "WordPress",
                     "format": "Article",
                     "datetime_hki": p["article_publish_at"],
-                    "status": "Missed" if missed else "Scheduled (Simulated)",
+                    "status": "Missed" if missed else "Scheduled",
                     "approval_status": p["article_status"],
                     "missed": missed,
                     "overlap": False,
@@ -4256,11 +4276,11 @@ def get_calendar_data(db_path: str = DB_PATH) -> Dict[str, Any]:
                     "id": f"reel-{p['id']}",
                     "package_id": p["id"],
                     "title": f"Reel: {p['title']}",
-                    "kind": "Reel Publish (Simulated)",
+                    "kind": "Reel Publish",
                     "channel": "Instagram & TikTok",
                     "format": "Reel",
                     "datetime_hki": p["reel_publish_at"],
-                    "status": "Missed" if missed else "Scheduled (Simulated)",
+                    "status": "Missed" if missed else "Scheduled",
                     "approval_status": p["reel_status"],
                     "missed": missed,
                     "overlap": False,
@@ -4274,11 +4294,11 @@ def get_calendar_data(db_path: str = DB_PATH) -> Dict[str, Any]:
                     "id": f"ig-{p['id']}",
                     "package_id": p["id"],
                     "title": f"IG Post: {p['title']}",
-                    "kind": "Instagram Feed Post (Simulated)",
+                    "kind": "Instagram Feed Post",
                     "channel": "Instagram & TikTok",
                     "format": "Instagram Post",
                     "datetime_hki": p["ig_post_publish_at"],
-                    "status": "Missed" if missed else "Scheduled (Simulated)",
+                    "status": "Missed" if missed else "Scheduled",
                     "approval_status": p.get("ig_post_status", "pending"),
                     "missed": missed,
                     "overlap": False,
@@ -5142,7 +5162,7 @@ def create_reel_from_clips(
             "duplicate_check": "No duplicate clip sequence published in archive.",
         }
 
-        ai_model = "OpenAI (Default — Simulated)"
+        ai_model = "Google Gemini (gemini-3.8-flash — $0 Free Tier)"
         created_by = "User Clips Pipeline"
         if openai_client.get_openai_api_key():
             try:

@@ -1367,9 +1367,9 @@
                 </div>
               </details>
 
-              <!-- Zone 2 + Zone 3 Layout: Article & Web Publisher (1600×900) -->
+              <!-- PART 1: CLEAN WORDPRESS ARTICLE WORKSPACE (ESSENTIALS VISIBLE, EXTRAS IN CLOSED ACCORDION) -->
               <div class="article-3zone-grid">
-                <!-- ZONE 2: CENTER ARTICLE CANVAS (Clean Story & Copy Stage) -->
+                <!-- Left: Clean Article Copy Canvas (Headline, Summary, Section/Category, Body) -->
                 <div class="article-canvas-stage">
                   <!-- ANCHOR 1: STORY & COPY (Sections 1 & 2) -->
               <div id="sec-art-content" class="article-section-anchor">
@@ -1451,20 +1451,7 @@
                   </div>
                 </div>
 
-                <!-- Monetization Quick Inserters -->
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 8px;padding:8px 12px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:8px;">
-                  <span style="font-size:0.75rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.5px;">💰 Monetize:</span>
-                  <button type="button" id="btn-insert-aff-tours" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #38BDF8;color:#38BDF8;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Lapland &amp; Helsinki Tours affiliate card">
-                    ❄️ + Lapland / Helsinki Tour
-                  </button>
-                  <button type="button" id="btn-insert-aff-hotels" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #38BDF8;color:#38BDF8;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Hotel &amp; Glass Igloo booking card">
-                    🏨 + Hotel / Glass Igloo
-                  </button>
-                  <button type="button" id="btn-insert-aff-esim" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #10B981;color:#34D399;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Tourist eSIM card">
-                    📶 + Travel eSIM Data
-                  </button>
-                </div>
-
+                
                 <div class="wp-content-actions">
                   <button type="button" id="btn-copy-visual-article" class="btn btn-secondary btn-sm">
                     📋 Copy formatted article <span class="hint-inline">(WordPress Visual Editor)</span>
@@ -1487,17 +1474,16 @@
               </div> <!-- /#sec-art-content -->
                 </div>
 
-                <!-- ZONE 3: RIGHT CONTEXTUAL INSPECTOR (Hero 1600×900, WP Meta/SEO, Caption & Publish) -->
+                <!-- Right: Featured Photo + Auto Alt Text + Editable Credit + Readiness + Push to WP -->
                 <div class="article-inspector-column">
-                  <div class="studio-inspector-card">
-                    <div class="studio-inspector-tab-bar" role="tablist">
-                      <button type="button" class="btn-inspector-tab active" data-art-tab="media">📸 Hero &amp; Media</button>
-                      <button type="button" class="btn-inspector-tab" data-art-tab="meta">⚙️ WP Meta &amp; SEO</button>
-                      <button type="button" class="btn-inspector-tab" data-art-tab="social">💬 Caption</button>
+                  <div class="studio-inspector-card" style="padding:16px;">
+                    <!-- Clear Photo & Credit Readiness Indicator -->
+                    <div id="wp-photo-readiness-pill" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);color:#6EE7B7;font-size:0.78rem;font-weight:700;margin-bottom:12px;">
+                      <span id="wp-photo-readiness-text">📷 Checking photo, alt text &amp; credit...</span>
+                      <span class="badge" style="background:rgba(2,156,216,0.25);color:#38BDF8;font-size:0.66rem;padding:2px 7px;">Auto-Synced</span>
                     </div>
 
-                    <div id="art-pane-media" class="inspector-pane active">
-                      <!-- ANCHOR 2: FEATURED & PHOTOS (Section 3) -->
+                    <!-- ANCHOR 2: FEATURED & PHOTOS (Section 3) -->
               <div id="sec-art-photos" class="article-section-anchor">
               <!-- SECTION 3: FEATURED IMAGE (Verified Rights & Downloads) -->
               <div class="wp-section-block">
@@ -1567,7 +1553,13 @@
 
                     <!-- Photographer, source URL and licence -->
                     <div class="wp-credit-box">
-                      <input type="hidden" id="wp-field-img-credit" value="" />
+                      <div class="wp-field-wrap" style="margin-bottom:8px;">
+                        <div class="wp-field-label-row">
+                          <label class="label-sm" for="wp-field-img-credit" style="color:#38BDF8;font-weight:700;">Photo Credit (Photo: ...) <span class="req-star">*</span></label>
+                          <button type="button" class="btn-copy-field" data-copy-target="wp-field-img-credit">📋 Copy</button>
+                        </div>
+                        <input type="text" id="wp-field-img-credit" class="wp-input" placeholder="Photo: ILF" value="" />
+                      </div>
                       <div class="wp-field-label-row">
                         <span class="label-sm">Photographer, Source URL &amp; Licence</span>
                         <button type="button" id="btn-copy-full-credit" class="btn-copy-field">📋 Copy image credit</button>
@@ -1603,10 +1595,47 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-photos -->
+
+                    <!-- Compact Gemini Quick Edit Bar -->
+                    <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(6,18,36,0.75);border:1px solid rgba(56,189,248,0.28);display:flex;flex-direction:column;gap:8px;">
+                      <div style="font-size:0.72rem;font-weight:800;color:#38BDF8;text-transform:uppercase;letter-spacing:0.05em;">✨ Gemini Quick Edit ($0 Free Tier)</div>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button type="button" onclick="document.getElementById('btn-claude-article')?.click()" class="btn btn-ghost btn-xs" style="flex:1;font-size:0.74rem;">✨ Rewrite Article</button>
+                        <button type="button" onclick="document.getElementById('btn-study-story-in-finnish')?.click()" class="btn btn-ghost btn-xs" style="flex:1;font-size:0.74rem;color:#6EE7B7;">🇫🇮 Study in Finnish</button>
+                      </div>
                     </div>
 
-                    <div id="art-pane-meta" class="inspector-pane">
-                      <!-- ANCHOR 3: WORDPRESS DETAILS & META (Section 4) -->
+                    <!-- Anchored Primary Actions -->
+                    <div class="inspector-sticky-save" style="margin-top:14px;border-radius:10px;flex-wrap:wrap;justify-content:space-between;">
+                      <button type="button" onclick="document.getElementById('btn-save-article-edits')?.click()" class="btn btn-ghost btn-sm" style="font-weight:700;">💾 Save Edits</button>
+                      <button type="button" onclick="document.getElementById('btn-push-wordpress-draft')?.click()" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">🚀 Push Draft to WordPress</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CLOSED ACCORDION: MORE ARTICLE OPTIONS -->
+              <details id="more-article-options-drawer" class="inspector-drawer" style="margin-top:16px;">
+                <summary style="padding:12px 16px;font-size:0.86rem;">
+                  <span>⚙️ More Article Options (Monetization, Extra Gallery, Location/Events, SEO, Tags, Notes, AI Revisions &amp; Schedule)</span>
+                  <span style="font-size:0.74rem;color:#94A3B8;font-weight:500;">Click to expand ▾</span>
+                </summary>
+                <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:16px;">
+                  <!-- Monetization Quick Inserters -->
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 8px;padding:8px 12px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:8px;">
+                  <span style="font-size:0.75rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.5px;">💰 Monetize:</span>
+                  <button type="button" id="btn-insert-aff-tours" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #38BDF8;color:#38BDF8;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Lapland &amp; Helsinki Tours affiliate card">
+                    ❄️ + Lapland / Helsinki Tour
+                  </button>
+                  <button type="button" id="btn-insert-aff-hotels" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #38BDF8;color:#38BDF8;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Hotel &amp; Glass Igloo booking card">
+                    🏨 + Hotel / Glass Igloo
+                  </button>
+                  <button type="button" id="btn-insert-aff-esim" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #10B981;color:#34D399;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Tourist eSIM card">
+                    📶 + Travel eSIM Data
+                  </button>
+                </div>
+
+                  <!-- ANCHOR 3: WORDPRESS DETAILS & META (Section 4) -->
               <div id="sec-art-details" class="article-section-anchor">
               <!-- SECTION 4: REMAINING WORDPRESS FIELDS (Exact Order) -->
               <div class="wp-section-block">
@@ -1627,8 +1656,8 @@
                     • <strong>🏛️ Venue Reviews:</strong> Only type street address if reviewing an exact restaurant, sauna, or museum.<br/>
                     • <strong>🎟️ Events Section:</strong> Only fill Event date &amp; venue if writing about an upcoming concert or festival.
                     <div style="margin-top:10px;">
-                      <button type="button" id="btn-copy-ai-prompt" class="btn btn-sm" style="background:#003882;color:#ffffff;border:none;padding:6px 12px;font-size:0.75rem;font-weight:700;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" title="Copy foolproof prompt for ChatGPT, Claude or other AI">
-                        <span>🤖 Copy Prompt for ChatGPT / Claude</span>
+                      <button type="button" id="btn-copy-ai-prompt" class="btn btn-sm" style="background:#003882;color:#ffffff;border:none;padding:6px 12px;font-size:0.75rem;font-weight:700;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" title="Copy editorial prompt for Google Gemini">
+                        <span>✨ Copy Prompt for Google Gemini</span>
                       </button>
                     </div>
                   </div>
@@ -1798,10 +1827,7 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-details -->
-                    </div>
-
-                    <div id="art-pane-social" class="inspector-pane">
-                      <!-- ANCHOR 4: VIRAL SOCIAL CAPTION (Section 5) -->
+                  <!-- ANCHOR 4: VIRAL SOCIAL CAPTION (Section 5) -->
               <div id="sec-art-social" class="article-section-anchor">
               <!-- SECTION 5: VIRAL SOCIAL CAPTION (Instagram, TikTok, Facebook) -->
               <div class="wp-section-block" id="social-caption-section">
@@ -1822,16 +1848,212 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-social -->
-                    </div>
-
-                    <!-- Anchored Primary Export / Publish Footer -->
-                    <div class="inspector-sticky-save" style="flex-wrap:wrap;justify-content:space-between;">
-                      <button type="button" onclick="document.getElementById('btn-save-article-edits')?.click()" class="btn btn-ghost btn-sm" style="font-weight:700;">💾 Save Edits</button>
-                      <button type="button" onclick="document.getElementById('btn-push-wordpress-draft')?.click()" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">🚀 Push to WordPress</button>
-                    </div>
+                  <section id="sec-art-revisions" class="card feedback-copilot-card article-section-anchor">
+            <div class="panel-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(56,189,248,0.35);flex-shrink:0;">
+                  <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                </div>
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <h2 class="panel-title" style="margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-0.01em;">Editorial AI Co-Pilot &amp; Revision Desk</h2>
+                    <span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;">Google Gemini Free Tier</span>
                   </div>
+                  <p class="hint-text" style="margin:3px 0 0;font-size:0.78rem;color:#94a3b8;line-height:1.4;">
+                    Instruct the AI in plain English to revise any part of this story — photo credits, captions, headline, tone, paragraphs, category, or city.
+                  </p>
                 </div>
               </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="badge" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;">
+                  <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+                  <span>Instant Multi-Field Sync</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Target Selection Checkboxes -->
+            <div class="revision-target-selector" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+              <div style="font-size:0.8rem;font-weight:700;color:#FFFFFF;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                <span>🎯 What should be updated in the new revision? (Tick all that apply):</span>
+                <span class="hint-text" style="font-size:0.75rem;font-weight:400;color:#94a3b8;">Selected components will be synchronized into the new version</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;">
+                <label class="rev-target-pill active" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #38bdf8;border-radius:8px;background:rgba(56,189,248,0.1);cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;transition:all 0.15s ease;">
+                  <input type="checkbox" id="rev-target-article" checked style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
+                  <div>
+                    <div style="font-weight:700;color:#FFFFFF;">📝 WordPress Article</div>
+                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">Headline, Body, Photo Credits &amp; Meta</div>
+                  </div>
+                </label>
+                <label class="rev-target-pill active" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #38bdf8;border-radius:8px;background:rgba(56,189,248,0.1);cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;transition:all 0.15s ease;">
+                  <input type="checkbox" id="rev-target-post" checked style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
+                  <div>
+                    <div style="font-weight:700;color:#FFFFFF;">📱 Static Social Post</div>
+                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">1080×1350 Graphic, Slide Text &amp; Caption</div>
+                  </div>
+                </label>
+                <label class="rev-target-pill" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid rgba(75, 137, 188, 0.28);border-radius:8px;background:#061224;cursor:pointer;font-size:0.83rem;font-weight:600;color:#B8C4D4;user-select:none;transition:all 0.15s ease;">
+                  <input type="checkbox" id="rev-target-reel" style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
+                  <div>
+                    <div style="font-weight:700;color:#FFFFFF;">🎬 Reel Video</div>
+                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">Script, Voiceover Narration &amp; Cuts</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Instant Editorial Prompt Chips -->
+            <div class="quick-chips" style="margin-bottom:12px;">
+              <span class="label-sm" style="color:#94a3b8;font-weight:700;margin-bottom:4px;display:block;">💡 Instant Editorial Prompts (Click to insert &amp; adapt):</span>
+              <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Change image credit to Photo: [Photographer / Source / License]">
+                  🏷️ “Change image credit to Photo: [Photographer / Agency]”
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Update photo caption to highlight [Specific story detail]">
+                  📸 “Update photo caption to highlight [Key Detail]”
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Tighten article headline for high mobile readability">
+                  📰 “Tighten headline for mobile readers”
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Make the tone punchier and more journalistic with a stronger opening hook">
+                  ⚡ “Make tone punchier &amp; journalistic”
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Set location to Helsinki and add local Finnish context">
+                  📍 “Set location to Helsinki &amp; add context”
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Add more background context, facts, and official statements into the body">
+                  ✍️ “Add background facts &amp; context”
+                </button>
+              </div>
+            </div>
+
+            <form id="comment-form" class="stack-form">
+              <!-- Voice Note Bar -->
+              <div class="voice-bar" data-voice-for="comment-input" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-ghost btn-sm btn-rec" style="border:1px solid rgba(56,189,248,0.3);background:rgba(56,189,248,0.1);color:#38bdf8;">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                  <span>Record Voice Note</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-sim-voice" style="border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                  <span>Sample Voice Note</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-replay hidden" style="border:1px solid #10b981;color:#10b981;">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Replay</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-discard hidden" style="border:1px solid #ef4444;color:#ef4444;">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  <span>Discard</span>
+                </button>
+                <span class="voice-status hint-text" style="font-size:0.75rem;color:#38bdf8;"></span>
+                <audio class="voice-audio hidden"></audio>
+              </div>
+
+              <!-- Main Feedback Input Box -->
+              <div style="position:relative;">
+                <textarea
+                  id="comment-input"
+                  rows="3"
+                  style="background:#061224;border:1.5px solid rgba(75, 137, 188, 0.28);border-radius:8px;padding:12px 14px;color:#FFFFFF;font-size:0.88rem;line-height:1.5;box-shadow:inset 0 2px 4px rgba(0,0,0,0.4);transition:border-color 0.15s ease;"
+                  placeholder="Ask for any change in plain English (e.g. “change image credit to Photo: Aleksi Stenberg / CC BY 2.5 and tighten the headline for mobile readers”) or record a voice note above…"
+                ></textarea>
+              </div>
+
+              <!-- Clip / Video Upload Zone for Reel Feedback -->
+              <div class="feedback-clip-upload-zone" style="margin-top:4px;background:#061224;border:1px dashed rgba(75, 137, 188, 0.28);border-radius:8px;padding:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <label style="font-weight:600;font-size:0.82rem;color:#FFFFFF;display:flex;align-items:center;gap:6px;margin:0;">
+                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                    <span>🎬 Attach Custom Video Clip or Photo for Reel Revision (Optional)</span>
+                  </label>
+                  <span class="hint-text" style="font-size:0.72rem;color:#94a3b8;">MP4, MOV, WebM, JPG (Max 100 MB)</span>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                  <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" class="form-control" style="font-size:12px;padding:6px;flex:1;background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;" />
+                  <button type="button" id="btn-feedback-clear-clip" class="btn btn-ghost btn-sm hidden" style="color:#ef4444;white-space:nowrap;">✕ Remove Clip</button>
+                </div>
+
+                <!-- Live Preview Pill when Clip is Chosen -->
+                <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:12px;background:#082347;padding:8px 12px;border-radius:6px;border:1px solid rgba(75, 137, 188, 0.28);">
+                  <video id="feedback-clip-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;background:#000;" muted playsinline></video>
+                  <img id="feedback-img-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;display:none;" />
+                  <div style="flex:1;min-width:0;">
+                    <div id="feedback-clip-name" style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFFFFF;">video_clip.mp4</div>
+                    <div id="feedback-clip-meta" style="font-size:0.72rem;color:#94a3b8;">Ready to attach • Will be stitched into new Reel revision</div>
+                  </div>
+                  <span class="badge badge-success" style="font-size:0.7rem;white-space:nowrap;">Attached</span>
+                </div>
+              </div>
+
+              <div class="comment-actions" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:6px;">
+                <button type="submit" id="btn-submit-comment" class="btn btn-primary" style="padding:10px 20px;font-size:0.9rem;font-weight:700;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(22,139,255,0.4);">
+                  <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Submit Feedback &amp; Generate Revision</span>
+                </button>
+                <div id="feedback-submit-status" class="hint-text" style="font-size:0.82rem;font-weight:600;"></div>
+              </div>
+            </form>
+
+            <!-- Modern History Block -->
+            <div class="history-block" style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(48,59,77,0.7);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div class="label-sm" style="color:#FFFFFF;font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:6px;">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                  <span>Revision &amp; Decision History</span>
+                </div>
+                <span class="hint-text" style="font-size:0.72rem;color:#94a3b8;">All versions preserved with full rollback capability</span>
+              </div>
+              <div id="comment-history" class="comment-history"></div>
+            </div>
+          </section>
+
+          <!-- Schedule Package Card -->
+          <section class="card">
+            <h2 class="panel-title">Publishing Schedule (Europe/Helsinki)</h2>
+            <p class="hint-text">
+              Scheduling is permitted only for the exact approved version. Articles and Social Posts can have separate publishing slots.
+            </p>
+            <div class="form-row" style="margin-top:12px;">
+              <div>
+                <label class="label-sm" for="sched-article-dt">Article Publishing Slot (WordPress)</label>
+                <input id="sched-article-dt" type="datetime-local" />
+              </div>
+              <div>
+                <label class="label-sm" for="sched-reel-dt">Social Post Publishing Slot (IG &amp; Facebook)</label>
+                <input id="sched-reel-dt" type="datetime-local" />
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <button id="btn-save-schedule" class="btn btn-secondary">
+                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Save Schedule</span>
+              </button>
+              <span id="schedule-msg" class="hint-text"></span>
+            </div>
+          </section>
+
+          <!-- Floating Mobile Quick Action Bar (1-Click Save, Push & Teleport) -->
+          <div id="article-mobile-quickbar" class="article-mobile-quickbar">
+            <button type="button" id="btn-quick-save-art" class="btn-quick-pill" title="Save in-Studio changes">
+              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              <span>Save</span>
+            </button>
+            <button type="button" id="btn-quick-push-art" class="btn-quick-pill primary" title="Push Draft directly to WordPress">
+              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+              <span>Push WP</span>
+            </button>
+            <button type="button" id="btn-quick-copy-wp" class="btn-quick-pill ghost" title="Copy All WordPress Fields">
+              <span>📋 Copy</span>
+            </button>
+            <button type="button" id="btn-quick-jump-top" class="btn-quick-pill ghost" title="Scroll to top of article">
+              <span>⬆️ Top</span>
+            </button>
+          </div>
+                </div>
+              </details>
             </section>
 
             <!-- Interactive Static Social Post (1080×1350) & 3:4 Profile Crop Card -->
@@ -1861,80 +2083,100 @@
                 </div>
               </div>
 
-              <!-- Design Studio Selector (Future-Ready for Design 1, Design 2, Design 3...) -->
-              <div class="design-studio-switcher-bar">
-                <button type="button" class="btn-design-studio-switch active" data-design="1" id="btn-switch-design-1">
-                  <span class="design-pill-icon">✨</span>
-                  <span class="design-pill-title">Design - 1: Universal Editorial Feed</span>
-                  <span class="design-pill-badge">Single Post • 4:5 / 16:9 / 3:4</span>
-                </button>
-                <button type="button" class="btn-design-studio-switch" data-design="2" id="btn-switch-design-2">
-                  <span class="design-pill-icon">📑</span>
-                  <span class="design-pill-title">Design - 2: 6-Slide Story Deck</span>
-                  <span class="design-pill-badge">Instagram Carousel • Slides 1–6</span>
-                </button>
-                <div class="design-studio-coming-soon" title="Ready for future editorial card templates">
-                  <span>🎨 + Design - 3 (Quote / Minimalist - Future)</span>
-                </div>
-              </div>
-
-              <!-- ============================================================== -->
-              <!-- WORKSPACE: DESIGN - 1 (UNIVERSAL EDITORIAL SINGLE POST)        -->
-              <!-- ============================================================== -->
+              <!-- PART 2: CLEAN INSTA POST (1080×1350) — ESSENTIALS VISIBLE -->
               <div id="design-1-workspace" class="studio-app-grid">
-                <!-- Left Column: Sticky Canvas Stage -->
+                <!-- Left: 1080×1350 Live Preview (Twilight Navy #0A192F -> #003580 + Top-Left Heart Logo) & Downloads -->
                 <div class="studio-stage-column">
                   <div class="studio-stage-card">
-                    <!-- Format Selector Tabs + Safe-Zone Guide Toggle -->
-                    <div class="social-format-tabs" role="tablist" style="margin-bottom:12px;background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;">
-                      <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📱 Feed (4:5)</button>
-                      <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📘 Facebook</button>
-                      <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">🔍 Grid (3:4)</button>
-                      <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐 Guide</button>
-                    </div>
-
                     <!-- No Image Uploaded Warning Banner -->
                     <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:10px 14px;border-radius:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
                       <span style="font-size:0.78rem;">⚠️ No photo uploaded for social post yet.</span>
                       <button type="button" class="btn btn-primary btn-xs" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#029CD8;font-size:0.72rem;padding:3px 8px;font-weight:700;">📷 Upload Photo</button>
                     </div>
-
-                    <!-- Canvas Views -->
                     <div class="static-canvas-views canvas-safe-zone-wrap" style="position:relative;">
                       <div id="d1-safe-zone-overlay" class="canvas-safe-zone-overlay hidden"></div>
                       <div class="static-canvas-col format-col active-format" id="format-view-feed">
-                        <canvas id="static-post-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                        <canvas id="static-post-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#0A192F;"></canvas>
                       </div>
                       <div class="static-canvas-col format-col" id="format-view-fb">
-                        <canvas id="static-fb-canvas" width="1200" height="630" style="width:100%;height:auto;aspect-ratio:1200/630;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                        <canvas id="static-fb-canvas" width="1200" height="630" style="width:100%;height:auto;aspect-ratio:1200/630;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#0A192F;"></canvas>
                       </div>
                       <div class="static-canvas-col format-col" id="format-view-crop">
-                        <canvas id="static-crop-canvas" width="1012" height="1350" style="width:100%;height:auto;aspect-ratio:3/4;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                        <canvas id="static-crop-canvas" width="1012" height="1350" style="width:100%;height:auto;aspect-ratio:3/4;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#0A192F;"></canvas>
                       </div>
                     </div>
 
-                    <!-- Direct Action Bar -->
+                    <!-- Direct Mobile & Desktop Exports -->
                     <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:12px;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
                       📲 Save to Photos / Camera Roll
                     </button>
                     <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
                       <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
                       <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                      <button type="button" onclick="document.getElementById('input-upload-post-photo')?.click()" class="btn btn-ghost btn-sm" title="Upload or replace synced photo">📷 Photo</button>
                     </div>
                   </div>
                 </div>
 
-                <!-- Right Column: Tabbed Inspector Toolbar -->
-                <div class="studio-inspector-card">
-                  <!-- Inspector Tabs Bar -->
-                  <div class="studio-inspector-tab-bar" role="tablist">
-                    <button type="button" class="btn-inspector-tab active" data-d1-tab="photo">📸 Photo &amp; Framing</button>
-                    <button type="button" class="btn-inspector-tab" data-d1-tab="text">✍️ Text &amp; Typography</button>
-                    <button type="button" class="btn-inspector-tab" data-d1-tab="caption">📝 Caption &amp; Hashtags</button>
+                <!-- Right: Social Caption (Gemini Polish + Copy), Hashtags & Save -->
+                <div class="studio-inspector-card" style="padding:18px;gap:14px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <strong style="color:#fff;font-size:0.95rem;">📝 Social Caption &amp; Hashtags</strong>
+                    <span class="badge" style="background:rgba(2,156,216,0.2);color:#38BDF8;font-size:0.7rem;padding:2px 8px;">1080×1350 • Auto-Synced Photo</span>
+                  </div>
+                  <div id="d1-pane-caption" class="inspector-pane active" style="display:block;padding:0;">
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
+                        <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption</button>
+                      </div>
+                      <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
+                    </div>
+
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
+                        <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
+                      </div>
+                      <input type="text" id="static-edit-hashtags" class="wp-input" />
+                      <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
+                    </div>
+
+                    <div style="margin-top:8px;">
+                      <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;width:100%;justify-content:center;" title="Preview &amp; Polish Caption &amp; Hashtags with Google Gemini (Free Tier)">
+                        <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                        <span>Polish Caption with Gemini</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="inspector-sticky-save" style="border-radius:10px;">
+                    <button type="button" id="btn-save-static-post" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+                      <span>💾 Save Changes to Article &amp; Post</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CLOSED ACCORDION: 6-SLIDE CAROUSEL & STYLE OPTIONS -->
+              <details id="carousel-and-style-drawer" class="inspector-drawer" style="margin-top:18px;">
+                <summary style="padding:12px 16px;font-size:0.86rem;">
+                  <span>🎨 6-Slide Carousel &amp; Style Options (Zoom, Framing, Per-Line Colors, Font Size, Darkness, Arrow, FB/Grid Formats &amp; Slides 1–6)</span>
+                  <span style="font-size:0.74rem;color:#94A3B8;font-weight:500;">Click to expand ▾</span>
+                </summary>
+                <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:18px;">
+                  <!-- Format Switcher + Safe-Zone Guide -->
+                  <div class="social-format-tabs" role="tablist" style="background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;max-width:520px;">
+                    <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📱 Feed (4:5)</button>
+                    <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📘 Facebook (1200×630)</button>
+                    <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">🔍 Grid (3:4)</button>
+                    <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐 Guide</button>
                   </div>
 
-                  <!-- Tab 1: Photo & Framing -->
-                  <div id="d1-pane-photo" class="inspector-pane active">
+                  <!-- Design-1 Fine Controls (Photo Framing & Per-Line Typography) -->
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
+                    <div class="studio-inspector-card" style="padding:14px;">
+                      <div style="font-size:0.78rem;font-weight:800;color:#38BDF8;margin-bottom:10px;">📸 Design-1 Photo &amp; Framing</div>
+                      <div id="d1-pane-photo" style="display:block;">
                     <!-- Photo Upload Box -->
                     <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1990,9 +2232,10 @@
                       </div>
                     </div>
                   </div>
-
-                  <!-- Tab 2: Text & Typography -->
-                  <div id="d1-pane-text" class="inspector-pane">
+                    </div>
+                    <div class="studio-inspector-card" style="padding:14px;">
+                      <div style="font-size:0.78rem;font-weight:800;color:#38BDF8;margin-bottom:10px;">✍️ Design-1 Per-Line Text, Colors &amp; Size</div>
+                      <div id="d1-pane-text" style="display:block;">
                     <!-- Category Badge -->
                     <div class="wp-field-wrap">
                       <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
@@ -2073,47 +2316,15 @@
                       <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;cursor:pointer;" />
                     </div>
                   </div>
-
-                  <!-- Tab 3: Caption & Hashtags -->
-                  <div id="d1-pane-caption" class="inspector-pane">
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
-                        <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption</button>
-                      </div>
-                      <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
-                    </div>
-
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
-                        <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
-                      </div>
-                      <input type="text" id="static-edit-hashtags" class="wp-input" />
-                      <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
-                    </div>
-
-                    <div style="margin-top:8px;">
-                      <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;width:100%;justify-content:center;" title="Preview &amp; Polish Caption &amp; Hashtags with Google Gemini (Free Tier)">
-                        <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                        <span>Polish Caption with Gemini</span>
-                      </button>
                     </div>
                   </div>
 
-                  <!-- Sticky Save Footer -->
-                  <div class="inspector-sticky-save">
-                    <button type="button" id="btn-save-static-post" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
-                      <span>💾 Save Changes to Article &amp; Post</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
+                  <!-- Design-2: 6-Slide Story Deck -->
+                  <div style="border-top:1px solid rgba(75,137,188,0.28);padding-top:16px;">
+                    <div style="font-size:0.9rem;font-weight:800;color:#fff;margin-bottom:10px;">📑 Design - 2: 6-Slide Story Deck (Slides 1–6)</div>
+                    <!-- WORKSPACE: DESIGN - 2 (6-SLIDE INSTAGRAM CAROUSEL DECK)        -->
               <!-- ============================================================== -->
-              <!-- WORKSPACE: DESIGN - 2 (6-SLIDE INSTAGRAM CAROUSEL DECK)        -->
-              <!-- ============================================================== -->
-              <div id="design-2-workspace" class="studio-app-grid" style="display:none;">
+              <div id="design-2-workspace" class="studio-app-grid" style="display:grid;margin-top:14px;">
                 <!-- Left Column: Sticky Carousel Stage -->
                 <div class="studio-stage-column">
                   <div class="studio-stage-card">
@@ -2380,6 +2591,9 @@
                   </div>
                 </div>
               </div>
+                  </div>
+                </div>
+              </details>
 
               <!-- Hidden backwards-compatibility containers for legacy DOM elements -->
               <div style="display:none;" aria-hidden="true">
@@ -2398,211 +2612,7 @@
           </div>
 
           <!-- Editorial AI Co-Pilot & Revision Desk -->
-          <section id="sec-art-revisions" class="card feedback-copilot-card article-section-anchor">
-            <div class="panel-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(56,189,248,0.35);flex-shrink:0;">
-                  <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                </div>
-                <div>
-                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <h2 class="panel-title" style="margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-0.01em;">Editorial AI Co-Pilot &amp; Revision Desk</h2>
-                    <span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;">Google Gemini Free Tier</span>
-                  </div>
-                  <p class="hint-text" style="margin:3px 0 0;font-size:0.78rem;color:#94a3b8;line-height:1.4;">
-                    Instruct the AI in plain English to revise any part of this story — photo credits, captions, headline, tone, paragraphs, category, or city.
-                  </p>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span class="badge" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;">
-                  <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
-                  <span>Instant Multi-Field Sync</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Target Selection Checkboxes -->
-            <div class="revision-target-selector" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-              <div style="font-size:0.8rem;font-weight:700;color:#FFFFFF;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                <span>🎯 What should be updated in the new revision? (Tick all that apply):</span>
-                <span class="hint-text" style="font-size:0.75rem;font-weight:400;color:#94a3b8;">Selected components will be synchronized into the new version</span>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;">
-                <label class="rev-target-pill active" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #38bdf8;border-radius:8px;background:rgba(56,189,248,0.1);cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;transition:all 0.15s ease;">
-                  <input type="checkbox" id="rev-target-article" checked style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
-                  <div>
-                    <div style="font-weight:700;color:#FFFFFF;">📝 WordPress Article</div>
-                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">Headline, Body, Photo Credits &amp; Meta</div>
-                  </div>
-                </label>
-                <label class="rev-target-pill active" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #38bdf8;border-radius:8px;background:rgba(56,189,248,0.1);cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;transition:all 0.15s ease;">
-                  <input type="checkbox" id="rev-target-post" checked style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
-                  <div>
-                    <div style="font-weight:700;color:#FFFFFF;">📱 Static Social Post</div>
-                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">1080×1350 Graphic, Slide Text &amp; Caption</div>
-                  </div>
-                </label>
-                <label class="rev-target-pill" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid rgba(75, 137, 188, 0.28);border-radius:8px;background:#061224;cursor:pointer;font-size:0.83rem;font-weight:600;color:#B8C4D4;user-select:none;transition:all 0.15s ease;">
-                  <input type="checkbox" id="rev-target-reel" style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
-                  <div>
-                    <div style="font-weight:700;color:#FFFFFF;">🎬 Reel Video</div>
-                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">Script, Voiceover Narration &amp; Cuts</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Instant Editorial Prompt Chips -->
-            <div class="quick-chips" style="margin-bottom:12px;">
-              <span class="label-sm" style="color:#94a3b8;font-weight:700;margin-bottom:4px;display:block;">💡 Instant Editorial Prompts (Click to insert &amp; adapt):</span>
-              <div style="display:flex;flex-wrap:wrap;gap:7px;">
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Change image credit to Photo: [Photographer / Source / License]">
-                  🏷️ “Change image credit to Photo: [Photographer / Agency]”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Update photo caption to highlight [Specific story detail]">
-                  📸 “Update photo caption to highlight [Key Detail]”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Tighten article headline for high mobile readability">
-                  📰 “Tighten headline for mobile readers”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Make the tone punchier and more journalistic with a stronger opening hook">
-                  ⚡ “Make tone punchier &amp; journalistic”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Set location to Helsinki and add local Finnish context">
-                  📍 “Set location to Helsinki &amp; add context”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Add more background context, facts, and official statements into the body">
-                  ✍️ “Add background facts &amp; context”
-                </button>
-              </div>
-            </div>
-
-            <form id="comment-form" class="stack-form">
-              <!-- Voice Note Bar -->
-              <div class="voice-bar" data-voice-for="comment-input" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-ghost btn-sm btn-rec" style="border:1px solid rgba(56,189,248,0.3);background:rgba(56,189,248,0.1);color:#38bdf8;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                  <span>Record Voice Note</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-sim-voice" style="border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                  <span>Sample Voice Note</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-replay hidden" style="border:1px solid #10b981;color:#10b981;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  <span>Replay</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-discard hidden" style="border:1px solid #ef4444;color:#ef4444;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  <span>Discard</span>
-                </button>
-                <span class="voice-status hint-text" style="font-size:0.75rem;color:#38bdf8;"></span>
-                <audio class="voice-audio hidden"></audio>
-              </div>
-
-              <!-- Main Feedback Input Box -->
-              <div style="position:relative;">
-                <textarea
-                  id="comment-input"
-                  rows="3"
-                  style="background:#061224;border:1.5px solid rgba(75, 137, 188, 0.28);border-radius:8px;padding:12px 14px;color:#FFFFFF;font-size:0.88rem;line-height:1.5;box-shadow:inset 0 2px 4px rgba(0,0,0,0.4);transition:border-color 0.15s ease;"
-                  placeholder="Ask for any change in plain English (e.g. “change image credit to Photo: Aleksi Stenberg / CC BY 2.5 and tighten the headline for mobile readers”) or record a voice note above…"
-                ></textarea>
-              </div>
-
-              <!-- Clip / Video Upload Zone for Reel Feedback -->
-              <div class="feedback-clip-upload-zone" style="margin-top:4px;background:#061224;border:1px dashed rgba(75, 137, 188, 0.28);border-radius:8px;padding:12px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <label style="font-weight:600;font-size:0.82rem;color:#FFFFFF;display:flex;align-items:center;gap:6px;margin:0;">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
-                    <span>🎬 Attach Custom Video Clip or Photo for Reel Revision (Optional)</span>
-                  </label>
-                  <span class="hint-text" style="font-size:0.72rem;color:#94a3b8;">MP4, MOV, WebM, JPG (Max 100 MB)</span>
-                </div>
-
-                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                  <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" class="form-control" style="font-size:12px;padding:6px;flex:1;background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;" />
-                  <button type="button" id="btn-feedback-clear-clip" class="btn btn-ghost btn-sm hidden" style="color:#ef4444;white-space:nowrap;">✕ Remove Clip</button>
-                </div>
-
-                <!-- Live Preview Pill when Clip is Chosen -->
-                <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:12px;background:#082347;padding:8px 12px;border-radius:6px;border:1px solid rgba(75, 137, 188, 0.28);">
-                  <video id="feedback-clip-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;background:#000;" muted playsinline></video>
-                  <img id="feedback-img-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;display:none;" />
-                  <div style="flex:1;min-width:0;">
-                    <div id="feedback-clip-name" style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFFFFF;">video_clip.mp4</div>
-                    <div id="feedback-clip-meta" style="font-size:0.72rem;color:#94a3b8;">Ready to attach • Will be stitched into new Reel revision</div>
-                  </div>
-                  <span class="badge badge-success" style="font-size:0.7rem;white-space:nowrap;">Attached</span>
-                </div>
-              </div>
-
-              <div class="comment-actions" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:6px;">
-                <button type="submit" id="btn-submit-comment" class="btn btn-primary" style="padding:10px 20px;font-size:0.9rem;font-weight:700;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(22,139,255,0.4);">
-                  <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                  <span>Submit Feedback &amp; Generate Revision</span>
-                </button>
-                <div id="feedback-submit-status" class="hint-text" style="font-size:0.82rem;font-weight:600;"></div>
-              </div>
-            </form>
-
-            <!-- Modern History Block -->
-            <div class="history-block" style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(48,59,77,0.7);">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <div class="label-sm" style="color:#FFFFFF;font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:6px;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                  <span>Revision &amp; Decision History</span>
-                </div>
-                <span class="hint-text" style="font-size:0.72rem;color:#94a3b8;">All versions preserved with full rollback capability</span>
-              </div>
-              <div id="comment-history" class="comment-history"></div>
-            </div>
           </section>
-
-          <!-- Schedule Package Card -->
-          <section class="card">
-            <h2 class="panel-title">Publishing Schedule (Europe/Helsinki)</h2>
-            <p class="hint-text">
-              Scheduling is permitted only for the exact approved version. Articles and Social Posts can have separate publishing slots.
-            </p>
-            <div class="form-row" style="margin-top:12px;">
-              <div>
-                <label class="label-sm" for="sched-article-dt">Article Publishing Slot (WordPress)</label>
-                <input id="sched-article-dt" type="datetime-local" />
-              </div>
-              <div>
-                <label class="label-sm" for="sched-reel-dt">Social Post Publishing Slot (IG &amp; Facebook)</label>
-                <input id="sched-reel-dt" type="datetime-local" />
-              </div>
-            </div>
-            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-              <button id="btn-save-schedule" class="btn btn-secondary">
-                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Save Schedule (Simulated)</span>
-              </button>
-              <span id="schedule-msg" class="hint-text"></span>
-            </div>
-          </section>
-
-          <!-- Floating Mobile Quick Action Bar (1-Click Save, Push & Teleport) -->
-          <div id="article-mobile-quickbar" class="article-mobile-quickbar">
-            <button type="button" id="btn-quick-save-art" class="btn-quick-pill" title="Save in-Studio changes">
-              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-              <span>Save</span>
-            </button>
-            <button type="button" id="btn-quick-push-art" class="btn-quick-pill primary" title="Push Draft directly to WordPress">
-              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-              <span>Push WP</span>
-            </button>
-            <button type="button" id="btn-quick-copy-wp" class="btn-quick-pill ghost" title="Copy All WordPress Fields">
-              <span>📋 Copy</span>
-            </button>
-            <button type="button" id="btn-quick-jump-top" class="btn-quick-pill ghost" title="Scroll to top of article">
-              <span>⬆️ Top</span>
-            </button>
-          </div>
-        </section>
 
         <!-- VIEW 2: ASSIGNMENTS & PRODUCTION DESK (Separated into Article vs Reel) -->
         <section id="view-assignments" class="view hidden">
@@ -3588,7 +3598,7 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=96.0"></script>
+  <script src="/app.js?v=98.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
   <script src="/finnish-lab.js?v=97.0"></script>

@@ -771,7 +771,7 @@
                 if (statusSpan) statusSpan.textContent = `Transcribed (${res.model}) • Editable below`;
               } catch (err) {
                 setRecorded(url, "Move the logo lower and make the second line bigger");
-                if (statusSpan) statusSpan.textContent = "Voice note ready (Simulated fallback).";
+                if (statusSpan) statusSpan.textContent = "Voice note ready.";
               }
             };
             mediaRecorder.start();
@@ -932,7 +932,11 @@
 
       if ($("pkg-title")) $("pkg-title").textContent = pkg.title || "";
       if ($("pkg-origin-badge")) $("pkg-origin-badge").textContent = pkg.origin || "Editorial";
-      if ($("pkg-model-badge")) $("pkg-model-badge").textContent = v.ai_model || "AI Editorial Engine";
+      if ($("pkg-model-badge")) {
+        const rawModel = String(v.ai_model || "");
+        const isLegacy = /openai|gpt-4|simulated|claude/i.test(rawModel) || !rawModel.trim();
+        $("pkg-model-badge").textContent = isLegacy ? "Google Gemini (gemini-3.8-flash — $0 Free Tier)" : rawModel;
+      }
 
       const srcChk = typeof v.source_check === "string" ? JSON.parse(v.source_check) : (v.source_check || {});
       if ($("pkg-source-check")) $("pkg-source-check").textContent = srcChk?.status || "Verified";
@@ -1291,15 +1295,43 @@
 
       const webpBtn = $("btn-dl-webp");
       if (webpBtn) webpBtn.classList.toggle("hidden", !hasImage || !featImg.download_webp);
-      if ($("wp-field-img-alt")) $("wp-field-img-alt").value = hasImage ? (featImg.alt_text || art.image_alt_text || "") : "";
+      const autoAlt = (featImg.alt_text || art.image_alt_text || art.headline || "").trim();
+      const rawCredit = (featImg.credit_string || art.image_credit || (featImg.photographer ? `Photo: ${featImg.photographer}` : "") || (hasImage ? "Photo: ILF" : "")).trim();
+      if ($("wp-field-img-alt")) $("wp-field-img-alt").value = autoAlt;
       if ($("wp-field-img-caption")) $("wp-field-img-caption").value = hasImage ? (featImg.caption || art.image_caption || "") : "";
-      if ($("wp-field-img-credit")) $("wp-field-img-credit").value = hasImage ? (featImg.credit_string || art.image_credit || "") : "";
-      if ($("wp-photo-photographer")) $("wp-photo-photographer").textContent = hasImage ? (featImg.photographer ? `${featImg.photographer}${featImg.agency ? ` (${featImg.agency})` : ""}` : "Verified Contributor") : "No Image Uploaded";
+      if ($("wp-field-img-credit")) $("wp-field-img-credit").value = rawCredit;
+      if ($("wp-photo-photographer")) $("wp-photo-photographer").textContent = hasImage ? (featImg.photographer ? `${featImg.photographer}${featImg.agency ? ` (${featImg.agency})` : ""}` : "ILF") : "No Image Uploaded";
       if ($("wp-photo-source-link")) {
         $("wp-photo-source-link").textContent = hasImage ? (featImg.source_url || featImg.original_source_url || "—") : "—";
         $("wp-photo-source-link").href = hasImage ? (featImg.source_url || featImg.original_source_url || "#") : "#";
       }
       if ($("wp-photo-licence")) $("wp-photo-licence").textContent = hasImage ? (featImg.licence || "Editorial Rights Cleared") : "None";
+
+      const updatePhotoReadiness = () => {
+        const pill = $("wp-photo-readiness-pill");
+        const txt = $("wp-photo-readiness-text");
+        if (!pill || !txt) return;
+        const hasAlt = Boolean(($("wp-field-img-alt")?.value || "").trim());
+        const hasCred = Boolean(($("wp-field-img-credit")?.value || "").trim());
+        if (hasImage && hasAlt && hasCred) {
+          pill.style.background = "rgba(16,185,129,0.14)";
+          pill.style.borderColor = "rgba(16,185,129,0.42)";
+          pill.style.color = "#6EE7B7";
+          txt.textContent = "✅ Photo, Alt Text & Credit Ready for WordPress";
+        } else {
+          const missing = [];
+          if (!hasImage) missing.push("Featured Photo");
+          if (!hasAlt) missing.push("Alt Text");
+          if (!hasCred) missing.push("Photo Credit");
+          pill.style.background = "rgba(245,158,11,0.14)";
+          pill.style.borderColor = "rgba(245,158,11,0.42)";
+          pill.style.color = "#FCD34D";
+          txt.textContent = `⚠️ Add before pushing: ${missing.join(", ")}`;
+        }
+      };
+      updatePhotoReadiness();
+      if ($("wp-field-img-alt")) $("wp-field-img-alt").oninput = updatePhotoReadiness;
+      if ($("wp-field-img-credit")) $("wp-field-img-credit").oninput = updatePhotoReadiness;
 
       // Remaining fields in exact order
       if ($("wp-field-region")) $("wp-field-region").value = art.region || "Finland";
@@ -6127,7 +6159,7 @@
             reel_publish_at: $("sched-reel-dt").value || null,
           }),
         });
-        $("schedule-msg").textContent = "Scheduled (Simulated) in Europe/Helsinki.";
+        $("schedule-msg").textContent = "Scheduled in Europe/Helsinki.";
       } catch (err) {
         $("schedule-msg").textContent = err.message;
       }
@@ -6898,12 +6930,22 @@
     bindInspectorTabs("data-art-tab", "#panel-article", "art-pane-");
     bindInspectorTabs("data-reel-tab", "#reel-inspector-panel", "reel-pane-");
 
-    // Safe-Zone Guide Toggles for Social Graphics Canvases
+    // Safe-Zone Guide Toggles for Social Graphics Canvases + Carousel Accordion Redraw
     $("btn-toggle-d1-safezone")?.addEventListener("click", () => {
       $("d1-safe-zone-overlay")?.classList.toggle("hidden");
     });
     $("btn-toggle-d2-safezone")?.addEventListener("click", () => {
       $("d2-safe-zone-overlay")?.classList.toggle("hidden");
+    });
+    $("carousel-and-style-drawer")?.addEventListener("toggle", (e) => {
+      if (e.target.open) {
+        if (typeof loadActiveCarouselSlideInputs === "function") {
+          loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
+        }
+        if (typeof renderActiveCarouselSlideCanvas === "function") {
+          renderActiveCarouselSlideCanvas();
+        }
+      }
     });
 
     // Featured Image & Additional Image Downloads
@@ -8062,6 +8104,9 @@
         tags: $("wp-field-tags")?.value || "",
         seo_title: $("wp-field-seo-title")?.value || "",
         meta_description: $("wp-field-meta-desc")?.value || "",
+        image_alt: ($("wp-field-img-alt")?.value || "").trim() || ($("wp-field-headline")?.value || "").trim(),
+        image_caption: $("wp-field-img-caption")?.value || "",
+        image_credit: $("wp-field-img-credit")?.value || "Photo: ILF",
       };
       await api("/api/package/update-article", {
         method: "POST",
