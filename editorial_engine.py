@@ -38,6 +38,9 @@ ILF_VALID_SECTION_CATEGORIES: Dict[str, List[str]] = {
     "News": [
         "Finland", "Weather", "Business", "Education", "Sports", "Culture & Events", "International"
     ],
+    "Events": [
+        "Culture & Events"
+    ],
     "Finland Guide": [
         "Housing", "Everyday Life", "Residence Permits", "Driving", "Public Transport",
         "Work", "Study in Finland", "Moving to Finland", "Banking", "Cost of Living",
@@ -47,20 +50,14 @@ ILF_VALID_SECTION_CATEGORIES: Dict[str, List[str]] = {
         "Nature", "Outdoor Activities", "Family Activities", "Winter Activities",
         "Summer Activities", "Beaches", "Museums", "Culture & Traditions"
     ],
-    "Events": [
-        "Culture & Events"
-    ],
     "Food & Restaurants": [
-        "Finnish Food", "restaurants-cafes"
+        "Finnish Food", "Restaurants & Cafes"
     ],
     "Travel": [
         "Lapland", "Helsinki", "Finnish Lakeland", "Finnish Archipelago",
         "National Parks", "Northern Lights", "Hotels", "Cabins", "Camping", "Lakes",
         "Summer Travel", "Winter Travel", "Road Trips"
     ],
-    "Shopping": [
-        "Shopping"
-    ]
 }
 
 _FALLBACK_SECTIONS = list(ILF_VALID_SECTION_CATEGORIES.keys())
@@ -69,8 +66,8 @@ _FALLBACK_CATEGORIES = [
     "Driving", "Education", "Everyday Life", "Family Activities", "Finland", "Finnish Archipelago", "Finnish Food",
     "Finnish Lakeland", "Finnish Language", "Government Services", "Healthcare", "Helsinki", "Hotels", "Housing",
     "International", "Lakes", "Lapland", "Moving to Finland", "Museums", "National Parks", "Nature", "Northern Lights",
-    "Outdoor Activities", "Public Transport", "Residence Permits", "restaurants-cafes", "Road Trips", "Sports",
-    "Study in Finland", "Summer Activities", "Summer Travel", "Taxes", "Uncategorized", "Weather", "Winter Activities",
+    "Outdoor Activities", "Public Transport", "Residence Permits", "Restaurants & Cafes", "Road Trips", "Sports",
+    "Study in Finland", "Summer Activities", "Summer Travel", "Taxes", "Weather", "Winter Activities",
     "Winter Travel", "Work",
 ]
 

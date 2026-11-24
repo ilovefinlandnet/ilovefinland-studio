@@ -88,10 +88,19 @@
     emailDeliveryConfigured: false,
     autoSyncTimer: null,
     customPodcastEpisodes: [],
+    podcastEpisodeId: "pod_seasons",
     podcastCreating: false,
+    podcastPlaying: false,
+    podcastPaused: false,
+    podcastItemIdx: 0,
+    podcastPhase: "",
+    podcastLoop: true,
+    podcastSpeed: 0.75,
+    podcastTimer: null,
+    podcastShowScript: true,
     extractingCards: false,
     speakingMsgId: null,
-    gameTab: "street", // street | speak
+    gameTab: "street", // street (School Finnish Practice) | speak
     streetIdx: 0,
     streetScore: 0,
     streetFeedback: null,
@@ -103,31 +112,141 @@
     cardSearch: "",
   };
 
-  const STREET_GAME_QUESTIONS = [
-    { spoken: "Mä en tiiä.", formal: "Minä en tiedä.", en: "I don't know.", opts: ["I don't know.", "I am going home.", "Wait a second."] },
-    { spoken: "Mä meen himaan.", formal: "Minä menen kotiin.", en: "I'm going home.", opts: ["I'm hungry.", "I'm going home.", "See you tomorrow."] },
-    { spoken: "Ootsä valmis?", formal: "Oletko sinä valmis?", en: "Are you ready?", opts: ["Are you tired?", "Are you ready?", "Where are you?"] },
-    { spoken: "Kaks kahvii, kiitos.", formal: "Kaksi kahvia, kiitos.", en: "Two coffees, please.", opts: ["Two coffees, please.", "One tea, thanks.", "No milk, thanks."] },
-    { spoken: "Sori, mä oon myöhässä.", formal: "Anteeksi, minä olen myöhässä.", en: "Sorry, I'm late.", opts: ["Sorry, I forgot.", "Sorry, I'm late.", "Sorry, I don't understand."] },
-    { spoken: "Ei jaksa.", formal: "En jaksa.", en: "I can't be bothered / Too tired.", opts: ["No problem.", "I can't be bothered / Too tired.", "I don't have money."] },
-    { spoken: "Ihan sama.", formal: "Aivan sama.", en: "Whatever / I don't care.", opts: ["Same to you.", "Whatever / I don't care.", "Very good."] },
-    { spoken: "Oisko sulla aikaa?", formal: "Olisiko sinulla aikaa?", en: "Would you have time?", opts: ["Do you have a pen?", "Would you have time?", "What time is it?"] },
-    { spoken: "Mitä sä teet huomenna?", formal: "Mitä sinä teet huomenna?", en: "What are you doing tomorrow?", opts: ["Where were you yesterday?", "What are you doing tomorrow?", "How is the weather?"] },
-    { spoken: "Vituttaa.", formal: "Minua ärsyttää todella paljon.", en: "I'm pissed off / Really annoyed.", opts: ["I'm so excited.", "I'm pissed off / Really annoyed.", "I'm freezing cold."] },
+  const SCHOOL_FINNISH_QUESTIONS = [
+    {
+      topic: "Verb 'olla' (to be)",
+      promptFi: "Minä ___ opiskelija Suomessa.",
+      promptEn: "I am a student in Finland.",
+      answer: "olen",
+      fullFi: "Minä olen opiskelija Suomessa.",
+      fullEn: "I am a student in Finland.",
+      tip: "'Minä' (I) always takes the -n ending: olen.",
+      opts: ["olen (am — I)", "olet (are — you)", "on (is — he/she)"],
+    },
+    {
+      topic: "Verb 'olla' (plural)",
+      promptFi: "Me ___ tänään kurssilla.",
+      promptEn: "We are in class today.",
+      answer: "olemme",
+      fullFi: "Me olemme tänään kurssilla.",
+      fullEn: "We are in class today.",
+      tip: "Standard school Finnish for 'me' (we) takes -mme: olemme.",
+      opts: ["olemme (are — we)", "olette (are — you pl.)", "ovat (are — they)"],
+    },
+    {
+      topic: "Questions (-ko / -kö)",
+      promptFi: "___ sinä suomea?",
+      promptEn: "Do you speak Finnish?",
+      answer: "Puhutko",
+      fullFi: "Puhutko sinä suomea?",
+      fullEn: "Do you speak Finnish?",
+      tip: "Back vowel 'u' in 'puhut' takes '-ko' -> Puhutko.",
+      opts: ["Puhutko (Do you speak?)", "Puhutkö (wrong harmony)", "Puhuu (speaks)"],
+    },
+    {
+      topic: "Questions (-ko / -kö)",
+      promptFi: "___ sinä kahvia?",
+      promptEn: "Do you drink coffee?",
+      answer: "Juotko",
+      fullFi: "Juotko sinä kahvia?",
+      fullEn: "Do you drink coffee?",
+      tip: "'Juot' has back vowels (u, o), so attach '-ko': Juotko.",
+      opts: ["Juotko (Do you drink?)", "Juotkö (wrong harmony)", "Juon (I drink)"],
+    },
+    {
+      topic: "Local Cases (-ssa / -ssä)",
+      promptFi: "Minä asun ___.",
+      promptEn: "I live in Pori.",
+      answer: "Porissa",
+      fullFi: "Minä asun Porissa.",
+      fullEn: "I live in Pori.",
+      tip: "'In' a city uses the inessive ending -ssa/-ssä (Pori -> Porissa).",
+      opts: ["Porissa (in Pori)", "Porista (from Pori)", "Poriin (to Pori)"],
+    },
+    {
+      topic: "Local Cases (-sta / -stä)",
+      promptFi: "Olen kotoisin ___.",
+      promptEn: "I am originally from Finland.",
+      answer: "Suomesta",
+      fullFi: "Olen kotoisin Suomesta.",
+      fullEn: "I am originally from Finland.",
+      tip: "'From' uses the elative ending -sta/-stä (Suomi -> Suomesta).",
+      opts: ["Suomesta (from Finland)", "Suomessa (in Finland)", "Suomeen (to Finland)"],
+    },
+    {
+      topic: "Local Cases (Illative -Vn)",
+      promptFi: "Menen nyt ___.",
+      promptEn: "I am going to the store now.",
+      answer: "kauppaan",
+      fullFi: "Menen nyt kauppaan.",
+      fullEn: "I am going to the store now.",
+      tip: "Movement 'into' doubles the final vowel + n: kauppa -> kauppaan.",
+      opts: ["kauppaan (to the store)", "kaupassa (in the store)", "kaupasta (from the store)"],
+    },
+    {
+      topic: "Everyday Vocabulary",
+      promptFi: "Anteeksi, voitko ___?",
+      promptEn: "Excuse me, can you repeat?",
+      answer: "toistaa",
+      fullFi: "Anteeksi, voitko toistaa?",
+      fullEn: "Excuse me, can you repeat?",
+      tip: "'Toistaa' means 'to repeat' — super useful in Finnish class!",
+      opts: ["toistaa (to repeat)", "nukkua (to sleep)", "syödä (to eat)"],
+    },
+    {
+      topic: "Days & Time",
+      promptFi: "Tänään on maanantai. Huomenna on ___.",
+      promptEn: "Today is Monday. Tomorrow is Tuesday.",
+      answer: "tiistai",
+      fullFi: "Huomenna on tiistai.",
+      fullEn: "Tomorrow is Tuesday.",
+      tip: "Weekdays start lowercase in Finnish: maanantai, tiistai, keskiviikko.",
+      opts: ["tiistai (Tuesday)", "perjantai (Friday)", "sunnuntai (Sunday)"],
+    },
+    {
+      topic: "Seasons & Weather",
+      promptFi: "Ulkona sataa ___.",
+      promptEn: "It is snowing outside.",
+      answer: "lunta",
+      fullFi: "Ulkona sataa lunta.",
+      fullEn: "It is snowing outside.",
+      tip: "'Sataa lunta' = it is snowing (partitive of 'lumi' is 'lunta').",
+      opts: ["lunta (snow)", "aurinko (sun)", "tuoli (chair)"],
+    },
+    {
+      topic: "Everyday Objects",
+      promptFi: "Kirjoitan ___ vihkoon.",
+      promptEn: "I write with a pen into the notebook.",
+      answer: "kynällä",
+      fullFi: "Kirjoitan kynällä vihkoon.",
+      fullEn: "I write with a pen into the notebook.",
+      tip: "Using a tool ('with a pen') takes -lla/-llä: kynä -> kynällä.",
+      opts: ["kynällä (with a pen)", "kynässä (in a pen)", "kynästä (from a pen)"],
+    },
+    {
+      topic: "Polite Requests",
+      promptFi: "___ yhden kahvin, kiitos.",
+      promptEn: "Could I have one coffee, please.",
+      answer: "Saisinko",
+      fullFi: "Saisinko yhden kahvin, kiitos.",
+      fullEn: "Could I have one coffee, please.",
+      tip: "'Saisinko' is the polite school & everyday way to ask for something.",
+      opts: ["Saisinko (Could I have)", "Olenko (Am I)", "Asunko (Do I live)"],
+    },
   ];
 
   const SPEAK_PHRASES = [
-    { fi: "Hyvää huomenta!", en: "Good morning!", focus: "Long 'ää' in hyvää" },
-    { fi: "Mitä kuuluu?", en: "How are you?", focus: "Double 'uu' in kuuluu" },
-    { fi: "Saisinko yhden kahvin?", en: "Could I have one coffee?", focus: "Clear 'y' in yhden" },
-    { fi: "Anteeksi, voitko toistaa?", en: "Excuse me, can you repeat?", focus: "Double 'ee' in anteeksi" },
-    { fi: "Tänään on kylmä sää.", en: "Today the weather is cold.", focus: "Crisp 'ä' and 'y'" },
-    { fi: "Mä meen nyt kotiin.", en: "I'm going home now.", focus: "Natural spoken flow" },
+    { fi: "Hyvää huomenta, opettaja!", en: "Good morning, teacher!", focus: "Long 'ää' in hyvää" },
+    { fi: "Mitä sinulle kuuluu?", en: "How are you?", focus: "Double 'uu' in kuuluu" },
+    { fi: "Saisinko yhden kahvin, kiitos?", en: "Could I have one coffee, please?", focus: "Clear 'y' in yhden" },
+    { fi: "Anteeksi, voitko toistaa hitaasti?", en: "Excuse me, can you repeat slowly?", focus: "Double 'ee' in anteeksi" },
+    { fi: "Tänään on kylmä talvipäivä.", en: "Today is a cold winter day.", focus: "Crisp 'ä' and 'y'" },
+    { fi: "Minä asun Porissa ja opiskelen suomea.", en: "I live in Pori and study Finnish.", focus: "Steady 1st-syllable stress" },
   ];
 
-  /* ---------- FUN ROAST MODE (ESCALATING MISTAKE SIGNATURE) ---------- */
+  /* ---------- WARM ENCOURAGING COACH MODE (FUN LIGHT BANTER, ZERO HARSHNESS) ---------- */
   function isRoastEnabled() {
-    return DB.getSettings().roastMode !== false; // ON by default for everyone
+    return DB.getSettings().roastMode !== false;
   }
 
   function getRoastLine(isMistake) {
@@ -135,12 +254,10 @@
       state.mistakeStreak = 0;
       return "";
     }
-    if (!isRoastEnabled()) return "";
     state.mistakeStreak = (state.mistakeStreak || 0) + 1;
-    if (state.mistakeStreak === 1) return "😈 Muji Chutiya, you are wrong! 😂";
-    if (state.mistakeStreak === 2) return "😈 Idiot! Voi vittu, Muji Chutiya — wrong again! 🤦‍♂️";
-    if (state.mistakeStreak === 3) return "🔥 Mitä vittua?! Muji Chutiya, concentrate idiot! 😂";
-    return "🔥 Vittu! Vituttaa — Muji Chutiya idiot, focus on Finnish! 💀😂";
+    if (state.mistakeStreak === 1) return "😊 Close one! Finnish endings are sneaky — check the tip below!";
+    if (state.mistakeStreak === 2) return "💪 Almost got it! One quick look at the rule and you'll ace the next one.";
+    return "🌟 Keep going! Every mistake locks the right Finnish pattern into memory.";
   }
 
   /* ---------- INDIVIDUAL PER-USER FRIEND MEMORY (ISOLATED BY EMAIL!) ---------- */
@@ -203,84 +320,133 @@
     return mistakeRe.test(low);
   }
 
-  /* ---------- WALK & LISTEN PODCAST EPISODES ---------- */
+  /* ---------- LONGER BEGINNER WALK & LISTEN AUDIO COURSES (20-24 ITEMS, ~10-15 MIN) ---------- */
   const PODCAST_EPISODES = [
     {
-      id: "pod_cafe",
-      title: "At a Finnish Café",
-      duration: "~2 min",
+      id: "pod_seasons",
+      title: "🍂 Seasons & Weather",
+      duration: "~12–15 min",
       items: [
-        { fi: "Hei! Saisinko yhden kahvin?", en: "Hi! Could I have one coffee?" },
-        { fi: "Otatko maitoa?", en: "Would you like milk?" },
-        { fi: "Kyllä kiitos, kauramaitoa.", en: "Yes please, oat milk." },
-        { fi: "Maksan kortilla.", en: "I will pay by card." },
-        { fi: "Kiitos paljon, mukavaa päivää!", en: "Thank you very much, have a nice day!" },
+        { fi: "kevät", en: "spring" },
+        { fi: "kesä", en: "summer" },
+        { fi: "syksy", en: "autumn" },
+        { fi: "talvi", en: "winter" },
+        { fi: "sää", en: "weather" },
+        { fi: "aurinko", en: "sun" },
+        { fi: "aurinko paistaa", en: "the sun is shining" },
+        { fi: "pilvi", en: "cloud" },
+        { fi: "tänään on pilvistä", en: "today it is cloudy" },
+        { fi: "sade", en: "rain" },
+        { fi: "ulkona sataa vettä", en: "it is raining outside" },
+        { fi: "lumi", en: "snow" },
+        { fi: "ulkona sataa lunta", en: "it is snowing outside" },
+        { fi: "tuuli", en: "wind" },
+        { fi: "tänään tuulee paljon", en: "today it is very windy" },
+        { fi: "kylmä", en: "cold" },
+        { fi: "lämmin", en: "warm" },
+        { fi: "kuuma", en: "hot" },
+        { fi: "pakkanen", en: "freezing cold" },
+        { fi: "on kymmenen astetta pakkasta", en: "it is minus ten degrees" },
+        { fi: "talvella on pimeää", en: "in winter it is dark" },
+        { fi: "kesällä on valoisaa", en: "in summer it is bright" },
+        { fi: "millainen sää tänään on?", en: "what is the weather like today?" },
+        { fi: "muista laittaa lämmin takki", en: "remember to put on a warm jacket" },
       ],
     },
     {
-      id: "pod_market",
-      title: "In the Supermarket",
-      duration: "~2 min",
+      id: "pod_days_months",
+      title: "📅 Days & Months",
+      duration: "~12–15 min",
       items: [
-        { fi: "Anteeksi, missä maito on?", en: "Excuse me, where is the milk?" },
-        { fi: "Onko sinulla bonuskorttia?", en: "Do you have a bonus card?" },
-        { fi: "Ei ole, kiitos.", en: "No I don't, thanks." },
-        { fi: "En tarvitse muovipussia.", en: "I don't need a plastic bag." },
-        { fi: "Kuitti riittää, kiitos!", en: "The receipt is enough, thank you!" },
+        { fi: "maanantai", en: "Monday" },
+        { fi: "tiistai", en: "Tuesday" },
+        { fi: "keskiviikko", en: "Wednesday" },
+        { fi: "torstai", en: "Thursday" },
+        { fi: "perjantai", en: "Friday" },
+        { fi: "lauantai", en: "Saturday" },
+        { fi: "sunnuntai", en: "Sunday" },
+        { fi: "viikonloppu", en: "weekend" },
+        { fi: "tänään", en: "today" },
+        { fi: "huomenna", en: "tomorrow" },
+        { fi: "eilen", en: "yesterday" },
+        { fi: "tammikuu", en: "January" },
+        { fi: "helmikuu", en: "February" },
+        { fi: "maaliskuu", en: "March" },
+        { fi: "huhtikuu", en: "April" },
+        { fi: "toukokuu", en: "May" },
+        { fi: "kesäkuu", en: "June" },
+        { fi: "heinäkuu", en: "July" },
+        { fi: "elokuu", en: "August" },
+        { fi: "syyskuu", en: "September" },
+        { fi: "lokakuu", en: "October" },
+        { fi: "marraskuu", en: "November" },
+        { fi: "joulukuu", en: "December" },
+        { fi: "mikä päivä tänään on?", en: "what day is it today?" },
       ],
     },
     {
-      id: "pod_class",
-      title: "In Finnish Class",
-      duration: "~2 min",
+      id: "pod_objects",
+      title: "🏠 Everyday Objects & Names",
+      duration: "~12–15 min",
       items: [
-        { fi: "Huomenta, opettaja!", en: "Good morning, teacher!" },
-        { fi: "Anteeksi, voitko toistaa?", en: "Excuse me, can you repeat?" },
-        { fi: "Voitko puhua vähän hitaammin?", en: "Can you speak a bit slower?" },
-        { fi: "Minulla on kysymys.", en: "I have a question." },
-        { fi: "Nyt ymmärrän, kiitos!", en: "Now I understand, thank you!" },
+        { fi: "pöytä", en: "table" },
+        { fi: "tuoli", en: "chair" },
+        { fi: "kirja", en: "book" },
+        { fi: "vihko", en: "notebook" },
+        { fi: "kynä", en: "pen" },
+        { fi: "laukku", en: "bag" },
+        { fi: "puhelin", en: "phone" },
+        { fi: "tietokone", en: "computer" },
+        { fi: "avain", en: "key" },
+        { fi: "lompakko", en: "wallet" },
+        { fi: "ovi", en: "door" },
+        { fi: "ikkuna", en: "window" },
+        { fi: "valo", en: "light" },
+        { fi: "sänky", en: "bed" },
+        { fi: "kuppi", en: "cup" },
+        { fi: "lasi", en: "glass" },
+        { fi: "lautanen", en: "plate" },
+        { fi: "lusikka", en: "spoon" },
+        { fi: "haarukka", en: "fork" },
+        { fi: "veitsi", en: "knife" },
+        { fi: "takki", en: "jacket" },
+        { fi: "kengät", en: "shoes" },
+        { fi: "vesi", en: "water" },
+        { fi: "kahvi", en: "coffee" },
       ],
     },
     {
-      id: "pod_bus",
-      title: "Bus & Directions",
-      duration: "~2 min",
+      id: "pod_olla_q",
+      title: "🧩 Olla & Questions",
+      duration: "~11–14 min",
       items: [
-        { fi: "Anteeksi, meneekö tämä bussi keskustaan?", en: "Excuse me, does this bus go to the city center?" },
-        { fi: "Kyllä menee, rautatieasemalle.", en: "Yes it does, to the railway station." },
-        { fi: "Kuinka kauan matka kestää?", en: "How long does the trip take?" },
-        { fi: "Noin viisitoista minuuttia.", en: "About fifteen minutes." },
-        { fi: "Kiitos paljon avusta!", en: "Thank you very much for your help!" },
-      ],
-    },
-    {
-      id: "pod_weather",
-      title: "Talking About Weather",
-      duration: "~2 min",
-      items: [
-        { fi: "Millainen sää tänään on?", en: "What is the weather like today?" },
-        { fi: "Tänään on kylmä ja sataa lunta.", en: "Today it is cold and it is snowing." },
-        { fi: "Ulkona on kymmenen astetta pakkasta.", en: "Outside it is minus ten degrees." },
-        { fi: "Muista laittaa lämmin takki!", en: "Remember to put on a warm jacket!" },
-        { fi: "Kesällä Suomessa on valoisaa.", en: "In summer it is bright in Finland." },
-      ],
-    },
-    {
-      id: "pod_street",
-      title: "🗣️ Real Street Finnish & Slang",
-      duration: "~2 min",
-      items: [
-        { fi: "Vittu!", en: "Fuck! / Damn!" },
-        { fi: "Mitä vittua?", en: "What the fuck?" },
-        { fi: "Voi vittu!", en: "Oh, fuck!" },
-        { fi: "Vituttaa.", en: "I'm pissed off / It really annoys me." },
-        { fi: "Ei jaksa.", en: "I can't be bothered / Too tired for this." },
-        { fi: "Ihan sama.", en: "Whatever / I don't care." },
+        { fi: "minä olen", en: "I am" },
+        { fi: "sinä olet", en: "you are" },
+        { fi: "hän on", en: "he or she is" },
+        { fi: "me olemme", en: "we are" },
+        { fi: "te olette", en: "you plural are" },
+        { fi: "he ovat", en: "they are" },
+        { fi: "minä en ole", en: "I am not" },
+        { fi: "sinä et ole", en: "you are not" },
+        { fi: "hän ei ole", en: "he or she is not" },
+        { fi: "minä olen opiskelija", en: "I am a student" },
+        { fi: "olen kotoisin ulkomailta", en: "I am from abroad" },
+        { fi: "minä asun Porissa", en: "I live in Pori" },
+        { fi: "oletko sinä valmis?", en: "are you ready?" },
+        { fi: "asutko sinä Suomessa?", en: "do you live in Finland?" },
+        { fi: "puhutko sinä suomea?", en: "do you speak Finnish?" },
+        { fi: "onko sinulla kysymys?", en: "do you have a question?" },
+        { fi: "mikä sinun nimesi on?", en: "what is your name?" },
+        { fi: "mistä sinä olet kotoisin?", en: "where are you from?" },
+        { fi: "missä sinä asut?", en: "where do you live?" },
+        { fi: "mitä sinulle kuuluu?", en: "how are you?" },
+        { fi: "kiitos, minulle kuuluu hyvää", en: "thank you, I am doing well" },
+        { fi: "anteeksi, voitko toistaa?", en: "excuse me, can you repeat?" },
       ],
     },
     {
       id: "pod_cards",
-      title: "My Saved Flashcards",
+      title: "⭐ Saved Flashcards",
       duration: "Personal",
       dynamic: true,
       items: [],
@@ -357,12 +523,14 @@
   }
 
   function fallbackBrowserSpeak(text, slow, msgId) {
+    // CRITICAL SILENT CLASSROOM GUARD: Never speak out loud while Live Classroom mode is ON!
+    if (state.isLiveTranslating) { stopActiveAudio(true); return; }
     if (!("speechSynthesis" in window)) { stopActiveAudio(); return; }
     try {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "fi-FI";
-      utter.rate = slow ? 0.68 : 0.95;
+      utter.rate = slow ? 0.75 : 1.0;
       const voices = window.speechSynthesis.getVoices() || [];
       const fiVoice = voices.find((v) => (v.lang || "").toLowerCase().startsWith("fi"));
       if (fiVoice) utter.voice = fiVoice;
@@ -373,6 +541,23 @@
       stopActiveAudio();
     }
   }
+
+  window.flSpeakFi = function (text, rate) {
+    // CRITICAL SILENT CLASSROOM GUARD
+    if (state.isLiveTranslating) return;
+    const clean = cleanTtsText(text);
+    if (!clean || !("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(clean);
+      utter.lang = "fi-FI";
+      utter.rate = typeof rate === "number" ? rate : 1.0;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const fiVoice = voices.find((v) => (v.lang || "").toLowerCase().startsWith("fi"));
+      if (fiVoice) utter.voice = fiVoice;
+      window.speechSynthesis.speak(utter);
+    } catch (_) {}
+  };
 
   const _audioInflight = new Map();
 
@@ -385,36 +570,16 @@
       .slice(0, 1200);
   }
 
-  function fetchOrGetTtsUrl(clean, mode) {
-    const key = `${mode}|${clean}`;
-    if (_audioMemCache.has(key)) return Promise.resolve(_audioMemCache.get(key));
-    if (_audioInflight.has(key)) return _audioInflight.get(key);
-    const p = flApi("/api/finnish-lab/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: clean, mode }),
-    })
-      .then((res) => {
-        if (res && res.audio_base64) {
-          const dataUrl = `data:${res.mime_type || "audio/wav"};base64,${res.audio_base64}`;
-          _audioMemCache.set(key, dataUrl);
-          return dataUrl;
-        }
-        return null;
-      })
-      .catch(() => null)
-      .finally(() => _audioInflight.delete(key));
-    _audioInflight.set(key, p);
-    return p;
-  }
-
-  function prewarmFinnishAudio(text) {
-    const clean = cleanTtsText(text);
-    if (!clean || clean.length < 2) return;
-    fetchOrGetTtsUrl(clean, "phrase").catch(() => {});
+  function prewarmFinnishAudio(_text) {
+    // 100% Free Browser Web Speech API (fi-FI) — zero paid TTS calls
   }
 
   async function speakFinnish(text, slow, msgId) {
+    // CRITICAL SILENT CLASSROOM GUARD: Never speak out loud when Live mode is active!
+    if (state.isLiveTranslating) {
+      toast("🔇 Silent Classroom Live mode is ON — audio is muted.", "info");
+      return;
+    }
     const targetId = msgId || ("tts_" + Date.now());
     if (msgId && state.speakingMsgId === msgId) {
       stopActiveAudio();
@@ -428,48 +593,9 @@
     renderActiveView();
     renderSidePanel();
 
-    const playUrl = (dataUrl, rate) => {
-      const audio = new Audio(dataUrl);
-      if (rate && rate !== 1) {
-        audio.playbackRate = rate;
-        if ("preservesPitch" in audio) audio.preservesPitch = true;
-        if ("webkitPreservesPitch" in audio) audio.webkitPreservesPitch = true;
-      }
-      _activeAudioEl = audio;
-      audio.onended = () => { if (state.speakingMsgId === targetId) stopActiveAudio(); };
-      audio.play().catch(() => fallbackBrowserSpeak(clean, slow, targetId));
-    };
-
-    const phraseKey = `phrase|${clean}`;
-    const slowKey = `slow|${clean}`;
-
-    // Instant 0ms playback if already pre-warmed or cached (Slow reuses phrase audio at 0.78x instantly!)
-    if (!slow && _audioMemCache.has(phraseKey)) {
-      playUrl(_audioMemCache.get(phraseKey), 1);
-      return;
-    }
-    if (slow && _audioMemCache.has(slowKey)) {
-      playUrl(_audioMemCache.get(slowKey), 1);
-      return;
-    }
-    if (slow && _audioMemCache.has(phraseKey)) {
-      playUrl(_audioMemCache.get(phraseKey), 0.78);
-      return;
-    }
-
-    // TRUE 0ms INSTANT VOICE: if human audio isn't cached yet, speak immediately on-tap with native fi-FI voice
-    // while silently pre-warming the warm Gemini human voice in the background for next play!
+    // 100% Free Browser Web Speech API (fi-FI, 0.75x slow / 1.0x normal)
     if ("speechSynthesis" in window) {
       fallbackBrowserSpeak(clean, slow, targetId);
-      prewarmFinnishAudio(clean);
-      return;
-    }
-
-    // Fallback for browsers without Web Speech API: fetch Gemini human voice directly
-    const dataUrl = await fetchOrGetTtsUrl(clean, "phrase");
-    if (state.speakingMsgId !== targetId) return;
-    if (dataUrl) {
-      playUrl(dataUrl, slow ? 0.78 : 1);
       return;
     }
     if (state.speakingMsgId === targetId) {
@@ -481,30 +607,54 @@
     return [...(state.customPodcastEpisodes || []), ...PODCAST_EPISODES];
   }
 
-  async function createCustomPodcastEpisode(topicStr) {
+  function stopPodcastPlayback(skipRender) {
+    state.podcastPlaying = false;
+    state.podcastPaused = false;
+    state.podcastPhase = "";
+    if (state.podcastTimer) {
+      clearTimeout(state.podcastTimer);
+      state.podcastTimer = null;
+    }
+    if ("speechSynthesis" in window) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+    if (!skipRender) renderActiveView();
+  }
+
+  async function createCustomPodcastEpisode(topicStr, attachments) {
     const topic = (topicStr || "").trim();
-    if (!topic) { toast("Type a topic first (e.g. At the doctor)!", "warning"); return; }
+    const atts = Array.isArray(attachments) ? attachments : [];
+    if (!topic && !atts.length) {
+      toast("Pick a preset, type a topic, or upload a homework photo!", "warning");
+      return;
+    }
+    stopPodcastPlayback(true);
     state.podcastCreating = true;
     renderActiveView();
     try {
       const res = await flApi("/api/finnish-lab/podcast-topic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, level: DB.getSettings().level || "A1" }),
+        body: JSON.stringify({
+          topic: topic || "Homework Photo Vocabulary & Grammar",
+          level: DB.getSettings().level || "A1",
+          count: 24,
+          attachments: atts.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
+        }),
       });
       const ep = {
         id: "pod_custom_" + Date.now(),
-        title: "✨ " + (res.title || topic),
-        duration: "~2 min",
+        title: "✨ " + (res.title || topic || "Homework Course"),
+        duration: res.duration || "~12–15 min",
         items: res.items || [],
       };
       state.customPodcastEpisodes.unshift(ep);
       state.podcastEpisodeId = ep.id;
-      state.podcastAudioUrl = null;
+      state.podcastItemIdx = 0;
       state.podcastShowScript = true;
-      toast(`Created "${ep.title}"! Tap Play to listen 🎧`, "success");
+      toast(`Created "${ep.title}" (${ep.items.length} items)! Tap Play to walk & listen 🎧`, "success");
     } catch (err) {
-      toast(err.message || "Could not create episode.", "error");
+      toast(err.message || "Could not create Walk & Listen course.", "error");
     } finally {
       state.podcastCreating = false;
       renderActiveView();
@@ -537,7 +687,7 @@
       }
       state.flashcards = await DB.listFlashcards();
       scheduleAutoSync();
-      toast(`⭐ Saved ${added || cards.length} words to Flashcards & Podcast!`, "success");
+      toast(`⭐ Saved ${added || cards.length} words to Flashcards & Walk & Listen!`, "success");
       renderActiveView();
     } catch (err) {
       toast(err.message || "Could not extract flashcards.", "error");
@@ -549,65 +699,162 @@
   function getPodcastItems(ep) {
     if (!ep) return [];
     if (ep.dynamic) {
-      return state.flashcards.slice(0, 8).map((c) => ({ fi: c.fi, en: c.en }));
+      return (state.flashcards || []).slice(0, 30).map((c) => ({ fi: c.fi, en: c.en }));
     }
     return ep.items || [];
   }
 
-  async function generateAndPlayPodcast(epId) {
+  function speakUtteranceAsync(text, lang, rate) {
+    return new Promise((resolve) => {
+      if (!state.podcastPlaying || state.isLiveTranslating || !("speechSynthesis" in window)) {
+        resolve(false);
+        return;
+      }
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(cleanTtsText(text));
+        u.lang = lang;
+        u.rate = rate;
+        const voices = window.speechSynthesis.getVoices() || [];
+        const prefix = lang.slice(0, 2).toLowerCase();
+        const matched = voices.find((v) => (v.lang || "").toLowerCase().startsWith(prefix));
+        if (matched) u.voice = matched;
+        u.onend = () => resolve(true);
+        u.onerror = () => resolve(true);
+        window.speechSynthesis.speak(u);
+      } catch (_) {
+        resolve(true);
+      }
+    });
+  }
+
+  function waitPodcastMs(ms) {
+    return new Promise((resolve) => {
+      if (!state.podcastPlaying) { resolve(false); return; }
+      state.podcastTimer = setTimeout(() => {
+        state.podcastTimer = null;
+        resolve(Boolean(state.podcastPlaying));
+      }, ms);
+    });
+  }
+
+  // Passive Memorization Loop ($0 Free Browser Web Speech API):
+  // Slow Finnish -> "means [English]" -> 1.2s pause -> Second Slow Finnish repeat
+  async function generateAndPlayPodcast(epId, startIndex) {
+    if (state.isLiveTranslating) {
+      toast("🔇 Stop Silent Classroom Live mode first before playing audio.", "warning");
+      return;
+    }
+    if (!("speechSynthesis" in window)) {
+      toast("Browser speech synthesis is unavailable on this device.", "error");
+      return;
+    }
     const ep = getAllPodcastEpisodes().find((x) => x.id === epId) || PODCAST_EPISODES[0];
     const items = getPodcastItems(ep);
     if (!items.length) {
-      toast("Save a few flashcards first to turn your own words into a walking podcast!", "warning");
-      return;
-    }
-    const scriptLines = [
-      `Tervetuloa! Welcome to your Finnish walking podcast: ${ep.title}. Listen and repeat aloud as you walk.`,
-    ];
-    items.forEach((it, idx) => {
-      scriptLines.push(`Number ${idx + 1}. ${it.fi}. ... In English, that means: ${it.en}. ... Again, clearly: ${it.fi}.`);
-    });
-    scriptLines.push("Hyvä! Great job practising Finnish today!");
-    const fullScript = scriptLines.join("\n");
-
-    const cacheKey = `podcast|${ep.id}|${fullScript}`;
-    if (_audioMemCache.has(cacheKey)) {
-      state.podcastAudioUrl = _audioMemCache.get(cacheKey);
-      state.podcastLoading = false;
-      renderActiveView();
-      setTimeout(() => {
-        const el = document.getElementById("fl-podcast-audio");
-        if (el) { el.playbackRate = state.podcastSlow ? 0.8 : 1.0; el.play().catch(() => {}); }
-      }, 40);
+      toast("Save a few flashcards first to play your personal Walk & Listen course!", "warning");
       return;
     }
 
-    state.podcastLoading = true;
-    state.podcastAudioUrl = null;
+    stopActiveAudio(true);
+    stopPodcastPlayback(true);
+    state.podcastEpisodeId = ep.id;
+    state.podcastPlaying = true;
+    state.podcastPaused = false;
+    state.podcastItemIdx = typeof startIndex === "number" ? Math.max(0, Math.min(items.length - 1, startIndex)) : (state.podcastItemIdx || 0);
+    DB.touchStudyStreak("listening");
     renderActiveView();
 
-    try {
-      const res = await flApi("/api/finnish-lab/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: fullScript, mode: "podcast" }),
-      });
-      if (res && res.audio_base64) {
-        const url = `data:${res.mime_type || "audio/wav"};base64,${res.audio_base64}`;
-        _audioMemCache.set(cacheKey, url);
-        state.podcastAudioUrl = url;
-        DB.touchStudyStreak("listening");
-      }
-    } catch (err) {
-      toast("Could not generate podcast audio: " + err.message, "error");
-    } finally {
-      state.podcastLoading = false;
+    const runId = Date.now();
+    state._podcastRunId = runId;
+
+    while (state.podcastPlaying && state._podcastRunId === runId) {
+      const it = items[state.podcastItemIdx];
+      if (!it) break;
+      const fiSpeed = Number(state.podcastSpeed) || 0.75;
+
+      // Step 1: Slow Finnish
+      state.podcastPhase = `🇫🇮 Slow Finnish (${fiSpeed.toFixed(2)}×)`;
       renderActiveView();
-      setTimeout(() => {
-        const el = document.getElementById("fl-podcast-audio");
-        if (el) { el.playbackRate = state.podcastSlow ? 0.8 : 1.0; el.play().catch(() => {}); }
-      }, 60);
+      await speakUtteranceAsync(it.fi, "fi-FI", fiSpeed);
+      if (!state.podcastPlaying || state._podcastRunId !== runId) break;
+      await waitPodcastMs(450);
+      if (!state.podcastPlaying || state._podcastRunId !== runId) break;
+
+      // Step 2: "means [English meaning]"
+      state.podcastPhase = "🇬🇧 English meaning";
+      renderActiveView();
+      await speakUtteranceAsync(`means ${it.en}`, "en-US", 0.95);
+      if (!state.podcastPlaying || state._podcastRunId !== runId) break;
+
+      // Step 3: Short memorization pause
+      state.podcastPhase = "🧠 Memorize pause...";
+      renderActiveView();
+      await waitPodcastMs(1250);
+      if (!state.podcastPlaying || state._podcastRunId !== runId) break;
+
+      // Step 4: Second slow Finnish repeat
+      state.podcastPhase = `🔁 Repeat Finnish (${fiSpeed.toFixed(2)}×)`;
+      renderActiveView();
+      await speakUtteranceAsync(it.fi, "fi-FI", fiSpeed);
+      if (!state.podcastPlaying || state._podcastRunId !== runId) break;
+
+      await waitPodcastMs(850);
+      if (!state.podcastPlaying || state._podcastRunId !== runId) break;
+
+      if (state.podcastItemIdx + 1 < items.length) {
+        state.podcastItemIdx += 1;
+      } else if (state.podcastLoop) {
+        state.podcastItemIdx = 0;
+      } else {
+        stopPodcastPlayback();
+        toast("🎉 Completed Walk & Listen session!", "success");
+        break;
+      }
     }
+  }
+
+  function exportWalkAndListenGoodnotes(epId, format) {
+    const ep = getAllPodcastEpisodes().find((x) => x.id === epId) || PODCAST_EPISODES[0];
+    const items = getPodcastItems(ep);
+    if (!items.length) {
+      toast("No items in this episode to export yet.", "warning");
+      return;
+    }
+    const today = DB.todayStr();
+    if (format === "md") {
+      let md = `# 🎧 Walk & Listen Study Sheet — ${ep.title} (${today})\n\n| # | Finnish (Suomi) | English Meaning |\n|---|---|---|\n`;
+      items.forEach((it, idx) => {
+        md += `| ${idx + 1} | **${it.fi}** | ${it.en} |\n`;
+      });
+      downloadTextFile(`walk-listen-${ep.id}-${today}.md`, md);
+      toast("⬇️ Exported Walk & Listen Markdown sheet for Goodnotes!", "success");
+      return;
+    }
+    const win = window.open("", "_blank", "width=880,height=760");
+    if (!win) {
+      toast("Pop-up blocked — use Markdown export or allow pop-ups.", "warning");
+      return;
+    }
+    const rows = items
+      .map((it, i) => `<tr><td>${i + 1}</td><td><strong>${esc(it.fi)}</strong></td><td>${esc(it.en)}</td></tr>`)
+      .join("");
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(ep.title)} — Goodnotes Study Sheet</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; color: #0A192F; padding: 26px; max-width: 860px; margin: 0 auto; }
+        h1 { color: #003580; font-size: 20px; border-bottom: 3px solid #003580; padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13.5px; }
+        th { background: #0A192F; color: #fff; padding: 9px; text-align: left; }
+        td { border: 1px solid #CBD5E1; padding: 8px 10px; }
+        @media print { .no-print { display: none; } }
+      </style></head><body>
+      <div class="no-print" style="text-align:right;margin-bottom:12px;">
+        <button onclick="window.print()" style="background:#003580;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer;">🖨️ Print / Save PDF to Goodnotes</button>
+      </div>
+      <h1>🎧 ${esc(ep.title)} (${items.length} Items • ${today})</h1>
+      <table><thead><tr><th>#</th><th>Finnish (Suomi)</th><th>English Meaning</th></tr></thead><tbody>${rows}</tbody></table>
+    </body></html>`);
+    win.document.close();
   }
 
   /* ---------- SECURE API CLIENT ---------- */
@@ -1015,14 +1262,13 @@
       return;
     }
     if (state.isRecording) stopRecording();
+    // CRITICAL: Mute & cancel all audio before entering Silent Classroom Live mode!
+    stopActiveAudio(true);
+    stopPodcastPlayback(true);
 
-    // Use continuous rolling 6-second audio streaming on iPhone & iPad Safari (reliable & never stops!)
-    // (iPadOS 13+ reports "MacIntel" with maxTouchPoints > 1)
-    const isIOS =
-      /iPhone|iPad|iPod/i.test(navigator.userAgent || "") ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    // Prefer native browser SpeechRecognition / webkitSpeechRecognition (fi-FI, $0 cost, 100% silent)
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (isIOS || !SR) {
+    if (!SR) {
       startRollingLiveListen();
       return;
     }
@@ -1034,14 +1280,14 @@
       rec.interimResults = true;
       state.liveRecognition = rec;
       state.isLiveTranslating = true;
-      state.liveInterimText = "Listening silently for Finnish...";
+      state.liveInterimText = "🔇 Silent Classroom Mode ON — Listening for teacher's Finnish (Speaker 100% Muted)...";
 
       rec.onresult = (ev) => {
         let interim = "";
         for (let i = ev.resultIndex; i < ev.results.length; i++) {
           const transcript = (ev.results[i][0].transcript || "").trim();
           if (ev.results[i].isFinal && transcript.length > 1) {
-            state.liveInterimText = "Translating...";
+            state.liveInterimText = "🔇 Translating teacher silently...";
             renderLiveBannerOnly();
             sendMessage(transcript, { mode: "live_translate", silentLive: true });
           } else {
@@ -1049,7 +1295,7 @@
           }
         }
         if (interim.trim()) {
-          state.liveInterimText = interim.trim();
+          state.liveInterimText = "🔇 Hearing: " + interim.trim();
           renderLiveBannerOnly();
         }
       };
@@ -1696,21 +1942,19 @@
     const actionsHtml =
       m.role === "assistant" && !m.isError
         ? m.isLiveSubtitle
-          ? `<div class="fl-msg-actions" style="margin-top:6px;">
-               ${
-                 isSpeakingThis
-                   ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" title="Stop audio" aria-label="Stop" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${ICO.stop}<span>Stop</span></button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen" aria-label="Listen">${ICO.listen}</button>`
-               }
-               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save vocabulary to Flashcards" aria-label="Save Words">${ICO.cards}</button>
+          ? `<div class="fl-msg-actions" style="margin-top:8px;">
+               <span style="font-size:0.68rem;color:#34D399;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);">🔇 Silent Classroom Helper</span>
+               <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save vocabulary to Flashcards" aria-label="Save Words">${ICO.cards} Save Words</button>
              </div>`
           : `<div class="fl-msg-actions">
                ${
-                 isSpeakingThis
+                 state.isLiveTranslating
+                   ? `<span style="font-size:0.68rem;color:#94a3b8;">🔇 Muted (Live ON)</span>`
+                   : isSpeakingThis
                    ? `<button type="button" class="fl-mini-btn" data-fl-stop-speak="1" title="Stop audio" aria-label="Stop" style="background:rgba(239,68,68,0.18);color:#fca5a5;">${ICO.stop}<span>Stop</span></button>`
-                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen in Finnish voice" aria-label="Listen">${ICO.listen}</button>`
+                   : `<button type="button" class="fl-mini-btn" data-fl-speak="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen in Finnish voice (1.0x)" aria-label="Listen">${ICO.listen}</button>
+                      <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen slowly (0.75×)" aria-label="Slow">${ICO.slow}<span style="font-size:0.68rem;">0.75×</span></button>`
                }
-               <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen slowly (0.8×)" aria-label="Slow">${ICO.slow}<span style="font-size:0.68rem;">0.8×</span></button>
                <button type="button" class="fl-mini-btn" data-fl-explain-more="${idx}" title="Explain in more detail" aria-label="Explain">${ICO.explain}</button>
                <button type="button" class="fl-mini-btn" data-fl-extract-cards="${idx}" title="Save words to Flashcards" aria-label="Save Words">${ICO.cards}</button>
                <button type="button" class="fl-mini-btn" data-fl-save-note="${idx}" title="Save to Notes" aria-label="Save">${ICO.save}</button>
@@ -1766,10 +2010,10 @@
             <button type="button" class="fl-study-tile" data-fl-study="game" style="border-color:rgba(168,85,247,0.38);background:radial-gradient(circle at 85% 15%, rgba(168,85,247,0.18), transparent 60%), rgba(13,22,40,0.92);">
               <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
                 <div class="fl-study-icon-badge" style="width:46px;height:46px;background:rgba(168,85,247,0.2);border-color:rgba(192,132,252,0.4);">${ICO.zap}</div>
-                <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(168,85,247,0.22);color:#e9d5ff;font-weight:800;">FUN</span>
+                <span style="font-size:0.65rem;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.22);color:#6ee7b7;font-weight:800;">SCHOOL A1</span>
               </div>
-              <strong style="font-size:1rem;">Street Game &amp; Speak</strong>
-              <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">1-min spoken Finnish (Puhekieli) quiz + AI pronunciation check out loud.</span>
+              <strong style="font-size:1rem;">🏫 School Finnish &amp; Speak</strong>
+              <span style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Standard beginner school grammar &amp; vocab drill (Finnish + English) + pronunciation practice.</span>
             </button>
           </div>
         </div>
@@ -1783,25 +2027,29 @@
   }
 
   function renderGameAndSpeakTool() {
-    const q = STREET_GAME_QUESTIONS[state.streetIdx % STREET_GAME_QUESTIONS.length];
+    const q = SCHOOL_FINNISH_QUESTIONS[state.streetIdx % SCHOOL_FINNISH_QUESTIONS.length];
     const sp = SPEAK_PHRASES[state.speakPhraseIdx % SPEAK_PHRASES.length];
     return `
       <div class="fl-card" style="padding:18px;border-radius:20px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
-          <button type="button" class="fl-btn sm ${state.gameTab === "street" ? "active" : ""}" data-fl-gtab="street">${ICO.zap} Street vs. Class</button>
+          <button type="button" class="fl-btn sm ${state.gameTab === "street" ? "active" : ""}" data-fl-gtab="street">🏫 School Finnish Practice</button>
           <button type="button" class="fl-btn sm ${state.gameTab === "speak" ? "active" : ""}" data-fl-gtab="speak">${ICO.mic} Say It Out Loud</button>
         </div>
 
         ${
           state.gameTab === "street"
             ? `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;color:#94a3b8;margin-bottom:10px;">
-                 <span>Question ${(state.streetIdx % STREET_GAME_QUESTIONS.length) + 1} / ${STREET_GAME_QUESTIONS.length}</span>
+                 <span>Question ${(state.streetIdx % SCHOOL_FINNISH_QUESTIONS.length) + 1} / ${SCHOOL_FINNISH_QUESTIONS.length} • <strong style="color:#7dd3fc;">${esc(q.topic)}</strong></span>
                  <span style="color:#6ee7b7;font-weight:700;">Score: ${state.streetScore}</span>
                </div>
                <div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
-                 <div style="font-size:0.72rem;color:#7dd3fc;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">A Finn on the street says:</div>
-                 <div style="font-size:1.35rem;font-weight:800;color:#fff;margin-bottom:8px;">“${esc(q.spoken)}”</div>
-                 <button type="button" class="fl-mini-btn" data-fl-speak="${esc(q.spoken)}">${ICO.listen} Hear it</button>
+                 <div style="font-size:0.72rem;color:#7dd3fc;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Complete the School Finnish Sentence:</div>
+                 <div style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:6px;">🇫🇮 ${esc(q.promptFi)}</div>
+                 <div style="font-size:0.88rem;color:#cbd5e1;margin-bottom:10px;">🇬🇧 ${esc(q.promptEn)}</div>
+                 <div style="display:flex;justify-content:center;gap:6px;">
+                   <button type="button" class="fl-mini-btn" data-fl-speak-slow="${esc(q.fullFi)}">🐢 0.75×</button>
+                   <button type="button" class="fl-mini-btn" data-fl-speak="${esc(q.fullFi)}">🔊 1.0×</button>
+                 </div>
                </div>
                <div style="display:flex;flex-direction:column;gap:8px;">
                  ${q.opts
@@ -1813,21 +2061,23 @@
                ${
                  state.streetFeedback
                    ? `<div style="margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.05);font-size:0.84rem;">
-                        ${state.streetFeedback.roast ? `<div class="fl-roast-banner">${esc(state.streetFeedback.roast)}</div>` : ""}
-                        <div style="font-weight:700;color:${state.streetFeedback.ok ? "#6ee7b7" : "#fca5a5"};">${state.streetFeedback.ok ? "✅ Oikein!" : "❌ Not quite!"}</div>
-                        <div style="color:#cbd5e1;margin-top:4px;"><strong>Street:</strong> ${esc(q.spoken)} • <strong>Book:</strong> ${esc(q.formal)}</div>
-                        <div style="color:#7dd3fc;margin-top:2px;">🇬🇧 ${esc(q.en)}</div>
-                        <button type="button" class="fl-btn primary sm" id="fl-street-next" style="margin-top:10px;width:100%;">Next Phrase →</button>
+                        ${state.streetFeedback.roast ? `<div class="fl-roast-banner" style="background:rgba(56,189,248,0.14);border-color:rgba(56,189,248,0.35);color:#e0f2fe;">${esc(state.streetFeedback.roast)}</div>` : ""}
+                        <div style="font-weight:700;color:${state.streetFeedback.ok ? "#6ee7b7" : "#fca5a5"};">${state.streetFeedback.ok ? "✅ Oikein! (Correct!)" : `❌ Answer: ${esc(q.answer)}`}</div>
+                        <div style="color:#ffffff;margin-top:5px;font-weight:700;">🇫🇮 ${esc(q.fullFi)}</div>
+                        <div style="color:#7dd3fc;margin-top:2px;">🇬🇧 ${esc(q.fullEn)}</div>
+                        <div style="color:#cbd5e1;margin-top:4px;font-size:0.78rem;">💡 ${esc(q.tip)}</div>
+                        <button type="button" class="fl-btn primary sm" id="fl-street-next" style="margin-top:10px;width:100%;">Next Question →</button>
                       </div>`
                    : ""
                }`
             : `<div style="background:rgba(6,14,30,0.9);border:1px solid rgba(56,189,248,0.28);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px;">
                  <div style="font-size:0.72rem;color:#7dd3fc;margin-bottom:4px;">SAY THIS OUT LOUD (${(state.speakPhraseIdx % SPEAK_PHRASES.length) + 1}/${SPEAK_PHRASES.length})</div>
-                 <div style="font-size:1.35rem;font-weight:800;color:#fff;">${esc(sp.fi)}</div>
+                 <div style="font-size:1.35rem;font-weight:800;color:#fff;">🇫🇮 ${esc(sp.fi)}</div>
                  <div style="font-size:0.84rem;color:#94a3b8;margin-top:4px;">🇬🇧 ${esc(sp.en)}</div>
                  <div style="font-size:0.74rem;color:#fde047;margin-top:4px;">Focus: ${esc(sp.focus)}</div>
                  <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
-                   <button type="button" class="fl-btn sm" data-fl-speak="${esc(sp.fi)}">${ICO.listen} Hear First</button>
+                   <button type="button" class="fl-btn sm" data-fl-speak-slow="${esc(sp.fi)}">🐢 0.75×</button>
+                   <button type="button" class="fl-btn sm" data-fl-speak="${esc(sp.fi)}">🔊 1.0×</button>
                    <button type="button" class="fl-btn sm" id="fl-speak-next-phrase">Next Phrase →</button>
                  </div>
                </div>
@@ -1841,7 +2091,7 @@
                ${
                  state.speakResult
                    ? `<div style="margin-top:14px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.06);font-size:0.86rem;line-height:1.5;">
-                        ${state.speakResult.roast ? `<div class="fl-roast-banner">${esc(state.speakResult.roast)}</div>` : ""}
+                        ${state.speakResult.roast ? `<div class="fl-roast-banner" style="background:rgba(56,189,248,0.14);border-color:rgba(56,189,248,0.35);color:#e0f2fe;">${esc(state.speakResult.roast)}</div>` : ""}
                         <div style="font-size:1.05rem;font-weight:800;color:${state.speakResult.score >= 7 ? "#6ee7b7" : "#fde047"};">Score: ${state.speakResult.score}/10</div>
                         <div style="color:#fff;margin-top:4px;"><strong>${esc(state.speakResult.verdict)}</strong></div>
                         ${state.speakResult.heard ? `<div style="color:#94a3b8;margin-top:4px;">Heard: <em>"${esc(state.speakResult.heard)}"</em></div>` : ""}
@@ -1858,72 +2108,91 @@
     const allEps = getAllPodcastEpisodes();
     const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
     const items = getPodcastItems(ep);
+    const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, items.length - 1));
+    const currentItem = items[activeIdx];
+
     return `
       <div class="fl-card" style="padding:18px;border-radius:20px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-          <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.headphones}</div>
-          <div>
-            <strong style="font-size:1.05rem;display:block;color:#fff;">Walk &amp; Listen — Podcast Studio</strong>
-            <span style="font-size:0.78rem;color:#94a3b8;">Warm human voice • Finnish → English → slow repeat</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="fl-study-icon-badge" style="width:46px;height:46px;">${ICO.headphones}</div>
+            <div>
+              <strong style="font-size:1.05rem;display:block;color:#fff;">🎧 Walk &amp; Listen — Beginner Audio Course (10–20 Min)</strong>
+              <span style="font-size:0.78rem;color:#94a3b8;">100% Free Passive Memorization • Slow Finnish → "means English" → Pause → Repeat</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="fl-btn sm" id="fl-pod-export-pdf" title="Print / Save PDF to Goodnotes">📄 Goodnotes PDF</button>
+            <button type="button" class="fl-btn sm" id="fl-pod-export-md" title="Download Markdown Study Sheet">⬇️ Export .md</button>
           </div>
         </div>
 
-        <!-- Custom "Make My Own Episode" Creator -->
-        <div class="fl-pod-creator">
-          <div style="font-size:0.76rem;font-weight:700;color:#7dd3fc;display:inline-flex;align-items:center;gap:5px;">${ICO.explain} Make My Own Episode (Any Topic)</div>
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="fl-pod-custom-topic" class="fl-input" placeholder="e.g. At the doctor, Job interview, At Kela..." style="flex:1;font-size:0.84rem;" />
-            <button type="button" class="fl-btn primary sm" id="fl-pod-create-btn" ${state.podcastCreating ? "disabled" : ""} style="white-space:nowrap;">${state.podcastCreating ? "Creating..." : `${ICO.explain} Create`}</button>
-          </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;">
-            <button type="button" class="fl-mini-btn" data-fl-pod-quick="At the doctor">🏥 Doctor</button>
-            <button type="button" class="fl-mini-btn" data-fl-pod-quick="Job interview in Finland">💼 Job Interview</button>
-            <button type="button" class="fl-mini-btn" data-fl-pod-quick="At Kela or Migri">🏛️ Kela</button>
-            <button type="button" class="fl-mini-btn" data-fl-pod-quick="Small talk with Finnish neighbor">☕ Neighbor</button>
+        <!-- Custom Course Creator (Topic OR Upload Homework Photo -> 20-30 items via $0 Gemini) -->
+        <div class="fl-pod-creator" style="margin-bottom:14px;">
+          <div style="font-size:0.76rem;font-weight:700;color:#7dd3fc;display:inline-flex;align-items:center;gap:5px;">${ICO.explain} Generate 24-Item Beginner Audio Course (Topic or Homework Photo)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="fl-pod-custom-topic" class="fl-input" placeholder="e.g. Colors & Numbers, Food & Drinks, Family..." style="flex:1;min-width:190px;font-size:0.84rem;" />
+            <button type="button" class="fl-btn primary sm" id="fl-pod-create-btn" ${state.podcastCreating ? "disabled" : ""} style="white-space:nowrap;">${state.podcastCreating ? "⏳ Building 24 items..." : "✨ Generate Course"}</button>
+            <label class="fl-btn sm" style="cursor:pointer;white-space:nowrap;border-color:rgba(56,189,248,0.45);color:#7dd3fc;" title="Upload a Finnish homework photo to turn it into a Walk & Listen audio course">
+              📷 Upload Homework Photo
+              <input type="file" id="fl-pod-hw-photo" accept="image/*" style="display:none;" />
+            </label>
           </div>
         </div>
 
-        <!-- Episode Picker -->
+        <!-- One-Tap Beginner Presets (22-24 items each + Saved Flashcards) -->
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
           ${allEps.map(
             (p) => `<button type="button" class="fl-btn sm ${p.id === ep.id ? "active" : ""}" data-fl-pod-ep="${p.id}">${esc(p.title)}</button>`
           ).join("")}
         </div>
 
-        <!-- Spotify-Style Luxury Player -->
+        <!-- Passive Memorization Player Card -->
         <div class="fl-pod-player-card">
           <div style="font-size:1.08rem;font-weight:800;color:#fff;margin-bottom:4px;">${esc(ep.title)}</div>
-          <div style="font-size:0.78rem;color:#7dd3fc;margin-bottom:14px;">${items.length} sentences • ${esc(ep.duration)} • Human Neural Voice</div>
+          <div style="font-size:0.78rem;color:#7dd3fc;margin-bottom:12px;">${items.length} items • ${esc(ep.duration || "~12–15 min")} • Free Web Speech (fi-FI)</div>
 
           ${
-            state.podcastLoading
-              ? `<div style="padding:14px;color:#7dd3fc;font-weight:700;">⏳ Preparing warm human voice episode... (cached after first play)</div>`
-              : state.podcastAudioUrl
-              ? `<audio id="fl-podcast-audio" controls src="${state.podcastAudioUrl}" style="width:100%;margin-bottom:12px;"></audio>
-                 <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
-                   <button type="button" class="fl-btn sm ${state.podcastSlow ? "active" : ""}" id="fl-pod-slow">${ICO.slow} Slow (0.8×): ${state.podcastSlow ? "ON" : "OFF"}</button>
-                   <button type="button" class="fl-btn sm" id="fl-pod-replay">↺ Replay</button>
-                   <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide Text" : "👁️ Show Text"}</button>
+            state.podcastPlaying && currentItem
+              ? `<div style="background:rgba(6,18,36,0.9);border:1.5px solid rgba(56,189,248,0.45);border-radius:14px;padding:14px;margin-bottom:12px;">
+                   <div style="font-size:0.72rem;color:#34D399;font-weight:800;margin-bottom:4px;">Item ${activeIdx + 1} / ${items.length} • ${esc(state.podcastPhase || "Playing...")}</div>
+                   <div style="font-size:1.35rem;font-weight:800;color:#fff;">🇫🇮 ${esc(currentItem.fi)}</div>
+                   <div style="font-size:0.9rem;color:#7dd3fc;margin-top:4px;">🇬🇧 means: ${esc(currentItem.en)}</div>
                  </div>`
-              : `<button type="button" class="fl-pod-play-cta" id="fl-pod-play-btn">▶ Play Walking Podcast</button>
-                 <div style="margin-top:12px;">
-                   <button type="button" class="fl-mini-btn" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide Text" : "👁️ Preview Sentences"}</button>
-                 </div>`
+              : ""
           }
+
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            ${
+              state.podcastPlaying
+                ? `<button type="button" class="fl-btn danger" id="fl-pod-stop-btn" style="padding:10px 22px;border-radius:999px;font-weight:800;">⏹️ Stop Playback</button>`
+                : `<button type="button" class="fl-pod-play-cta" id="fl-pod-play-btn">▶ Start Passive Walk &amp; Listen</button>`
+            }
+          </div>
+
+          <!-- Speed (0.70x / 0.80x / 1.0x), Loop Episode & Prev/Next Controls -->
+          <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;align-items:center;">
+            <button type="button" class="fl-btn sm" id="fl-pod-prev" title="Previous item">⏮ Prev</button>
+            <button type="button" class="fl-btn sm" id="fl-pod-next" title="Next item">Next ⏭</button>
+            <button type="button" class="fl-btn sm ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop">🔁 Loop Episode: ${state.podcastLoop ? "ON" : "OFF"}</button>
+            <span style="font-size:0.72rem;color:#94a3b8;margin-left:4px;">Speed:</span>
+            ${[0.70, 0.80, 1.0].map((spd) => `<button type="button" class="fl-btn sm ${Math.abs((state.podcastSpeed || 0.75) - spd) < 0.06 ? "active" : ""}" data-fl-pod-speed="${spd}">${spd.toFixed(2)}×</button>`).join("")}
+            <button type="button" class="fl-btn sm" id="fl-pod-script-toggle">${state.podcastShowScript ? "🙈 Hide List" : "👁️ Show All"}</button>
+          </div>
         </div>
 
         ${
           state.podcastShowScript
-            ? `<div style="margin-top:12px;">
+            ? `<div style="margin-top:12px;max-height:360px;overflow-y:auto;">
                 ${items
                   .map(
                     (it, idx) => `
-                  <div class="fl-vocab-row">
+                  <div class="fl-vocab-row" style="${state.podcastPlaying && idx === activeIdx ? "border-color:#38BDF8;background:rgba(2,156,216,0.18);" : ""}">
                     <div>
-                      <strong style="color:#fff;">${idx + 1}. ${esc(it.fi)}</strong>
+                      <strong style="color:#fff;">${idx + 1}. 🇫🇮 ${esc(it.fi)}</strong>
                       <div style="font-size:0.78rem;color:#7dd3fc;">🇬🇧 ${esc(it.en)}</div>
                     </div>
-                    <button type="button" class="fl-mini-btn" data-fl-speak="${esc(it.fi)}" title="Listen">${ICO.listen}</button>
+                    <button type="button" class="fl-mini-btn" data-fl-pod-jump="${idx}" title="Play from item ${idx + 1}">▶</button>
                   </div>
                 `
                   )
@@ -2296,7 +2565,7 @@
                       : ""
                   }
                   <button type="button" id="fl-roast-toggle" class="fl-btn sm ${isRoastEnabled() ? "active" : ""}">
-                    ${isRoastEnabled() ? "😈 Fun Roast Mode: ON" : "😇 Fun Roast Mode: OFF"}
+                    ${isRoastEnabled() ? "😊 Friendly Coach Banter: ON" : "📘 Classic Calm Tutor: ON"}
                   </button>
                   <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:9px;display:flex;flex-direction:column;gap:6px;">
                     <strong style="font-size:0.76rem;color:#e2e8f0;">🔑 Change Password</strong>
@@ -2536,12 +2805,13 @@
     root.querySelectorAll("[data-fl-study]").forEach((b) => { b.onclick = () => { state.studyTool = b.getAttribute("data-fl-study"); state.lessonStep = 1; renderActiveView(); }; });
     root.querySelector("#fl-study-back")?.addEventListener("click", () => { state.studyTool = null; renderActiveView(); });
 
-    // Street vs Class Game & Pronunciation Check events
+    // School Finnish Practice & Pronunciation Check events
     root.querySelectorAll("[data-fl-gtab]").forEach((b) => { b.onclick = () => { state.gameTab = b.getAttribute("data-fl-gtab"); renderActiveView(); }; });
     root.querySelectorAll("[data-fl-street-ans]").forEach((b) => {
       b.onclick = () => {
-        const q = STREET_GAME_QUESTIONS[state.streetIdx % STREET_GAME_QUESTIONS.length];
-        const ok = b.getAttribute("data-fl-street-ans") === q.en;
+        const q = SCHOOL_FINNISH_QUESTIONS[state.streetIdx % SCHOOL_FINNISH_QUESTIONS.length];
+        const picked = (b.getAttribute("data-fl-street-ans") || "").trim();
+        const ok = picked.toLowerCase().startsWith(q.answer.toLowerCase());
         if (ok) {
           state.streetScore++;
           getRoastLine(false);
@@ -2632,23 +2902,54 @@
     });
     root.querySelectorAll("[data-fl-pod-ep]").forEach((b) => {
       b.onclick = () => {
+        stopPodcastPlayback(true);
         state.podcastEpisodeId = b.getAttribute("data-fl-pod-ep");
-        state.podcastAudioUrl = null;
+        state.podcastItemIdx = 0;
         renderActiveView();
       };
     });
-    root.querySelector("#fl-pod-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId));
+    root.querySelector("#fl-pod-hw-photo")?.addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const att = await fileToAttachment(f);
+      e.target.value = "";
+      if (att) {
+        const customTopic = document.getElementById("fl-pod-custom-topic")?.value || f.name.replace(/\.[^.]+$/, "");
+        createCustomPodcastEpisode(customTopic, [att]);
+      }
+    });
+    root.querySelector("#fl-pod-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx));
+    root.querySelector("#fl-pod-stop-btn")?.addEventListener("click", () => stopPodcastPlayback());
+    root.querySelector("#fl-pod-loop")?.addEventListener("click", () => { state.podcastLoop = !state.podcastLoop; renderActiveView(); });
+    root.querySelector("#fl-pod-prev")?.addEventListener("click", () => {
+      const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
+      const items = getPodcastItems(ep);
+      if (!items.length) return;
+      state.podcastItemIdx = (state.podcastItemIdx - 1 + items.length) % items.length;
+      if (state.podcastPlaying) generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      else renderActiveView();
+    });
+    root.querySelector("#fl-pod-next")?.addEventListener("click", () => {
+      const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
+      const items = getPodcastItems(ep);
+      if (!items.length) return;
+      state.podcastItemIdx = (state.podcastItemIdx + 1) % items.length;
+      if (state.podcastPlaying) generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      else renderActiveView();
+    });
+    root.querySelectorAll("[data-fl-pod-speed]").forEach((b) => {
+      b.onclick = () => {
+        state.podcastSpeed = parseFloat(b.getAttribute("data-fl-pod-speed")) || 0.75;
+        toast(`Walk & Listen speed set to ${state.podcastSpeed.toFixed(2)}×`, "info");
+        renderActiveView();
+      };
+    });
+    root.querySelectorAll("[data-fl-pod-jump]").forEach((b) => {
+      b.onclick = () => generateAndPlayPodcast(state.podcastEpisodeId, Number(b.getAttribute("data-fl-pod-jump") || 0));
+    });
+    root.querySelector("#fl-pod-export-pdf")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "print"));
+    root.querySelector("#fl-pod-export-md")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "md"));
     root.querySelector("#fl-pod-script-toggle")?.addEventListener("click", () => { state.podcastShowScript = !state.podcastShowScript; renderActiveView(); });
-    root.querySelector("#fl-pod-slow")?.addEventListener("click", () => {
-      state.podcastSlow = !state.podcastSlow;
-      const el = document.getElementById("fl-podcast-audio");
-      if (el) el.playbackRate = state.podcastSlow ? 0.8 : 1.0;
-      renderActiveView();
-    });
-    root.querySelector("#fl-pod-replay")?.addEventListener("click", () => {
-      const el = document.getElementById("fl-podcast-audio");
-      if (el) { el.currentTime = 0; el.playbackRate = state.podcastSlow ? 0.8 : 1.0; el.play().catch(() => {}); }
-    });
     root.querySelectorAll("[data-fl-htab]").forEach((b) => { b.onclick = () => { state.helperTab = b.getAttribute("data-fl-htab"); renderActiveView(); }; });
     root.querySelector("#fl-hw-files")?.addEventListener("change", async (e) => {
       for (const f of Array.from(e.target.files || [])) { const att = await fileToAttachment(f); if (att) state.hwAttachments.push(att); }
@@ -2819,7 +3120,7 @@
     root.querySelector("#fl-roast-toggle")?.addEventListener("click", () => {
       const next = !isRoastEnabled();
       DB.saveSettings({ roastMode: next });
-      toast(next ? "😈 Fun Roast Mode ON!" : "😇 Fun Roast Mode OFF", "info");
+      toast(next ? "😊 Friendly Coach Banter ON!" : "📘 Classic Calm Tutor ON", "info");
       renderActiveView();
     });
     root.querySelector("#fl-focus-toggle")?.addEventListener("click", () => { state.focusMode = !state.focusMode; document.body.classList.toggle("fl-focus-mode", state.focusMode); renderActiveView(); });

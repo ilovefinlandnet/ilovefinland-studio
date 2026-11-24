@@ -17,6 +17,7 @@ from urllib.request import urlopen
 
 import env_loader
 import editorial_engine
+import gemini_service
 import live_sources
 import openai_client
 from db import (
@@ -70,6 +71,17 @@ from db import (
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+
+def resolve_uploads_dir() -> str:
+    """Resolve uploads folder to /data/uploads if persistent disk is mounted, else static/assets/uploads."""
+    if os.path.exists("/data") and os.path.isdir("/data"):
+        p = os.path.join("/data", "uploads")
+        os.makedirs(p, exist_ok=True)
+        return p
+    p = os.path.join(STATIC_DIR, "assets", "uploads")
+    os.makedirs(p, exist_ok=True)
+    return p
 ALLOWED_EMAIL = os.environ.get("ILF_ADMIN_EMAIL", os.environ.get("ILF_ALLOWED_EMAIL", "binodoli721@gmail.com")).lower()
 GOOGLE_CLIENT_ID = os.environ.get("ILF_GOOGLE_CLIENT_ID", "").strip()
 ACCESS_KEY = os.environ.get("ILF_ACCESS_KEY", "suomi-studio-x9k4-7q2m").strip()
@@ -158,24 +170,46 @@ def get_connections_catalog() -> List[Dict[str, Any]]:
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip() or os.environ.get("GOOGLE_API_KEY", "").strip())
     has_openai = bool(openai_key and openai_key.startswith("sk-"))
 
+    gemini_status = (
+        "Default AI: Active ($0 Free Tier • gemini-3.8-flash)"
+        if has_gemini
+        else "Default AI: Key Missing (Add Free GEMINI_API_KEY)"
+    )
+    gemini_next = (
+        "Active Default AI for Studio rewrites, captions, chat, Reel hooks, and Finnish Study Lab ($0 Google AI Studio Free Tier)."
+        if has_gemini
+        else "Add your free GEMINI_API_KEY from aistudio.google.com to .env or Render Environment."
+    )
+
     if is_demo:
-        openai_status = "Demo Mode (Default AI — Simulated Active)"
-        openai_configured = True
-        openai_next = "Studio is operating in Demo Mode. Real external API calls are disabled."
-    elif has_openai:
-        openai_status = "Default AI: Key Configured (Click Test Connection)"
-        openai_configured = True
-        openai_next = "Click 'Test Connection' to run live handshake."
-    else:
-        openai_status = "Default AI: Disconnected (Key Missing in .env)"
+        openai_status = "Optional Fallback (Demo Mode)"
         openai_configured = False
-        openai_next = "Add OPENAI_API_KEY to .env on your Mac. Keys never enter the browser."
+        openai_next = "Google Gemini Free Tier is active as Default AI. OpenAI is optional."
+    elif has_openai:
+        openai_status = "Optional / Fallback (Key Configured)"
+        openai_configured = True
+        openai_next = "Optional backup provider. Google Gemini ($0 Free Tier) is the active Default AI."
+    else:
+        openai_status = "Optional / Disabled (Not Required)"
+        openai_configured = False
+        openai_next = "Optional: Not required. Studio runs on Google Gemini ($0 Free Tier) by default."
 
     return [
         {
+            "id": "gemini",
+            "name": "Google Gemini (gemini-3.8-flash) — Active Default AI ($0 Free Tier)",
+            "role": "Primary Default AI powering Editorial Studio rewrites, captions, hooks, Studio AI Chat, Reel Assist & Finnish Study Lab (Snap & Ask Vision, Pori Roleplay, SRS Drills, Story-to-Lesson).",
+            "status": gemini_status,
+            "configured": has_gemini,
+            "secret_env": "GEMINI_API_KEY",
+            "next_step": gemini_next,
+            "testable": True,
+            "category": "AI Intelligence",
+        },
+        {
             "id": "openai",
-            "name": "OpenAI (GPT-4o & Whisper) — Default Provider",
-            "role": "Default primary AI for straight-news articles, Reel scripts, voice-note Whisper transcription & inbox drafts.",
+            "name": "OpenAI (GPT-4o) — Optional Fallback",
+            "role": "Optional secondary provider (not required). All Studio AI & Finnish Study Lab tasks default to Google Gemini Free Tier.",
             "status": openai_status,
             "configured": openai_configured,
             "secret_env": "OPENAI_API_KEY",
@@ -185,23 +219,12 @@ def get_connections_catalog() -> List[Dict[str, Any]]:
         },
         {
             "id": "claude",
-            "name": "Anthropic Claude (Claude 3.5 Sonnet) — Optional (Disabled)",
-            "role": "Optional alternative AI model for selective rewrites. Disabled by default; not required for live Studio operation.",
+            "name": "Anthropic Claude — Optional (Disabled)",
+            "role": "Optional alternative AI model. Disabled by default; not required for live Studio operation.",
             "status": "Disabled (Optional)",
             "configured": False,
             "secret_env": "ANTHROPIC_API_KEY",
-            "next_step": "Optional: Leave disabled or add ANTHROPIC_API_KEY when desired. Studio runs live without Claude.",
-            "testable": True,
-            "category": "AI Intelligence",
-        },
-        {
-            "id": "gemini",
-            "name": "Google Gemini & Veo (Imagen 3 & Veo 3.1) — Visual Engine",
-            "role": "Photographic DSLR visual engine & cinematic vertical Reel motion. Free Tier available on Google AI Studio.",
-            "status": "Connected (Server-Side Key)" if has_gemini else "Native Engine Active (Zero Cost / Free)",
-            "configured": has_gemini,
-            "secret_env": "GEMINI_API_KEY",
-            "next_step": "Key verified server-side. Studio requires explicit approval checkbox before billed generation." if has_gemini else "Optional: Add free developer key from aistudio.google.com, or use Studio Native DSLR engine ($0.00).",
+            "next_step": "Optional: Leave disabled. Studio runs live on Google Gemini Free Tier.",
             "testable": True,
             "category": "AI Intelligence",
         },
@@ -288,8 +311,7 @@ def test_connection_service(service: str) -> Dict[str, Any]:
             "disabled": True,
         }
     elif svc in ("gemini", "google_gemini"):
-        import ai_media_engine
-        return ai_media_engine.verify_gemini_connection()
+        return gemini_service.verify_gemini_connection()
     elif svc in ("wordpress", "wp"):
         wp_base = os.getenv("WP_BASE_URL", "https://ilovefinland.net").rstrip("/")
         wp_user = os.getenv("WP_USERNAME", "admin")
@@ -605,6 +627,29 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
             import finnish_lab_engine
             self._send_json(finnish_lab_engine.load_user_sync_snapshot(user_email))
+            return
+
+        if path == "/api/finnish-lab/srs/queue":
+            admin_email = self._current_user()
+            stu = self._current_fl_student_account()
+            user_email = admin_email or (stu["email"] if stu else None)
+            if not user_email:
+                self._send_json({"error": "Authentication required"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            import finnish_study_pro
+            topic = qs.get("topic", ["all"])[0]
+            self._send_json(finnish_study_pro.get_srs_queue(user_email, db_path=db_path, topic=topic))
+            return
+
+        if path == "/api/finnish-lab/vocab":
+            admin_email = self._current_user()
+            stu = self._current_fl_student_account()
+            user_email = admin_email or (stu["email"] if stu else None)
+            if not user_email:
+                self._send_json({"error": "Authentication required"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            import finnish_study_pro
+            self._send_json(finnish_study_pro.list_vocab_deck(user_email, db_path=db_path))
             return
 
         if path == "/api/finnish-lab/admin/users":
@@ -931,6 +976,20 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if not self._require_auth():
                 return
 
+        # Persistent uploads serving: check /data/uploads first, then static/assets/uploads
+        if path.startswith("/assets/uploads/"):
+            fname = os.path.basename(path)
+            persistent_upload = os.path.join("/data", "uploads", fname)
+            if os.path.exists(persistent_upload):
+                self._send_file(persistent_upload)
+                return
+            local_upload = os.path.join(STATIC_DIR, "assets", "uploads", fname)
+            if os.path.exists(local_upload):
+                self._send_file(local_upload)
+                return
+            self.send_error(HTTPStatus.NOT_FOUND, "Upload Not Found")
+            return
+
         if path == "/" or path == "/index.html" or path == "/studio-ai" or path.startswith("/studio-ai/") or path == "/finnish-lab" or path.startswith("/finnish-lab/") or path == "/finnish-student" or path.startswith("/finnish-student/"):
             self._send_file(os.path.join(STATIC_DIR, "index.html"))
             return
@@ -963,8 +1022,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
 
             clean_name = re.sub(r'[^A-Za-z0-9_.-]', '_', fname)
             save_name = f"reel_{secrets.token_hex(4)}_{clean_name}"
-            uploads_dir = os.path.join(STATIC_DIR, "assets", "uploads")
-            os.makedirs(uploads_dir, exist_ok=True)
+            uploads_dir = resolve_uploads_dir()
             save_path = os.path.join(uploads_dir, save_name)
 
             remaining = length
@@ -975,6 +1033,15 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                         break
                     f.write(chunk)
                     remaining -= len(chunk)
+
+            # Mirror to static/assets/uploads if persistent disk is active
+            local_uploads = os.path.join(STATIC_DIR, "assets", "uploads")
+            if uploads_dir != local_uploads:
+                try:
+                    os.makedirs(local_uploads, exist_ok=True)
+                    shutil.copy2(save_path, os.path.join(local_uploads, save_name))
+                except Exception:
+                    pass
 
             url = f"/assets/uploads/{save_name}"
             self._send_json({
@@ -1358,11 +1425,17 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             ext = os.path.splitext(fname)[1].lower() or (".mp4" if mtype == "video" else ".jpg")
             clean_name = re.sub(r'[^A-Za-z0-9_.-]', '_', fname)
             save_name = f"reel_{secrets.token_hex(4)}_{clean_name}"
-            uploads_dir = os.path.join(STATIC_DIR, "assets", "uploads")
-            os.makedirs(uploads_dir, exist_ok=True)
+            uploads_dir = resolve_uploads_dir()
             save_path = os.path.join(uploads_dir, save_name)
             with open(save_path, "wb") as f:
                 f.write(raw_bytes)
+            local_uploads = os.path.join(STATIC_DIR, "assets", "uploads")
+            if uploads_dir != local_uploads:
+                try:
+                    os.makedirs(local_uploads, exist_ok=True)
+                    shutil.copy2(save_path, os.path.join(local_uploads, save_name))
+                except Exception:
+                    pass
 
             url = f"/assets/uploads/{save_name}"
             self._send_json({
@@ -1385,15 +1458,34 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": "Project not found"}, status=HTTPStatus.NOT_FOUND)
                 return
             timeline = body.get("timeline") or proj.get("timeline", {})
+            media_clips = (timeline.get("tracks") or {}).get("media") or []
+            if not media_clips:
+                self._send_json(
+                    {"error": "Add at least one photo or video clip to your Reel timeline before exporting."},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
             out_filename = f"rendered_reel_proj_{proj_id}_{secrets.token_hex(3)}.mp4"
-            out_path = os.path.join(STATIC_DIR, "assets", out_filename)
+            uploads_dir = resolve_uploads_dir()
+            os.makedirs(uploads_dir, exist_ok=True)
+            out_path = os.path.join(uploads_dir, out_filename)
             try:
                 media_gen.export_reel_project_timeline_mp4(
                     timeline=timeline,
                     output_path=out_path,
                     project_title=proj.get("title", "ILoveFinland Reel"),
                 )
-                export_url = f"/assets/{out_filename}"
+                # Mirror to static/assets/uploads if separate from /data/uploads
+                local_mirror_dir = os.path.join(STATIC_DIR, "assets", "uploads")
+                os.makedirs(local_mirror_dir, exist_ok=True)
+                local_mirror_path = os.path.join(local_mirror_dir, out_filename)
+                if os.path.abspath(out_path) != os.path.abspath(local_mirror_path):
+                    try:
+                        import shutil
+                        shutil.copy2(out_path, local_mirror_path)
+                    except Exception:
+                        pass
+                export_url = f"/assets/uploads/{out_filename}"
                 update_reel_project(
                     project_id=proj_id,
                     timeline=timeline,
@@ -1415,25 +1507,90 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/reel/ai-assist":
             prompt_type = body.get("type", "hooks")
             topic = (body.get("topic") or "Finland").strip()
+            ai_res = gemini_service.generate_reel_ai_assist(topic=topic, prompt_type=prompt_type)
+            if ai_res.get("ok") and ai_res.get("suggestions"):
+                self._send_json(ai_res)
+                return
+            # Safe fallback if offline / key missing, with transparent notice
             clean_topic = topic.upper()
             if prompt_type == "hooks":
                 suggestions = [
                     f"5 THINGS YOU DIDN'T KNOW ABOUT {clean_topic}",
                     f"WHY FINNS LOVE {clean_topic}",
-                    f"THE SECRET TO {clean_topic} IN FINLAND",
-                    f"INSIDE {clean_topic}: A LOCAL FINNISH GUIDE",
+                    f"THE REAL STORY BEHIND {clean_topic} IN FINLAND",
+                    f"INSIDE {clean_topic}: A LOCAL FINLAND GUIDE",
                 ]
             elif prompt_type == "subtitles":
                 suggestions = [
-                    f"Experience the quiet magic and seasonal beauty across Finland.",
-                    f"Essential guide for residents and travelers in Finland.",
-                    f"Authentic local insights verified by ILoveFinland Studio.",
+                    f"What locals and visitors in Finland should know about {topic}.",
+                    f"Practical Finland insights from ilovefinland.net.",
                 ]
             else:
-                suggestions = [
-                    f"#Finland #DiscoverFinland #NordicLife #VisitFinland #{topic.replace(' ', '')}",
-                ]
-            self._send_json({"ok": True, "type": prompt_type, "suggestions": suggestions})
+                suggestions = [f"#Finland #ILoveFinland #LivingInFinland #VisitFinland #{topic.replace(' ', '')}"]
+            self._send_json({
+                "ok": True,
+                "type": prompt_type,
+                "model": "offline-fallback",
+                "notice": ai_res.get("error", ""),
+                "suggestions": suggestions,
+            })
+            return
+
+        if path == "/api/package/gemini-rewrite-preview":
+            pkg_id = int(body.get("package_id", 0))
+            scope = (body.get("scope") or "article").strip().lower()
+            writing_style = (body.get("writing_style") or "guide").strip().lower()
+            instruction = (body.get("instruction") or "").strip()
+            bundle = get_package_bundle(pkg_id, db_path=db_path)
+            if not bundle:
+                self._send_json({"ok": False, "error": "Package not found"}, status=HTTPStatus.NOT_FOUND)
+                return
+            cur_ver = bundle["package"]["current_version"]
+            ver_obj = next((v for v in bundle["versions"] if v["version"] == cur_ver), bundle["versions"][-1])
+            art = dict(ver_obj.get("article") or {})
+            ig = dict(ver_obj.get("ig_post") or {})
+            # Allow frontend to pass live unsaved edits for accurate diff comparison
+            if isinstance(body.get("current_article"), dict):
+                art.update({k: v for k, v in body["current_article"].items() if v is not None})
+            if isinstance(body.get("current_ig"), dict):
+                ig.update({k: v for k, v in body["current_ig"].items() if v is not None})
+
+            if scope == "caption":
+                res = gemini_service.preview_caption_polish(art, ig, instruction=instruction)
+                if not res.get("ok"):
+                    self._send_json(res, status=res.get("status_code", 502))
+                    return
+                self._send_json({
+                    "ok": True,
+                    "scope": "caption",
+                    "model": res["model"],
+                    "current": {
+                        "caption": ig.get("caption", ""),
+                        "hashtags": ig.get("hashtags", []),
+                        "headline_line1": ig.get("headline_line1", ""),
+                        "headline_line2": ig.get("headline_line2", ""),
+                    },
+                    "proposal": res["proposal"],
+                })
+                return
+
+            res = gemini_service.preview_article_rewrite(art, writing_style=writing_style, instruction=instruction)
+            if not res.get("ok"):
+                self._send_json(res, status=res.get("status_code", 502))
+                return
+            self._send_json({
+                "ok": True,
+                "scope": "article",
+                "model": res["model"],
+                "current": {
+                    "headline": art.get("headline", ""),
+                    "short_description": art.get("short_description", ""),
+                    "body_html": art.get("body_html", ""),
+                    "seo_title": art.get("seo_title", ""),
+                    "meta_description": art.get("meta_description", ""),
+                },
+                "proposal": res["proposal"],
+            })
             return
 
         if path == "/api/package/publish-wordpress-draft":
@@ -1504,7 +1661,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
 
             wp_sec_map = {
                 "news": 2, "things to do": 3, "events": 4, "finland guide": 5,
-                "food & restaurants": 6, "travel": 7, "shopping": 8,
+                "food & restaurants": 6, "travel": 7,
             }
             wp_cat_map = {
                 "everyday life": 52, "residence permits": 26, "driving": 33, "housing": 34,
@@ -1515,7 +1672,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "winter activities": 23, "summer activities": 24, "nature": 16, "study in finland": 28,
                 "finnish food": 53, "finnish language": 35, "general": 1, "finland": 9,
                 "international": 10, "business": 11, "education": 12, "sports": 13,
-                "restaurants-cafes": 55, "lapland": 39, "finnish archipelago": 42,
+                "restaurants-cafes": 55, "restaurants & cafes": 55, "lapland": 39, "finnish archipelago": 42,
                 "finnish lakeland": 41, "national parks": 17, "northern lights": 43,
                 "hotels": 49, "cabins": 48, "camping": 47, "lakes": 18,
                 "summer travel": 44, "winter travel": 45, "road trips": 46,
@@ -1614,13 +1771,26 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if resolved_tag_ids:
                 post_payload["tags"] = resolved_tag_ids
 
-            # 4. Featured Image (Upload to WordPress Media Library)
+            # 4. Featured Image (Upload to WordPress Media Library — checks persistent /data/uploads first!)
             feat_img = art.get("featured_image") or {}
             media_id = None
             if feat_img.get("url"):
-                img_url = feat_img["url"].lstrip("/")
-                local_img_path = os.path.join(STATIC_DIR, img_url)
-                if os.path.exists(local_img_path):
+                raw_img_url = feat_img["url"].strip()
+                img_url = raw_img_url.lstrip("/")
+                local_img_path = ""
+                # Priority 1: Persistent Render /data/uploads/ volume
+                if "assets/uploads/" in img_url:
+                    up_fname = os.path.basename(img_url)
+                    candidate_persist = os.path.join(resolve_uploads_dir(), up_fname)
+                    if os.path.exists(candidate_persist):
+                        local_img_path = candidate_persist
+                # Priority 2: Standard STATIC_DIR path
+                if not local_img_path:
+                    candidate_static = os.path.join(STATIC_DIR, img_url)
+                    if os.path.exists(candidate_static):
+                        local_img_path = candidate_static
+
+                if local_img_path and os.path.exists(local_img_path):
                     try:
                         fname = os.path.basename(local_img_path)
                         base, dot, ext = fname.rpartition('.')
@@ -1653,10 +1823,16 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
 
                         if media_id:
                             alt_text = feat_img.get("alt_text") or headline
-                            caption_text = feat_img.get("caption") or ""
+                            clean_credit = feat_img.get("credit_string") or feat_img.get("photographer") or art.get("image_credit") or "Photo: ILF"
+                            if any(k in clean_credit.lower() for k in ["/assets/", "clip_", "direct creator upload", "user upload"]):
+                                clean_credit = "Photo: ILF"
+                            caption_text = (feat_img.get("caption") or "").strip()
+                            if clean_credit and clean_credit not in caption_text:
+                                caption_text = f"{caption_text} ({clean_credit})".strip() if caption_text else clean_credit
                             meta_up = {}
                             if alt_text: meta_up["alt_text"] = alt_text
                             if caption_text: meta_up["caption"] = caption_text
+                            if clean_credit: meta_up["description"] = clean_credit
                             up_meta_req = urllib.request.Request(
                                 f"{wp_base}/wp-json/wp/v2/media/{media_id}",
                                 data=json.dumps(meta_up).encode("utf-8"),
@@ -1930,11 +2106,17 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 tok = secrets.token_hex(4)
                 safe_fname = fname.replace(" ", "_").replace("/", "_")
                 saved_name = f"clip_{tok}_{safe_fname}"
-                uploads_dir = os.path.join(STATIC_DIR, "assets", "uploads")
-                os.makedirs(uploads_dir, exist_ok=True)
+                uploads_dir = resolve_uploads_dir()
                 save_path = os.path.join(uploads_dir, saved_name)
                 with open(save_path, "wb") as f:
                     f.write(raw_bytes)
+                local_uploads = os.path.join(STATIC_DIR, "assets", "uploads")
+                if uploads_dir != local_uploads:
+                    try:
+                        os.makedirs(local_uploads, exist_ok=True)
+                        shutil.copy2(save_path, os.path.join(local_uploads, saved_name))
+                    except Exception:
+                        pass
                 self._send_json({
                     "success": True,
                     "url": f"/assets/uploads/{saved_name}",
@@ -2582,9 +2764,17 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 raw_bytes = base64.b64decode(img_b64)
                 tok = secrets.token_hex(4)
                 saved_name = f"ref_{tok}_{fname}"
-                save_path = os.path.join(STATIC_DIR, "assets", "uploads", saved_name)
+                uploads_dir = resolve_uploads_dir()
+                save_path = os.path.join(uploads_dir, saved_name)
                 with open(save_path, "wb") as f:
                     f.write(raw_bytes)
+                local_uploads = os.path.join(STATIC_DIR, "assets", "uploads")
+                if uploads_dir != local_uploads:
+                    try:
+                        os.makedirs(local_uploads, exist_ok=True)
+                        shutil.copy2(save_path, os.path.join(local_uploads, saved_name))
+                    except Exception:
+                        pass
                 self._send_json({
                     "success": True,
                     "url": f"/assets/uploads/{saved_name}",
@@ -2713,6 +2903,54 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(res, status=200 if res.get("ok") else 400)
                 return
 
+            import finnish_study_pro
+
+            if path == "/api/finnish-lab/srs/review":
+                payload = body or {}
+                res = finnish_study_pro.review_srs_drill(
+                    user_email=user,
+                    drill_id=int(payload.get("drill_id", 0)),
+                    correct=bool(payload.get("correct", False)),
+                    db_path=db_path,
+                )
+                self._send_json(res, status=200 if res.get("ok") else 400)
+                return
+
+            if path == "/api/finnish-lab/srs/generate":
+                payload = body or {}
+                res = finnish_study_pro.generate_ai_srs_drills(
+                    user_email=user,
+                    topic=payload.get("topic", "local_cases"),
+                    level=payload.get("level", "A1"),
+                    db_path=db_path,
+                )
+                self._send_json(res, status=200 if res.get("ok") else res.get("status_code", 502))
+                return
+
+            if path == "/api/finnish-lab/vocab":
+                payload = body or {}
+                if payload.get("action") == "delete" and payload.get("id"):
+                    res = finnish_study_pro.delete_vocab_word(user, int(payload["id"]), db_path=db_path)
+                else:
+                    res = finnish_study_pro.save_vocab_word(user, payload, db_path=db_path)
+                self._send_json(res, status=200 if res.get("ok") else 400)
+                return
+
+            if path == "/api/finnish-lab/snap-ask":
+                res = finnish_study_pro.handle_snap_and_ask(body or {})
+                self._send_json(res, status=200 if res.get("ok") else res.get("status_code", 502))
+                return
+
+            if path == "/api/finnish-lab/roleplay":
+                res = finnish_study_pro.handle_pori_roleplay(body or {})
+                self._send_json(res, status=200 if res.get("ok") else res.get("status_code", 502))
+                return
+
+            if path == "/api/finnish-lab/story-lesson":
+                res = finnish_study_pro.handle_story_to_lesson(body or {})
+                self._send_json(res, status=200 if res.get("ok") else res.get("status_code", 502))
+                return
+
             self._send_json({"error": "Unknown Finnish Lab endpoint"}, status=HTTPStatus.NOT_FOUND)
             return
 
@@ -2740,6 +2978,11 @@ def _start_background_scanner(db_path: str = DB_PATH, interval_seconds: int = 36
 def create_server(host: str = "0.0.0.0", port: int = 8787, db_path: str = DB_PATH) -> ThreadingHTTPServer:
     """Initialize SQLite DB and return configured HTTP server."""
     init_db(db_path=db_path)
+    try:
+        import finnish_study_pro
+        finnish_study_pro.init_finnish_study_tables(db_path=db_path)
+    except Exception as e:
+        print(f"Finnish Study Lab SQLite init warning: {e}")
     _start_background_scanner(db_path=db_path)
     try:
         from cloud_sync import start_auto_sync_watcher

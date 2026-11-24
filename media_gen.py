@@ -221,42 +221,53 @@ def export_reel_project_timeline_mp4(
     outro_config = tracks.get("outro", {})
     total_dur = float(timeline.get("duration_sec", 10.0))
 
+    def _resolve_media_path(raw_url: str) -> str:
+        if not raw_url:
+            return ""
+        clean = raw_url.strip()
+        if "assets/uploads/" in clean:
+            fname = os.path.basename(clean)
+            p_persist = os.path.join("/data/uploads", fname)
+            if os.path.exists(p_persist):
+                return p_persist
+        if clean.startswith("/"):
+            p_static = os.path.join(base_dir, "static", clean.lstrip("/"))
+            if os.path.exists(p_static):
+                return p_static
+        if os.path.exists(clean):
+            return clean
+        return ""
+
     # Resolve logo image path
     logo_url = logo_config.get("url") or "/assets/ilf-heart-exact.png"
-    if logo_url.startswith("/"):
-        logo_path = os.path.join(base_dir, "static", logo_url.lstrip("/"))
-    else:
-        logo_path = logo_url
-    if not os.path.exists(logo_path):
-        logo_path = os.path.join(base_dir, "static", "assets", "ilf-heart-exact.png")
+    logo_path = _resolve_media_path(logo_url) or os.path.join(base_dir, "static", "assets", "ilf-heart-exact.png")
 
-    # Resolve audio track path
+    # Resolve music & voiceover audio paths
     music_track = next((a for a in audio_tracks if a.get("type") == "music" and a.get("url")), None)
-    if music_track and music_track.get("url"):
-        audio_url = music_track["url"]
-        if audio_url.startswith("/"):
-            audio_path = os.path.join(base_dir, "static", audio_url.lstrip("/"))
-        else:
-            audio_path = audio_url
-    else:
+    voice_track = next((a for a in audio_tracks if a.get("type") == "voiceover" and a.get("url")), None)
+
+    audio_path = _resolve_media_path(music_track.get("url", "")) if music_track else ""
+    if not audio_path:
         audio_path = os.path.join(base_dir, "static", "assets", "nordic-pulse.wav")
     if not os.path.exists(audio_path):
         generate_nordic_pulse_wav(audio_path, duration_sec=total_dur)
+
+    voice_path = _resolve_media_path(voice_track.get("url", "")) if voice_track else ""
+    music_vol = float((music_track or {}).get("volume", 0.7))
+    voice_vol = float((voice_track or {}).get("volume", 1.0))
+    voice_start_ms = int(max(0.0, float((voice_track or {}).get("start_sec", 0.0))) * 1000)
 
     # Convert timeline into unified scenes
     scene_configs = []
     if media_clips:
         for idx, clip in enumerate(media_clips):
             c_url = clip.get("url") or ""
-            if c_url.startswith("/"):
-                c_img = os.path.join(base_dir, "static", c_url.lstrip("/"))
-            elif os.path.exists(c_url):
-                c_img = c_url
-            else:
-                c_img = os.path.join(base_dir, "static", "assets", "sample-clips", "tesla-clean-bg.jpg")
+            c_img = _resolve_media_path(c_url) or os.path.join(base_dir, "static", "assets", "sample-clips", "tesla-clean-bg.jpg")
 
             st = float(clip.get("start_sec", 0.0))
             en = float(clip.get("end_sec", st + float(clip.get("duration", 3.5))))
+            ext_low = os.path.splitext(c_img)[1].lower()
+            is_video = ext_low in (".mp4", ".mov", ".webm", ".mkv", ".m4v")
 
             # Find text overlapping this clip
             active_texts = [
@@ -272,6 +283,7 @@ def export_reel_project_timeline_mp4(
                 "start_sec": st,
                 "end_sec": en,
                 "image_path": c_img,
+                "is_video": is_video,
                 "badge": badge,
                 "tag": badge,
                 "line1": title_text,
@@ -284,23 +296,7 @@ def export_reel_project_timeline_mp4(
                 "transition": clip.get("transition_in") or ("dissolve" if idx > 0 else "none"),
             })
     else:
-        # Fallback single scene
-        fallback_bg = os.path.join(base_dir, "static", "assets", "sample-clips", "tesla-clean-bg.jpg")
-        scene_configs.append({
-            "start_sec": 0.0,
-            "end_sec": total_dur,
-            "image_path": fallback_bg,
-            "badge": "ILOVEFINLAND",
-            "tag": "ILOVEFINLAND",
-            "line1": project_title.upper()[:28] if project_title not in ("New Blank Reel", "Untitled Reel") else "",
-            "line2": "EXPLORE FINLAND",
-            "line2_color": "white",
-            "line3": "",
-            "line2_highlight": "EXPLORE FINLAND",
-            "subtitle": "Discover more stories on ilovefinland.net",
-            "is_outro": False,
-            "transition": "none",
-        })
+        raise ValueError("No media clips in timeline.")
 
     # Outro Scene only if explicitly enabled
     if outro_config.get("enabled", False):
@@ -310,6 +306,7 @@ def export_reel_project_timeline_mp4(
             "start_sec": last_end,
             "end_sec": last_end + outro_dur,
             "image_path": scene_configs[-1]["image_path"] if scene_configs else logo_path,
+            "is_video": False,
             "badge": "YOUR FINLAND DISCOVERED",
             "tag": "YOUR FINLAND DISCOVERED",
             "line1": outro_config.get("subtitle", "FALL IN LOVE WITH FINLAND."),
@@ -325,50 +322,111 @@ def export_reel_project_timeline_mp4(
 
     ffmpeg_bin = shutil.which("ffmpeg")
     if ffmpeg_bin:
-        # FFmpeg Rendering Pipeline (Clean cross-platform container rendering for Render.com)
+        # FFmpeg Rendering Pipeline (Mixed Photo+Video, Logo Overlay, Text Drawtext, Music + Voiceover Mix)
         try:
-            # Render via ffmpeg filter complex
             concat_inputs = []
             for sc in scene_configs:
-                concat_inputs.extend(["-loop", "1", "-t", str(round(sc["end_sec"] - sc["start_sec"], 2)), "-i", sc["image_path"]])
-            
-            # Add audio input
-            concat_inputs.extend(["-i", audio_path])
-            audio_idx = len(scene_configs)
+                dur = max(0.4, round(sc["end_sec"] - sc["start_sec"], 2))
+                if sc.get("is_video"):
+                    concat_inputs.extend(["-stream_loop", "-1", "-t", str(dur), "-i", sc["image_path"]])
+                else:
+                    concat_inputs.extend(["-loop", "1", "-t", str(dur), "-i", sc["image_path"]])
 
-            # Build video filter to scale each image to 1080x1920
+            input_idx = len(scene_configs)
+            logo_idx = None
+            if logo_config.get("visible", True) and os.path.exists(logo_path):
+                concat_inputs.extend(["-i", logo_path])
+                logo_idx = input_idx
+                input_idx += 1
+
+            concat_inputs.extend(["-i", audio_path])
+            music_idx = input_idx
+            input_idx += 1
+
+            voice_idx = None
+            if voice_path and os.path.exists(voice_path):
+                concat_inputs.extend(["-i", voice_path])
+                voice_idx = input_idx
+                input_idx += 1
+
+            # Video clip scaling + normalization to 1080x1920 @ 30fps
             v_filters = []
             for i in range(len(scene_configs)):
-                v_filters.append(f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[v{i}]")
-            
+                v_filters.append(
+                    f"[{i}:v]fps=30,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[v{i}]"
+                )
             concat_filter = "".join(f"[v{i}]" for i in range(len(scene_configs)))
-            concat_filter += f"concat=n={len(scene_configs)}:v=1:a=0[vbase];"
-            
-            # Add logo overlay
-            logo_x_pct = float(logo_config.get("x_pct", 50.0)) / 100.0
-            logo_y_pct = float(logo_config.get("y_pct", 18.0)) / 100.0
-            overlay_x = int(1080 * logo_x_pct - 38)
-            overlay_y = int(1920 * logo_y_pct - 38)
+            concat_filter += f"concat=n={len(scene_configs)}:v=1:a=0[vbase]"
+            v_filters.append(concat_filter)
 
-            filter_complex = ";".join(v_filters) + ";" + concat_filter
-            filter_complex += f"[vbase]format=yuv420p[vout]"
+            current_v = "[vbase]"
+            # Composite brand logo if enabled
+            if logo_idx is not None:
+                logo_size = int(max(44, min(220, float(logo_config.get("size_px", 96.0)))))
+                logo_x_pct = float(logo_config.get("x_pct", 12.0)) / 100.0
+                logo_y_pct = float(logo_config.get("y_pct", 10.0)) / 100.0
+                overlay_x = max(24, min(1080 - logo_size - 24, int(1080 * logo_x_pct)))
+                overlay_y = max(24, min(1920 - logo_size - 24, int(1920 * logo_y_pct)))
+                v_filters.append(f"[{logo_idx}:v]scale={logo_size}:-1[vlogo]")
+                v_filters.append(f"{current_v}[vlogo]overlay={overlay_x}:{overlay_y}[vwithlogo]")
+                current_v = "[vwithlogo]"
 
+            # Composite timed text overlays if a font file exists
+            font_candidates = [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/System/Library/Fonts/Helvetica.ttc",
+                "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            ]
+            font_file = next((fp for fp in font_candidates if os.path.exists(fp)), "")
+            if font_file and text_layers:
+                for t_i, tl in enumerate(text_layers[:8]):
+                    raw_txt = (tl.get("text") or "").strip()
+                    if not raw_txt:
+                        continue
+                    safe_txt = raw_txt.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'").replace("%", "\\%")
+                    t_start = max(0.0, float(tl.get("start_sec", 0.0)))
+                    t_end = max(t_start + 0.3, float(tl.get("end_sec", total_dur)))
+                    t_size = int(max(24, min(88, float(tl.get("font_size", 46)))))
+                    t_color = (tl.get("color") or "#FFFFFF").strip()
+                    t_y = int(1920 * (float(tl.get("y_pct", 74.0)) / 100.0))
+                    next_v = f"[vt{t_i}]"
+                    v_filters.append(
+                        f"{current_v}drawtext=fontfile='{font_file}':text='{safe_txt}':fontsize={t_size}:"
+                        f"fontcolor={t_color}:x=(w-text_w)/2:y={t_y}:box=1:boxcolor=0x0A192F@0.72:boxborderw=14:"
+                        f"enable='between(t,{t_start:.2f},{t_end:.2f})'{next_v}"
+                    )
+                    current_v = next_v
+
+            v_filters.append(f"{current_v}format=yuv420p[vout]")
+
+            # Audio mixing (Music + Optional Voiceover with volume & delay)
+            if voice_idx is not None:
+                v_filters.append(f"[{music_idx}:a]volume={music_vol:.2f}[amusic]")
+                v_filters.append(f"[{voice_idx}:a]adelay={voice_start_ms}|{voice_start_ms},volume={voice_vol:.2f}[avoice]")
+                v_filters.append("[amusic][avoice]amix=inputs=2:duration=first:dropout_transition=2[aout]")
+                audio_map = "[aout]"
+            else:
+                v_filters.append(f"[{music_idx}:a]volume={music_vol:.2f}[aout]")
+                audio_map = "[aout]"
+
+            filter_complex = ";".join(v_filters)
             cmd = [
                 ffmpeg_bin, "-y",
                 *concat_inputs,
                 "-filter_complex", filter_complex,
                 "-map", "[vout]",
-                "-map", f"{audio_idx}:a",
+                "-map", audio_map,
                 "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
                 "-c:a", "aac", "-b:a", "192k", "-shortest",
                 "-movflags", "+faststart",
-                output_path
+                output_path,
             ]
             res = subprocess.run(cmd, capture_output=True, text=True)
             if res.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 1000:
                 return output_path
         except Exception:
-            pass # Fall through to Swift binary
+            pass  # Fall through to Swift binary on macOS if available
 
     # Swift AVAssetWriter Engine (Hardware accelerated on macOS)
     swift_config = {

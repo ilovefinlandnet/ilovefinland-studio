@@ -699,17 +699,18 @@ def _call_studio_gemini(
         return None, [], "GEMINI_API_KEY is not configured on the server."
 
     discovery = finnish_lab_engine.discover_gemini_models()
-    models_to_try: List[str] = []
-    if discovery.get("selected_model"):
+    models_to_try: List[str] = ["models/gemini-3.8-flash", "models/gemini-3.5-flash-lite"]
+    if discovery.get("selected_model") and discovery["selected_model"] not in models_to_try:
         models_to_try.append(discovery["selected_model"])
     for fb in discovery.get("fallback_models", []):
         if fb not in models_to_try:
             models_to_try.append(fb)
-    if not models_to_try:
-        models_to_try = ["models/gemini-flash-lite-latest", "models/gemini-2.0-flash"]
+    for extra in ("models/gemini-flash-latest", "models/gemini-2.5-flash", "models/gemini-2.0-flash"):
+        if extra not in models_to_try:
+            models_to_try.append(extra)
 
     last_err = "Could not reach Gemini."
-    for model_id in models_to_try[:3]:
+    for model_id in models_to_try[:5]:
         url = f"https://generativelanguage.googleapis.com/v1beta/{model_id}:generateContent?key={key}"
         req_body: Dict[str, Any] = {
             "system_instruction": {"parts": [{"text": system_instruction}]},

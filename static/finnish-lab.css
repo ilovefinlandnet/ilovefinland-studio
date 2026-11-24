@@ -1313,3 +1313,351 @@ body.fl-student-only .workspace:has(#view-finnish-lab:not(.hidden)) {
   font-size: 0.94rem;
   line-height: 1.5;
 }
+
+/* ========================================================================= */
+/* FINNISH STUDY LAB PRO — TWILIGHT NAVY SUITE (V96.0)                       */
+/* ========================================================================= */
+.flp-pro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, #0A192F 0%, #071A36 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  flex-wrap: wrap;
+  z-index: 30;
+}
+
+.flp-tab-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.flp-tab-btn {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(75, 137, 188, 0.3);
+  background: rgba(13, 37, 69, 0.75);
+  color: #CBD5E1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.flp-tab-btn:hover {
+  border-color: #38BDF8;
+  color: #FFFFFF;
+}
+
+.flp-tab-btn.active {
+  background: linear-gradient(135deg, #003580 0%, #029CD8 100%);
+  border-color: #38BDF8;
+  color: #FFFFFF;
+  box-shadow: 0 3px 12px rgba(2, 156, 216, 0.35);
+}
+
+.flp-sbs-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #7DD3FC;
+  background: rgba(0, 53, 128, 0.35);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.flp-pro-workspace {
+  padding: 18px 20px 40px;
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.flp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.flp-card {
+  background: #091B33;
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.flp-pill, .flp-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(2, 156, 216, 0.2);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.flp-stat-pill.is-green {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.flp-prompt-box {
+  background: #061224;
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.flp-rebuild-slot {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(6, 18, 36, 0.85);
+  border: 1.5px dashed rgba(56, 189, 248, 0.45);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.96rem;
+}
+
+.flp-tile-btn, .flp-choice-btn {
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(75, 137, 188, 0.38);
+  background: #0D2545;
+  color: #FFFFFF;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.flp-tile-btn:hover, .flp-choice-btn:hover {
+  border-color: #38BDF8;
+  background: #12335F;
+}
+
+.flp-choice-btn.is-correct {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #10B981;
+}
+
+.flp-choice-btn.is-wrong {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #EF4444;
+}
+
+.flp-feedback {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(75, 137, 188, 0.35);
+}
+
+.flp-feedback.is-ok {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.flp-feedback.is-miss {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.flp-dual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.flp-dual-grid small {
+  color: #94A3B8;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.flp-fi-line {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 4px 0 6px;
+}
+
+.flp-audio-btns {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.flp-btn-audio {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(0, 53, 128, 0.45);
+  color: #E0F2FE;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.flp-btn-audio:hover {
+  background: #029CD8;
+  color: #FFFFFF;
+}
+
+.flp-btn-primary {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #003580 0%, #029CD8 100%);
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.flp-btn-ghost {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(75, 137, 188, 0.35);
+  background: rgba(6, 18, 36, 0.7);
+  color: #E2E8F0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.flp-select, .flp-input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(75, 137, 188, 0.35);
+  background: #061224;
+  color: #FFFFFF;
+  font-size: 0.82rem;
+}
+
+.flp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.flp-table th {
+  text-align: left;
+  padding: 8px 10px;
+  background: #061224;
+  color: #94A3B8;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(75, 137, 188, 0.3);
+}
+
+.flp-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(75, 137, 188, 0.16);
+  color: #E2E8F0;
+}
+
+.flp-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.flp-msg-user {
+  align-self: flex-end;
+  max-width: 82%;
+  background: linear-gradient(135deg, #003580 0%, #0284C7 100%);
+  color: #FFFFFF;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+}
+
+.flp-msg-ai {
+  background: #061224;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.flp-word-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(0, 53, 128, 0.35);
+  color: #E0F2FE;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.flp-word-chip:hover {
+  background: #029CD8;
+  color: #FFFFFF;
+}
+
+.flp-toast {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  background: #0A192F;
+  color: #FFFFFF;
+  border: 1.5px solid #38BDF8;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  z-index: 2000;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.flp-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Silent Classroom Helper Card Styling (v97.0) */
+.fl-msg.live-sub {
+  background: linear-gradient(145deg, rgba(10, 25, 47, 0.96) 0%, rgba(0, 53, 128, 0.35) 100%) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.48) !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.42) !important;
+}
+
+.fl-msg.live-sub strong {
+  color: #FFFFFF;
+}
+
+.fl-msg.live-sub em {
+  color: #7DD3FC;
+}

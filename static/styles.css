@@ -1,23 +1,50 @@
 :root {
-  /* Global ILoveFinland Dark Design System (Publishing Calendar Reference) */
-  /* KLM-Inspired Clean Nordic Design System */
-  --main-bg: #061224;
-  --sidebar-bg: #012547;
-  --panel-bg: #082347;
-  --card-bg: #082347;
-  --card-hover: #0D3360;
-  --primary-blue: #029CD8;
-  --brand-blue: #029CD8;
+  /* ========================================================================= */
+  /* CENTRALIZED ILOVEFINLAND.NET DESIGN SYSTEM TOKENS (TWILIGHT NAVY THEME)   */
+  /* ========================================================================= */
+  --ilf-bg-app: #0A192F;          /* Official Twilight Navy Shell */
+  --ilf-bg-deep: #061224;         /* Deep Canvas Backdrop */
+  --ilf-bg-sidebar: #071426;      /* Slim Left Navigation Rail */
+  --ilf-bg-canvas: #0B1E38;       /* Center Active Workspace Surface */
+  --ilf-bg-inspector: #091B33;    /* Right Contextual Inspector Surface */
+  --ilf-bg-elevated: #0D2545;     /* Elevated Inputs / Cards */
+  --ilf-bg-hover: #112F56;        /* Interactive Hover Surface */
+
+  --ilf-brand-midnight: #003580;  /* Official Finnish Flag / Brand Blue */
+  --ilf-brand-primary: #029CD8;   /* Action Cyan / Primary CTA */
+  --ilf-brand-electric: #38BDF8;  /* High-Contrast Glow & Active Indicators */
+  --ilf-brand-emerald: #10B981;   /* Export / Publish / Approved Accent */
+
+  --ilf-text-primary: #FFFFFF;
+  --ilf-text-secondary: #E2E8F0;
+  --ilf-text-muted: #94A3B8;
+
+  --ilf-border-subtle: rgba(75, 137, 188, 0.22);
+  --ilf-border-strong: rgba(56, 189, 248, 0.35);
+  --ilf-radius-lg: 16px;
+  --ilf-radius-md: 10px;
+  --ilf-radius-sm: 6px;
+  --ilf-sidebar-width: 224px;
+  --ilf-inspector-width: 380px;
+
+  /* Global ILoveFinland Dark Design System (Mapped to Centralized Tokens) */
+  --main-bg: var(--ilf-bg-deep);
+  --sidebar-bg: var(--ilf-bg-sidebar);
+  --panel-bg: var(--ilf-bg-canvas);
+  --card-bg: var(--ilf-bg-inspector);
+  --card-hover: var(--ilf-bg-hover);
+  --primary-blue: var(--ilf-brand-primary);
+  --brand-blue: var(--ilf-brand-primary);
   --brand-blue-hover: #0284B8;
-  --bright-blue: #029CD8;
-  --electric-blue: #38BDF8;
-  --secondary-blue: #015196;
+  --bright-blue: var(--ilf-brand-primary);
+  --electric-blue: var(--ilf-brand-electric);
+  --secondary-blue: var(--ilf-brand-midnight);
   --arctic-blue: #4B89BC;
   
-  --text-primary: #FFFFFF;
-  --text-secondary: #F1F5F9;
-  --text-muted: #94A3B8;
-  --border-subtle: rgba(75, 137, 188, 0.22);
+  --text-primary: var(--ilf-text-primary);
+  --text-secondary: var(--ilf-text-secondary);
+  --text-muted: var(--ilf-text-muted);
+  --border-subtle: var(--ilf-border-subtle);
   --border-color: rgba(75, 137, 188, 0.28);
 
   /* Aliases mapped directly to KLM theme */
@@ -6541,4 +6568,476 @@ h1, h2, h3, .panel-title, .brand-title, .modal-title {
   #view-review {
     padding-bottom: 125px !important;
   }
+}
+
+/* ============================================================== */
+/* MODERN EXTENSIBLE PHOTO EDITING STUDIO (CANVA / LIGHTROOM STYLE) */
+/* ============================================================== */
+.design-studio-switcher-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: rgba(3, 16, 32, 0.85);
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.btn-design-studio-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 24, 48, 0.6);
+  color: #94A3B8;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.btn-design-studio-switch:hover {
+  background: rgba(2, 132, 199, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #F8FAFC;
+}
+
+.btn-design-studio-switch.active {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #38BDF8;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+}
+
+.btn-design-studio-switch .design-pill-icon {
+  font-size: 1.15rem;
+}
+
+.btn-design-studio-switch .design-pill-title {
+  font-weight: 800;
+  color: inherit;
+}
+
+.btn-design-studio-switch .design-pill-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.design-studio-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  color: #64748B;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 2-Column App Grid */
+.studio-app-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 500px) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .studio-app-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* Left Column: Sticky Stage */
+.studio-stage-column {
+  position: sticky;
+  top: 18px;
+  z-index: 10;
+}
+
+.studio-stage-card {
+  background: rgba(3, 16, 32, 0.9);
+  border: 1.5px solid rgba(56, 189, 248, 0.3);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+}
+
+/* Right Column: Tabbed Inspector Toolbar */
+.studio-inspector-card {
+  background: rgba(4, 20, 40, 0.85);
+  border: 1px solid rgba(75, 137, 188, 0.28);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-inspector-tab-bar {
+  display: flex;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(2, 14, 28, 0.95);
+  border-bottom: 1px solid rgba(75, 137, 188, 0.25);
+  overflow-x: auto;
+}
+
+.btn-inspector-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94A3B8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-inspector-tab:hover {
+  background: rgba(56, 189, 248, 0.08);
+  color: #E2E8F0;
+}
+
+.btn-inspector-tab.active {
+  background: rgba(2, 132, 199, 0.25);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38BDF8;
+}
+
+.inspector-pane {
+  display: none;
+  padding: 18px;
+}
+
+.inspector-pane.active {
+  display: block;
+  animation: fadeInInspector 0.15s ease-out;
+}
+
+@keyframes fadeInInspector {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.inspector-sticky-save {
+  padding: 14px 18px;
+  background: rgba(2, 14, 28, 0.95);
+  border-top: 1px solid rgba(75, 137, 188, 0.25);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ========================================================================= */
+/* 3-ZONE MODULAR STUDIO ARCHITECTURE (V95.0)                                */
+/* ========================================================================= */
+
+/* Zone 1: Slim Navigation Sidebar */
+.sidebar {
+  width: var(--ilf-sidebar-width, 224px) !important;
+  background: var(--ilf-bg-sidebar, #071426) !important;
+  border-right: 1px solid var(--ilf-border-subtle) !important;
+  padding: 16px 10px 12px !important;
+}
+
+.sidebar .nav-item {
+  padding: 9px 11px !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  gap: 10px !important;
+  margin-bottom: 3px !important;
+}
+
+.sidebar .sidebar-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--ilf-border-subtle);
+}
+
+/* Slim Top Utility Command Bar (Houses Article Suggestions & Studio AI without Sidebar Clutter) */
+.studio-utility-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  margin-bottom: 14px;
+  background: rgba(7, 20, 38, 0.88);
+  border: 1px solid var(--ilf-border-subtle);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  flex-wrap: wrap;
+}
+
+.studio-utility-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.studio-utility-breadcrumb {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ilf-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-utility-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-utility-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ilf-border-subtle);
+  background: var(--ilf-bg-elevated);
+  color: var(--ilf-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.btn-utility-pill:hover {
+  border-color: var(--ilf-brand-electric);
+  background: var(--ilf-bg-hover);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.btn-utility-pill.is-ai {
+  background: linear-gradient(135deg, rgba(0, 53, 128, 0.75) 0%, rgba(2, 156, 216, 0.35) 100%);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #E0F2FE;
+}
+
+.btn-utility-pill.is-ai:hover {
+  background: linear-gradient(135deg, #003580 0%, #029CD8 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(2, 156, 216, 0.35);
+}
+
+.utility-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ilf-brand-primary);
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+/* Secondary Tools Popover / Settings Drawer */
+.utility-more-wrap {
+  position: relative;
+}
+
+.utility-more-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--ilf-bg-inspector);
+  border: 1px solid var(--ilf-border-strong);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.utility-more-menu.hidden {
+  display: none !important;
+}
+
+.utility-more-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ilf-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.utility-more-item:hover {
+  background: var(--ilf-bg-hover);
+  color: #FFFFFF;
+}
+
+/* Progressive Disclosure Collapsible Drawer */
+.inspector-drawer {
+  background: rgba(6, 18, 36, 0.65);
+  border: 1px solid var(--ilf-border-subtle);
+  border-radius: 10px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.inspector-drawer summary {
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ilf-brand-electric);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.inspector-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.inspector-drawer-body {
+  padding: 12px;
+  border-top: 1px solid var(--ilf-border-subtle);
+}
+
+/* Zone 2 + Zone 3 Layout for Article & Web Publisher (1600x900) */
+.article-3zone-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 410px);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .article-3zone-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.article-canvas-stage {
+  background: var(--ilf-bg-canvas);
+  border: 1px solid var(--ilf-border-subtle);
+  border-radius: var(--ilf-radius-lg);
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.article-inspector-column {
+  position: sticky;
+  top: 16px;
+}
+
+/* Safe-Zone Guide Overlay for 1080x1350 Social Canvases */
+.canvas-safe-zone-wrap {
+  position: relative;
+}
+
+.canvas-safe-zone-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 12px;
+  border: 2px dashed rgba(56, 189, 248, 0.65);
+  box-shadow: inset 0 0 0 18px rgba(0, 53, 128, 0.14);
+  z-index: 4;
+}
+
+.canvas-safe-zone-overlay::after {
+  content: "SAFE ZONE (4:5 FEED & 3:4 GRID)";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: rgba(6, 18, 36, 0.82);
+  color: #38BDF8;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+}
+
+.canvas-safe-zone-overlay.hidden {
+  display: none !important;
+}
+
+/* Zone 3 Contextual Inspector for Reels Studio (1080x1920) */
+.reel-3zone-inspector-card {
+  background: var(--ilf-bg-inspector);
+  border: 1px solid var(--ilf-border-strong);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+.reel-inspector-header {
+  padding: 12px 14px;
+  background: rgba(6, 18, 36, 0.9);
+  border-bottom: 1px solid var(--ilf-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reel-inspector-header-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reel-inspector-sticky-export {
+  margin-top: auto;
+  padding: 12px 14px;
+  background: rgba(6, 18, 36, 0.95);
+  border-top: 1px solid var(--ilf-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Hide utility bar cleanly when Finnish Lab is full-screen */
+body:has(#view-finnish-lab:not(.hidden)) .studio-utility-bar {
+  display: none !important;
 }

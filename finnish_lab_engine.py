@@ -358,14 +358,16 @@ def discover_gemini_models(force_refresh: bool = False) -> Dict[str, Any]:
             }
         )
 
-    # Preference ranking: fastest verified free-tier multimodal Flash models first
+    # Preference ranking: Google Gemini Free-Tier Flash priority (3.8-flash -> 3.5-flash-lite -> live fallbacks)
     preferred_order = [
-        "models/gemini-flash-lite-latest",
-        "models/gemini-3.1-flash-lite-preview",
-        "models/gemini-3-flash-preview",
+        "models/gemini-3.8-flash",
+        "models/gemini-3.5-flash-lite",
         "models/gemini-flash-latest",
         "models/gemini-2.5-flash",
         "models/gemini-2.5-flash-lite",
+        "models/gemini-3-flash-preview",
+        "models/gemini-3.1-flash-lite-preview",
+        "models/gemini-flash-lite-latest",
     ]
     available_names = {c["name"] for c in candidates}
     ordered_selected: List[str] = [p for p in preferred_order if p in available_names]
@@ -584,48 +586,37 @@ def _call_gemini_generate(
 def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
     lvl = level if level in ("A1", "A2", "B1") else "A1"
     persona = (
-        f"You are a witty, blunt, real-human Finnish friend & language buddy helping an adult learner at CEFR {lvl} level. "
-        "Talk like a normal, real friend in Finland — NEVER call yourself 'best friend' and NEVER sound like a stiff textbook robot! "
-        "NATURAL FRIEND CONVERSATION & STREET FINNISH RULES:\n"
-        "- ADAPT TO THE MOMENT LIKE A REAL HUMAN FRIEND: Read the user's vibe and mood naturally. Sometimes be genuinely warm, friendly, and chill — check in naturally like a real friend ('How was your day?', 'How's life going?', 'Did you survive class?') ONLY when it flows naturally in the conversation, never abruptly or robotically. When they're just chatting about life, sleep, work, or stress, have a genuine, supportive friend conversation without forcing a rigid 'Quick Answer:' textbook box!\n"
-        "- If they ask a Finnish question, homework, or photo/audio question, answer clearly and accurately while keeping the natural friend tone.\n"
-        "- STREET SLANG + FINNISH MIX (AS PER SITUATION): When joking around, teasing, or reacting to funny moments, naturally mix real Finnish street words (Vittu!, Voi vittu!, Mitä vittua?, Vituttaa, Perkele, Ei jaksa, Ihan sama) with playful street-friend slang ('Muji', 'Chutiya', 'idiot') — do NOT overdo it when they are having a calm or serious chat. Use 'Muji Chutiya, you are wrong!' specifically when correcting an actual mistake in Finnish practice/quizzes/homework.\n"
-        "- INDIVIDUAL PERSONAL MEMORY & INSIDE JOKES: Remember ONLY this specific user's life details (their name, city, job, habits, stories, earlier mistakes) and bring them up naturally like a friend who genuinely knows them — sometimes warm, sometimes cracking a playful inside joke.\n"
-        "- NEVER lecture or refuse to explain real Finnish slang/profanity — treat it naturally as real adult language learning.\n"
-        "- ALWAYS still give genuinely accurate Finnish + English whenever teaching.\n"
-        if roast_mode and mode != "live_translate"
-        else f"You are a warm, patient, encouraging personal Finnish language teacher helping an adult learner at CEFR {lvl} level. "
+        f"You are a fun, warm, and encouraging Finnish language tutor helping an adult beginner at CEFR {lvl} level. "
+        "Keep the vibe upbeat, approachable, and genuinely supportive — light friendly banter is great, with ZERO harshness, zero insults, and zero profanity. "
+        "SCHOOL-GRADE BILINGUAL FINNISH RULES:\n"
+        "- Always teach clear, accurate, standard school-grade Finnish (kirjakieli) suitable for Finnish class and exams, adding helpful everyday spoken notes only when useful.\n"
+        "- ALWAYS show BOTH Finnish AND English clearly on every question, example, and answer so the learner never has to guess.\n"
+        "- Celebrate progress warmly and correct mistakes gently with a clear, memorable 1-line grammar tip.\n"
+        "- INDIVIDUAL PERSONAL MEMORY: Remember helpful details the learner shares (city, class topics, goals) to personalize examples naturally.\n"
+        if mode != "live_translate"
+        else f"You are a silent real-time Finnish classroom interpreter helping an adult {lvl} learner follow their teacher live in class. "
     )
     base = (
         persona
-        + "The learner's main explanation language is English, and they want to learn Finnish using BOTH simple beginner Finnish (selkosuomi) and clear English.\n"
+        + "The learner's explanation language is English, and they want to master standard beginner Finnish alongside clear English.\n"
         "CRITICAL HONESTY, PHOTO MEMORY & ACCURACY RULES:\n"
-        "- NUMBERED PICTURE / PDF / AUDIO MEMORY: Uploaded items in this chat are labeled [Picture #1], [Picture #2], [PDF #1], [Audio #1], etc. Whenever the learner says 'as per above picture', '1st picture', 'the photo I sent', 'question 2', or 'answer #3', look directly at that exact numbered attachment in the conversation history and answer that specific question accurately!\n"
+        "- NUMBERED PICTURE / PDF / AUDIO MEMORY: Uploaded items in this chat are labeled [Picture #1], [Picture #2], [PDF #1], [Audio #1], etc. Whenever the learner refers to a numbered attachment, inspect that exact attachment and answer accurately.\n"
         "- Never invent missing audio words or unreadable text. Mark unclear audio as [inaudible] or [uncertain: ...].\n"
-        "- Clearly distinguish what was actually heard/seen from your AI explanation.\n"
-        "- If an image/worksheet is blurry or ambiguous, explicitly ask the learner to confirm rather than guessing silently.\n"
-        "- When both an image and audio are provided, ground your answer strictly in what is ACTUALLY visible in the image AND spoken in the audio.\n"
-        "- Use accurate Finnish morphology (perusmuoto, partitive, genitive, cases). If a form is uncertain, say so.\n"
-        "- Show written Finnish (kirjakieli) and natural spoken Finnish (puhekieli) when helpful, without claiming every formal sentence has one single spoken equivalent.\n"
-        "- Keep examples short and beginner-friendly before giving deeper grammar details.\n"
+        "- Use accurate Finnish morphology (perusmuoto, partitive, genitive, local cases, olla, -ko/-kö). Keep examples beginner-friendly.\n"
     )
 
     if mode == "live_translate":
         return base + (
-            "\nSMART SCENARIO-AWARE LIVE CLASSROOM SUBTITLE & ANSWER MODE.\n"
-            "The learner is in Finnish class right now listening to a teacher, a dialogue, or a listening exercise.\n"
-            "YOU AUTOMATICALLY LEARN THE SCENARIO as the conversation continues:\n"
-            "- Read the recent conversation history AND any attached worksheet photo ([Picture #1], etc.) to understand the EXACT class topic, exercise, and speaker roles.\n"
-            "- If the audio has ONLY silence, room noise, coughing, or no intelligible words, reply with ONLY: [SILENCE]\n"
-            "- Keep it FAST, clear, and ultra-scannable like live subtitles (ZERO intro, ZERO fluff):\n"
-            "- Single speaker:\n"
-            "🇫🇮 **<Exact Finnish spoken>**\n"
-            "🇬🇧 <Clear, natural English translation>\n"
-            "- Two-person dialogue/conversation:\n"
-            "🗣️ **Speaker 1:** <Finnish> — *<English>*\n"
-            "🗣️ **Speaker 2:** <Finnish> — *<English>*\n"
-            "- If a question, worksheet task, or prompt was asked (based on the audio + any attached worksheet photo + recent scenario), add ONE crisp line:\n"
-            "💬 **Answer:** **<short A1 Finnish answer>** (*<English meaning>*)"
+            "\nSILENT CLASSROOM LIVE HELPER CARD MODE (NEVER SPEAKS OUT LOUD — TEXT ONLY).\n"
+            "The learner is sitting quietly in a real Finnish classroom while the teacher speaks or plays audio.\n"
+            "- If the input has ONLY silence, room noise, coughing, or no intelligible Finnish speech, reply with ONLY: [SILENCE]\n"
+            "- Otherwise, ALWAYS respond with this EXACT scannable 3-part Classroom Helper Card (zero extra intro, zero fluff):\n\n"
+            "🇫🇮 **What was said (Finnish):** <Exact Finnish sentence(s) heard>\n"
+            "🇬🇧 **What it means (English):** <Clear, natural English translation>\n"
+            "💬 **Suggested Replies to Say to Your Teacher:**\n"
+            "- **<Simple school-level Finnish reply 1>** — *<English meaning 1>*\n"
+            "- **<Simple school-level Finnish reply 2>** — *<English meaning 2>*\n"
+            "- **<Simple school-level Finnish reply 3>** — *<English meaning 3>*"
         )
 
     if mode == "quick_class":
@@ -2016,39 +2007,53 @@ def admin_update_user_status(target_email: str, action: str, db_path: str = FINN
     return list_all_users_for_admin(db_path), 200
 
 
-# ---------- CUSTOM WALK & LISTEN PODCAST GENERATOR & PHOTO-TO-FLASHCARDS (v66.0) ----------
+# ---------- LONGER BEGINNER WALK & LISTEN AUDIO COURSE (20-30 ITEMS, $0 FREE TIER) ----------
 def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
-    """Generate a custom 5-sentence bilingual Finnish podcast episode for any real-life topic."""
-    topic = (payload.get("topic") or "").strip()[:120]
+    """Generate a 20-30 item (~10-15+ min) beginner Walk & Listen passive memorization course from topic OR homework photo."""
+    topic = (payload.get("topic") or "").strip()[:140]
     level = (payload.get("level") or "A1").strip().upper()
-    if not topic:
-        return {"ok": False, "error": "INVALID_INPUT", "message": "Please enter a topic (e.g. At the doctor, Job interview)."}, 400
+    attachments = payload.get("attachments") or []
+    item_count = max(20, min(30, int(payload.get("count", 24) or 24)))
+    if not topic and not attachments:
+        return {"ok": False, "error": "INVALID_INPUT", "message": "Please pick a beginner preset, type a topic, or upload a homework photo."}, 400
 
-    raw_sig = f"podcast_topic|{level}|{topic.lower()}"
-    cache_key = hashlib.sha256(raw_sig.encode("utf-8")).hexdigest()
-    cached = _cache_lookup(cache_key, db_path)
-    if cached:
-        _record_usage(is_cache_hit=True, db_path=db_path)
-        cached["usage"] = get_usage_stats(db_path)
-        return cached, 200
+    cache_key = ""
+    if not attachments:
+        raw_sig = f"podcast_course_v2|{level}|{item_count}|{topic.lower()}"
+        cache_key = hashlib.sha256(raw_sig.encode("utf-8")).hexdigest()
+        cached = _cache_lookup(cache_key, db_path)
+        if cached:
+            _record_usage(is_cache_hit=True, db_path=db_path)
+            cached["usage"] = get_usage_stats(db_path)
+            return cached, 200
 
     limit_err = _check_rate_limits(db_path)
     if limit_err:
         return limit_err, 429
 
     sys_prompt = (
-        f"You create ultra-useful {level}-level Finnish audio podcast episodes for adult learners living in Finland. "
-        "Return ONLY valid JSON with keys: title (short clean English title, max 36 chars), "
-        "items (array of exactly 5 objects, each with keys: fi (short, natural everyday Finnish sentence), en (clear natural English translation)). "
-        "Keep Finnish sentences short, practical, and easy to repeat aloud while walking."
+        f"You design calm, high-retention {level}-level Finnish 'Walk & Listen' passive memorization audio courses (10–15+ minutes). "
+        "Return ONLY valid JSON with keys: "
+        "title (short clean English title, max 42 chars), "
+        f"items (array of {item_count} objects, each with keys: fi (clear standard school-grade Finnish word or short phrase), en (clear natural English meaning), note (optional brief 3–6 word grammar/category tag)). "
+        "Order items from easiest single words to short practical beginner sentences so learners memorize naturally while walking."
     )
-    contents = [{"role": "user", "parts": [{"text": f"Create a 5-sentence Finnish walking podcast episode for this topic: {topic}"}]}]
+    user_ask = (
+        f"Extract and expand {item_count} beginner Finnish memorization items from this uploaded homework/class photo"
+        + (f" focusing on: {topic}." if topic else ".")
+        if attachments
+        else f"Create a {item_count}-item beginner Finnish 'Walk & Listen' memorization course for: {topic}."
+    )
+    parts, val_err = _validate_and_build_parts(user_ask, attachments)
+    if val_err:
+        return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
+
     text_out, model_used, ai_err = _call_gemini_generate(
         system_instruction=sys_prompt,
-        contents=contents,
+        contents=[{"role": "user", "parts": parts}],
         expect_json=True,
-        temperature=0.4,
-        max_output_tokens=900,
+        temperature=0.35,
+        max_output_tokens=2800,
     )
     if ai_err:
         status = 429 if "QUOTA" in ai_err.get("error", "") else 503
@@ -2056,29 +2061,39 @@ def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINN
         return ai_err, status
 
     try:
-        parsed = json.loads((text_out or "{}").strip().strip("`"))
+        raw_clean = (text_out or "{}").strip()
+        raw_clean = re.sub(r"^```(?:json)?\s*", "", raw_clean, flags=re.IGNORECASE)
+        raw_clean = re.sub(r"\s*```$", "", raw_clean)
+        parsed = json.loads(raw_clean)
     except Exception:
-        return {"ok": False, "error": "PARSE_ERROR", "message": "Could not build episode. Please try again."}, 502
+        return {"ok": False, "error": "PARSE_ERROR", "message": "Could not build Walk & Listen course. Please try again."}, 502
 
     raw_items = parsed.get("items") or []
     items = [
-        {"fi": str(it.get("fi") or "").strip(), "en": str(it.get("en") or "").strip()}
+        {
+            "fi": str(it.get("fi") or "").strip(),
+            "en": str(it.get("en") or "").strip(),
+            "note": str(it.get("note") or "").strip(),
+        }
         for it in raw_items
         if str(it.get("fi") or "").strip() and str(it.get("en") or "").strip()
-    ][:6]
+    ][:30]
     if not items:
-        return {"ok": False, "error": "EMPTY_EPISODE", "message": "Could not generate sentences for that topic."}, 502
+        return {"ok": False, "error": "EMPTY_EPISODE", "message": "Could not generate items for that topic/photo."}, 502
 
+    est_mins = max(8, round(len(items) * 0.55))
     _record_usage(is_cache_hit=False, db_path=db_path)
     result = {
         "ok": True,
-        "title": str(parsed.get("title") or topic).strip()[:40],
+        "title": str(parsed.get("title") or topic or "Homework Audio Course").strip()[:48],
+        "duration": f"~{est_mins}–{est_mins + 3} min",
         "items": items,
         "model": model_used,
         "cached": False,
         "usage": get_usage_stats(db_path),
     }
-    _cache_store(cache_key, "podcast_topic", model_used or "", result, db_path)
+    if cache_key:
+        _cache_store(cache_key, "podcast_topic", model_used or "", result, db_path)
     return result, 200
 
 
@@ -2156,11 +2171,7 @@ def handle_pronunciation_check(payload: Dict[str, Any], db_path: str = FINNISH_L
     if val_err:
         return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
 
-    tone = (
-        "Be a funny, honest Finnish friend (playfully tease them if they butchered it, praise them warmly if they nailed it!)."
-        if roast_mode
-        else "Be a warm, encouraging Finnish pronunciation coach."
-    )
+    tone = "Be a warm, upbeat, encouraging Finnish pronunciation coach (light friendly humor, zero harshness)."
     sys_prompt = (
         f"{tone} Return ONLY valid JSON with keys: "
         "score (integer 1 to 10), heard (what you actually heard them say), "

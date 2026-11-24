@@ -37,6 +37,18 @@ def _resolve_db_path() -> str:
 DB_PATH = _resolve_db_path()
 
 
+def resolve_uploads_dir() -> Path:
+    """Resolve uploads folder to /data/uploads if persistent disk is mounted, else static/assets/uploads."""
+    data_dir = Path("/data")
+    if data_dir.exists() and data_dir.is_dir():
+        persistent_uploads = data_dir / "uploads"
+        persistent_uploads.mkdir(parents=True, exist_ok=True)
+        return persistent_uploads
+    default_uploads = Path(__file__).parent / "static" / "assets" / "uploads"
+    default_uploads.mkdir(parents=True, exist_ok=True)
+    return default_uploads
+
+
 def save_persistent_session(token: str, email: str, db_path: str = DB_PATH) -> None:
     """Persist an authenticated session token into SQLite so logins survive server restarts."""
     conn = get_connection(db_path)
@@ -2955,7 +2967,35 @@ def create_revision_from_comment(
                 if "cc" in user_specified_credit.lower():
                     article["featured_image"]["licence"] = "Attribution (CC)"
 
-        if openai_client.get_openai_api_key() and (revise_article or revise_reel):
+        import gemini_service
+        used_live_gemini = False
+        if gemini_service.get_gemini_api_key() and revise_article:
+            try:
+                saved_feat_photo = copy.deepcopy(article.get("featured_image"))
+                g_res = gemini_service.preview_article_rewrite(
+                    article=article,
+                    writing_style=article.get("writing_style", "guide"),
+                    instruction=comment_body,
+                )
+                if g_res.get("ok") and isinstance(g_res.get("proposal"), dict):
+                    prop = g_res["proposal"]
+                    article["headline"] = prop.get("headline") or article.get("headline", "")
+                    article["short_description"] = prop.get("short_description") or article.get("short_description", "")
+                    article["body_html"] = prop.get("body_html") or article.get("body_html", "")
+                    if prop.get("seo_title"):
+                        article["seo_title"] = prop["seo_title"]
+                    if prop.get("meta_description"):
+                        article["meta_description"] = prop["meta_description"]
+                    if saved_feat_photo and saved_feat_photo.get("url"):
+                        article["featured_image"] = saved_feat_photo
+                    change_summary_text = prop.get("change_summary") or f"Gemini revision applied: {comment_body[:80]}"
+                    ai_model = f"Google Gemini ({g_res.get('model', 'gemini-3.8-flash')} Free Tier)"
+                    created_by = ai_model
+                    used_live_gemini = True
+            except Exception as g_exc:
+                print(f"[db] Live Gemini revision failed, trying fallback: {g_exc}")
+
+        if not used_live_gemini and openai_client.get_openai_api_key() and (revise_article or revise_reel):
             try:
                 # Keep uploaded photo url before OpenAI call to prevent overwrite
                 saved_feat_photo = copy.deepcopy(article.get("featured_image"))
@@ -3756,7 +3796,42 @@ def adjust_static_post(
                 tags = [t.strip() for t in tags.split(",") if t.strip()]
             ig_post["hashtags"] = tags[:5]
         if "carousel_slides" in adjustments:
-            ig_post["carousel_slides"] = adjustments["carousel_slides"]
+            slides = adjustments["carousel_slides"]
+            if isinstance(slides, list):
+                clean_slides = []
+                for sl in slides:
+                    sl_copy = dict(sl)
+                    p_data = sl_copy.get("photoDataUrl") or ""
+                    if p_data.startswith("data:image/"):
+                        try:
+                            header, b64_data = p_data.split(",", 1)
+                            ext = ".jpg"
+                            if "png" in header:
+                                ext = ".png"
+                            elif "webp" in header:
+                                ext = ".webp"
+                            img_bytes = base64.b64decode(b64_data)
+                            s_num = sl_copy.get("slide_number", 1)
+                            fname = f"slide_p{package_id}_s{s_num}_{uuid.uuid4().hex[:8]}{ext}"
+                            uploads_dir = resolve_uploads_dir()
+                            uploads_dir.mkdir(parents=True, exist_ok=True)
+                            dest_path = uploads_dir / fname
+                            dest_path.write_bytes(img_bytes)
+                            local_uploads = Path(__file__).resolve().parent / "static" / "assets" / "uploads"
+                            local_uploads.mkdir(parents=True, exist_ok=True)
+                            try:
+                                (local_uploads / fname).write_bytes(img_bytes)
+                            except Exception:
+                                pass
+                            file_url = f"/assets/uploads/{fname}"
+                            sl_copy["photoDataUrl"] = file_url
+                            sl_copy["photo_url"] = file_url
+                        except Exception as e:
+                            logger.error("Failed saving carousel slide photo: %s", e)
+                    clean_slides.append(sl_copy)
+                ig_post["carousel_slides"] = clean_slides
+            else:
+                ig_post["carousel_slides"] = slides
         if "show_swipe_arrow" in adjustments:
             ig_post["show_swipe_arrow"] = bool(adjustments["show_swipe_arrow"])
         if "location_stamp" in adjustments:
@@ -3976,10 +4051,17 @@ def upload_featured_image(
             clean_filename = re.sub(r'[^A-Za-z0-9_.-]', '_', raw_filename)
             tok = secrets.token_hex(4)
             saved_filename = f"photo_{tok}_{clean_filename}"
-            uploads_dir = Path(__file__).parent / "static" / "assets" / "uploads"
-            uploads_dir.mkdir(parents=True, exist_ok=True)
+            uploads_dir = resolve_uploads_dir()
             saved_path = uploads_dir / saved_filename
             saved_path.write_bytes(raw_bytes)
+            # Also mirror to static/assets/uploads if persistent disk is active
+            local_static_uploads = Path(__file__).parent / "static" / "assets" / "uploads"
+            if uploads_dir != local_static_uploads:
+                try:
+                    local_static_uploads.mkdir(parents=True, exist_ok=True)
+                    (local_static_uploads / saved_filename).write_bytes(raw_bytes)
+                except Exception:
+                    pass
             image_url = f"/assets/uploads/{saved_filename}"
 
         feat = article.get("featured_image", {})
@@ -6073,10 +6155,17 @@ def add_article_additional_image(
             clean_filename = re.sub(r'[^A-Za-z0-9_.-]', '_', raw_filename)
             tok = secrets.token_hex(4)
             saved_filename = f"photo_{tok}_{clean_filename}"
-            uploads_dir = Path(__file__).parent / "static" / "assets" / "uploads"
-            uploads_dir.mkdir(parents=True, exist_ok=True)
+            uploads_dir = resolve_uploads_dir()
             saved_path = uploads_dir / saved_filename
             saved_path.write_bytes(raw_bytes)
+            # Also mirror to static/assets/uploads if persistent disk is active
+            local_static_uploads = Path(__file__).parent / "static" / "assets" / "uploads"
+            if uploads_dir != local_static_uploads:
+                try:
+                    local_static_uploads.mkdir(parents=True, exist_ok=True)
+                    (local_static_uploads / saved_filename).write_bytes(raw_bytes)
+                except Exception:
+                    pass
             image_url = f"/assets/uploads/{saved_filename}"
 
         clean_credit = image_data.get("credit_string") or image_data.get("credit") or "Photo: ILF"

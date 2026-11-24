@@ -539,6 +539,22 @@
 
     document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === viewName));
     document.querySelectorAll(".bnav-item").forEach((b) => b.classList.toggle("active", b.dataset.view === viewName));
+    const viewLabels = {
+      projects: "Dashboard • Stories & Pipeline",
+      ideas: "Article Suggestions • AI Pitch Radar",
+      review: "Editorial Workspace",
+      "reel-studio": "Reels Studio • 1080×1920 Vertical Video",
+      "finnish-lab": "Finnish Study Lab • A1–B2",
+      "studio-ai": "Studio AI • Editorial Co-Pilot",
+      connections: "Brand Assets & Settings",
+      calendar: "Publishing Calendar",
+      "ai-media": "AI Media Studio",
+      research: "Official Finnish Sources",
+      inbox: "Reader Inbox & Voice",
+      performance: "Performance & Stats",
+    };
+    const activeLbl = $("studio-active-module-label");
+    if (activeLbl) activeLbl.textContent = viewLabels[viewName] || "ilovefinland.net Studio";
     document.querySelectorAll(".view").forEach((v) => {
       const isTarget = v.id === `view-${viewName}`;
       v.classList.toggle("hidden", !isTarget);
@@ -873,6 +889,18 @@
     if (tabArt) tabArt.classList.toggle("active", tabName === "article");
     if (tabIg) tabIg.classList.toggle("active", tabName === "ig");
 
+    // Keep Zone 1 Slim Sidebar synced with active workspace tab
+    if (!$("view-review")?.classList.contains("hidden")) {
+      document.querySelectorAll(".sidebar .nav-item").forEach((b) => b.classList.remove("active"));
+      if (tabName === "article") {
+        $("nav-item-web-publisher")?.classList.add("active");
+        if ($("studio-active-module-label")) $("studio-active-module-label").textContent = "Article & Web Publisher • 1600×900";
+      } else if (tabName === "ig") {
+        $("nav-item-social-graphics")?.classList.add("active");
+        if ($("studio-active-module-label")) $("studio-active-module-label").textContent = "Social Graphics Studio • 1080×1350";
+      }
+    }
+
     if (panelArt) {
       panelArt.classList.toggle("active-tab-panel", tabName === "article");
       panelArt.classList.toggle("hidden", tabName !== "article");
@@ -1165,20 +1193,27 @@
       if ($("wp-field-dek")) $("wp-field-dek").value = art.short_description || "";
       if ($("wp-field-lang")) $("wp-field-lang").value = art.language || "English";
 
-      // Populate Section and Category selects
+      // Populate Section and Category selects (strictly aligned to the 6 active ilovefinland.net sections)
       const secSelect = $("wp-field-section");
       const catSelect = $("wp-field-category");
-      const tax = art.taxonomy_options || currentTaxonomy || {};
+      const ACTIVE_SECTIONS = ["News", "Events", "Finland Guide", "Things to Do", "Food & Restaurants", "Travel"];
+      const rawTax = (currentTaxonomy && Object.keys(currentTaxonomy).length > 0) ? currentTaxonomy : (art.taxonomy_options || {});
+      const tax = {};
+      ACTIVE_SECTIONS.forEach((s) => {
+        if (rawTax[s]) tax[s] = rawTax[s];
+      });
       if (secSelect && Object.keys(tax).length > 0) {
+        const currentSec = ACTIVE_SECTIONS.includes(art.section) ? art.section : "News";
         secSelect.innerHTML = Object.keys(tax)
-          .map((sec) => `<option value="${sec}" ${sec === art.section ? "selected" : ""}>${sec}</option>`)
+          .map((sec) => `<option value="${sec}" ${sec === currentSec ? "selected" : ""}>${sec}</option>`)
           .join("");
 
         const updateCategories = () => {
           const selSec = secSelect.value;
-          const cats = tax[selSec] || [];
+          const cats = (tax[selSec] || []).map((c) => (c === "restaurants-cafes" ? "Restaurants & Cafes" : c));
+          const targetCat = art.category === "restaurants-cafes" ? "Restaurants & Cafes" : art.category;
           catSelect.innerHTML = cats
-            .map((cat) => `<option value="${cat}" ${cat === art.category ? "selected" : ""}>${cat}</option>`)
+            .map((cat) => `<option value="${cat}" ${cat === targetCat ? "selected" : ""}>${cat}</option>`)
             .join("");
         };
         updateCategories();
@@ -1367,6 +1402,16 @@
       if (ig.photo_url && (ig.photo_url.includes("tesla") || ig.photo_url.includes("sample-clips") || ig.photo_url.includes("helsinki-sample"))) {
         ig.photo_url = "";
       }
+    }
+
+    // Auto-Draft Recovery: restore local cached photo if DB photo is empty
+    if ((!ig.photo_url || !ig.photo_url.trim()) && typeof currentPackageId !== "undefined" && currentPackageId) {
+      try {
+        const cachedD1 = localStorage.getItem(`ilf_d1_photo_${currentPackageId}`);
+        if (cachedD1) {
+          ig.photo_url = cachedD1;
+        }
+      } catch (e) {}
     }
 
     const hasPhoto = Boolean(ig.photo_url && ig.photo_url.trim());
@@ -1905,19 +1950,19 @@
 
         ctx45.drawImage(photoImg, drawX, drawY, drawW, drawH);
 
-        // Dark navy bottom gradient scrim
-        const grad = ctx45.createLinearGradient(0, h * 0.44, 0, h);
-        grad.addColorStop(0, "rgba(11, 26, 44, 0)");
-        grad.addColorStop(0.30, "rgba(11, 26, 44, 0.60)");
-        grad.addColorStop(0.65, "rgba(11, 26, 44, 0.90)");
-        grad.addColorStop(1.0, "rgba(11, 26, 44, 0.98)");
+        // Twilight Navy (#0A192F -> #003580) bottom gradient scrim
+        const grad = ctx45.createLinearGradient(0, h * 0.42, 0, h);
+        grad.addColorStop(0, "rgba(10, 25, 47, 0)");
+        grad.addColorStop(0.32, "rgba(0, 53, 128, 0.58)");
+        grad.addColorStop(0.68, "rgba(10, 25, 47, 0.90)");
+        grad.addColorStop(1.0, "rgba(10, 25, 47, 0.98)");
         ctx45.fillStyle = grad;
         ctx45.fillRect(0, 0, w, h);
       } else {
-        // --- CLEAN PLACEHOLDER FOR NO IMAGE UPLOADED ---
+        // --- CLEAN TWILIGHT NAVY PLACEHOLDER (#0A192F -> #003580) ---
         const bgGrad = ctx45.createLinearGradient(0, 0, 0, h);
-        bgGrad.addColorStop(0, "#0a192f");
-        bgGrad.addColorStop(1, "#1e293b");
+        bgGrad.addColorStop(0, "#0A192F");
+        bgGrad.addColorStop(1, "#003580");
         ctx45.fillStyle = bgGrad;
         ctx45.fillRect(0, 0, w, h);
 
@@ -5717,21 +5762,96 @@
       $("csv-import-input").value = "Finland Winter Tire Rules,Instagram Carousel (4:5),48,,108,235,41,88";
     });
 
+    // Side-by-Side Diff Preview Modal Controller for Google Gemini ($0 Free Tier)
+    let pendingGeminiProposal = null;
+    const closeGeminiDiffModal = () => {
+      $("gemini-diff-modal")?.classList.add("hidden");
+      pendingGeminiProposal = null;
+    };
+    $("btn-gemini-diff-close")?.addEventListener("click", closeGeminiDiffModal);
+    $("btn-gemini-diff-discard")?.addEventListener("click", () => {
+      closeGeminiDiffModal();
+      showToast("Discarded Gemini proposal — your manual edits are untouched.");
+    });
+    $("btn-gemini-diff-apply")?.addEventListener("click", async () => {
+      if (!pendingGeminiProposal) return;
+      const { scope, proposal } = pendingGeminiProposal;
+      if (scope === "article") {
+        if ($("wp-field-headline") && proposal.headline) $("wp-field-headline").value = proposal.headline;
+        if ($("wp-field-dek") && proposal.short_description) $("wp-field-dek").value = proposal.short_description;
+        if ($("wp-code-textarea") && proposal.body_html) $("wp-code-textarea").value = proposal.body_html;
+        if ($("article-body-visual") && proposal.body_html) $("article-body-visual").innerHTML = proposal.body_html;
+        if ($("wp-field-seo-title") && proposal.seo_title) $("wp-field-seo-title").value = proposal.seo_title;
+        if ($("wp-field-meta-desc") && proposal.meta_description) $("wp-field-meta-desc").value = proposal.meta_description;
+        closeGeminiDiffModal();
+        showToast("✅ Gemini article rewrite applied! Click 'Save Edits' to store version.");
+      } else if (scope === "caption") {
+        const tagStr = (proposal.hashtags || []).join(" ");
+        const fullCap = tagStr && !proposal.caption.includes(tagStr) ? `${proposal.caption}\n\n${tagStr}` : proposal.caption;
+        if ($("static-edit-caption")) $("static-edit-caption").value = fullCap;
+        if ($("social-caption-textarea")) $("social-caption-textarea").value = fullCap;
+        if ($("static-edit-hashtags")) $("static-edit-hashtags").value = tagStr;
+        if (proposal.headline_line1 && $("static-edit-line1")) $("static-edit-line1").value = proposal.headline_line1;
+        if (proposal.headline_line2 && $("static-edit-line2")) $("static-edit-line2").value = proposal.headline_line2;
+        if (currentStaticPost) {
+          currentStaticPost.caption = fullCap;
+          currentStaticPost.hashtags = proposal.hashtags || currentStaticPost.hashtags;
+          if (proposal.headline_line1) currentStaticPost.headline_line1 = proposal.headline_line1;
+          if (proposal.headline_line2) currentStaticPost.headline_line2 = proposal.headline_line2;
+          drawStaticPostCanvases(currentStaticPost);
+        }
+        closeGeminiDiffModal();
+        showToast("✅ Gemini caption & hooks applied! Click 'Save Changes' to persist.");
+      }
+    });
+
+    const openGeminiDiffModal = ({ title, model, summary, currentText, proposedText, scope, proposal }) => {
+      pendingGeminiProposal = { scope, proposal };
+      if ($("gemini-diff-title")) $("gemini-diff-title").textContent = title;
+      if ($("gemini-diff-model-badge")) $("gemini-diff-model-badge").textContent = `${model || "gemini-3.8-flash"} • $0 Free Tier`;
+      if ($("gemini-diff-summary")) $("gemini-diff-summary").textContent = summary || "Review changes side-by-side before applying.";
+      if ($("gemini-diff-current")) $("gemini-diff-current").textContent = currentText || "(Empty)";
+      if ($("gemini-diff-proposed")) $("gemini-diff-proposed").textContent = proposedText || "(Empty)";
+      $("gemini-diff-modal")?.classList.remove("hidden");
+    };
+
     $("btn-claude-article")?.addEventListener("click", async () => {
       if (!currentPackageId) return;
       const btn = $("btn-claude-article");
       const orig = btn ? btn.innerHTML : "";
-      if (btn) btn.innerHTML = "⏳ Rewriting Article with AI…";
+      if (btn) btn.innerHTML = "⏳ Asking Gemini…";
       try {
-        bundle = await api("/api/package/rewrite-claude", {
+        const res = await api("/api/package/gemini-rewrite-preview", {
           method: "POST",
-          body: JSON.stringify({ package_id: currentPackageId, scope: "article" }),
+          body: JSON.stringify({
+            package_id: currentPackageId,
+            scope: "article",
+            writing_style: $("wp-field-writing-style")?.value || "guide",
+            current_article: {
+              headline: $("wp-field-headline")?.value || "",
+              short_description: $("wp-field-dek")?.value || "",
+              body_html: $("wp-code-textarea")?.value || "",
+              section: $("wp-field-section")?.value || "News",
+              category: $("wp-field-category")?.value || "Finland",
+              language: $("wp-field-lang")?.value || "English",
+            },
+          }),
         });
-        selectedVersion = bundle.package.current_version;
-        renderReview();
-        populateDirectEditorFields();
+        if (!res.ok) throw new Error(res.error || "Gemini preview failed.");
+        const cur = res.current || {};
+        const prop = res.proposal || {};
+        const stripHtml = (h) => String(h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        openGeminiDiffModal({
+          title: "Gemini Article Rewrite — Side-by-Side Preview",
+          model: res.model,
+          summary: prop.change_summary,
+          currentText: `HEADLINE:\n${cur.headline}\n\nSUMMARY:\n${cur.short_description}\n\nBODY:\n${stripHtml(cur.body_html)}`,
+          proposedText: `HEADLINE:\n${prop.headline}\n\nSUMMARY:\n${prop.short_description}\n\nSEO TITLE: ${prop.seo_title}\nMETA DESC: ${prop.meta_description}\n\nBODY:\n${stripHtml(prop.body_html)}`,
+          scope: "article",
+          proposal: prop,
+        });
       } catch (err) {
-        alert(`Failed to rewrite article: ${err.message}`);
+        alert(`⚠️ Gemini Rewrite Notice:\n\n${err.message}`);
       } finally {
         if (btn) btn.innerHTML = orig;
       }
@@ -5760,24 +5880,68 @@
       if (!currentPackageId) return;
       const btnTop = $("btn-claude-caption-top");
       const btnBottom = $("btn-claude-caption-bottom");
-      if (btnTop) btnTop.innerHTML = "⏳ Polishing with ChatGPT…";
-      if (btnBottom) btnBottom.innerHTML = "⏳ Polishing with ChatGPT…";
+      const origTop = btnTop ? btnTop.innerHTML : "";
+      const origBottom = btnBottom ? btnBottom.innerHTML : "";
+      if (btnTop) btnTop.innerHTML = "⏳ Polishing with Gemini…";
+      if (btnBottom) btnBottom.innerHTML = "⏳ Polishing with Gemini…";
       try {
-        bundle = await api("/api/package/rewrite-claude", {
+        const res = await api("/api/package/gemini-rewrite-preview", {
           method: "POST",
-          body: JSON.stringify({ package_id: currentPackageId, scope: "caption" }),
+          body: JSON.stringify({
+            package_id: currentPackageId,
+            scope: "caption",
+            current_article: {
+              headline: $("wp-field-headline")?.value || "",
+              short_description: $("wp-field-dek")?.value || "",
+              section: $("wp-field-section")?.value || "News",
+              category: $("wp-field-category")?.value || "Finland",
+            },
+            current_ig: {
+              headline_line1: $("static-edit-line1")?.value || "",
+              headline_line2: $("static-edit-line2")?.value || "",
+              caption: $("static-edit-caption")?.value || $("social-caption-textarea")?.value || "",
+            },
+          }),
         });
-        selectedVersion = bundle.package.current_version;
-        renderReview();
+        if (!res.ok) throw new Error(res.error || "Gemini caption polish failed.");
+        const cur = res.current || {};
+        const prop = res.proposal || {};
+        openGeminiDiffModal({
+          title: "Gemini Caption & Hooks — Side-by-Side Preview",
+          model: res.model,
+          summary: prop.change_summary,
+          currentText: `COVER HOOK:\n${cur.headline_line1} / ${cur.headline_line2}\n\nCAPTION:\n${cur.caption}`,
+          proposedText: `COVER HOOK:\n${prop.headline_line1} / ${prop.headline_line2}\n\nCAPTION:\n${prop.caption}\n\nHASHTAGS:\n${(prop.hashtags || []).join(" ")}`,
+          scope: "caption",
+          proposal: prop,
+        });
       } catch (err) {
-        alert(`Failed to polish caption: ${err.message}`);
+        alert(`⚠️ Gemini Caption Notice:\n\n${err.message}`);
       } finally {
-        if (btnTop) btnTop.innerHTML = "✨ Polish Caption with ChatGPT";
-        if (btnBottom) btnBottom.innerHTML = "✨ Polish Caption with ChatGPT";
+        if (btnTop) btnTop.innerHTML = origTop || "✨ Polish Caption with Gemini";
+        if (btnBottom) btnBottom.innerHTML = origBottom || "✨ Polish Caption with Gemini";
       }
     };
     $("btn-claude-caption-top")?.addEventListener("click", triggerPolishCaption);
     $("btn-claude-caption-bottom")?.addEventListener("click", triggerPolishCaption);
+
+    // 1-Click ilovefinland.net Story-to-Lesson Bridge -> Opens Finnish Study Lab with generated A1/A2 selkosuomi lesson!
+    $("btn-study-story-in-finnish")?.addEventListener("click", () => {
+      const headline = $("wp-field-headline")?.value || $("pkg-title")?.textContent || "";
+      const summary = $("wp-field-dek")?.value || "";
+      const bodyText = ($("wp-code-textarea")?.value || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 2200);
+      if (!headline && !bodyText) {
+        showToast("Open an article draft first to generate a Finnish reading lesson.", "info");
+        return;
+      }
+      window.__pendingStoryLesson = { headline, summary, body: bodyText, packageId: currentPackageId };
+      switchView("finnish-lab");
+      setTimeout(() => {
+        if (window.FinnishLab && typeof window.FinnishLab.openStoryLesson === "function") {
+          window.FinnishLab.openStoryLesson(window.__pendingStoryLesson);
+        }
+      }, 250);
+    });
 
     document.querySelectorAll(".chip-btn").forEach((c) => {
       c.addEventListener("click", () => {
@@ -6615,6 +6779,133 @@
       });
     });
 
+    // =========================================================================
+    // 3-ZONE MODULAR STUDIO CONTROLLER & EXTENSIBLE MODULE REGISTRY (V95.0)
+    // =========================================================================
+    window.ILFStudioRegistry = {
+      modules: {},
+      registerModule({ id, label, icon = "🧩", onOpen }) {
+        if (!id || this.modules[id]) return;
+        this.modules[id] = { id, label, icon, onOpen };
+        const mount = $("sidebar-dynamic-modules");
+        if (mount) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "nav-item";
+          btn.dataset.view = id;
+          btn.id = `nav-item-dyn-${id}`;
+          btn.innerHTML = `<span style="font-size:1rem;line-height:1;">${icon}</span><span>${label}</span>`;
+          btn.addEventListener("click", () => {
+            if (typeof onOpen === "function") onOpen();
+            else switchView(id);
+          });
+          mount.appendChild(btn);
+        }
+      },
+    };
+
+    // Zone 1 Slim Sidebar Direct Workspace Shortcuts (Article & Web / Social Graphics)
+    document.querySelectorAll(".nav-item[data-workspace-shortcut]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const targetTab = btn.dataset.workspaceShortcut; // "article" or "ig"
+        $("sidebar-drawer")?.classList.remove("open");
+        $("sidebar-backdrop")?.classList.add("hidden");
+        if (currentPackageId && bundle && bundle.package) {
+          switchView("review");
+          switchReviewWorkspaceTab(targetTab);
+        } else {
+          try {
+            const list = await api("/api/packages");
+            const pkgs = Array.isArray(list) ? list : (list.packages || []);
+            if (pkgs.length > 0) {
+              await loadPackage(pkgs[0].id);
+              switchView("review");
+              switchReviewWorkspaceTab(targetTab);
+            } else {
+              switchView("projects");
+              showToast("Create or select a story first to open the editor.", "info");
+            }
+          } catch (err) {
+            switchView("projects");
+          }
+        }
+      });
+    });
+
+    // Top Utility Command Bar (Article Suggestions, Studio AI & More Tools Popover)
+    document.querySelectorAll(".studio-utility-bar [data-view]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.dataset.view;
+        $("utility-more-menu")?.classList.add("hidden");
+        $("btn-utility-more-toggle")?.setAttribute("aria-expanded", "false");
+        if (view) switchView(view);
+      });
+    });
+
+    $("btn-utility-more-toggle")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const menu = $("utility-more-menu");
+      if (!menu) return;
+      const isNowHidden = menu.classList.toggle("hidden");
+      $("btn-utility-more-toggle")?.setAttribute("aria-expanded", String(!isNowHidden));
+    });
+
+    document.addEventListener("click", (e) => {
+      const wrap = e.target.closest(".utility-more-wrap");
+      if (!wrap) {
+        $("utility-more-menu")?.classList.add("hidden");
+        $("btn-utility-more-toggle")?.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    // Social Graphics Top Design Switcher (Design - 1 vs Design - 2 vs Future Design - 3)
+    document.querySelectorAll(".btn-design-studio-switch").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const d = btn.dataset.design;
+        document.querySelectorAll(".btn-design-studio-switch").forEach((b) => b.classList.toggle("active", b === btn));
+        const w1 = $("design-1-workspace");
+        const w2 = $("design-2-workspace");
+        if (w1) w1.style.display = (d === "1") ? "grid" : "none";
+        if (w2) w2.style.display = (d === "2") ? "grid" : "none";
+        if (d === "1" && currentStaticPost) {
+          drawStaticPostCanvases(currentStaticPost);
+        }
+        if (d === "2") {
+          if (typeof loadActiveCarouselSlideInputs === "function") {
+            loadActiveCarouselSlideInputs(typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1);
+          }
+          if (typeof renderActiveCarouselSlideCanvas === "function") {
+            renderActiveCarouselSlideCanvas();
+          }
+        }
+      });
+    });
+
+    // Zone 3 Contextual Inspector Tab Switchers (All Workspaces)
+    const bindInspectorTabs = (attrName, scopeSelector, panePrefix) => {
+      document.querySelectorAll(`.btn-inspector-tab[${attrName}]`).forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const val = btn.getAttribute(attrName);
+          document.querySelectorAll(`.btn-inspector-tab[${attrName}]`).forEach((b) => b.classList.toggle("active", b === btn));
+          document.querySelectorAll(`${scopeSelector} .inspector-pane`).forEach((p) => {
+            p.classList.toggle("active", p.id === `${panePrefix}${val}`);
+          });
+        });
+      });
+    };
+    bindInspectorTabs("data-d1-tab", "#design-1-workspace", "d1-pane-");
+    bindInspectorTabs("data-d2-tab", "#design-2-workspace", "d2-pane-");
+    bindInspectorTabs("data-art-tab", "#panel-article", "art-pane-");
+    bindInspectorTabs("data-reel-tab", "#reel-inspector-panel", "reel-pane-");
+
+    // Safe-Zone Guide Toggles for Social Graphics Canvases
+    $("btn-toggle-d1-safezone")?.addEventListener("click", () => {
+      $("d1-safe-zone-overlay")?.classList.toggle("hidden");
+    });
+    $("btn-toggle-d2-safezone")?.addEventListener("click", () => {
+      $("d2-safe-zone-overlay")?.classList.toggle("hidden");
+    });
+
     // Featured Image & Additional Image Downloads
     document.addEventListener("click", (e) => {
       const dlBtn = e.target.closest(".btn-download-img");
@@ -6981,6 +7272,22 @@
       const s = carouselSlidesData[slideNum] || defaultSlideData(slideNum);
       carouselSlidesData[slideNum] = s;
 
+      // Auto-Draft Recovery from LocalStorage so slide photos survive refreshes/restarts
+      if (typeof currentPackageId !== "undefined" && currentPackageId && !s.photoImg && !s.photoDataUrl) {
+        try {
+          const cached = localStorage.getItem(`ilf_d2_photo_${currentPackageId}_${slideNum}`);
+          if (cached) {
+            s.photoDataUrl = cached;
+            const img = new Image();
+            img.onload = () => {
+              s.photoImg = img;
+              if (activeCarouselSlide === slideNum) renderActiveCarouselSlideCanvas();
+            };
+            img.src = cached;
+          }
+        } catch (e) {}
+      }
+
       // For Slide 1: If headline lines are empty, automatically populate from Design - 1 inputs or current package
       if (slideNum === 1) {
         if (!s.headline_line1 || !s.headline_line1.trim()) {
@@ -7113,8 +7420,8 @@
         ctx.fillRect(0, 0, w, h);
       } else {
         const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-        bgGrad.addColorStop(0, "#011830");
-        bgGrad.addColorStop(1, "#062A4D");
+        bgGrad.addColorStop(0, "#0A192F");
+        bgGrad.addColorStop(1, "#003580");
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, w, h);
       }
@@ -7420,7 +7727,7 @@
       });
     });
 
-    // Upload photo for active carousel slide
+    // Upload photo for active carousel slide (with Auto-Draft LocalStorage backup)
     $("input-upload-carousel-photo")?.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
@@ -7431,8 +7738,13 @@
         img.onload = () => {
           carouselSlidesData[activeCarouselSlide].photoDataUrl = dataUrl;
           carouselSlidesData[activeCarouselSlide].photoImg = img;
+          try {
+            if (currentPackageId) {
+              localStorage.setItem(`ilf_d2_photo_${currentPackageId}_${activeCarouselSlide}`, dataUrl);
+            }
+          } catch (err) {}
           loadActiveCarouselSlideInputs(activeCarouselSlide);
-          showToast(`Photo uploaded for Slide ${activeCarouselSlide}!`);
+          showToast(`Photo uploaded & backed up for Slide ${activeCarouselSlide}!`);
         };
         img.src = dataUrl;
       };
@@ -7440,11 +7752,13 @@
     });
 
     // Individual downloads for active slide
-    $("btn-save-carousel-slide")?.addEventListener("click", () => {
+    const saveActiveCarouselSlideToPhotos = () => {
       const cvs = $("carousel-canvas");
       if (!cvs) return;
       saveImageDirectlyToMobilePhotos(cvs, `ilovefinland-slide-${activeCarouselSlide}.jpg`, "image/jpeg", `Slide ${activeCarouselSlide} (4:5)`);
-    });
+    };
+    $("btn-save-carousel-slide")?.addEventListener("click", saveActiveCarouselSlideToPhotos);
+    $("btn-save-carousel-slide-photos")?.addEventListener("click", saveActiveCarouselSlideToPhotos);
     $("btn-dl-carousel-slide-jpg")?.addEventListener("click", () => {
       downloadCanvas("carousel-canvas", `ilovefinland-slide-${activeCarouselSlide}.jpg`, "image/jpeg");
     });
@@ -7696,7 +8010,7 @@
             short_description: $("wp-field-dek")?.value || "",
             language: $("wp-field-lang")?.value || "English",
             section: $("wp-field-section")?.value || "News",
-            category: $("wp-field-category")?.value || "Transport & Infrastructure",
+            category: $("wp-field-category")?.value || "Finland",
             body_html: $("wp-code-textarea")?.value || "",
             region: $("wp-field-region")?.value || "Finland",
             city_location: $("wp-field-city")?.value || "",
@@ -7739,7 +8053,7 @@
         short_description: $("wp-field-dek")?.value || "",
         language: $("wp-field-lang")?.value || "English",
         section: $("wp-field-section")?.value || "News",
-        category: $("wp-field-category")?.value || "Transport & Infrastructure",
+        category: $("wp-field-category")?.value || "Finland",
         body_html: $("wp-code-textarea")?.value || "",
         region: $("wp-field-region")?.value || "Finland",
         city_location: $("wp-field-city")?.value || "",
@@ -7982,6 +8296,9 @@ ${content}`;
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
+        try {
+          if (currentPackageId) localStorage.setItem(`ilf_d1_photo_${currentPackageId}`, base64);
+        } catch (err) {}
         await api("/api/package/upload-featured-image", {
           method: "POST",
           body: JSON.stringify({
@@ -8022,6 +8339,9 @@ ${content}`;
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
+        try {
+          if (currentPackageId) localStorage.setItem(`ilf_d1_photo_${currentPackageId}`, base64);
+        } catch (err) {}
         await api("/api/package/upload-featured-image", {
           method: "POST",
           body: JSON.stringify({

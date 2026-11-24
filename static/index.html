@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=55.0" />
+  <link rel="stylesheet" href="/styles.css?v=96.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=85.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=97.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -117,88 +117,49 @@
     <aside id="sidebar-drawer" class="sidebar">
       <div class="sidebar-brand">
         <img src="/assets/ilf-heart.png" alt="ILoveFinland Heart" class="brand-heart" />
-        <div style="flex:1;">
+        <div style="flex:1;min-width:0;">
           <div class="brand-title">ILoveFinland</div>
-          <div class="brand-sub">Studio Workbench</div>
+          <div class="brand-sub">Studio 3-Zone</div>
         </div>
         <button type="button" id="btn-close-sidebar" class="btn-sidebar-close" aria-label="Close menu">✕</button>
       </div>
 
       <nav class="side-nav" aria-label="Main navigation">
-        <div class="nav-section-label">EDITORIAL WORKSPACE</div>
-        <button class="nav-item" data-view="ideas" id="nav-item-ideas">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>
-          <span>Article Suggestions</span>
-          <span id="badge-ideas-count" class="badge" style="margin-left:auto;font-size:0.7rem;padding:2px 7px;background:var(--accent);color:#fff;border-radius:10px;font-weight:700;">17</span>
-        </button>
+        <div class="nav-section-label">WORKSPACES</div>
         <button class="nav-item active" data-view="projects" id="nav-item-projects">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-workspace-shortcut="article" id="nav-item-web-publisher">
           <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-          <span>Articles &amp; Posts</span>
+          <span>Article &amp; Web</span>
+        </button>
+        <button class="nav-item" data-workspace-shortcut="ig" id="nav-item-social-graphics">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          <span>Social Graphics</span>
         </button>
         <button class="nav-item" data-view="reel-studio" id="nav-item-reel-studio">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
-          <span>🎬 Reel Editor</span>
-          <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:#38bdf8;color:#0f172a;border-radius:6px;font-weight:700;">CapCut</span>
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+          <span>Reels Studio</span>
         </button>
-        <button class="nav-item" data-view="studio-ai" id="nav-item-studio-ai">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.91 5.81a2 2 0 0 1-1.28 1.28L3 12l5.81 1.91a2 2 0 0 1 1.28 1.28L12 21l1.91-5.81a2 2 0 0 1 1.28-1.28L21 12l-5.81-1.91a2 2 0 0 1-1.28-1.28L12 3Z"></path></svg>
-          <span>Studio AI</span>
-          <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:rgba(56,189,248,0.18);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35);border-radius:6px;font-weight:700;">Chat</span>
-        </button>
-
-        <div class="nav-section-label" style="margin-top:14px;">PERSONAL LEARNING</div>
         <button class="nav-item" data-view="finnish-lab" id="nav-item-finnish-lab">
           <span style="font-size:1.05rem;line-height:1;">🇫🇮</span>
-          <span>Finnish Lab</span>
-          <span class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:#10b981;color:#022c22;border-radius:6px;font-weight:800;">A1</span>
+          <span>Finnish Study Lab</span>
+          <span class="badge" style="margin-left:auto;font-size:0.62rem;padding:2px 6px;background:#10b981;color:#022c22;border-radius:6px;font-weight:800;">A1</span>
         </button>
-
-        <div class="nav-section-label" style="margin-top:14px;">SECONDARY TOOLS</div>
-        <button class="nav-item" data-view="calendar">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          <span>Publishing Calendar</span>
-        </button>
-        <button class="nav-item" data-view="ai-media">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
-          <span>AI Media Studio</span>
-        </button>
-        <button class="nav-item" data-view="research">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <span>Official Finnish Sources</span>
-        </button>
-        <button class="nav-item" data-view="inbox">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-          <span>Reader Inbox &amp; Voice</span>
-        </button>
-        <button class="nav-item" data-view="performance">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-          <span>Performance &amp; Stats</span>
-        </button>
-        <button class="nav-item" data-view="connections">
-          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-          <span>Platform Connections</span>
-        </button>
+        <!-- Dynamic module slot for future registered workspaces -->
+        <div id="sidebar-dynamic-modules"></div>
       </nav>
 
       <div class="sidebar-footer">
-        <div class="nav-section-label" style="padding:4px 14px 2px;margin:0;">SESSION &amp; NETWORK</div>
+        <button class="nav-item" data-view="connections" id="nav-item-brand-settings" style="width:100%;margin-bottom:8px;">
+          <svg class="lucide" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Brand &amp; Settings</span>
+        </button>
 
         <div class="sidebar-session-row">
           <span class="sidebar-session-dot" title="Authenticated / Online"></span>
           <span id="user-pill" class="sidebar-session-email">editor@ilovefinland.net</span>
-        </div>
-
-        <div style="padding:6px 14px;display:flex;flex-direction:column;gap:5px;">
-          <button type="button" id="btn-cloud-sync-desktop" class="btn btn-ghost btn-sm" style="width:100%;font-size:0.75rem;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;" title="Click to immediately sync laptop database to cloud">
-            <span>☁️ Cloud Auto-Sync</span>
-            <span id="desktop-sync-status-badge" class="pill pill-approved" style="font-size:0.65rem;padding:1px 6px;">Live 🟢</span>
-          </button>
-          <a href="https://rather-landscape-fit-south.trycloudflare.com" target="_blank" style="font-size:0.72rem;color:#38bdf8;text-decoration:none;text-align:center;padding:2px 0;font-weight:600;" title="Open Studio on your smartphone">
-            📱 Mobile Studio Link ↗
-          </a>
-          <a href="https://ilovefinland-studio.onrender.com" target="_blank" style="font-size:0.68rem;color:#94a3b8;text-decoration:none;text-align:center;padding:1px 0;">
-            🌐 24/7 Cloud Backup ↗
-          </a>
         </div>
 
         <button id="btn-logout" class="nav-item-logout" title="Sign Out">
@@ -232,30 +193,48 @@
       </header>
 
       <main class="workspace">
-        <!-- Cockpit Operations Status Strip (Executive Airline Dispatch Style) -->
-        <div class="cockpit-telemetry-bar">
-          <button type="button" id="btn-desktop-back" class="btn-desktop-back hidden" title="Go back to previous screen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            <span>Back</span>
-          </button>
-          <div class="telemetry-pill">
-            <span class="telemetry-dot live"></span>
-            <span class="telemetry-label">DISPATCH:</span>
-            <span class="telemetry-value">ilovefinland.net (v1.2.26)</span>
+        <!-- Slim Top Utility Command Bar (Instant Access to Article Suggestions, Studio AI & Secondary Tools) -->
+        <div class="studio-utility-bar">
+          <div class="studio-utility-left">
+            <button type="button" id="btn-desktop-back" class="btn-desktop-back hidden" title="Go back to previous screen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Back</span>
+            </button>
+            <div class="studio-utility-breadcrumb">
+              <span class="telemetry-dot live"></span>
+              <span id="studio-active-module-label">ilovefinland.net Studio</span>
+            </div>
+            <div class="telemetry-pill telemetry-clock" id="telemetry-helsinki-clock" style="margin-left:6px;">
+              <span class="telemetry-label">EET:</span>
+              <span class="telemetry-value" id="clock-helsinki-val">--:--:--</span>
+            </div>
           </div>
-          <div class="telemetry-pill">
-            <span class="telemetry-dot nominal"></span>
-            <span class="telemetry-label">RADAR:</span>
-            <span class="telemetry-value">22 Finnish Feeds Active</span>
-          </div>
-          <div class="telemetry-pill">
-            <span class="telemetry-dot cyan"></span>
-            <span class="telemetry-label">CONSOLE:</span>
-            <span class="telemetry-value">Apple / KLM Operations Desk</span>
-          </div>
-          <div class="telemetry-pill telemetry-clock" id="telemetry-helsinki-clock">
-            <span class="telemetry-label">HELSINKI TIME (EET):</span>
-            <span class="telemetry-value" id="clock-helsinki-val">--:--:--</span>
+
+          <div class="studio-utility-pill-group">
+            <button type="button" class="btn-utility-pill" data-view="ideas" id="nav-item-ideas" title="Open AI Article Suggestions & Story Pitches">
+              <span>💡 Article Suggestions</span>
+              <span id="badge-ideas-count" class="utility-pill-badge">17</span>
+            </button>
+            <button type="button" class="btn-utility-pill is-ai" data-view="studio-ai" id="nav-item-studio-ai" title="Open Studio AI Co-Pilot Chat">
+              <span>✨ Studio AI</span>
+            </button>
+            <div class="utility-more-wrap">
+              <button type="button" class="btn-utility-pill" id="btn-utility-more-toggle" aria-expanded="false" title="More Editorial & Sync Tools">
+                <span>⋯ Tools</span>
+              </button>
+              <div id="utility-more-menu" class="utility-more-menu hidden">
+                <button type="button" class="utility-more-item" data-view="calendar">📅 Publishing Calendar</button>
+                <button type="button" class="utility-more-item" data-view="ai-media">🎨 AI Media Studio</button>
+                <button type="button" class="utility-more-item" data-view="research">🔍 Official Finnish Sources</button>
+                <button type="button" class="utility-more-item" data-view="inbox">📥 Reader Inbox &amp; Voice</button>
+                <button type="button" class="utility-more-item" data-view="performance">📈 Performance &amp; Stats</button>
+                <div style="height:1px;background:var(--ilf-border-subtle);margin:4px 0;"></div>
+                <button type="button" id="btn-cloud-sync-desktop" class="utility-more-item" style="color:#34D399;">
+                  <span>☁️ Cloud Auto-Sync</span>
+                  <span id="desktop-sync-status-badge" class="pill pill-approved" style="margin-left:auto;font-size:0.62rem;padding:1px 6px;">Live 🟢</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <!-- VIEW 0: UNIFIED ARTICLES & POSTS WORKSPACE -->
@@ -341,7 +320,6 @@
                   <option value="Travel">Travel</option>
                   <option value="Food & Restaurants">Food &amp; Restaurants</option>
                   <option value="Events">Events</option>
-                  <option value="Shopping">Shopping</option>
                 </select>
 
                 <!-- Status Filter -->
@@ -944,18 +922,89 @@
                   </div>
                 </div>
 
-                <!-- 3. RIGHT INSPECTOR PANEL (ALWAYS ON RIGHT ON DESKTOP) -->
-                <div class="reel-right-inspector" id="reel-inspector-panel">
-                  <div class="reel-inspector-title">
-                    <span id="inspector-icon">⚙️</span>
-                    <span id="inspector-heading">Element Inspector</span>
+                <!-- 3. ZONE 3: CONTEXTUAL INSPECTOR & EXPORT (REELS STUDIO 1080×1920) -->
+                <div class="reel-right-inspector reel-3zone-inspector-card" id="reel-inspector-panel">
+                  <div class="reel-inspector-header">
+                    <div class="reel-inspector-header-title">
+                      <span id="inspector-icon">⚙️</span>
+                      <span id="inspector-heading">Element Inspector</span>
+                    </div>
+                    <span class="badge" style="background:rgba(2,156,216,0.2);color:#38BDF8;font-size:0.65rem;padding:2px 6px;border-radius:4px;">9:16 Studio</span>
                   </div>
 
-                  <!-- DYNAMIC INSPECTOR PROPERTIES -->
-                  <div id="inspector-content">
-                    <p style="font-size:0.75rem;color:var(--reel-text-muted);text-align:center;padding:30px 10px;">
-                      Select a clip or text box on the canvas or timeline to customize its properties.
+                  <!-- Contextual Inspector Tab Switcher -->
+                  <div class="studio-inspector-tab-bar" role="tablist" style="padding:6px 8px;">
+                    <button type="button" class="btn-inspector-tab active" data-reel-tab="element" style="flex:1;justify-content:center;padding:6px 8px;font-size:0.74rem;">⚙️ Element</button>
+                    <button type="button" class="btn-inspector-tab" data-reel-tab="stage" style="flex:1;justify-content:center;padding:6px 8px;font-size:0.74rem;">📐 Stage</button>
+                    <button type="button" class="btn-inspector-tab" data-reel-tab="export" style="flex:1;justify-content:center;padding:6px 8px;font-size:0.74rem;">🚀 Export</button>
+                  </div>
+
+                  <!-- Tab 1: Active Selected Element Properties -->
+                  <div id="reel-pane-element" class="inspector-pane active" style="padding:12px;overflow-y:auto;flex:1;">
+                    <div id="inspector-content">
+                      <div style="text-align:center;padding:20px 10px;">
+                        <div style="font-size:1.5rem;margin-bottom:6px;opacity:0.75;">🎬</div>
+                        <p style="font-size:0.76rem;color:var(--ilf-text-muted);margin:0 0 12px;">
+                          Select a clip, text overlay, or logo on the canvas or timeline to edit its timing, animation, and styling.
+                        </p>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                          <button type="button" class="btn btn-ghost btn-xs" onclick="document.getElementById('tab-drawer-media')?.click()" style="width:100%;font-size:0.74rem;">+ Add Video / Photo Clip</button>
+                          <button type="button" class="btn btn-ghost btn-xs" onclick="document.getElementById('tab-drawer-text')?.click()" style="width:100%;font-size:0.74rem;">+ Add Headline Text</button>
+                          <button type="button" class="btn btn-ghost btn-xs" onclick="document.getElementById('tab-drawer-audio')?.click()" style="width:100%;font-size:0.74rem;">+ Add Music / Voiceover</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Tab 2: Stage, Safe-Zone & Platform Toggles -->
+                  <div id="reel-pane-stage" class="inspector-pane" style="padding:12px;overflow-y:auto;flex:1;">
+                    <div style="font-size:0.74rem;font-weight:700;color:#38BDF8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Safe-Zone &amp; Platform Guides</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                      <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-toggle-safe-area')?.click()" style="width:100%;justify-content:space-between;display:flex;font-size:0.76rem;">
+                        <span>📐 Toggle IG 4:5 Safe Area</span>
+                        <span style="color:#38BDF8;font-weight:700;">Toggle</span>
+                      </button>
+                      <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('tab-drawer-logo')?.click()" style="width:100%;justify-content:space-between;display:flex;font-size:0.76rem;">
+                        <span>💙 ILoveFinland Watermark</span>
+                        <span style="color:#94A3B8;">Configure →</span>
+                      </button>
+                      <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('tab-drawer-outro')?.click()" style="width:100%;justify-content:space-between;display:flex;font-size:0.76rem;">
+                        <span>🎬 Branded Outro Card</span>
+                        <span style="color:#94A3B8;">Configure →</span>
+                      </button>
+                    </div>
+
+                    <details class="inspector-drawer">
+                      <summary><span>🎯 Target Platforms</span><span>▾</span></summary>
+                      <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:6px;font-size:0.76rem;color:#E2E8F0;">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" checked /> Instagram Reels (1080×1920)</label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" checked /> Facebook Reels (1080×1920)</label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" /> TikTok Vertical (9:16)</label>
+                      </div>
+                    </details>
+                  </div>
+
+                  <!-- Tab 3: Export Quality & Render Preset -->
+                  <div id="reel-pane-export" class="inspector-pane" style="padding:12px;overflow-y:auto;flex:1;">
+                    <div style="font-size:0.74rem;font-weight:700;color:#38BDF8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Output Specification</div>
+                    <div style="background:rgba(6,18,36,0.7);border:1px solid var(--ilf-border-subtle);border-radius:8px;padding:10px;font-size:0.76rem;display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+                      <div style="display:flex;justify-content:space-between;"><span style="color:#94A3B8;">Resolution</span><strong style="color:#fff;">1080 × 1920 (Full HD)</strong></div>
+                      <div style="display:flex;justify-content:space-between;"><span style="color:#94A3B8;">Aspect Ratio</span><strong style="color:#fff;">9:16 Vertical</strong></div>
+                      <div style="display:flex;justify-content:space-between;"><span style="color:#94A3B8;">Codec / Container</span><strong style="color:#fff;">H.264 / MP4 + AAC</strong></div>
+                    </div>
+                    <p style="font-size:0.72rem;color:#94A3B8;line-height:1.45;margin:0;">
+                      Export composites all video tracks, Ken Burns animations, brand typography, and audio mixes directly via server FFmpeg.
                     </p>
+                  </div>
+
+                  <!-- Anchored Bottom Export & Save Bar -->
+                  <div class="reel-inspector-sticky-export">
+                    <button type="button" id="btn-inspector-reel-export" onclick="document.getElementById('btn-export-reel-trigger')?.click()" class="btn btn-primary" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;box-shadow:0 4px 12px rgba(2,156,216,0.35);">
+                      🚀 Render &amp; Export MP4 (1080×1920)
+                    </button>
+                    <button type="button" id="btn-inspector-reel-save" onclick="document.getElementById('btn-save-reel-manual')?.click()" class="btn btn-ghost btn-sm" style="width:100%;font-size:0.76rem;">
+                      💾 Save Project Draft
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1178,7 +1227,7 @@
               <div>
                 <div class="eyebrow">
                   <span id="pkg-origin-badge" class="badge badge-origin">AI Research</span>
-                  <span id="pkg-model-badge" class="badge badge-model">OpenAI (Default)</span>
+                  <span id="pkg-model-badge" class="badge badge-model">Google Gemini (Free Tier)</span>
                   <span id="pkg-source-check" class="badge badge-check">Verified</span>
                 </div>
                 <div class="pkg-select-row">
@@ -1203,29 +1252,31 @@
                 <div id="version-tabs" class="version-tabs"></div>
               </div>
               <div class="claude-actions">
-                <button id="btn-claude-article" class="btn btn-claude btn-sm" title="Rewrite Article with ChatGPT (GPT-4o)">
+                <button id="btn-claude-article" class="btn btn-claude btn-sm" title="Preview &amp; Rewrite Article with Google Gemini (Free Tier)">
                   <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                  <span>Rewrite Article with ChatGPT</span>
+                  <span>Rewrite Article with Gemini</span>
                 </button>
-                <button id="btn-claude-caption-top" class="btn btn-claude btn-sm" title="Polish Caption &amp; Hashtags with ChatGPT (GPT-4o)">
+                <button id="btn-claude-caption-top" class="btn btn-claude btn-sm" title="Preview &amp; Polish Caption &amp; Hashtags with Google Gemini (Free Tier)">
                   <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                  <span>Polish Caption with ChatGPT</span>
+                  <span>Polish Caption with Gemini</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Pre-Approval Quality Checks Banner -->
-          <div id="pre-approval-checks-card" class="card checks-card">
-            <div class="checks-header">
-              <div class="checks-title-group">
-                <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <strong style="color:#FFFFFF;">Pre-Approval Editorial &amp; Safe Area Checks</strong>
-              </div>
-              <span class="hint-text" style="color:#B8C4D4;">Only approved versions can be scheduled or published</span>
+          <!-- Pre-Approval Quality Checks Drawer (Progressive Disclosure) -->
+          <details id="pre-approval-checks-card" class="inspector-drawer" style="margin-bottom:12px;">
+            <summary>
+              <span style="display:inline-flex;align-items:center;gap:8px;">
+                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Pre-Approval Editorial &amp; Safe Area Checks</span>
+              </span>
+              <span style="font-size:0.72rem;color:#94A3B8;font-weight:500;">Tap to inspect ▾</span>
+            </summary>
+            <div class="inspector-drawer-body">
+              <div id="pre-approval-checks-list" class="checks-grid"></div>
             </div>
-            <div id="pre-approval-checks-list" class="checks-grid"></div>
-          </div>
+          </details>
 
           <!-- Section Navigation / Workspaces Bar -->
           <div class="mobile-tabs" role="tablist">
@@ -1277,6 +1328,9 @@
                   <button type="button" id="btn-convert-article-to-reel" class="btn btn-sm" title="Generate a 9:16 Video Reel from this Article" style="background:#0284c7;color:#ffffff;border:none;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;cursor:pointer;">
                     <span>🎬 Convert to Reel</span>
                   </button>
+                  <button type="button" id="btn-study-story-in-finnish" class="btn btn-sm" title="Generate an A1/A2 selkosuomi reading lesson from this story in Finnish Study Lab" style="background:linear-gradient(135deg,#003580 0%,#10b981 100%);color:#ffffff;border:none;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;cursor:pointer;">
+                    <span>🇫🇮 Study Story in Finnish</span>
+                  </button>
                   <button id="btn-approve-article" class="btn btn-approve">
                     <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     <span>For Approval</span>
@@ -1284,57 +1338,40 @@
                 </div>
               </div>
 
-              <!-- Recommendation & Search Phrase Summary Banner -->
+              <!-- Recommendation & Search Phrase Drawer (Progressive Disclosure) -->
               <div id="wp-verification-banner" class="hidden" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#FCD34D;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.82rem;"></div>
-              <div class="wp-recommendation-box" id="wp-recommendation-box">
-                <div class="wp-rec-row">
-                  <div class="wp-rec-col">
-                    <span class="label-xs">Website Section &amp; Category Recommendation</span>
-                    <div class="wp-rec-val" id="wp-rec-taxonomy">News → Transport &amp; Infrastructure</div>
-                    <p class="hint-text" id="wp-rec-reason" style="margin:2px 0 0;"></p>
-                  </div>
-                  <div class="wp-rec-col">
-                    <span class="label-xs">Natural Google Search Phrase</span>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <code class="wp-search-phrase" id="wp-search-phrase">is tesla assisted driving allowed in finland</code>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-search-phrase" title="Copy Search Phrase">📋 Copy</button>
+              <details class="inspector-drawer" style="margin:0 0 14px;">
+                <summary>
+                  <span>🔍 SEO &amp; Section Recommendation</span>
+                  <span style="font-size:0.72rem;color:#94A3B8;font-weight:500;">Tap to expand ▾</span>
+                </summary>
+                <div class="inspector-drawer-body">
+                  <div class="wp-recommendation-box" id="wp-recommendation-box" style="margin:0;">
+                    <div class="wp-rec-row">
+                      <div class="wp-rec-col">
+                        <span class="label-xs">Website Section &amp; Category Recommendation</span>
+                        <div class="wp-rec-val" id="wp-rec-taxonomy">News → Transport &amp; Infrastructure</div>
+                        <p class="hint-text" id="wp-rec-reason" style="margin:2px 0 0;"></p>
+                      </div>
+                      <div class="wp-rec-col">
+                        <span class="label-xs">Natural Google Search Phrase</span>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <code class="wp-search-phrase" id="wp-search-phrase">is tesla assisted driving allowed in finland</code>
+                          <button type="button" class="btn-copy-field" data-copy-target="wp-search-phrase" title="Copy Search Phrase">📋 Copy</button>
+                        </div>
+                        <p class="hint-text" id="wp-search-integration" style="margin:2px 0 0;"></p>
+                      </div>
                     </div>
-                    <p class="hint-text" id="wp-search-integration" style="margin:2px 0 0;"></p>
                   </div>
+                  <div id="wp-prior-coverage-detail" style="background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:0.8rem;"></div>
                 </div>
-              </div>
-              <div id="wp-prior-coverage-detail" style="background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:0.8rem;"></div>
+              </details>
 
-              <!-- Article Sub-Navigation Capsule (Fast Jump Pills) -->
-              <nav class="article-subnav-capsule" id="article-subnav" aria-label="Jump to article section">
-                <button type="button" class="article-subnav-btn active" data-target-sec="sec-art-content">
-                  <span class="subnav-badge">1</span>
-                  <span class="subnav-icon">📝</span>
-                  <span class="subnav-label">Story &amp; Copy</span>
-                </button>
-                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-photos">
-                  <span class="subnav-badge">2</span>
-                  <span class="subnav-icon">📸</span>
-                  <span class="subnav-label">Photos &amp; Media</span>
-                </button>
-                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-details">
-                  <span class="subnav-badge">3</span>
-                  <span class="subnav-icon">⚙️</span>
-                  <span class="subnav-label">WordPress Details</span>
-                </button>
-                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-social">
-                  <span class="subnav-badge">4</span>
-                  <span class="subnav-icon">💬</span>
-                  <span class="subnav-label">Viral Caption</span>
-                </button>
-                <button type="button" class="article-subnav-btn" data-target-sec="sec-art-revisions">
-                  <span class="subnav-badge">5</span>
-                  <span class="subnav-icon">🔄</span>
-                  <span class="subnav-label">AI Revisions</span>
-                </button>
-              </nav>
-
-              <!-- ANCHOR 1: STORY & COPY (Sections 1 & 2) -->
+              <!-- Zone 2 + Zone 3 Layout: Article & Web Publisher (1600×900) -->
+              <div class="article-3zone-grid">
+                <!-- ZONE 2: CENTER ARTICLE CANVAS (Clean Story & Copy Stage) -->
+                <div class="article-canvas-stage">
+                  <!-- ANCHOR 1: STORY & COPY (Sections 1 & 2) -->
               <div id="sec-art-content" class="article-section-anchor">
               <!-- SECTION 1: ARTICLE DETAILS -->
               <div class="wp-section-block">
@@ -1448,8 +1485,19 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-content -->
+                </div>
 
-              <!-- ANCHOR 2: FEATURED & PHOTOS (Section 3) -->
+                <!-- ZONE 3: RIGHT CONTEXTUAL INSPECTOR (Hero 1600×900, WP Meta/SEO, Caption & Publish) -->
+                <div class="article-inspector-column">
+                  <div class="studio-inspector-card">
+                    <div class="studio-inspector-tab-bar" role="tablist">
+                      <button type="button" class="btn-inspector-tab active" data-art-tab="media">📸 Hero &amp; Media</button>
+                      <button type="button" class="btn-inspector-tab" data-art-tab="meta">⚙️ WP Meta &amp; SEO</button>
+                      <button type="button" class="btn-inspector-tab" data-art-tab="social">💬 Caption</button>
+                    </div>
+
+                    <div id="art-pane-media" class="inspector-pane active">
+                      <!-- ANCHOR 2: FEATURED & PHOTOS (Section 3) -->
               <div id="sec-art-photos" class="article-section-anchor">
               <!-- SECTION 3: FEATURED IMAGE (Verified Rights & Downloads) -->
               <div class="wp-section-block">
@@ -1555,8 +1603,10 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-photos -->
+                    </div>
 
-              <!-- ANCHOR 3: WORDPRESS DETAILS & META (Section 4) -->
+                    <div id="art-pane-meta" class="inspector-pane">
+                      <!-- ANCHOR 3: WORDPRESS DETAILS & META (Section 4) -->
               <div id="sec-art-details" class="article-section-anchor">
               <!-- SECTION 4: REMAINING WORDPRESS FIELDS (Exact Order) -->
               <div class="wp-section-block">
@@ -1748,8 +1798,10 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-details -->
+                    </div>
 
-              <!-- ANCHOR 4: VIRAL SOCIAL CAPTION (Section 5) -->
+                    <div id="art-pane-social" class="inspector-pane">
+                      <!-- ANCHOR 4: VIRAL SOCIAL CAPTION (Section 5) -->
               <div id="sec-art-social" class="article-section-anchor">
               <!-- SECTION 5: VIRAL SOCIAL CAPTION (Instagram, TikTok, Facebook) -->
               <div class="wp-section-block" id="social-caption-section">
@@ -1770,6 +1822,16 @@
                 </div>
               </div>
               </div> <!-- /#sec-art-social -->
+                    </div>
+
+                    <!-- Anchored Primary Export / Publish Footer -->
+                    <div class="inspector-sticky-save" style="flex-wrap:wrap;justify-content:space-between;">
+                      <button type="button" onclick="document.getElementById('btn-save-article-edits')?.click()" class="btn btn-ghost btn-sm" style="font-weight:700;">💾 Save Edits</button>
+                      <button type="button" onclick="document.getElementById('btn-push-wordpress-draft')?.click()" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">🚀 Push to WordPress</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
 
             <!-- Interactive Static Social Post (1080×1350) & 3:4 Profile Crop Card -->
@@ -1799,561 +1861,522 @@
                 </div>
               </div>
 
-              <!-- Format & Design Switch Tabs -->
-              <div class="social-format-tabs" role="tablist">
-                <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed">
-                  📱 Design - 1: Default Main Post (1080×1350)
+              <!-- Design Studio Selector (Future-Ready for Design 1, Design 2, Design 3...) -->
+              <div class="design-studio-switcher-bar">
+                <button type="button" class="btn-design-studio-switch active" data-design="1" id="btn-switch-design-1">
+                  <span class="design-pill-icon">✨</span>
+                  <span class="design-pill-title">Design - 1: Universal Editorial Feed</span>
+                  <span class="design-pill-badge">Single Post • 4:5 / 16:9 / 3:4</span>
                 </button>
-                <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb">
-                  📘 Facebook Landscape (1200×630)
+                <button type="button" class="btn-design-studio-switch" data-design="2" id="btn-switch-design-2">
+                  <span class="design-pill-icon">📑</span>
+                  <span class="design-pill-title">Design - 2: 6-Slide Story Deck</span>
+                  <span class="design-pill-badge">Instagram Carousel • Slides 1–6</span>
                 </button>
-                <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop">
-                  🔍 IG Profile Grid (3:4)
-                </button>
-                <button type="button" class="social-tab-btn" id="btn-jump-carousel-deck" style="background:rgba(2,156,216,0.12);border:1px solid rgba(56,189,248,0.4);color:#38BDF8;" onclick="const cw = document.getElementById('carousel-deck-wrapper'); if(cw){ const b = document.getElementById('carousel-deck-body'); if(b) b.style.display='block'; cw.scrollIntoView({behavior:'smooth'}); }">
-                  📑 Jump to Design - 2 Carousel (6 Slides) ↓
-                </button>
+                <div class="design-studio-coming-soon" title="Ready for future editorial card templates">
+                  <span>🎨 + Design - 3 (Quote / Minimalist - Future)</span>
+                </div>
               </div>
 
-              <!-- Main Visual Workspace for Design - 1 (Default Post) & Facebook / Crop Formats -->
-              <div class="static-post-workspace">
-                <!-- Visual Cards Preview Container (Left Column) -->
-                <div class="static-canvas-card">
-                  <!-- No Image Uploaded Warning Banner -->
-                  <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:12px 16px;border-radius:10px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                      <span style="font-size:1.4rem;">⚠️</span>
+              <!-- ============================================================== -->
+              <!-- WORKSPACE: DESIGN - 1 (UNIVERSAL EDITORIAL SINGLE POST)        -->
+              <!-- ============================================================== -->
+              <div id="design-1-workspace" class="studio-app-grid">
+                <!-- Left Column: Sticky Canvas Stage -->
+                <div class="studio-stage-column">
+                  <div class="studio-stage-card">
+                    <!-- Format Selector Tabs + Safe-Zone Guide Toggle -->
+                    <div class="social-format-tabs" role="tablist" style="margin-bottom:12px;background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;">
+                      <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📱 Feed (4:5)</button>
+                      <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📘 Facebook</button>
+                      <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">🔍 Grid (3:4)</button>
+                      <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐 Guide</button>
+                    </div>
+
+                    <!-- No Image Uploaded Warning Banner -->
+                    <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:10px 14px;border-radius:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                      <span style="font-size:0.78rem;">⚠️ No photo uploaded for social post yet.</span>
+                      <button type="button" class="btn btn-primary btn-xs" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#029CD8;font-size:0.72rem;padding:3px 8px;font-weight:700;">📷 Upload Photo</button>
+                    </div>
+
+                    <!-- Canvas Views -->
+                    <div class="static-canvas-views canvas-safe-zone-wrap" style="position:relative;">
+                      <div id="d1-safe-zone-overlay" class="canvas-safe-zone-overlay hidden"></div>
+                      <div class="static-canvas-col format-col active-format" id="format-view-feed">
+                        <canvas id="static-post-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                      </div>
+                      <div class="static-canvas-col format-col" id="format-view-fb">
+                        <canvas id="static-fb-canvas" width="1200" height="630" style="width:100%;height:auto;aspect-ratio:1200/630;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                      </div>
+                      <div class="static-canvas-col format-col" id="format-view-crop">
+                        <canvas id="static-crop-canvas" width="1012" height="1350" style="width:100%;height:auto;aspect-ratio:3/4;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                      </div>
+                    </div>
+
+                    <!-- Direct Action Bar -->
+                    <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:12px;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
+                      📲 Save to Photos / Camera Roll
+                    </button>
+                    <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
+                      <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
+                      <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Tabbed Inspector Toolbar -->
+                <div class="studio-inspector-card">
+                  <!-- Inspector Tabs Bar -->
+                  <div class="studio-inspector-tab-bar" role="tablist">
+                    <button type="button" class="btn-inspector-tab active" data-d1-tab="photo">📸 Photo &amp; Framing</button>
+                    <button type="button" class="btn-inspector-tab" data-d1-tab="text">✍️ Text &amp; Typography</button>
+                    <button type="button" class="btn-inspector-tab" data-d1-tab="caption">📝 Caption &amp; Hashtags</button>
+                  </div>
+
+                  <!-- Tab 1: Photo & Framing -->
+                  <div id="d1-pane-photo" class="inspector-pane active">
+                    <!-- Photo Upload Box -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
+                        <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
+                      </div>
+                      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                          <span>📷 Upload / Replace Photo</span>
+                        </button>
+                        <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                        <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
+                      </div>
+                    </div>
+
+                    <!-- Picture Adjustment (Zoom & Framing) -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
+                        <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
+                      </div>
+                      <!-- Zoom -->
+                      <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>🔍 Zoom Picture:</span>
+                          <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
+                        </div>
+                        <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
+                      </div>
+                      <!-- Horizontal Pan -->
+                      <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>↔️ Show Left / Center / Right:</span>
+                          <div style="display:flex;gap:4px;">
+                            <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
+                            <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                            <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
+                          </div>
+                        </div>
+                        <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                      </div>
+                      <!-- Vertical Pan -->
                       <div>
-                        <strong style="color:#FFFFFF;font-size:0.92rem;">No Image Uploaded for Social Post</strong>
-                        <p style="margin:2px 0 0;font-size:0.78rem;color:#FCA5A5;">An authentic photo is required before exporting or publishing to Instagram and Facebook.</p>
-                      </div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#029CD8;border:1px solid #168BFF;color:#fff;">
-                      📸 Upload Photo
-                    </button>
-                  </div>
-
-                  <div class="static-canvas-views">
-                    <!-- Format 1: Instagram & Facebook Vertical Feed (1080x1350) - DESIGN 1 (DEFAULT) -->
-                    <div class="static-canvas-col format-col active-format" id="format-view-feed">
-                      <div class="format-header-badge">
-                        <span class="badge" style="background:#0284c7;color:#fff;font-weight:800;letter-spacing:0.02em;">Design - 1 (Default)</span>
-                        <span class="badge" style="background:#E1306C;color:#fff;">Instagram</span>
-                        <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
-                        <span class="format-dim-pill">1080 × 1350 (4:5)</span>
-                      </div>
-                      <span class="static-canvas-label">Full Feed Post • Design - 1 (Universal Vertical)</span>
-                      <canvas id="static-post-canvas" width="1080" height="1350"></canvas>
-                      
-                      <!-- Direct Mobile Save Button -->
-                      <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
-                        📲 Save to Photos / Camera Roll
-                      </button>
-
-                      <div class="static-dl-row">
-                        <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
-                        <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
-                      </div>
-                    </div>
-
-                    <!-- Format 2: Facebook Landscape (1200x630) -->
-                    <div class="static-canvas-col format-col" id="format-view-fb">
-                      <div class="format-header-badge">
-                        <span class="badge" style="background:#1877F2;color:#fff;">Facebook</span>
-                        <span class="format-dim-pill">1200 × 630 (1.91:1)</span>
-                      </div>
-                      <span class="static-canvas-label">Facebook Desktop &amp; Link Post</span>
-                      <canvas id="static-fb-canvas" width="1200" height="630"></canvas>
-                      
-                      <!-- Direct Mobile Save Button -->
-                      <button type="button" id="btn-save-photos-fb" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
-                        📲 Save to Photos / Camera Roll
-                      </button>
-
-                      <div class="static-dl-row">
-                        <button type="button" id="btn-dl-static-fb-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (1200×630)</button>
-                        <button type="button" id="btn-dl-static-fb-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (1200×630)</button>
-                      </div>
-                    </div>
-
-                    <!-- Format 3: Instagram Profile Grid Crop (3:4) -->
-                    <div class="static-canvas-col format-col" id="format-view-crop">
-                      <div class="format-header-badge">
-                        <span class="badge" style="background:#833AB4;color:#fff;">Instagram</span>
-                        <span class="format-dim-pill">1012 × 1350 (3:4)</span>
-                      </div>
-                      <span class="static-canvas-label">Profile Grid Safety Preview</span>
-                      <canvas id="static-crop-canvas" width="1012" height="1350"></canvas>
-                      
-                      <!-- Direct Mobile Save Button -->
-                      <button type="button" id="btn-save-photos-crop" class="btn-save-photos-direct" style="width:100%;margin-top:8px;">
-                        📲 Save to Photos / Camera Roll
-                      </button>
-
-                      <div class="static-dl-row">
-                        <button type="button" id="btn-dl-static-crop-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (3:4)</button>
-                        <button type="button" id="btn-dl-static-crop-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (3:4)</button>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>↕️ Vertical Framing (Pan):</span>
+                          <div style="display:flex;gap:4px;">
+                            <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
+                            <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                            <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
+                          </div>
+                        </div>
+                        <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
                       </div>
                     </div>
                   </div>
-                  <div class="hint-text" style="margin-top:10px;font-size:0.75rem;text-align:center;">
-                    Auto-synced with article photo • Original heart logo • Navy scrim • Blue category badge • High-contrast typography
-                  </div>
-                </div>
 
-                <!-- Direct Editor Controls & Caption for Design - 1 (Right Column) -->
-                <div class="static-controls-col">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                      <span style="font-size:0.86rem;font-weight:800;color:#38BDF8;letter-spacing:-0.01em;">⚙️ Design - 1 Editor Controls</span>
-                      <span class="badge" style="background:#0284c7;color:#fff;font-size:0.68rem;padding:2px 7px;">Default Style</span>
+                  <!-- Tab 2: Text & Typography -->
+                  <div id="d1-pane-text" class="inspector-pane">
+                    <!-- Category Badge -->
+                    <div class="wp-field-wrap">
+                      <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
+                      <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
                     </div>
-                    <span style="font-size:0.72rem;color:#94a3b8;">Single Cover Post</span>
-                  </div>
-                  <!-- Photo Upload / Replacement Box -->
-                  <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
-                      <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
-                    </div>
-                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                      <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
-                        <span>📷 Upload / Replace Photo</span>
-                      </button>
-                      <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                      <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
-                    </div>
-                  </div>
 
-                  <!-- Picture Adjustment (Zoom & Framing) for Design - 1 -->
-                  <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
-                      <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
-                    </div>
-                    <!-- Zoom -->
-                    <div style="margin-bottom:10px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                        <span>🔍 Zoom Picture:</span>
-                        <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
-                      </div>
-                      <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
-                    </div>
-                    <!-- Horizontal Pan (Shift Left / Right) -->
-                    <div style="margin-bottom:10px;">
-                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                        <span>↔️ Show Left / Center / Right:</span>
-                        <div style="display:flex;gap:4px;">
-                          <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
-                          <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                          <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
+                    <!-- Line 1 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-line1">Headline Line 1</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="static-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="white" selected>⚪ White</option>
+                            <option value="blue">🔵 Electric Blue</option>
+                          </select>
                         </div>
                       </div>
-                      <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                      <input type="text" id="static-edit-line1" class="wp-input" />
                     </div>
-                    <!-- Vertical Pan (Shift Top / Bottom) -->
-                    <div>
-                      <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                        <span>↕️ Vertical Framing (Pan):</span>
-                        <div style="display:flex;gap:4px;">
-                          <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
-                          <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                          <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
+
+                    <!-- Line 2 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-line2">Headline Line 2</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="static-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="white" selected>⚪ White</option>
+                            <option value="blue">🔵 Electric Blue</option>
+                          </select>
                         </div>
                       </div>
-                      <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                      <input type="text" id="static-edit-line2" class="wp-input" />
                     </div>
-                  </div>
 
-                  <!-- Category Badge & Headlines -->
-                  <div class="wp-field-wrap">
-                    <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
-                    <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
-                  </div>
+                    <!-- Line 3 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-line3">Headline Line 3 (Optional)</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="static-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="blue" selected>🔵 Electric Blue</option>
+                            <option value="white">⚪ White</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
+                    </div>
 
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-line1">Headline Line 1</label>
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                        <select id="static-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                          <option value="white" selected>⚪ White</option>
-                          <option value="blue">🔵 Electric Blue</option>
-                        </select>
+                    <!-- CTA Line -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="white" selected>⚪ White (Default)</option>
+                            <option value="blue">🔵 Electric Blue</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
+                      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear</button>
                       </div>
                     </div>
-                    <input type="text" id="static-edit-line1" class="wp-input" />
-                  </div>
 
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-line2">Headline Line 2</label>
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                        <select id="static-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                          <option value="white" selected>⚪ White</option>
-                          <option value="blue">🔵 Electric Blue</option>
-                        </select>
+                    <!-- Typography Font Size Slider -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Badge)</label>
+                        <span class="hint-inline" id="static-line2-size-val">32px</span>
                       </div>
+                      <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;cursor:pointer;" />
                     </div>
-                    <input type="text" id="static-edit-line2" class="wp-input" />
                   </div>
 
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-line3">Headline Line 3 (Optional)</label>
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                        <select id="static-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                          <option value="blue" selected>🔵 Electric Blue</option>
-                          <option value="white">⚪ White</option>
-                        </select>
+                  <!-- Tab 3: Caption & Hashtags -->
+                  <div id="d1-pane-caption" class="inspector-pane">
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
+                        <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption</button>
                       </div>
+                      <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
                     </div>
-                    <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
-                  </div>
 
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
-                      <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                        <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                          <option value="white" selected>⚪ White (Default)</option>
-                          <option value="blue">🔵 Electric Blue</option>
-                        </select>
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
+                        <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
                       </div>
+                      <input type="text" id="static-edit-hashtags" class="wp-input" />
+                      <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
                     </div>
-                    <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
-                    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE AT ILOVEFINLAND.NET</button>
-                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
-                      <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear (Hide)</button>
+
+                    <div style="margin-top:8px;">
+                      <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;width:100%;justify-content:center;" title="Preview &amp; Polish Caption &amp; Hashtags with Google Gemini (Free Tier)">
+                        <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
+                        <span>Polish Caption with Gemini</span>
+                      </button>
                     </div>
                   </div>
 
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Category Badge)</label>
-                      <span class="hint-inline" id="static-line2-size-val">32px</span>
-                    </div>
-                    <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;" />
-                  </div>
-
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
-                      <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption + Hashtags</button>
-                    </div>
-                    <textarea id="static-edit-caption" class="wp-textarea" rows="8" style="line-height:1.5;font-size:0.86rem;"></textarea>
-                  </div>
-
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
-                      <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
-                    </div>
-                    <input type="text" id="static-edit-hashtags" class="wp-input" />
-                    <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
-                  </div>
-
-                  <!-- Save & Polish Controls -->
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px;flex-wrap:wrap;">
-                    <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;" title="Polish Caption &amp; Hashtags with ChatGPT (GPT-4o)">
-                      <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                      <span>Polish Caption with ChatGPT</span>
-                    </button>
-                    <button type="button" id="btn-save-static-post" class="btn btn-secondary btn-sm" style="gap:6px;background:#0284c7;border-color:#38bdf8;color:#fff;font-weight:700;">
-                      <span>💾 Save Static Post Adjustments</span>
+                  <!-- Sticky Save Footer -->
+                  <div class="inspector-sticky-save">
+                    <button type="button" id="btn-save-static-post" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+                      <span>💾 Save Changes to Article &amp; Post</span>
                     </button>
                   </div>
                 </div>
               </div>
 
               <!-- ============================================================== -->
-              <!-- CAROUSEL DECK: DESIGN - 2 (6 SLIDES: COVER + SLIDES 2 TO 6)   -->
+              <!-- WORKSPACE: DESIGN - 2 (6-SLIDE INSTAGRAM CAROUSEL DECK)        -->
               <!-- ============================================================== -->
-              <div id="carousel-deck-wrapper" style="margin-top:36px;padding-top:24px;border-top:1.5px dashed rgba(56,189,248,0.25);">
-                <!-- Header Strip -->
-                <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.3);border-radius:12px;padding:14px 18px;flex-wrap:wrap;gap:12px;">
-                  <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #10b981 0%, #0284c7 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(16,185,129,0.3);font-size:1.15rem;">
-                      📑
+              <div id="design-2-workspace" class="studio-app-grid" style="display:none;">
+                <!-- Left Column: Sticky Carousel Stage -->
+                <div class="studio-stage-column">
+                  <div class="studio-stage-card">
+                    <!-- Slide Selector Pills (1 to 6) right on top of canvas -->
+                    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                      <button type="button" class="btn-carousel-tab active" data-slide="1" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;white-space:nowrap;">1 (Cover)</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="2" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 2</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 3</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 4</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 5</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">6 (CTA)</button>
                     </div>
-                    <div>
-                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <strong style="color:#38BDF8;font-size:0.98rem;letter-spacing:-0.01em;">Instagram Carousel (Design - 2: 6-Slide Story Deck)</strong>
-                        <span class="badge" style="background:#10B981;color:#fff;font-size:0.68rem;padding:2px 7px;font-weight:700;">Design - 2</span>
-                        <span class="badge" style="background:#0284c7;color:#fff;font-size:0.68rem;padding:2px 7px;">6 Slides</span>
-                      </div>
-                      <span style="font-size:0.75rem;color:#94A3B8;display:block;margin-top:2px;">Slide 1 (Cover) + Slides 2–6 • Modern Scandinavian Frosted Glass • Title Case • Extensible for Design - 3</span>
-                    </div>
-                  </div>
 
-                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <button type="button" id="btn-download-all-carousel-slides" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:8px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(2,156,216,0.35);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                      <span>📲 Download All Slides (1 to 6) Batch</span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
+                      <strong id="carousel-active-slide-title" style="font-size:0.86rem;color:#38BDF8;font-weight:800;">Slide 1 (Main Cover Story)</strong>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <button type="button" id="btn-toggle-d2-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:3px 7px;">📐 Guide</button>
+                        <span id="carousel-active-slide-badge" class="badge" style="background:#0284c7;color:#fff;font-weight:800;font-size:0.68rem;padding:2px 7px;">Slide 1 of 6</span>
+                      </div>
+                    </div>
+
+                    <!-- Carousel Canvas -->
+                    <div class="canvas-safe-zone-wrap" style="position:relative;margin-bottom:12px;">
+                      <div id="d2-safe-zone-overlay" class="canvas-safe-zone-overlay hidden"></div>
+                      <canvas id="carousel-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
+                    </div>
+
+                    <!-- Direct Action Bar -->
+                    <button type="button" id="btn-save-carousel-slide-photos" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
+                      📲 Save This Slide to Photos
                     </button>
-                    <!-- Minimize / Maximize Toggle Button -->
-                    <button type="button" id="btn-toggle-carousel-deck" class="btn btn-secondary btn-sm" style="padding:8px 14px;font-size:0.78rem;font-weight:700;border-radius:8px;border:1px solid rgba(255,255,255,0.18);display:inline-flex;align-items:center;gap:6px;">
-                      <span id="carousel-deck-toggle-chevron">▲</span> <span id="carousel-deck-toggle-label">Minimize Design - 2 (Slides 1–6)</span>
+                    <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
+                      <button type="button" id="btn-dl-carousel-slide-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
+                      <button type="button" id="btn-dl-carousel-slide-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                    </div>
+                    <button type="button" id="btn-download-all-carousel-slides" class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;background:rgba(2,156,216,0.15);border:1px solid rgba(56,189,248,0.4);color:#38BDF8;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+                      <span>📦 Download All Slides (1 to 6) Batch</span>
                     </button>
                   </div>
                 </div>
 
-                <!-- Body for Slides 1 to 6 (Open by default) -->
-                <div id="carousel-deck-body" style="display:block;margin-top:18px;">
-                  <!-- Slide Tabs (1, 2, 3, 4, 5, 6) -->
-                  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <button type="button" class="btn-carousel-tab active" data-slide="1" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;">Slide 1 (Cover)</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="2" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 2</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 3</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 4</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 5</button>
-                    <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">Slide 6 (CTA)</button>
+                <!-- Right Column: Tabbed Carousel Inspector -->
+                <div class="studio-inspector-card">
+                  <!-- Inspector Tabs Bar -->
+                  <div class="studio-inspector-tab-bar" role="tablist">
+                    <button type="button" class="btn-inspector-tab active" data-d2-tab="photo">📸 Slide Photo</button>
+                    <button type="button" class="btn-inspector-tab" data-d2-tab="text">✍️ Headlines &amp; Text</button>
+                    <button type="button" class="btn-inspector-tab" data-d2-tab="style">🎨 Card Tone &amp; Arrow</button>
                   </div>
 
-                  <!-- 2-Column Deck Workspace matching Desktop Grid -->
-                  <div class="carousel-deck-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:28px;align-items:start;">
-                    <!-- Left: Slide Canvas Preview & Downloads -->
-                    <div style="max-width:530px;width:100%;margin:0 auto;">
-                      <div style="padding:16px;background:rgba(2,156,216,0.06);border:1.5px solid rgba(56,189,248,0.35);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.35);">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-                          <div style="display:flex;align-items:center;gap:8px;">
-                            <span style="font-size:1.2rem;">✨</span>
-                            <div>
-                              <strong id="carousel-active-slide-title" style="display:block;font-size:0.92rem;color:#38BDF8;font-weight:800;">Slide 1 (Main Cover Story)</strong>
-                              <span style="font-size:0.72rem;color:#94A3B8;">4:5 Vertical • Editorial Format</span>
-                            </div>
-                          </div>
-                          <span id="carousel-active-slide-badge" class="badge" style="background:#0284c7;color:#fff;font-weight:800;font-size:0.68rem;padding:2px 7px;">Slide 1 of 6</span>
-                        </div>
-
-                        <div style="position:relative;margin-bottom:12px;">
-                          <canvas id="carousel-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:block;background:#061426;"></canvas>
-                        </div>
-
-                        <!-- Direct Save / Download Controls for Active Slide -->
-                        <button type="button" id="btn-save-carousel-slide-photos" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
-                          📲 Save This Slide to Photos
+                  <!-- Tab 1: Slide Photo & Framing -->
+                  <div id="d2-pane-photo" class="inspector-pane active">
+                    <!-- Photo Upload Box -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;" id="carousel-photo-label">📸 Slide Photo</label>
+                        <span id="carousel-photo-status-badge" class="badge badge-alert">No Photo</span>
+                      </div>
+                      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <button type="button" id="btn-upload-carousel-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-carousel-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                          <span>📷 Upload Photo for This Slide</span>
                         </button>
-
-                        <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
-                          <button type="button" id="btn-dl-carousel-slide-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
-                          <button type="button" id="btn-dl-carousel-slide-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
-                        </div>
-
-                        <!-- Location & Layout Style for Active Slide -->
-                        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;gap:10px;">
-                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-input-location">📍 Location Stamp:</label>
-                            <input type="text" id="carousel-input-location" class="wp-input" style="flex:1;max-width:210px;font-size:0.78rem;padding:5px 8px;border-radius:6px;" placeholder="Leave empty to hide" />
-                          </div>
-
-                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                            <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-select-card-style">Layout Variant:</label>
-                            <select id="carousel-select-card-style" class="wp-input" style="flex:1;max-width:210px;font-size:0.78rem;padding:5px 8px;border-radius:6px;">
-                              <option value="frosted" selected>Frosted Glass Card (Modern)</option>
-                              <option value="minimal">Minimal Floating Pill</option>
-                              <option value="clean">Clean Photo (Full Bleed)</option>
-                              <option value="magazine">Magazine Cover (Vignette)</option>
-                            </select>
-                          </div>
-
-                          <!-- Card Tone / Darkness (Lighter / Darker Option) -->
-                          <div style="display:flex;flex-direction:column;gap:5px;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                              <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-select-card-tone">🎨 Card Tone / Darkness:</label>
-                              <select id="carousel-select-card-tone" class="wp-input" style="flex:1;max-width:210px;font-size:0.78rem;padding:5px 8px;border-radius:6px;">
-                                <option value="86" selected>Dark Navy (86% Default)</option>
-                                <option value="96">Deep Midnight (96% Darker)</option>
-                                <option value="100">Solid Navy (100% Max Dark)</option>
-                                <option value="70">Medium Translucent (70%)</option>
-                                <option value="50">Light Translucent (50%)</option>
-                                <option value="35">Soft Glass (35% Lightest)</option>
-                                <option value="custom">Custom Opacity</option>
-                              </select>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:8px;padding-left:2px;">
-                              <span style="font-size:0.72rem;color:#94A3B8;">Darkness:</span>
-                              <input type="range" id="carousel-range-card-opacity" min="25" max="100" step="1" value="86" style="flex:1;cursor:pointer;" />
-                              <span id="carousel-card-opacity-val" style="font-size:0.74rem;color:#38BDF8;font-weight:700;min-width:34px;">86%</span>
-                            </div>
-                          </div>
-
-                          <!-- Next Slide Arrow with Prominent Styling -->
-                          <div style="display:flex;flex-direction:column;gap:6px;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                              <label style="font-size:0.76rem;color:#CBD5E1;font-weight:700;margin:0;" for="carousel-check-swipe-arrow">👉 Next Slide Arrow:</label>
-                              <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
-                                <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
-                                <span>Show Slide Arrow</span>
-                              </label>
-                            </div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                              <label style="font-size:0.72rem;color:#94A3B8;margin:0;" for="carousel-select-arrow-style">Arrow Style:</label>
-                              <select id="carousel-select-arrow-style" class="wp-input" style="flex:1;max-width:210px;font-size:0.76rem;padding:4px 6px;border-radius:6px;">
-                                <option value="brand" selected>ILoveFinland ➔ (Brand Slide)</option>
-                                <option value="swipe">Swipe ➔ (Action Prompt)</option>
-                                <option value="next">Next ➔ (Story Flow)</option>
-                                <option value="arrow_only">➔ (Large Glowing Arrow Only)</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
+                        <input type="file" id="input-upload-carousel-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                        <span id="carousel-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
                       </div>
                     </div>
 
-                    <!-- Right: Slide Specific Edit Controls -->
-                    <div style="width:100%;">
-                      <!-- Photo Upload for this Slide -->
-                      <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                          <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;" id="carousel-photo-label">📸 Slide Photo</label>
-                          <span id="carousel-photo-status-badge" class="badge badge-alert">No Photo</span>
-                        </div>
-                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                          <button type="button" id="btn-upload-carousel-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-carousel-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
-                            <span>📷 Upload Photo for This Slide</span>
-                          </button>
-                          <input type="file" id="input-upload-carousel-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                          <span id="carousel-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
-                        </div>
+                    <!-- Slide Picture Adjustment -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
+                        <button type="button" id="btn-carousel-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
                       </div>
-
-                      <!-- Picture Adjustment (Zoom & Framing) for Active Slide -->
-                      <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                          <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
-                          <button type="button" id="btn-carousel-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
+                      <!-- Zoom -->
+                      <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>🔍 Zoom Picture:</span>
+                          <span id="carousel-photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
                         </div>
-                        <!-- Zoom -->
-                        <div style="margin-bottom:10px;">
-                          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                            <span>🔍 Zoom Picture:</span>
-                            <span id="carousel-photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
-                          </div>
-                          <input type="range" id="carousel-photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
-                        </div>
-                        <!-- Horizontal Pan (Shift Left / Right) -->
-                        <div style="margin-bottom:10px;">
-                          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                            <span>↔️ Show Left / Center / Right:</span>
-                            <div style="display:flex;gap:4px;">
-                              <button type="button" id="btn-carousel-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
-                              <button type="button" id="btn-carousel-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                              <button type="button" id="btn-carousel-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
-                            </div>
-                          </div>
-                          <input type="range" id="carousel-photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
-                        </div>
-                        <!-- Vertical Pan (Shift Top / Bottom) -->
-                        <div>
-                          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                            <span>↕️ Vertical Framing (Pan):</span>
-                            <div style="display:flex;gap:4px;">
-                              <button type="button" id="btn-carousel-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
-                              <button type="button" id="btn-carousel-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                              <button type="button" id="btn-carousel-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
-                            </div>
-                          </div>
-                          <input type="range" id="carousel-photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
-                        </div>
+                        <input type="range" id="carousel-photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
                       </div>
-
-                      <!-- Category Badge Text -->
-                      <div class="wp-field-wrap">
-                        <label class="label-sm" for="carousel-edit-badge">Category / Slide Badge Text</label>
-                        <input type="text" id="carousel-edit-badge" class="wp-input" maxlength="20" placeholder="e.g. NEWS or SLIDE 01" />
-                      </div>
-
-                      <!-- Headline Line 1 & Line 2 -->
-                      <div class="wp-field-wrap">
-                        <div class="wp-field-label-row">
-                          <label class="label-sm" for="carousel-edit-line1">Headline Line 1</label>
-                          <div style="display:flex;align-items:center;gap:6px;">
-                            <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                            <select id="carousel-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                              <option value="white" selected>⚪ White</option>
-                              <option value="blue">🔵 Electric Blue</option>
-                            </select>
+                      <!-- Horizontal Pan -->
+                      <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>↔️ Show Left / Center / Right:</span>
+                          <div style="display:flex;gap:4px;">
+                            <button type="button" id="btn-carousel-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
+                            <button type="button" id="btn-carousel-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                            <button type="button" id="btn-carousel-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
                           </div>
                         </div>
-                        <input type="text" id="carousel-edit-line1" class="wp-input" placeholder="e.g. The Paperless Lie:" />
+                        <input type="range" id="carousel-photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
                       </div>
-
-                      <div class="wp-field-wrap">
-                        <div class="wp-field-label-row">
-                          <label class="label-sm" for="carousel-edit-line2">Headline Line 2</label>
-                          <div style="display:flex;align-items:center;gap:6px;">
-                            <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                            <select id="carousel-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                              <option value="white" selected>⚪ White</option>
-                              <option value="blue">🔵 Electric Blue</option>
-                            </select>
+                      <!-- Vertical Pan -->
+                      <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>↕️ Vertical Framing (Pan):</span>
+                          <div style="display:flex;gap:4px;">
+                            <button type="button" id="btn-carousel-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
+                            <button type="button" id="btn-carousel-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
+                            <button type="button" id="btn-carousel-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
                           </div>
                         </div>
-                        <input type="text" id="carousel-edit-line2" class="wp-input" placeholder="e.g. Examining Digital Illusions" />
-                      </div>
-
-                      <div class="wp-field-wrap">
-                        <div class="wp-field-label-row">
-                          <label class="label-sm" for="carousel-edit-line3">Headline Line 3 (Optional)</label>
-                          <div style="display:flex;align-items:center;gap:6px;">
-                            <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                            <select id="carousel-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                              <option value="blue" selected>🔵 Electric Blue</option>
-                              <option value="white">⚪ White</option>
-                            </select>
-                          </div>
-                        </div>
-                        <input type="text" id="carousel-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
-                      </div>
-
-                      <!-- Website CTA / Footer Line -->
-                      <div class="wp-field-wrap">
-                        <div class="wp-field-label-row">
-                          <label class="label-sm" for="carousel-edit-cta">Website CTA / Footer Line (Optional)</label>
-                          <div style="display:flex;align-items:center;gap:6px;">
-                            <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                            <select id="carousel-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                              <option value="white">⚪ White (Default)</option>
-                              <option value="blue" selected>🔵 Electric Blue</option>
-                            </select>
-                          </div>
-                        </div>
-                        <input type="text" id="carousel-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
-                        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                          <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE</button>
-                          <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="READ FULL STORY • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL STORY</button>
-                          <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear</button>
-                        </div>
-                      </div>
-
-                      <!-- Typography Font Size Slider -->
-                      <div class="wp-field-wrap">
-                        <div class="wp-field-label-row">
-                          <label class="label-sm" for="carousel-edit-fontsize">Typography Font Size (Scales Slide Lines &amp; Badge)</label>
-                          <span class="hint-inline" id="carousel-fontsize-val">44px</span>
-                        </div>
-                        <input type="range" id="carousel-edit-fontsize" min="20" max="52" step="1" value="44" style="width:100%;" />
-                      </div>
-
-                      <!-- Quick Presets & Actions -->
-                      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-                        <button type="button" id="btn-carousel-clean-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#38BDF8;font-weight:700;border-radius:4px;">🖼️ Clean Photo Only</button>
-                        <button type="button" id="btn-carousel-frosted-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;border-radius:4px;">📄 Frosted Glass Card</button>
-                        <button type="button" id="btn-carousel-autotitlecase" class="btn btn-secondary btn-xs" style="font-size:0.72rem;padding:5px 10px;border-radius:4px;">🔤 Auto Title Case</button>
-                        <button type="button" id="btn-carousel-rerender" class="btn btn-primary btn-xs" style="font-size:0.72rem;padding:5px 10px;background:#029CD8;font-weight:700;border-radius:4px;">✨ Re-render</button>
-                      </div>
-
-                      <!-- Dedicated Save Changes to Article & Post Button for Design - 2 -->
-                      <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">
-                        <button type="button" id="btn-save-carousel-changes" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:11px 22px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,132,199,0.35);display:inline-flex;align-items:center;gap:8px;">
-                          <span>💾 Save Changes to Article &amp; Post</span>
-                        </button>
+                        <input type="range" id="carousel-photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
                       </div>
                     </div>
+                  </div>
+
+                  <!-- Tab 2: Headlines & Text -->
+                  <div id="d2-pane-text" class="inspector-pane">
+                    <!-- Badge -->
+                    <div class="wp-field-wrap">
+                      <label class="label-sm" for="carousel-edit-badge">Category / Slide Badge Text</label>
+                      <input type="text" id="carousel-edit-badge" class="wp-input" maxlength="20" placeholder="e.g. NEWS or SLIDE 01" />
+                    </div>
+
+                    <!-- Line 1 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-line1">Headline Line 1</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="carousel-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="white" selected>⚪ White</option>
+                            <option value="blue">🔵 Electric Blue</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input type="text" id="carousel-edit-line1" class="wp-input" placeholder="e.g. The Paperless Lie:" />
+                    </div>
+
+                    <!-- Line 2 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-line2">Headline Line 2</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="carousel-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="white" selected>⚪ White</option>
+                            <option value="blue">🔵 Electric Blue</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input type="text" id="carousel-edit-line2" class="wp-input" placeholder="e.g. Examining Digital Illusions" />
+                    </div>
+
+                    <!-- Line 3 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-line3">Headline Line 3 (Optional)</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="carousel-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="blue" selected>🔵 Electric Blue</option>
+                            <option value="white">⚪ White</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input type="text" id="carousel-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
+                    </div>
+
+                    <!-- CTA -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-cta">Website CTA / Footer Line (Optional)</label>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
+                          <select id="carousel-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                            <option value="white">⚪ White (Default)</option>
+                            <option value="blue" selected>🔵 Electric Blue</option>
+                          </select>
+                        </div>
+                      </div>
+                      <input type="text" id="carousel-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
+                      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:border-radius:4px;">+ DISCOVER MORE</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="READ FULL STORY • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:border-radius:4px;">+ READ FULL STORY</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:border-radius:4px;">✕ Clear</button>
+                      </div>
+                    </div>
+
+                    <!-- Typography Slider -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-fontsize">Typography Font Size (Scales Slide Lines &amp; Badge)</label>
+                        <span class="hint-inline" id="carousel-fontsize-val">44px</span>
+                      </div>
+                      <input type="range" id="carousel-edit-fontsize" min="20" max="52" step="1" value="44" style="width:100%;cursor:pointer;" />
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+                      <button type="button" id="btn-carousel-clean-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#38BDF8;font-weight:700;border-radius:4px;">🖼️ Clean Photo</button>
+                      <button type="button" id="btn-carousel-frosted-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;border-radius:4px;">📄 Frosted Glass</button>
+                      <button type="button" id="btn-carousel-autotitlecase" class="btn btn-secondary btn-xs" style="font-size:0.72rem;padding:4px 8px;border-radius:4px;">🔤 Title Case</button>
+                      <button type="button" id="btn-carousel-rerender" class="btn btn-primary btn-xs" style="font-size:0.72rem;padding:4px 8px;background:#029CD8;font-weight:700;border-radius:4px;">✨ Re-render</button>
+                    </div>
+                  </div>
+
+                  <!-- Tab 3: Card Tone & Slide Arrow -->
+                  <div id="d2-pane-style" class="inspector-pane">
+                    <!-- Location Stamp -->
+                    <div class="wp-field-wrap">
+                      <label class="label-sm" for="carousel-input-location">📍 Location Stamp</label>
+                      <input type="text" id="carousel-input-location" class="wp-input" placeholder="Leave empty to hide" />
+                    </div>
+
+                    <!-- Layout Variant -->
+                    <div class="wp-field-wrap">
+                      <label class="label-sm" for="carousel-select-card-style">Layout Variant</label>
+                      <select id="carousel-select-card-style" class="wp-input">
+                        <option value="frosted" selected>Frosted Glass Card (Modern)</option>
+                        <option value="minimal">Minimal Floating Pill</option>
+                        <option value="clean">Clean Photo (Full Bleed)</option>
+                        <option value="magazine">Magazine Cover (Vignette)</option>
+                      </select>
+                    </div>
+
+                    <!-- Card Tone / Darkness -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                      <label class="label-sm" for="carousel-select-card-tone" style="color:#FFFFFF;font-weight:700;">🎨 Card Tone / Darkness (Lighter or Darker)</label>
+                      <select id="carousel-select-card-tone" class="wp-input" style="margin-bottom:8px;">
+                        <option value="86" selected>Dark Navy (86% Default)</option>
+                        <option value="96">Deep Midnight (96% Darker)</option>
+                        <option value="100">Solid Navy (100% Max Dark)</option>
+                        <option value="70">Medium Translucent (70%)</option>
+                        <option value="50">Light Translucent (50%)</option>
+                        <option value="35">Soft Glass (35% Lightest)</option>
+                        <option value="custom">Custom Opacity</option>
+                      </select>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:0.72rem;color:#94A3B8;">Darkness:</span>
+                        <input type="range" id="carousel-range-card-opacity" min="25" max="100" step="1" value="86" style="flex:1;cursor:pointer;" />
+                        <span id="carousel-card-opacity-val" style="font-size:0.74rem;color:#38BDF8;font-weight:700;min-width:34px;">86%</span>
+                      </div>
+                    </div>
+
+                    <!-- Next Slide Arrow -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <label class="label-sm" for="carousel-check-swipe-arrow" style="margin:0;color:#FFFFFF;font-weight:700;">👉 Next Slide Arrow</label>
+                        <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
+                          <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
+                          <span>Show Slide Arrow</span>
+                        </label>
+                      </div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                        <label style="font-size:0.72rem;color:#94A3B8;margin:0;" for="carousel-select-arrow-style">Arrow Style:</label>
+                        <select id="carousel-select-arrow-style" class="wp-input" style="flex:1;max-width:210px;font-size:0.76rem;padding:4px 6px;border-radius:6px;">
+                          <option value="brand" selected>ILoveFinland ➔ (Brand Slide)</option>
+                          <option value="swipe">Swipe ➔ (Action Prompt)</option>
+                          <option value="next">Next ➔ (Story Flow)</option>
+                          <option value="arrow_only">➔ (Large Glowing Arrow Only)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Sticky Save Footer -->
+                  <div class="inspector-sticky-save">
+                    <button type="button" id="btn-save-carousel-changes" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+                      <span>💾 Save Changes to Article &amp; Post</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2369,8 +2392,7 @@
                 <button id="btn-dl-ai-png"></button>
                 <button id="btn-refresh-ai-canvas"></button>
                 <button id="btn-auto-titlecase"></button>
-                <textarea id="social-caption-textarea"></textarea>
-                <button id="btn-generate-social-caption"></button>
+                
               </div>
             </section>
           </div>
@@ -2385,7 +2407,7 @@
                 <div>
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <h2 class="panel-title" style="margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-0.01em;">Editorial AI Co-Pilot &amp; Revision Desk</h2>
-                    <span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;">GPT-4o Assisted</span>
+                    <span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;">Google Gemini Free Tier</span>
                   </div>
                   <p class="hint-text" style="margin:3px 0 0;font-size:0.78rem;color:#94a3b8;line-height:1.4;">
                     Instruct the AI in plain English to revise any part of this story — photo credits, captions, headline, tone, paragraphs, category, or city.
@@ -3425,7 +3447,6 @@
               <option value="Travel">Travel</option>
               <option value="Food & Restaurants">Food &amp; Restaurants</option>
               <option value="Events">Events</option>
-              <option value="Shopping">Shopping</option>
             </select>
           </div>
           <div>
@@ -3532,13 +3553,47 @@
     </div>
   </div>
 
+  <!-- Gemini Editorial Side-by-Side Diff Preview Modal (Apply vs Discard) -->
+  <div id="gemini-diff-modal" class="modal-backdrop hidden" style="position:fixed;inset:0;background:rgba(4,12,24,0.82);backdrop-filter:blur(6px);z-index:1200;display:flex;align-items:center;justify-content:center;padding:18px;">
+    <div style="width:100%;max-width:1040px;max-height:90vh;background:#091B33;border:1.5px solid rgba(56,189,248,0.45);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.7);display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;background:#061224;border-bottom:1px solid rgba(75,137,188,0.25);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.1rem;">✨</span>
+            <h3 id="gemini-diff-title" style="margin:0;font-size:1.02rem;color:#fff;font-weight:800;">Gemini Proposal Review</h3>
+            <span id="gemini-diff-model-badge" class="badge" style="background:rgba(2,156,216,0.22);color:#38BDF8;border:1px solid rgba(56,189,248,0.4);font-size:0.7rem;padding:2px 8px;">gemini-3.8-flash • $0 Free Tier</span>
+          </div>
+          <p id="gemini-diff-summary" style="margin:4px 0 0;font-size:0.78rem;color:#94A3B8;">Compare your current text with Gemini's proposal before applying.</p>
+        </div>
+        <button type="button" id="btn-gemini-diff-close" class="btn btn-ghost btn-sm" style="font-size:1rem;">✕</button>
+      </div>
+
+      <div id="gemini-diff-body" style="padding:18px 20px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;">
+        <div style="background:#061224;border:1px solid rgba(148,163,184,0.25);border-radius:12px;padding:14px;">
+          <div style="font-size:0.74rem;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Current Manual Draft</div>
+          <div id="gemini-diff-current" style="font-size:0.84rem;color:#CBD5E1;line-height:1.55;white-space:pre-wrap;word-break:break-word;"></div>
+        </div>
+        <div style="background:rgba(0,53,128,0.24);border:1.5px solid rgba(56,189,248,0.45);border-radius:12px;padding:14px;">
+          <div style="font-size:0.74rem;font-weight:800;color:#38BDF8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">✨ Google Gemini Proposal</div>
+          <div id="gemini-diff-proposed" style="font-size:0.84rem;color:#FFFFFF;line-height:1.55;white-space:pre-wrap;word-break:break-word;"></div>
+        </div>
+      </div>
+
+      <div style="padding:14px 20px;background:#061224;border-top:1px solid rgba(75,137,188,0.25);display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+        <button type="button" id="btn-gemini-diff-discard" class="btn btn-ghost" style="padding:9px 18px;font-weight:700;">✕ Discard (Keep Mine)</button>
+        <button type="button" id="btn-gemini-diff-apply" class="btn btn-primary" style="background:linear-gradient(135deg,#029CD8 0%,#10B981 100%);color:#fff;border:none;padding:9px 22px;font-weight:800;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">✅ Apply Proposal to Editor</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=94.0"></script>
+  <script src="/app.js?v=96.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
-  <script src="/finnish-lab.js?v=85.1"></script>
-  <script src="/studio-ai-chat.js?v=88.0"></script>
+  <script src="/finnish-lab.js?v=97.0"></script>
+  <script src="/finnish-lab-pro.js?v=96.0"></script>
+  <script src="/studio-ai-chat.js?v=96.0"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');
