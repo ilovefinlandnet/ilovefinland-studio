@@ -680,13 +680,15 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
 
     if mode == "quick_answer":
         return base + (
-            "\nANSWER MODE: CONCISE BILINGUAL TUTOR CARD (ZERO TEXT WALLS).\n"
-            "Keep your reply warm, encouraging, and concise (easy to read in 5 seconds, zero bloated paragraphs):\n"
-            "🇫🇮 **Finnish:** <Clear, natural school-grade A1/A2 Finnish reply or example>\n"
-            "🇬🇧 **English:** <Natural English translation>\n"
-            "💡 **Quick Note:**\n"
-            "- <1–2 short vocab or grammar bullets with base form (perusmuoto)>\n"
-            "If an image/homework sheet was attached, answer or explain the exercise concisely in Finnish + English."
+            "\nANSWER MODE: NATURAL EVERYDAY BILINGUAL TUTOR (CONCISE, ZERO TEXT WALLS).\n"
+            "The learner may ask ANY everyday question (like weather, time, food, shopping, daily life) OR a Finnish language question.\n"
+            "- If they ask a real-life question (e.g. 'How is the weather today?'), ALWAYS answer their real question naturally first (using any [LIVE REAL-TIME WEATHER DATA] provided), AND immediately teach the exact Finnish for both asking and saying it!\n"
+            "Use this clean, scannable format:\n"
+            "🇬🇧 **Answer:** <Short, warm real answer in English>\n"
+            "🇫🇮 **In Finnish:** <How to ask and/or say it in clear school-grade A1 Finnish, with English meaning>\n"
+            "💡 **Key Words:**\n"
+            "- **<word>** (*<base form>*) — <English meaning> (1–3 brief bullets max)\n"
+            "If an image/homework sheet was attached, answer or explain it concisely in Finnish + English."
         )
 
     if mode == "practice":
@@ -698,14 +700,14 @@ def _build_system_prompt(mode: str, level: str, roast_mode: bool = True) -> str:
             "3) Ask ONE short A1 Finnish follow-up question (with English translation)."
         )
 
-    # Default: teach_me (concise, scannable bilingual card)
+    # Default: teach_me (natural everyday bilingual card)
     return base + (
-        "\nANSWER MODE: CONCISE BILINGUAL TUTOR.\n"
-        "Give a warm, clear, concise explanation (avoid long walls of text):\n"
-        "🇫🇮 **Finnish:** <Clear school-grade Finnish answer / example>\n"
-        "🇬🇧 **English:** <Clear English translation>\n"
-        "💡 **Vocab & Grammar Notes:**\n"
-        "- <1–2 brief, high-value notes showing base form (perusmuoto) or ending rule>"
+        "\nANSWER MODE: NATURAL EVERYDAY BILINGUAL TUTOR.\n"
+        "Answer any real-world or Finnish question warmly and concisely (no long walls of text):\n"
+        "🇬🇧 **Answer:** <Clear English answer or explanation>\n"
+        "🇫🇮 **In Finnish:** <Natural school-grade A1 Finnish way to ask/say it + English translation>\n"
+        "💡 **Key Words:**\n"
+        "- <1–3 brief vocab/grammar bullets with base form (perusmuoto)>"
     )
 
 
@@ -2015,13 +2017,13 @@ def admin_update_user_status(target_email: str, action: str, db_path: str = FINN
     return list_all_users_for_admin(db_path), 200
 
 
-# ---------- LONGER BEGINNER WALK & LISTEN AUDIO COURSE (20-30 ITEMS, $0 FREE TIER) ----------
+# ---------- LONGER 20+ MIN BEGINNER WALK & LISTEN AUDIO COURSE (30-40 ITEMS, $0 FREE TIER) ----------
 def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
-    """Generate a 20-30 item (~10-15+ min) beginner Walk & Listen passive memorization course from topic OR homework photo."""
+    """Generate a 30-40 item (~20+ min) beginner Walk & Listen passive memorization course from topic OR homework photo."""
     topic = (payload.get("topic") or "").strip()[:140]
     level = (payload.get("level") or "A1").strip().upper()
     attachments = payload.get("attachments") or []
-    item_count = max(20, min(30, int(payload.get("count", 24) or 24)))
+    item_count = max(20, min(40, int(payload.get("count", 34) or 34)))
     if not topic and not attachments:
         return {"ok": False, "error": "INVALID_INPUT", "message": "Please pick a beginner preset, type a topic, or upload a homework photo."}, 400
 
@@ -2446,7 +2448,7 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
         {"fi": str(it.get("fi") or "").strip(), "en": str(it.get("en") or "").strip()}
         for it in raw_items
         if str(it.get("fi") or "").strip() and str(it.get("en") or "").strip()
-    ][:30]
+    ][:45]
     if not items:
         return {"ok": False, "error": "EMPTY_ITEMS", "message": "No Walk & Listen items provided."}, 400
 

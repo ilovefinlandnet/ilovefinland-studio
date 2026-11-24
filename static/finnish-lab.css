@@ -2574,4 +2574,87 @@ body:has(#view-finnish-lab:not(.hidden)),
     box-shadow: 0 -8px 24px rgba(2, 12, 27, 0.65);
     box-sizing: border-box;
   }
+
+  .fl3-select,
+  .fl3-input-sm {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+}
+
+/* v106.0 Everyday Learning Controls: Progress Bar, Select, Input, Live History & Jump-to-Latest */
+.fl3-progress-wrap {
+  margin: 0 0 10px;
+}
+
+.fl3-progress-track {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: #0A192F;
+  border: 1px solid #1E3A5F;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.fl3-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0052B4, #38BDF8);
+  transition: width 0.25s linear;
+}
+
+.fl3-select,
+.fl3-input-sm {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0A192F;
+  color: #FFFFFF;
+  border: 1px solid #1E3A5F;
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.fl3-select:focus,
+.fl3-input-sm:focus {
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.fl3-input-sm::placeholder {
+  color: #64748B;
+}
+
+.fl3-live-history {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #1E3A5F;
+}
+
+.fl3-scroll-latest-btn {
+  position: absolute;
+  right: 22px;
+  bottom: 138px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #003580, #0052B4);
+  color: #FFFFFF;
+  border: 1px solid #38BDF8;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(2, 12, 27, 0.55);
+}
+
+.fl3-scroll-latest-btn:hover {
+  filter: brightness(1.1);
 }

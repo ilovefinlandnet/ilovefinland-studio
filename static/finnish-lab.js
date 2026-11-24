@@ -33,7 +33,12 @@
 
   const state = {
     activeTab: "chat", // "chat" | "walk" | "notebook"
-    notebookTableId: "olla", // "olla" | "onko" | "days" | "everyday"
+    notebookTableId: "olla", // "olla" | "onko" | "days" | "numbers" | "everyday"
+    showSpokenTable: false,
+    quizSource: "mixed", // "mixed" | "podcast" | "grammar"
+    quizInputMode: "choice", // "choice" | "type"
+    podcastTotalDur: 0,
+    podcastCurSec: 0,
     mode: "chat", // legacy alias synced with activeTab
     studyTool: null,
     podcastEpisodeId: "pod_cafe",
@@ -322,44 +327,112 @@
     return mistakeRe.test(low);
   }
 
-  /* ---------- LONGER BEGINNER WALK & LISTEN AUDIO COURSES (20-24 ITEMS, ~10-15 MIN) ---------- */
+  /* ---------- FULL A1 FINNISH BOOK 20+ MIN WALK & LISTEN LIBRARY (32-36 ITEMS EACH, LOOP ON BY DEFAULT) ---------- */
   const PODCAST_EPISODES = [
     {
-      id: "pod_seasons",
-      title: "🍂 Seasons & Weather",
-      duration: "~12–15 min",
+      id: "pod_today_a1",
+      title: "🌅 Today's A1 Words",
+      duration: "~20 min",
+      dynamicToday: true,
+      items: [],
+    },
+    {
+      id: "pod_fruits_food",
+      title: "🍎 Fruits, Vegetables & Food",
+      duration: "~20–24 min",
       items: [
-        { fi: "kevät", en: "spring" },
-        { fi: "kesä", en: "summer" },
-        { fi: "syksy", en: "autumn" },
-        { fi: "talvi", en: "winter" },
-        { fi: "sää", en: "weather" },
-        { fi: "aurinko", en: "sun" },
-        { fi: "aurinko paistaa", en: "the sun is shining" },
-        { fi: "pilvi", en: "cloud" },
-        { fi: "tänään on pilvistä", en: "today it is cloudy" },
-        { fi: "sade", en: "rain" },
-        { fi: "ulkona sataa vettä", en: "it is raining outside" },
-        { fi: "lumi", en: "snow" },
-        { fi: "ulkona sataa lunta", en: "it is snowing outside" },
-        { fi: "tuuli", en: "wind" },
-        { fi: "tänään tuulee paljon", en: "today it is very windy" },
-        { fi: "kylmä", en: "cold" },
-        { fi: "lämmin", en: "warm" },
-        { fi: "kuuma", en: "hot" },
-        { fi: "pakkanen", en: "freezing cold" },
-        { fi: "on kymmenen astetta pakkasta", en: "it is minus ten degrees" },
-        { fi: "talvella on pimeää", en: "in winter it is dark" },
-        { fi: "kesällä on valoisaa", en: "in summer it is bright" },
-        { fi: "millainen sää tänään on?", en: "what is the weather like today?" },
-        { fi: "muista laittaa lämmin takki", en: "remember to put on a warm jacket" },
+        { fi: "omena", en: "apple" },
+        { fi: "banaani", en: "banana" },
+        { fi: "appelsiini", en: "orange" },
+        { fi: "päärynä", en: "pear" },
+        { fi: "viinirypäle", en: "grape" },
+        { fi: "mansikka", en: "strawberry" },
+        { fi: "mustikka", en: "blueberry" },
+        { fi: "vadelma", en: "raspberry" },
+        { fi: "sitruuna", en: "lemon" },
+        { fi: "vesimeloni", en: "watermelon" },
+        { fi: "ananas", en: "pineapple" },
+        { fi: "persikka", en: "peach" },
+        { fi: "tomaatti", en: "tomato" },
+        { fi: "kurkku", en: "cucumber" },
+        { fi: "peruna", en: "potato" },
+        { fi: "porkkana", en: "carrot" },
+        { fi: "sipuli", en: "onion" },
+        { fi: "valkosipuli", en: "garlic" },
+        { fi: "salaatti", en: "lettuce or salad" },
+        { fi: "paprika", en: "bell pepper" },
+        { fi: "leipä", en: "bread" },
+        { fi: "ruisleipä", en: "rye bread" },
+        { fi: "voi", en: "butter" },
+        { fi: "juusto", en: "cheese" },
+        { fi: "kananmuna", en: "egg" },
+        { fi: "maito", en: "milk" },
+        { fi: "vesi", en: "water" },
+        { fi: "kahvi", en: "coffee" },
+        { fi: "tee", en: "tea" },
+        { fi: "mehu", en: "juice" },
+        { fi: "kana", en: "chicken" },
+        { fi: "kala", en: "fish" },
+        { fi: "liha", en: "meat" },
+        { fi: "riisi ja pasta", en: "rice and pasta" },
+        { fi: "minä syön omenan", en: "I eat an apple" },
+        { fi: "haluan ostaa hedelmiä", en: "I want to buy fruits" },
       ],
     },
     {
-      id: "pod_days_months",
-      title: "📅 Days & Months",
-      duration: "~12–15 min",
+      id: "pod_clothes_colors",
+      title: "👕 Clothes & Colors",
+      duration: "~20–24 min",
       items: [
+        { fi: "takki", en: "jacket or coat" },
+        { fi: "talvitakki", en: "winter coat" },
+        { fi: "paita", en: "shirt" },
+        { fi: "t-paita", en: "t-shirt" },
+        { fi: "villapaita", en: "sweater" },
+        { fi: "huppari", en: "hoodie" },
+        { fi: "housut", en: "pants or trousers" },
+        { fi: "farkut", en: "jeans" },
+        { fi: "shortsit", en: "shorts" },
+        { fi: "mekko", en: "dress" },
+        { fi: "hame", en: "skirt" },
+        { fi: "puku", en: "suit" },
+        { fi: "kengät", en: "shoes" },
+        { fi: "saappaat", en: "boots" },
+        { fi: "lenkkarit", en: "sneakers" },
+        { fi: "sukat", en: "socks" },
+        { fi: "pipo", en: "beanie hat" },
+        { fi: "hattu", en: "hat" },
+        { fi: "huivi", en: "scarf" },
+        { fi: "hanskat", en: "gloves" },
+        { fi: "lapaset", en: "mittens" },
+        { fi: "vyö", en: "belt" },
+        { fi: "silmälasit", en: "eyeglasses" },
+        { fi: "punainen", en: "red" },
+        { fi: "sininen", en: "blue" },
+        { fi: "vihreä", en: "green" },
+        { fi: "keltainen", en: "yellow" },
+        { fi: "valkoinen", en: "white" },
+        { fi: "musta", en: "black" },
+        { fi: "harmaa", en: "grey" },
+        { fi: "ruskea", en: "brown" },
+        { fi: "oranssi", en: "orange color" },
+        { fi: "violetti", en: "purple" },
+        { fi: "vaaleanpunainen", en: "pink" },
+        { fi: "minulla on sininen takki", en: "I have a blue jacket" },
+        { fi: "minkä värinen tämä paita on?", en: "what color is this shirt?" },
+      ],
+    },
+    {
+      id: "pod_numbers_dates_time",
+      title: "🔢 Numbers, Dates & Time",
+      duration: "~20–24 min",
+      items: [
+        { fi: "nolla, yksi, kaksi, kolme", en: "zero, one, two, three" },
+        { fi: "neljä, viisi, kuusi, seitsemän", en: "four, five, six, seven" },
+        { fi: "kahdeksan, yhdeksän, kymmenen", en: "eight, nine, ten" },
+        { fi: "yksitoista, kaksitoista", en: "eleven, twelve" },
+        { fi: "kaksikymmentä, kolmekymmentä", en: "twenty, thirty" },
+        { fi: "viisikymmentä, sata, tuhat", en: "fifty, one hundred, one thousand" },
         { fi: "maanantai", en: "Monday" },
         { fi: "tiistai", en: "Tuesday" },
         { fi: "keskiviikko", en: "Wednesday" },
@@ -368,31 +441,95 @@
         { fi: "lauantai", en: "Saturday" },
         { fi: "sunnuntai", en: "Sunday" },
         { fi: "viikonloppu", en: "weekend" },
-        { fi: "tänään", en: "today" },
-        { fi: "huomenna", en: "tomorrow" },
-        { fi: "eilen", en: "yesterday" },
-        { fi: "tammikuu", en: "January" },
-        { fi: "helmikuu", en: "February" },
-        { fi: "maaliskuu", en: "March" },
-        { fi: "huhtikuu", en: "April" },
-        { fi: "toukokuu", en: "May" },
-        { fi: "kesäkuu", en: "June" },
-        { fi: "heinäkuu", en: "July" },
-        { fi: "elokuu", en: "August" },
-        { fi: "syyskuu", en: "September" },
-        { fi: "lokakuu", en: "October" },
-        { fi: "marraskuu", en: "November" },
-        { fi: "joulukuu", en: "December" },
+        { fi: "tänään, huomenna, eilen", en: "today, tomorrow, yesterday" },
+        { fi: "aamu, päivä, ilta, yö", en: "morning, day, evening, night" },
+        { fi: "tammikuu ja helmikuu", en: "January and February" },
+        { fi: "maaliskuu ja huhtikuu", en: "March and April" },
+        { fi: "toukokuu ja kesäkuu", en: "May and June" },
+        { fi: "heinäkuu ja elokuu", en: "July and August" },
+        { fi: "syyskuu ja lokakuu", en: "September and October" },
+        { fi: "marraskuu ja joulukuu", en: "November and December" },
+        { fi: "paljonko kello on?", en: "what time is it?" },
+        { fi: "kello on kahdeksan", en: "it is eight o'clock" },
+        { fi: "kello on puoli yhdeksän", en: "it is half past eight" },
+        { fi: "varttia yli kymmenen", en: "quarter past ten" },
+        { fi: "varttia vaille kolme", en: "quarter to three" },
+        { fi: "mihin aikaan kurssi alkaa?", en: "what time does the course start?" },
+        { fi: "kurssi alkaa kello yhdeksän", en: "the course starts at nine o'clock" },
         { fi: "mikä päivä tänään on?", en: "what day is it today?" },
+        { fi: "monesko päivä tänään on?", en: "what date is it today?" },
+        { fi: "tänään on ensimmäinen toukokuuta", en: "today is the first of May" },
+        { fi: "maanantaina menen kouluun", en: "on Monday I go to school" },
+        { fi: "paljonko tämä maksaa?", en: "how much does this cost?" },
+        { fi: "tämä maksaa viisi euroa", en: "this costs five euros" },
+        { fi: "minulla on kiire", en: "I am in a hurry" },
       ],
     },
     {
-      id: "pod_objects",
-      title: "🏠 Everyday Objects & Names",
-      duration: "~12–15 min",
+      id: "pod_seasons",
+      title: "🍂 Seasons & Weather",
+      duration: "~19–22 min",
       items: [
+        { fi: "kevät", en: "spring" },
+        { fi: "kesä", en: "summer" },
+        { fi: "syksy", en: "autumn" },
+        { fi: "talvi", en: "winter" },
+        { fi: "sää", en: "weather" },
+        { fi: "lämpötila", en: "temperature" },
+        { fi: "aurinko", en: "sun" },
+        { fi: "aurinko paistaa", en: "the sun is shining" },
+        { fi: "pilvi", en: "cloud" },
+        { fi: "tänään on pilvistä", en: "today it is cloudy" },
+        { fi: "sade", en: "rain" },
+        { fi: "ulkona sataa vettä", en: "it is raining outside" },
+        { fi: "lumi", en: "snow" },
+        { fi: "ulkona sataa lunta", en: "it is snowing outside" },
+        { fi: "jää", en: "ice" },
+        { fi: "tie on liukas", en: "the road is slippery" },
+        { fi: "tuuli", en: "wind" },
+        { fi: "tänään tuulee paljon", en: "today it is very windy" },
+        { fi: "sumu", en: "fog" },
+        { fi: "kylmä", en: "cold" },
+        { fi: "lämmin", en: "warm" },
+        { fi: "kuuma", en: "hot" },
+        { fi: "viileä", en: "cool" },
+        { fi: "pakkanen", en: "freezing cold" },
+        { fi: "tänään on nolla astetta", en: "today it is zero degrees" },
+        { fi: "on viisi astetta lämmintä", en: "it is plus five degrees" },
+        { fi: "on kymmenen astetta pakkasta", en: "it is minus ten degrees" },
+        { fi: "talvella on pimeää", en: "in winter it is dark" },
+        { fi: "kesällä on valoisaa", en: "in summer it is bright" },
+        { fi: "keväällä lumi sulaa", en: "in spring the snow melts" },
+        { fi: "syksyllä lehdet putoavat", en: "in autumn the leaves fall" },
+        { fi: "millainen sää tänään on?", en: "what is the weather like today?" },
+        { fi: "huomenna on kaunis päivä", en: "tomorrow is a beautiful day" },
+        { fi: "muista laittaa lämmin takki", en: "remember to put on a warm jacket" },
+      ],
+    },
+    {
+      id: "pod_home_objects",
+      title: "🏠 Home, Rooms & Objects",
+      duration: "~19–22 min",
+      items: [
+        { fi: "koti", en: "home" },
+        { fi: "asunto", en: "apartment" },
+        { fi: "talo", en: "house" },
+        { fi: "keittiö", en: "kitchen" },
+        { fi: "olohuone", en: "living room" },
+        { fi: "makuuhuone", en: "bedroom" },
+        { fi: "kylpyhuone", en: "bathroom" },
+        { fi: "sauna", en: "sauna" },
+        { fi: "parveke", en: "balcony" },
+        { fi: "eteinen", en: "hallway" },
         { fi: "pöytä", en: "table" },
         { fi: "tuoli", en: "chair" },
+        { fi: "sohva", en: "sofa" },
+        { fi: "sänky", en: "bed" },
+        { fi: "kaappi", en: "cupboard or closet" },
+        { fi: "jääkaappi", en: "refrigerator" },
+        { fi: "ovi", en: "door" },
+        { fi: "ikkuna", en: "window" },
+        { fi: "lamppu ja valo", en: "lamp and light" },
         { fi: "kirja", en: "book" },
         { fi: "vihko", en: "notebook" },
         { fi: "kynä", en: "pen" },
@@ -401,26 +538,60 @@
         { fi: "tietokone", en: "computer" },
         { fi: "avain", en: "key" },
         { fi: "lompakko", en: "wallet" },
-        { fi: "ovi", en: "door" },
-        { fi: "ikkuna", en: "window" },
-        { fi: "valo", en: "light" },
-        { fi: "sänky", en: "bed" },
-        { fi: "kuppi", en: "cup" },
-        { fi: "lasi", en: "glass" },
+        { fi: "kuppi ja lasi", en: "cup and glass" },
         { fi: "lautanen", en: "plate" },
-        { fi: "lusikka", en: "spoon" },
-        { fi: "haarukka", en: "fork" },
-        { fi: "veitsi", en: "knife" },
-        { fi: "takki", en: "jacket" },
-        { fi: "kengät", en: "shoes" },
-        { fi: "vesi", en: "water" },
-        { fi: "kahvi", en: "coffee" },
+        { fi: "lusikka, haarukka ja veitsi", en: "spoon, fork, and knife" },
+        { fi: "missä avain on?", en: "where is the key?" },
+        { fi: "kirja on pöydällä", en: "the book is on the table" },
+        { fi: "olen nyt kotona", en: "I am at home now" },
+        { fi: "menen illalla saunaan", en: "I am going to sauna in the evening" },
+      ],
+    },
+    {
+      id: "pod_family_body",
+      title: "👨‍👩‍👧 Family, People & Body",
+      duration: "~19–22 min",
+      items: [
+        { fi: "perhe", en: "family" },
+        { fi: "äiti", en: "mother" },
+        { fi: "isä", en: "father" },
+        { fi: "vanhemmat", en: "parents" },
+        { fi: "vaimo", en: "wife" },
+        { fi: "aviomies", en: "husband" },
+        { fi: "lapsi", en: "child" },
+        { fi: "poika", en: "boy or son" },
+        { fi: "tyttö", en: "girl or daughter" },
+        { fi: "sisko", en: "sister" },
+        { fi: "veli", en: "brother" },
+        { fi: "isoäiti ja isoisä", en: "grandmother and grandfather" },
+        { fi: "ystävä", en: "friend" },
+        { fi: "opettaja", en: "teacher" },
+        { fi: "opiskelija", en: "student" },
+        { fi: "naapuri", en: "neighbor" },
+        { fi: "lääkäri", en: "doctor" },
+        { fi: "pää", en: "head" },
+        { fi: "hiukset", en: "hair" },
+        { fi: "silmä", en: "eye" },
+        { fi: "korva", en: "ear" },
+        { fi: "nenä", en: "nose" },
+        { fi: "suu", en: "mouth" },
+        { fi: "hammas", en: "tooth" },
+        { fi: "kaula", en: "neck" },
+        { fi: "käsi", en: "hand or arm" },
+        { fi: "sormi", en: "finger" },
+        { fi: "jalka", en: "leg or foot" },
+        { fi: "selkä", en: "back" },
+        { fi: "vatsa", en: "stomach" },
+        { fi: "sydän", en: "heart" },
+        { fi: "minulla on pää kipeä", en: "I have a headache" },
+        { fi: "minun perheeni asuu Suomessa", en: "my family lives in Finland" },
+        { fi: "hän on minun hyvä ystäväni", en: "he or she is my good friend" },
       ],
     },
     {
       id: "pod_olla_q",
-      title: "🧩 Olla & Questions",
-      duration: "~11–14 min",
+      title: "🧩 Olla, Core Verbs & Questions",
+      duration: "~20–24 min",
       items: [
         { fi: "minä olen", en: "I am" },
         { fi: "sinä olet", en: "you are" },
@@ -431,9 +602,21 @@
         { fi: "minä en ole", en: "I am not" },
         { fi: "sinä et ole", en: "you are not" },
         { fi: "hän ei ole", en: "he or she is not" },
-        { fi: "minä olen opiskelija", en: "I am a student" },
-        { fi: "olen kotoisin ulkomailta", en: "I am from abroad" },
-        { fi: "minä asun Porissa", en: "I live in Pori" },
+        { fi: "me emme ole", en: "we are not" },
+        { fi: "asua — minä asun Porissa", en: "to live — I live in Pori" },
+        { fi: "puhua — puhun vähän suomea", en: "to speak — I speak a little Finnish" },
+        { fi: "opiskella — opiskelen suomea", en: "to study — I study Finnish" },
+        { fi: "syödä — syön aamupalaa", en: "to eat — I eat breakfast" },
+        { fi: "juoda — juon kahvia", en: "to drink — I drink coffee" },
+        { fi: "mennä — menen kauppaan", en: "to go — I go to the store" },
+        { fi: "tulla — tulen kotiin", en: "to come — I come home" },
+        { fi: "ostaa — ostan ruokaa", en: "to buy — I buy food" },
+        { fi: "maksaa — maksan kortilla", en: "to pay — I pay by card" },
+        { fi: "ymmärtää — ymmärrän hyvin", en: "to understand — I understand well" },
+        { fi: "tietää — en tiedä vielä", en: "to know — I do not know yet" },
+        { fi: "haluta — haluan oppia suomea", en: "to want — I want to learn Finnish" },
+        { fi: "voida — voitko auttaa minua?", en: "can — can you help me?" },
+        { fi: "tarvita — tarvitsen apua", en: "to need — I need help" },
         { fi: "oletko sinä valmis?", en: "are you ready?" },
         { fi: "asutko sinä Suomessa?", en: "do you live in Finland?" },
         { fi: "puhutko sinä suomea?", en: "do you speak Finnish?" },
@@ -443,22 +626,10 @@
         { fi: "missä sinä asut?", en: "where do you live?" },
         { fi: "mitä sinulle kuuluu?", en: "how are you?" },
         { fi: "kiitos, minulle kuuluu hyvää", en: "thank you, I am doing well" },
-        { fi: "anteeksi, voitko toistaa?", en: "excuse me, can you repeat?" },
+        { fi: "anteeksi, voitko toistaa hitaasti?", en: "excuse me, can you repeat slowly?" },
+        { fi: "mitä tämä tarkoittaa?", en: "what does this mean?" },
+        { fi: "nähdään huomenna!", en: "see you tomorrow!" },
       ],
-    },
-    {
-      id: "pod_today_a1",
-      title: "🌅 Today's A1 Words",
-      duration: "~10–14 min",
-      dynamicToday: true,
-      items: [],
-    },
-    {
-      id: "pod_cards",
-      title: "⭐ Saved Flashcards",
-      duration: "Personal",
-      dynamic: true,
-      items: [],
     },
   ];
 
@@ -720,9 +891,60 @@
     return _walkAudioEl;
   }
 
+  function saveWalkResumeState() {
+    try {
+      localStorage.setItem(
+        "fl_walk_resume_v1",
+        JSON.stringify({
+          episodeId: state.podcastEpisodeId,
+          itemIdx: state.podcastItemIdx || 0,
+          speed: state.podcastSpeed || 0.75,
+        })
+      );
+    } catch (_) {}
+  }
+
+  function loadWalkResumeState() {
+    try {
+      const raw = localStorage.getItem("fl_walk_resume_v1");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && d.episodeId && getAllPodcastEpisodes().some((x) => x.id === d.episodeId)) {
+        state.podcastEpisodeId = d.episodeId;
+      }
+      if (d && typeof d.itemIdx === "number" && d.itemIdx >= 0) {
+        state.podcastItemIdx = d.itemIdx;
+      }
+      if (d && typeof d.speed === "number" && d.speed >= 0.65 && d.speed <= 1.2) {
+        state.podcastSpeed = d.speed;
+      }
+    } catch (_) {}
+  }
+
+  function fmtMmSs(sec) {
+    const s = Math.max(0, Math.floor(Number(sec) || 0));
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+
+  function updateWalkProgressDom(curSec, durSec) {
+    state.podcastCurSec = curSec || 0;
+    if (durSec && isFinite(durSec)) state.podcastTotalDur = durSec;
+    const total = state.podcastTotalDur || 0;
+    const pct = total > 0 ? Math.min(100, Math.max(0, (state.podcastCurSec / total) * 100)) : 0;
+    const fill = document.getElementById("fl-walk-progress-fill");
+    const curEl = document.getElementById("fl-walk-time-cur");
+    const durEl = document.getElementById("fl-walk-time-dur");
+    if (fill) fill.style.width = `${pct.toFixed(1)}%`;
+    if (curEl) curEl.textContent = fmtMmSs(state.podcastCurSec);
+    if (durEl && total > 0) durEl.textContent = fmtMmSs(total);
+  }
+
   function updateWalkActiveCardHighlight(newIdx) {
     if (state.podcastItemIdx === newIdx) return;
     state.podcastItemIdx = newIdx;
+    saveWalkResumeState();
     const ep = getAllPodcastEpisodes().find((x) => x.id === state.podcastEpisodeId) || PODCAST_EPISODES[0];
     const items = getPodcastItems(ep);
     const cur = items[newIdx];
@@ -738,10 +960,16 @@
       if (miniFi) miniFi.textContent = cur.fi;
       if (miniEn) miniEn.textContent = cur.en;
     }
+    let activeRow = null;
     document.querySelectorAll("[data-fl-pod-row]").forEach((row) => {
       const rIdx = Number(row.getAttribute("data-fl-pod-row"));
-      row.classList.toggle("is-active-walk", rIdx === newIdx);
+      const isAct = rIdx === newIdx;
+      row.classList.toggle("is-active-walk", isAct);
+      if (isAct) activeRow = row;
     });
+    if (activeRow && activeRow.scrollIntoView) {
+      try { activeRow.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (_) {}
+    }
   }
 
   function setupWalkMediaSession(ep, items) {
@@ -828,7 +1056,7 @@
         body: JSON.stringify({
           topic: topic || "Homework Photo Vocabulary & Grammar",
           level: DB.getSettings().level || "A1",
-          count: 24,
+          count: 34,
           attachments: atts.map((a) => ({ mime_type: a.mime_type, data_base64: a.data_base64 })),
         }),
       });
@@ -893,7 +1121,7 @@
       const todayPack = (CURR && typeof CURR.getTodayVocabPack === "function")
         ? (CURR.getTodayVocabPack().words || []).map((w) => ({ fi: w.fi, en: w.en }))
         : [];
-      const fallbackCore = (PODCAST_EPISODES.find((p) => p.id === "pod_objects")?.items || []);
+      const fallbackCore = (PODCAST_EPISODES.find((p) => p.id === "pod_olla_q")?.items || []);
       const seen = new Set();
       const merged = [];
       for (const it of [...saved, ...todayPack, ...fallbackCore]) {
@@ -901,7 +1129,7 @@
         if (k && !seen.has(k)) {
           seen.add(k);
           merged.push({ fi: it.fi, en: it.en });
-          if (merged.length >= 24) break;
+          if (merged.length >= 34) break;
         }
       }
       return merged;
@@ -1014,11 +1242,13 @@
           if (targetIdx > 0 && offs[targetIdx] != null) {
             aud.currentTime = offs[targetIdx];
           }
+          updateWalkProgressDom(aud.currentTime || 0, aud.duration || res.total_duration || 0);
         };
         aud.ontimeupdate = () => {
           const offs = state.podcastItemOffsets || [];
-          if (!offs.length) return;
           const t = aud.currentTime || 0;
+          updateWalkProgressDom(t, aud.duration || res.total_duration || 0);
+          if (!offs.length) return;
           let found = 0;
           for (let i = 0; i < offs.length; i++) {
             if (t + 0.15 >= offs[i]) found = i;
@@ -2155,26 +2385,29 @@
     `;
 
     bindMainEvents();
+    if (activeTab === "chat") {
+      scrollChatsToBottom(true);
+    }
   }
 
-  /* ---------- PARSE SILENT CLASSROOM LIVE HELPER CARD ---------- */
-  function parseLatestLiveCard(msgs) {
-    const liveMsgs = (msgs || []).filter((m) => m.role === "assistant" && m.isLiveSubtitle && !m.isError);
-    const latest = liveMsgs.length ? liveMsgs[liveMsgs.length - 1] : null;
+  /* ---------- PARSE SILENT CLASSROOM LIVE HELPER CARDS (NEWEST FIRST + HISTORY) ---------- */
+  function parseSingleLiveMsg(msg) {
     const defaultReplies = [
       { fi: "Anteeksi, voitko toistaa hitaasti?", en: "Excuse me, can you repeat slowly?" },
       { fi: "Kyllä, minä ymmärrän.", en: "Yes, I understand." },
       { fi: "Mikä sivu kirjassa on?", en: "What page in the book is it?" },
     ];
-    if (!latest || !latest.text) {
+    if (!msg || !msg.text) {
       return {
+        id: "",
+        rawText: "",
         hasCapture: false,
         fiHeard: "",
         enMeaning: "",
         replies: defaultReplies,
       };
     }
-    const raw = String(latest.text || "");
+    const raw = String(msg.text || "");
     let fiHeard = "";
     let enMeaning = "";
     const mFi = raw.match(/(?:What was said\s*\(Finnish\)|Finnish)[:*]*\s*([^\n]+)/i);
@@ -2194,10 +2427,24 @@
       enMeaning = firstLines[1] || "";
     }
     return {
+      id: msg.id || "",
+      rawText: raw,
       hasCapture: true,
       fiHeard,
       enMeaning,
       replies: replies.length ? replies.slice(0, 3) : defaultReplies,
+    };
+  }
+
+  function parseAllLiveCards(msgs) {
+    const liveMsgs = (msgs || []).filter((m) => m.role === "assistant" && m.isLiveSubtitle && !m.isError);
+    if (!liveMsgs.length) {
+      return { latest: parseSingleLiveMsg(null), history: [] };
+    }
+    const parsed = liveMsgs.slice(-8).reverse().map(parseSingleLiveMsg);
+    return {
+      latest: parsed[0],
+      history: parsed.slice(1),
     };
   }
 
@@ -2256,18 +2503,18 @@
     const tutorMsgs = allMsgs
       .map((m, idx) => ({ m, idx }))
       .filter(({ m }) => !m.isLiveSubtitle && !(m.role === "user" && String(m.text || "").startsWith("🌐 ")));
-    const liveData = parseLatestLiveCard(allMsgs);
+    const { latest: liveData, history: liveHistory } = parseAllLiveCards(allMsgs);
     const hasPendingPhoto = state.pendingAttachments.some((a) => (a.mime_type || "").startsWith("image/"));
 
     return `
       <div class="fl3-grid-chat">
         <!-- LEFT PANEL: AI FINNISH TUTOR CARD -->
-        <section class="fl3-card fl3-tutor-card" aria-label="AI Finnish Tutor">
+        <section class="fl3-card fl3-tutor-card" aria-label="AI Finnish Tutor" style="position:relative;">
           <div class="fl3-card-head">
             <h2 class="fl3-card-title">
               <span>💬</span><span>AI Finnish Tutor</span>
             </h2>
-            <span class="fl3-badge">Bilingual A1–A2 • Concise</span>
+            <span class="fl3-badge">Everyday Bilingual • A1–A2</span>
           </div>
 
           <div class="fl3-chat-feed" id="fl-chat-stage">
@@ -2276,12 +2523,12 @@
                 ? tutorMsgs.map(({ m, idx }) => renderMessageBubble(m, idx)).join("")
                 : `<div style="margin:auto 0;padding:24px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">
                     <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🇫🇮</div>
-                    <strong style="font-size:1.05rem;color:#FFFFFF;">Hei! Ready to practice school Finnish?</strong>
+                    <strong style="font-size:1.05rem;color:#FFFFFF;">Hei! Ask me anything — everyday life or Finnish class</strong>
                     <p style="margin:0;font-size:0.85rem;color:#94A3B8;max-width:440px;line-height:1.5;">
-                      Ask any question in English or Finnish, or tap <strong>+ Photo</strong> to snap your homework sheet for a concise bilingual breakdown or send it straight to <strong>Walk &amp; Listen</strong>.
+                      Ask real questions like <em>"How is the weather today?"</em> to get the real answer + how to say it in Finnish, or tap <strong>+ Photo</strong> to snap your homework sheet for <strong>Walk &amp; Listen</strong>.
                     </p>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
-                      <button type="button" class="fl3-btn" data-fl-starter="Mitä kuuluu? How do I reply politely in class?">Mitä kuuluu?</button>
+                      <button type="button" class="fl3-btn" data-fl-starter="How is the weather today in Pori? Teach me how to ask and say it in Finnish.">🌤️ Weather in Finnish</button>
                       <button type="button" class="fl3-btn" data-fl-starter="Teach me 5 polite phrases to say to my Finnish teacher.">5 class phrases</button>
                       <button type="button" class="fl3-btn" data-fl-starter="Show how verb olla works in A1 sentences.">Verb olla</button>
                     </div>
@@ -2289,6 +2536,8 @@
             }
             ${state.isSending ? `<div class="fl3-bubble assistant">⏳ Thinking...</div>` : ""}
           </div>
+
+          <button type="button" id="fl-scroll-down-btn" class="fl3-scroll-latest-btn" style="display:none;" title="Jump to latest message" aria-label="Jump to latest message">↓ Latest</button>
 
           <div class="fl3-composer">
             ${
@@ -2314,7 +2563,7 @@
                 : ""
             }
 
-            <textarea id="fl-chat-input" class="fl3-composer-input" rows="2" placeholder="Ask in Finnish or English, or attach a homework photo..."></textarea>
+            <textarea id="fl-chat-input" class="fl3-composer-input" rows="2" placeholder="Ask anything in English or Finnish (e.g. How is the weather?) or attach homework..."></textarea>
 
             <div class="fl3-composer-bar">
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -2339,7 +2588,7 @@
           </div>
         </section>
 
-        <!-- RIGHT PANEL: STRICTLY SILENT CLASSROOM LIVE CARD -->
+        <!-- RIGHT PANEL: STRICTLY SILENT CLASSROOM LIVE CARD (CONTINUOUS + HISTORY) -->
         <section class="fl3-card accent fl3-live-card" aria-label="Silent Classroom Live Helper">
           <div class="fl3-card-head">
             <h2 class="fl3-card-title">
@@ -2369,7 +2618,10 @@
           </div>
 
           <div class="fl3-live-field">
-            <div class="fl3-live-label">🇫🇮 Finnish Heard</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+              <div class="fl3-live-label" style="margin:0;">🇫🇮 Finnish Heard</div>
+              ${liveData.hasCapture ? `<button type="button" class="fl3-speaker-btn" id="fl-live-save-words" title="Save words from this classroom capture to Vocabulary &amp; Drills">⭐ Save Class Words</button>` : ""}
+            </div>
             <div style="font-size:0.95rem;font-weight:700;color:#FFFFFF;line-height:1.45;">
               ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Live" when your teacher speaks Finnish...</span>`}
             </div>
@@ -2378,12 +2630,12 @@
           <div class="fl3-live-field">
             <div class="fl3-live-label">🇬🇧 English Meaning</div>
             <div style="font-size:0.92rem;color:#38BDF8;font-weight:600;line-height:1.45;">
-              ${liveData.hasCapture ? esc(liveData.enMeaning || "See translation above") : `<span style="color:#64748B;font-weight:500;">Instant English translation appears silently here.</span>`}
+              ${liveData.hasCapture ? esc(liveData.enMeaning || "See translation above") : `<span style="color:#64748B;font-weight:500;">Instant English translation + ready written answers appear silently here.</span>`}
             </div>
           </div>
 
           <div>
-            <div class="fl3-live-label" style="margin-bottom:8px;">💬 Tap-to-Use School Finnish Replies</div>
+            <div class="fl3-live-label" style="margin-bottom:8px;">💬 Ready Written Finnish Answers (Tap to Copy)</div>
             <div style="display:flex;flex-direction:column;gap:8px;">
               ${liveData.replies
                 .map(
@@ -2397,12 +2649,32 @@
                 .join("")}
             </div>
           </div>
+
+          ${
+            liveHistory.length
+              ? `<div class="fl3-live-history">
+                  <div class="fl3-live-label" style="margin-bottom:6px;">🕒 Earlier in Class (${liveHistory.length})</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;max-height:145px;overflow-y:auto;">
+                    ${liveHistory
+                      .map(
+                        (h) => `
+                      <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:8px 10px;">
+                        <div style="font-size:0.82rem;font-weight:700;color:#E2E8F0;">🇫🇮 ${esc(h.fiHeard)}</div>
+                        ${h.enMeaning ? `<div style="font-size:0.75rem;color:#38BDF8;margin-top:2px;">🇬🇧 ${esc(h.enMeaning)}</div>` : ""}
+                      </div>
+                    `
+                      )
+                      .join("")}
+                  </div>
+                </div>`
+              : ""
+          }
         </section>
       </div>
     `;
   }
 
-  /* ---------- TAB 2: WALK & LISTEN (POCKET AUDIO COURSE + LOCK-SCREEN PLAYBACK) ---------- */
+  /* ---------- TAB 2: WALK & LISTEN (20+ MIN A1 BOOK AUDIO COURSES + LOCK-SCREEN PLAYBACK) ---------- */
   function renderTabWalkAndListen() {
     const allEps = getAllPodcastEpisodes();
     const customHwEp = (state.customPodcastEpisodes || [])[0] || null;
@@ -2411,6 +2683,9 @@
     const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, items.length - 1));
     const currentItem = items[activeIdx] || { fi: "kevät", en: "spring" };
     const isCustomActive = Boolean(customHwEp && ep.id === customHwEp.id);
+    const estTotalSec = state.podcastTotalDur > 0 ? state.podcastTotalDur : Math.round(items.length * 36);
+    const curSec = state.podcastCurSec || 0;
+    const pct = estTotalSec > 0 ? Math.min(100, Math.max(0, (curSec / estTotalSec) * 100)) : 0;
 
     return `
       <div class="fl3-grid-walk">
@@ -2420,29 +2695,47 @@
             <h2 class="fl3-card-title">
               <span>🎧</span><span>Pocket Audio Player</span>
             </h2>
-            <span class="fl3-badge">Noora Neural • Lock-Screen</span>
+            <span class="fl3-badge">20+ Min • Lock-Screen</span>
           </div>
 
-          <div style="font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;margin-bottom:8px;">Choose Episode Topic</div>
-          <div class="fl3-topic-grid" style="margin-bottom:16px;">
+          <div style="font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#94A3B8;margin-bottom:8px;">Quick A1 Packs</div>
+          <div class="fl3-topic-grid" style="margin-bottom:10px;">
             <button type="button" class="fl3-topic-pill ${isCustomActive ? "active" : ""}" id="fl-walk-topic-photo">
-              <span>📷</span><span>${state.podcastCreating ? "Building Course..." : "From Homework Photo"}</span>
+              <span>📷</span><span>${state.podcastCreating ? "Building Course..." : "Homework Photo"}</span>
             </button>
             <button type="button" class="fl3-topic-pill ${ep.id === "pod_today_a1" ? "active" : ""}" data-fl-pod-ep="pod_today_a1">
               <span>🌅</span><span>Today's A1 Words</span>
             </button>
-            <button type="button" class="fl3-topic-pill ${ep.id === "pod_olla_q" ? "active" : ""}" data-fl-pod-ep="pod_olla_q">
-              <span>🧩</span><span>Olla &amp; Questions</span>
+            <button type="button" class="fl3-topic-pill ${ep.id === "pod_fruits_food" ? "active" : ""}" data-fl-pod-ep="pod_fruits_food">
+              <span>🍎</span><span>Fruits &amp; Food</span>
             </button>
-            <button type="button" class="fl3-topic-pill ${ep.id === "pod_seasons" ? "active" : ""}" data-fl-pod-ep="pod_seasons">
-              <span>🍂</span><span>Seasons &amp; Everyday</span>
+            <button type="button" class="fl3-topic-pill ${ep.id === "pod_clothes_colors" ? "active" : ""}" data-fl-pod-ep="pod_clothes_colors">
+              <span>👕</span><span>Clothes &amp; Colors</span>
             </button>
           </div>
           <input type="file" id="fl-pod-hw-photo" accept="image/*" style="display:none;" />
 
+          <!-- All 9 A1 Textbook Chapters Dropdown -->
+          <div style="margin-bottom:10px;">
+            <label for="fl-walk-chapter-select" style="display:block;font-size:0.72rem;font-weight:700;color:#94A3B8;margin-bottom:5px;">All A1 Finnish Book Chapters (34–36 phrases each • ~20 min)</label>
+            <select id="fl-walk-chapter-select" class="fl3-select" aria-label="Select A1 Finnish Book Chapter">
+              ${allEps
+                .map(
+                  (e) => `<option value="${esc(e.id)}" ${e.id === ep.id ? "selected" : ""}>${esc(e.title)} (${getPodcastItems(e).length} items • ${esc(e.duration || "~20 min")})</option>`
+                )
+                .join("")}
+            </select>
+          </div>
+
+          <!-- Compact + Custom Topic Generator -->
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <input type="text" id="fl-pod-custom-topic" class="fl3-input-sm" placeholder="+ Custom topic (e.g. kitchen, doctor, bus)..." aria-label="Custom podcast topic" />
+            <button type="button" class="fl3-btn primary" id="fl-pod-create-btn" style="padding:8px 12px;flex-shrink:0;" ${state.podcastCreating ? "disabled" : ""}>${state.podcastCreating ? "⏳" : "+ Create"}</button>
+          </div>
+
           ${
             customHwEp
-              ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;padding:8px 11px;background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;font-size:0.78rem;">
+              ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;padding:8px 11px;background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;font-size:0.78rem;">
                   <span style="color:#CBD5E1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(customHwEp.title)} (${(customHwEp.items || []).length} items)</span>
                   <button type="button" class="fl3-speaker-btn" id="fl-walk-upload-new-photo">📷 New Photo</button>
                 </div>`
@@ -2450,7 +2743,7 @@
           }
 
           <!-- Center Transport: Prev | Large Play/Pause Circle | Next -->
-          <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:12px 0 16px;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:8px 0 12px;">
             <button type="button" class="fl3-btn" id="fl-pod-prev" style="width:46px;height:46px;border-radius:50%;padding:0;" title="Previous phrase" aria-label="Previous phrase">⏮</button>
             ${
               state.podcastLoading
@@ -2462,8 +2755,19 @@
             <button type="button" class="fl3-btn" id="fl-pod-next" style="width:46px;height:46px;border-radius:50%;padding:0;" title="Next phrase" aria-label="Next phrase">⏭</button>
           </div>
 
+          <!-- Slim Progress Bar + Elapsed / Total Time -->
+          <div class="fl3-progress-wrap">
+            <div id="fl-walk-progress-bar" class="fl3-progress-track" title="Click to seek audio">
+              <div id="fl-walk-progress-fill" class="fl3-progress-fill" style="width:${pct.toFixed(1)}%;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#94A3B8;margin-top:5px;">
+              <span id="fl-walk-time-cur">${fmtMmSs(curSec)}</span>
+              <span id="fl-walk-time-dur">${fmtMmSs(estTotalSec)}</span>
+            </div>
+          </div>
+
           <div style="text-align:center;font-size:0.76rem;color:#94A3B8;margin-bottom:14px;">
-            ${state.podcastLoading ? esc(state.podcastPhase || "Preparing neural audio...") : state.podcastPlaying ? `Playing • ${esc(state.podcastVoiceLabel || "fi-FI-NooraNeural")}` : `${items.length} phrases • Continues playing when iPhone screen locks`}
+            ${state.podcastLoading ? esc(state.podcastPhase || "Preparing neural audio...") : state.podcastPlaying ? `Playing • ${esc(state.podcastVoiceLabel || "fi-FI-NooraNeural")}` : `${items.length} phrases • Remembers where you left off • iPhone lock-screen ready`}
           </div>
 
           <!-- Loop Episode + Speed Selector (0.75x / 0.90x / 1.0x) -->
@@ -2528,56 +2832,69 @@
     `;
   }
 
-  /* ---------- TAB 3: NOTEBOOK & DRILLS (GOODNOTES MASTER TABLES + QUICK A1 QUIZ) ---------- */
+  /* ---------- TAB 3: NOTEBOOK & DRILLS (QUICK A1 PRACTICE QUIZ FIRST + GOODNOTES MASTER TABLES) ---------- */
   const NOTEBOOK_MASTER_TABLES = {
     olla: {
-      title: "Olla-verb & Pronouns",
+      title: "Olla & Pronouns",
       rows: [
-        { fi: "Minä olen", note: "spoken: mä oon", en: "I am" },
-        { fi: "Sinä olet", note: "spoken: sä oot", en: "You are" },
-        { fi: "Hän on", note: "spoken: se on", en: "He / She is" },
-        { fi: "Me olemme", note: "spoken: me ollaan", en: "We are" },
-        { fi: "Te olette", note: "spoken: te ootte", en: "You (plural) are" },
-        { fi: "He ovat", note: "spoken: ne on", en: "They are" },
-        { fi: "Minä en ole", note: "negative stem: ole", en: "I am not" },
-        { fi: "Minä olen opiskelija.", note: "school A1", en: "I am a student." },
+        { fi: "Minä olen", spoken: "mä oon", note: "1st person singular", en: "I am" },
+        { fi: "Sinä olet", spoken: "sä oot", note: "2nd person singular", en: "You are" },
+        { fi: "Hän on", spoken: "se on", note: "3rd person singular", en: "He / She is" },
+        { fi: "Me olemme", spoken: "me ollaan", note: "1st person plural", en: "We are" },
+        { fi: "Te olette", spoken: "te ootte", note: "2nd person plural", en: "You (plural) are" },
+        { fi: "He ovat", spoken: "ne on", note: "3rd person plural", en: "They are" },
+        { fi: "Minä en ole", spoken: "mä en oo", note: "negative stem: ole", en: "I am not" },
+        { fi: "Minä olen opiskelija.", spoken: "Mä oon opiskelija.", note: "school A1", en: "I am a student." },
       ],
     },
     onko: {
-      title: "Onko & -ko/-kö Questions",
+      title: "Onko Questions",
       rows: [
-        { fi: "Onko sinulla kysymys?", note: "Minulla / sinulla on", en: "Do you have a question?" },
-        { fi: "Oletko sinä valmis?", note: "olet + -ko", en: "Are you ready?" },
-        { fi: "Puhutko sinä suomea?", note: "back vowel u → -ko", en: "Do you speak Finnish?" },
-        { fi: "Asutko sinä Porissa?", note: "-ssa = in", en: "Do you live in Pori?" },
-        { fi: "Ymmärrätkö sinä?", note: "front vowel ä → -kö", en: "Do you understand?" },
-        { fi: "Voitko toistaa hitaasti?", note: "polite class question", en: "Can you repeat slowly?" },
-        { fi: "Saisinko yhden kahvin?", note: "polite request", en: "Could I have one coffee?" },
+        { fi: "Onko sinulla kysymys?", spoken: "Onks sulla kysymys?", note: "Minulla / sinulla on", en: "Do you have a question?" },
+        { fi: "Oletko sinä valmis?", spoken: "Ootko sä valmis?", note: "olet + -ko", en: "Are you ready?" },
+        { fi: "Puhutko sinä suomea?", spoken: "Puhutko sä suomee?", note: "back vowel u → -ko", en: "Do you speak Finnish?" },
+        { fi: "Asutko sinä Porissa?", spoken: "Asutko sä Porissa?", note: "-ssa = in", en: "Do you live in Pori?" },
+        { fi: "Ymmärrätkö sinä?", spoken: "Ymmärrätsä?", note: "front vowel ä → -kö", en: "Do you understand?" },
+        { fi: "Voitko toistaa hitaasti?", spoken: "Voitsä toistaa hitaasti?", note: "polite class question", en: "Can you repeat slowly?" },
+        { fi: "Saisinko yhden kahvin?", spoken: "Saisinko yhen kahvin?", note: "polite request", en: "Could I have one coffee?" },
       ],
     },
     days: {
-      title: "Days & Time",
+      title: "Days, Months & Time",
       rows: [
-        { fi: "maanantai", note: "maanantaina = on Monday", en: "Monday" },
-        { fi: "tiistai", note: "tiistaina = on Tuesday", en: "Tuesday" },
-        { fi: "keskiviikko", note: "middle of week", en: "Wednesday" },
-        { fi: "torstai", note: "torstaina = on Thursday", en: "Thursday" },
-        { fi: "perjantai", note: "perjantaina = on Friday", en: "Friday" },
-        { fi: "lauantai ja sunnuntai", note: "viikonloppu", en: "Saturday and Sunday (weekend)" },
-        { fi: "tänään • huomenna • eilen", note: "core time words", en: "today • tomorrow • yesterday" },
-        { fi: "Mihin aikaan kurssi alkaa?", note: "class schedule", en: "What time does the course start?" },
+        { fi: "maanantai • tiistai • keskiviikko", spoken: "ma • ti • ke", note: "maanantaina = on Monday", en: "Monday • Tuesday • Wednesday" },
+        { fi: "torstai • perjantai", spoken: "to • pe", note: "perjantaina = on Friday", en: "Thursday • Friday" },
+        { fi: "lauantai ja sunnuntai", spoken: "viikonloppu", note: "weekend", en: "Saturday and Sunday" },
+        { fi: "tammikuu • helmikuu • maaliskuu", spoken: "tammi–maalis", note: "winter / early spring", en: "January • February • March" },
+        { fi: "huhtikuu • toukokuu • kesäkuu", spoken: "huhti–kesä", note: "spring / early summer", en: "April • May • June" },
+        { fi: "heinäkuu • elokuu • syyskuu", spoken: "heinä–syys", note: "summer / early autumn", en: "July • August • September" },
+        { fi: "lokakuu • marraskuu • joulukuu", spoken: "loka–joulu", note: "autumn / winter", en: "October • November • December" },
+        { fi: "tänään • huomenna • eilen", spoken: "tänää • huomenn • eilen", note: "core time words", en: "today • tomorrow • yesterday" },
+        { fi: "Paljonko kello on? Kello on yhdeksän.", spoken: "Paljon kello on? Yheksän.", note: "telling time", en: "What time is it? It is nine o'clock." },
+      ],
+    },
+    numbers: {
+      title: "Numbers & Colors",
+      rows: [
+        { fi: "nolla, yksi, kaksi, kolme, neljä, viisi", spoken: "yks, kaks, kolme, neljä, viis", note: "0–5", en: "zero, one, two, three, four, five" },
+        { fi: "kuusi, seitsemän, kahdeksan, yhdeksän, kymmenen", spoken: "kuus, seittemän, kaheksan, yheksän", note: "6–10", en: "six, seven, eight, nine, ten" },
+        { fi: "kaksikymmentä • viisikymmentä • sata", spoken: "kakskyt • viiskyt • sata", note: "20 • 50 • 100", en: "twenty • fifty • one hundred" },
+        { fi: "valkoinen • musta • harmaa", spoken: "valkonen • musta • harmaa", note: "basic neutral colors", en: "white • black • gray" },
+        { fi: "sininen • punainen • keltainen • vihreä", spoken: "sininen • punanen • keltanen • vihree", note: "primary colors", en: "blue • red • yellow • green" },
+        { fi: "ruskea • oranssi • vaaleanpunainen", spoken: "ruskee • oranssi • pinkki", note: "everyday colors", en: "brown • orange • pink" },
+        { fi: "Paljonko tämä maksaa? Se maksaa viisi euroa.", spoken: "Paljon tää maksaa? Viis euroo.", note: "shopping A1", en: "How much does this cost? It costs five euros." },
       ],
     },
     everyday: {
       title: "Everyday Vocabulary",
       rows: [
-        { fi: "Hyvää huomenta!", note: "morning greeting", en: "Good morning!" },
-        { fi: "Kiitos paljon!", note: "ole hyvä = you're welcome", en: "Thank you very much!" },
-        { fi: "Anteeksi", note: "polite attention / sorry", en: "Excuse me / Sorry" },
-        { fi: "kirja, vihko ja kynä", note: "classroom objects", en: "book, notebook, and pen" },
-        { fi: "kauppa → kaupassa", note: "inessive -ssa", en: "store → in the store" },
-        { fi: "koti → kotona", note: "special at-home form", en: "home → at home" },
-        { fi: "Tänään on kaunis päivä.", note: "everyday weather", en: "Today is a beautiful day." },
+        { fi: "Hyvää huomenta!", spoken: "Huomenta!", note: "morning greeting", en: "Good morning!" },
+        { fi: "Kiitos paljon!", spoken: "Kiitti!", note: "ole hyvä = you're welcome", en: "Thank you very much!" },
+        { fi: "Anteeksi", spoken: "Sori / Anteeks", note: "polite attention / sorry", en: "Excuse me / Sorry" },
+        { fi: "kirja, vihko ja kynä", spoken: "kirja, vihko ja kynä", note: "classroom objects", en: "book, notebook, and pen" },
+        { fi: "kauppa → kaupassa", spoken: "kaupas", note: "inessive -ssa", en: "store → in the store" },
+        { fi: "koti → kotona", spoken: "koton", note: "special at-home form", en: "home → at home" },
+        { fi: "Tänään on nolla astetta.", spoken: "Tänää on nolla astet.", note: "everyday weather", en: "Today it is zero degrees." },
       ],
     },
   };
@@ -2585,8 +2902,9 @@
   function getNotebookRows(tableId) {
     const tbl = NOTEBOOK_MASTER_TABLES[tableId] || NOTEBOOK_MASTER_TABLES.olla;
     if (tableId !== "everyday") return tbl.rows;
-    const customRows = (state.flashcards || []).slice(0, 20).map((c) => ({
+    const customRows = (state.flashcards || []).slice(0, 25).map((c) => ({
       fi: c.fi,
+      spoken: c.spoken || "",
       note: c.baseForm ? `base: ${c.baseForm}` : "saved word",
       en: c.en,
     }));
@@ -2600,7 +2918,7 @@
 
   function exportNotebookGoodnotes(format) {
     const today = DB.todayStr();
-    const keys = ["olla", "onko", "days", "everyday"];
+    const keys = ["olla", "onko", "days", "numbers", "everyday"];
     if (format === "md") {
       let md = `# 🇫🇮 ILoveFinland — Finnish Master Study Sheet (${today})\n\n`;
       for (const k of keys) {
@@ -2608,7 +2926,8 @@
         const rows = getNotebookRows(k);
         md += `## ${t.title}\n\n| Finnish (Suomi) | English |\n|---|---|\n`;
         rows.forEach((r) => {
-          md += `| **${r.fi}** ${r.note ? `*(${r.note})*` : ""} | ${r.en} |\n`;
+          const sp = r.spoken ? ` • spoken: ${r.spoken}` : "";
+          md += `| **${r.fi}** ${r.note || sp ? `*(${r.note || ""}${sp})*` : ""} | ${r.en} |\n`;
         });
         md += "\n";
       }
@@ -2626,7 +2945,7 @@
       const t = NOTEBOOK_MASTER_TABLES[k];
       const rows = getNotebookRows(k);
       sectionsHtml += `<h2>${esc(t.title)}</h2><table><thead><tr><th>Finnish (Suomi)</th><th>English</th></tr></thead><tbody>` +
-        rows.map((r) => `<tr><td><strong>${esc(r.fi)}</strong>${r.note ? ` <span style="color:#475569;font-size:12px;">(${esc(r.note)})</span>` : ""}</td><td>${esc(r.en)}</td></tr>`).join("") +
+        rows.map((r) => `<tr><td><strong>${esc(r.fi)}</strong>${r.spoken ? ` <span style="color:#0369A1;font-size:12px;">[spoken: ${esc(r.spoken)}]</span>` : ""}${r.note ? ` <span style="color:#475569;font-size:12px;">(${esc(r.note)})</span>` : ""}</td><td>${esc(r.en)}</td></tr>`).join("") +
         `</tbody></table>`;
     }
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Finnish Goodnotes Study Sheet (${today})</title>
@@ -2648,28 +2967,66 @@
     win.document.close();
   }
 
-  function getCombinedQuizPool() {
-    const dynamicQs = (state.flashcards || []).slice(0, 10).map((c, i, arr) => {
-      const distractors = [
-        arr[(i + 1) % arr.length]?.en,
-        arr[(i + 2) % arr.length]?.en,
-        "good morning",
-        "in the store",
-        "thank you",
-      ].filter((x) => x && x.toLowerCase() !== String(c.en || "").toLowerCase());
-      const opts = [c.en, distractors[0] || "water", distractors[1] || "tomorrow"];
+  function buildQuestionsFromItems(items, topicLabel) {
+    const valid = (items || []).filter((it) => it && it.fi && it.en);
+    if (!valid.length) return [];
+    const fallbackDistractors = ["good morning", "in the store", "thank you", "zero degrees", "red jacket", "apple"];
+    return valid.map((it, i) => {
+      const d1 = valid[(i + 3) % valid.length]?.en;
+      const d2 = valid[(i + 7) % valid.length]?.en;
+      const d3 = valid[(i + 11) % valid.length]?.en;
+      const distractors = [d1, d2, d3, ...fallbackDistractors].filter(
+        (x, idx, a) => x && x.toLowerCase() !== String(it.en).toLowerCase() && a.indexOf(x) === idx
+      );
+      const rawOpts = [it.en, distractors[0] || "water", distractors[1] || "tomorrow"];
+      // Deterministic rotation based on index so correct answer isn't always first
+      const rot = i % rawOpts.length;
+      const opts = rawOpts.slice(rot).concat(rawOpts.slice(0, rot));
       return {
-        topic: "Saved Vocabulary",
-        promptFi: `Mitä tarkoittaa "${c.fi}"?`,
-        promptEn: `Choose the English meaning of "${c.fi}":`,
-        answer: c.en,
-        fullFi: c.fi,
-        fullEn: c.en,
-        tip: c.example || `Saved in your personal Finnish vocabulary deck.`,
+        topic: topicLabel,
+        promptFi: `Mitä tarkoittaa "${it.fi}"?`,
+        promptEn: `What does "${it.fi}" mean in English?`,
+        answer: it.en,
+        altAnswer: it.fi,
+        fullFi: it.fi,
+        fullEn: it.en,
+        tip: `From ${topicLabel} — tap 🔊 0.75× to hear the exact Finnish pronunciation.`,
         opts,
       };
     });
-    return [...SCHOOL_FINNISH_QUESTIONS, ...dynamicQs];
+  }
+
+  function getCombinedQuizPool() {
+    const src = state.quizSource || "mixed";
+    const allEps = getAllPodcastEpisodes();
+    const curEp = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
+    const podItems = getPodcastItems(curEp);
+    const podQs = buildQuestionsFromItems(podItems, `🎧 ${curEp.title}`);
+    const savedQs = buildQuestionsFromItems((state.flashcards || []).slice(0, 14), "⭐ Saved Words");
+    const extraA1 = [
+      { topic: "A1 Numbers & Time", promptFi: "Paljonko kello on? Kello on ___ (9).", promptEn: "What time is it? It is nine o'clock.", answer: "yhdeksän", fullFi: "Kello on yhdeksän.", fullEn: "It is nine o'clock.", tip: "7 = seitsemän, 8 = kahdeksan, 9 = yhdeksän, 10 = kymmenen.", opts: ["yhdeksän", "kahdeksan", "seitsemän"] },
+      { topic: "A1 Weather", promptFi: "Tänään on ___ astetta. (0°C)", promptEn: "Today it is zero degrees.", answer: "nolla", fullFi: "Tänään on nolla astetta.", fullEn: "Today it is zero degrees.", tip: "nolla astetta = zero degrees; pakkasta = below zero.", opts: ["nolla", "kylmä", "sataa"] },
+      { topic: "A1 Clothes & Colors", promptFi: "Minulla on ___ takki. (blue)", promptEn: "I have a blue jacket.", answer: "sininen", fullFi: "Minulla on sininen takki.", fullEn: "I have a blue jacket.", tip: "sininen = blue, punainen = red, vihreä = green.", opts: ["sininen", "punainen", "vihreä"] },
+      { topic: "A1 Fruits & Food", promptFi: "Haluaisin yhden ___, kiitos. (apple)", promptEn: "I would like one apple, please.", answer: "omenan", fullFi: "Haluaisin yhden omenan, kiitos.", fullEn: "I would like one apple, please.", tip: "omena = apple (yhden omenan = one apple).", opts: ["omenan", "banaanin", "leivän"] },
+      { topic: "A1 Months", promptFi: "Mikä kuukausi on tammikuu?", promptEn: "Which month is tammikuu?", answer: "January", fullFi: "Tammikuu on vuoden ensimmäinen kuukausi.", fullEn: "January is the first month of the year.", tip: "tammikuu = January, helmikuu = February, joulukuu = December.", opts: ["January", "December", "June"] },
+    ];
+    const grammarQs = [...SCHOOL_FINNISH_QUESTIONS, ...extraA1];
+
+    if (src === "podcast") {
+      return podQs.length ? podQs : grammarQs;
+    }
+    if (src === "grammar") {
+      return grammarQs;
+    }
+    // Mixed: interleave podcast + saved words + A1 grammar so every session feels fresh!
+    const mixed = [];
+    const maxLen = Math.max(podQs.length, grammarQs.length, savedQs.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (podQs[i]) mixed.push(podQs[i]);
+      if (grammarQs[i]) mixed.push(grammarQs[i]);
+      if (savedQs[i]) mixed.push(savedQs[i]);
+    }
+    return mixed.length ? mixed : grammarQs;
   }
 
   function renderTabNotebookAndDrills() {
@@ -2677,18 +3034,85 @@
     const rows = getNotebookRows(tblId);
     const quizPool = getCombinedQuizPool();
     const q = quizPool[state.streetIdx % quizPool.length];
+    const quizSrc = state.quizSource || "mixed";
+    const quizMode = state.quizInputMode || "mc";
 
     return `
       <div class="fl3-stack-notebook">
-        <!-- TOP CARD: GOODNOTES MASTER TABLES -->
+        <!-- TOP CARD: QUICK A1 PRACTICE QUIZ (PRACTICE FIRST!) -->
+        <section class="fl3-card accent" aria-label="Quick A1 Practice Quiz">
+          <div class="fl3-card-head">
+            <h2 class="fl3-card-title">
+              <span>🎯</span><span>Quick A1 Practice Quiz</span>
+            </h2>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="fl3-badge">${esc(q.topic)}</span>
+              <span class="fl3-badge">Score: ${state.streetScore}</span>
+            </div>
+          </div>
+
+          <!-- Quiz Source Pills + Answer Mode Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="fl3-btn ${quizSrc === "mixed" ? "active" : ""}" data-fl-quiz-source="mixed" style="padding:7px 12px;">🎯 Mixed (Podcast + A1)</button>
+              <button type="button" class="fl3-btn ${quizSrc === "podcast" ? "active" : ""}" data-fl-quiz-source="podcast" style="padding:7px 12px;">🎧 Current Podcast</button>
+              <button type="button" class="fl3-btn ${quizSrc === "grammar" ? "active" : ""}" data-fl-quiz-source="grammar" style="padding:7px 12px;">🏫 All A1 Grammar</button>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="fl3-btn ${quizMode === "mc" ? "active" : ""}" data-fl-quiz-mode="mc" style="padding:7px 11px;">Multiple Choice</button>
+              <button type="button" class="fl3-btn ${quizMode === "type" ? "active" : ""}" data-fl-quiz-mode="type" style="padding:7px 11px;">⌨️ Type Answer</button>
+            </div>
+          </div>
+
+          <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:10px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:1.22rem;font-weight:800;color:#FFFFFF;margin-bottom:4px;">🇫🇮 ${esc(q.promptFi)}</div>
+              <div style="font-size:0.88rem;color:#94A3B8;">🇬🇧 ${esc(q.promptEn)}</div>
+            </div>
+            <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(q.fullFi)}">🔊 0.75×</button>
+          </div>
+
+          ${
+            quizMode === "type"
+              ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <input type="text" id="fl-quiz-type-input" class="fl3-input-sm" style="flex:1;min-width:200px;padding:11px 14px;font-size:0.95rem;" placeholder="Type your answer and press Enter..." autocomplete="off" />
+                  <button type="button" class="fl3-btn primary" id="fl-quiz-type-submit" style="padding:10px 18px;">Check Answer ✓</button>
+                </div>`
+              : `<div style="display:flex;flex-direction:column;gap:8px;">
+                  ${q.opts
+                    .map(
+                      (opt) => `<button type="button" class="fl3-quiz-opt" data-fl-street-ans="${esc(opt)}">${esc(opt)}</button>`
+                    )
+                    .join("")}
+                </div>`
+          }
+
+          ${
+            state.streetFeedback
+              ? `<div style="margin-top:14px;padding:14px;border-radius:10px;background:#0A192F;border:1px solid ${state.streetFeedback.ok ? "rgba(52,211,153,0.5)" : "rgba(56,189,248,0.45)"};">
+                   ${state.streetFeedback.roast ? `<div style="color:#E0F2FE;font-size:0.82rem;margin-bottom:6px;">${esc(state.streetFeedback.roast)}</div>` : ""}
+                   <div style="font-weight:800;color:${state.streetFeedback.ok ? "#6EE7B7" : "#FCA5A5"};font-size:0.94rem;">
+                     ${state.streetFeedback.ok ? "✅ Oikein! Great job!" : `💡 Correct answer: ${esc(q.answer)}`}
+                   </div>
+                   <div style="color:#FFFFFF;font-weight:700;margin-top:6px;">🇫🇮 ${esc(q.fullFi)}</div>
+                   <div style="color:#38BDF8;font-size:0.86rem;margin-top:2px;">🇬🇧 ${esc(q.fullEn)}</div>
+                   <div style="color:#CBD5E1;font-size:0.8rem;margin-top:5px;">${esc(q.tip)}</div>
+                   <button type="button" class="fl3-btn primary" id="fl-street-next" style="margin-top:12px;width:100%;">Next Question →</button>
+                 </div>`
+              : ""
+          }
+        </section>
+
+        <!-- BOTTOM CARD: GOODNOTES MASTER TABLES -->
         <section class="fl3-card" aria-label="Goodnotes Master Tables">
           <div class="fl3-card-head">
             <h2 class="fl3-card-title">
               <span>📓</span><span>Goodnotes Master Tables</span>
             </h2>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="fl3-btn ${state.showSpokenTable ? "active" : ""}" id="fl-nb-spoken-toggle" title="Show everyday spoken Finnish (puhekieli)">🗣️ Spoken: ${state.showSpokenTable ? "ON" : "OFF"}</button>
               <button type="button" class="fl3-btn" id="fl-nb-export-md">📄 Export .md</button>
-              <button type="button" class="fl3-btn primary" id="fl-nb-export-pdf">🖨️ Export to Goodnotes (PDF)</button>
+              <button type="button" class="fl3-btn primary" id="fl-nb-export-pdf">🖨️ Goodnotes (PDF)</button>
             </div>
           </div>
 
@@ -2697,6 +3121,16 @@
               <button type="button" class="fl3-btn ${tblId === id ? "active" : ""}" data-fl-nb-table="${id}">${esc(meta.title)}</button>
             `).join("")}
           </div>
+
+          ${
+            tblId === "everyday"
+              ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:#0A192F;border:1px solid #1E3A5F;border-radius:10px;">
+                  <input type="text" id="fl-nb-add-fi" class="fl3-input-sm" style="flex:1;min-width:140px;" placeholder="Add Finnish word (e.g. omena)..." />
+                  <input type="text" id="fl-nb-add-en" class="fl3-input-sm" style="flex:1;min-width:140px;" placeholder="English meaning (e.g. apple)..." />
+                  <button type="button" class="fl3-btn primary" id="fl-nb-add-btn" style="padding:8px 14px;">+ Add Word</button>
+                </div>`
+              : ""
+          }
 
           <div class="fl3-table-wrap">
             <table class="fl3-table">
@@ -2715,6 +3149,7 @@
                       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                         <div>
                           <strong style="color:#FFFFFF;font-size:0.94rem;">${esc(r.fi)}</strong>
+                          ${state.showSpokenTable && r.spoken ? `<div style="font-size:0.75rem;color:#38BDF8;margin-top:2px;font-weight:600;">🗣️ spoken: ${esc(r.spoken)}</div>` : ""}
                           ${r.note ? `<div style="font-size:0.74rem;color:#94A3B8;margin-top:2px;">${esc(r.note)}</div>` : ""}
                         </div>
                         <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(r.fi)}" title="Listen slowly (0.75×)">🔊 0.75×</button>
@@ -2728,50 +3163,6 @@
               </tbody>
             </table>
           </div>
-        </section>
-
-        <!-- BOTTOM CARD: QUICK A1 PRACTICE QUIZ -->
-        <section class="fl3-card accent" aria-label="Quick A1 Practice Quiz">
-          <div class="fl3-card-head">
-            <h2 class="fl3-card-title">
-              <span>🎯</span><span>Quick A1 Practice Quiz</span>
-            </h2>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="fl3-badge">${esc(q.topic)}</span>
-              <span class="fl3-badge">Score: ${state.streetScore}</span>
-            </div>
-          </div>
-
-          <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:10px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div>
-              <div style="font-size:1.22rem;font-weight:800;color:#FFFFFF;margin-bottom:4px;">🇫🇮 ${esc(q.promptFi)}</div>
-              <div style="font-size:0.88rem;color:#94A3B8;">🇬🇧 ${esc(q.promptEn)}</div>
-            </div>
-            <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(q.fullFi)}">🔊 0.75×</button>
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            ${q.opts
-              .map(
-                (opt) => `<button type="button" class="fl3-quiz-opt" data-fl-street-ans="${esc(opt)}">${esc(opt)}</button>`
-              )
-              .join("")}
-          </div>
-
-          ${
-            state.streetFeedback
-              ? `<div style="margin-top:14px;padding:14px;border-radius:10px;background:#0A192F;border:1px solid ${state.streetFeedback.ok ? "rgba(52,211,153,0.5)" : "rgba(56,189,248,0.45)"};">
-                   ${state.streetFeedback.roast ? `<div style="color:#E0F2FE;font-size:0.82rem;margin-bottom:6px;">${esc(state.streetFeedback.roast)}</div>` : ""}
-                   <div style="font-weight:800;color:${state.streetFeedback.ok ? "#6EE7B7" : "#FCA5A5"};font-size:0.94rem;">
-                     ${state.streetFeedback.ok ? "✅ Oikein! Great job!" : `💡 Correct answer: ${esc(q.answer)}`}
-                   </div>
-                   <div style="color:#FFFFFF;font-weight:700;margin-top:6px;">🇫🇮 ${esc(q.fullFi)}</div>
-                   <div style="color:#38BDF8;font-size:0.86rem;margin-top:2px;">🇬🇧 ${esc(q.fullEn)}</div>
-                   <div style="color:#CBD5E1;font-size:0.8rem;margin-top:5px;">${esc(q.tip)}</div>
-                   <button type="button" class="fl3-btn primary" id="fl-street-next" style="margin-top:12px;width:100%;">Next Question →</button>
-                 </div>`
-              : ""
-          }
         </section>
       </div>
     `;
@@ -3154,6 +3545,30 @@
     root.querySelector("#fl-start-rec")?.addEventListener("click", startRecording);
     root.querySelector("#fl-stop-rec")?.addEventListener("click", stopRecording);
 
+    // Tab 1: Chat scroll-to-latest pill & Silent Live Save Words
+    const chatStageEl = root.querySelector("#fl-chat-stage");
+    const scrollDownBtn = root.querySelector("#fl-scroll-down-btn");
+    if (chatStageEl && scrollDownBtn) {
+      const updateScrollPill = () => {
+        const gap = chatStageEl.scrollHeight - chatStageEl.scrollTop - chatStageEl.clientHeight;
+        scrollDownBtn.style.display = gap > 90 ? "inline-flex" : "none";
+      };
+      chatStageEl.addEventListener("scroll", updateScrollPill, { passive: true });
+      scrollDownBtn.addEventListener("click", () => {
+        chatStageEl.scrollTo({ top: chatStageEl.scrollHeight, behavior: "smooth" });
+        scrollDownBtn.style.display = "none";
+      });
+    }
+
+    root.querySelector("#fl-live-save-words")?.addEventListener("click", () => {
+      const conv = getActiveConv();
+      const allMsgs = conv ? conv.messages || [] : [];
+      const { latest } = parseAllLiveCards(allMsgs);
+      if (latest && latest.rawText) {
+        extractAndSaveFlashcards({ text: latest.rawText });
+      }
+    });
+
     // Tab 1 Right Panel: Silent Classroom Live Card controls (100% silent — never speaks!)
     root.querySelector("#fl-live-btn")?.addEventListener("click", toggleLiveTranslation);
     root.querySelector("#fl-live-now")?.addEventListener("click", () => { if (state.liveForceCutFn) state.liveForceCutFn(); });
@@ -3249,8 +3664,44 @@
         stopPodcastPlayback(true);
         state.podcastEpisodeId = b.getAttribute("data-fl-pod-ep");
         state.podcastItemIdx = 0;
+        state.podcastCurSec = 0;
+        state.podcastTotalDur = 0;
+        saveWalkResumeState();
         renderActiveView();
       };
+    });
+
+    root.querySelector("#fl-walk-chapter-select")?.addEventListener("change", (e) => {
+      stopPodcastPlayback(true);
+      state.podcastEpisodeId = e.target.value || "pod_today_a1";
+      state.podcastItemIdx = 0;
+      state.podcastCurSec = 0;
+      state.podcastTotalDur = 0;
+      saveWalkResumeState();
+      renderActiveView();
+    });
+
+    const triggerCustomPodcast = () => {
+      const inp = document.getElementById("fl-pod-custom-topic");
+      const topic = (inp?.value || "").trim();
+      if (!topic) {
+        toast("Type a topic first (e.g. fruits, kitchen, doctor, bus)!", "warning");
+        return;
+      }
+      if (inp) inp.value = "";
+      createCustomPodcastEpisode(topic, []);
+    };
+    root.querySelector("#fl-pod-create-btn")?.addEventListener("click", triggerCustomPodcast);
+    root.querySelector("#fl-pod-custom-topic")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); triggerCustomPodcast(); }
+    });
+
+    root.querySelector("#fl-walk-progress-bar")?.addEventListener("click", (e) => {
+      if (!_walkAudioEl || !_walkAudioEl.duration || !isFinite(_walkAudioEl.duration)) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / Math.max(1, rect.width)));
+      _walkAudioEl.currentTime = ratio * _walkAudioEl.duration;
+      updateWalkProgressDom(_walkAudioEl.currentTime, _walkAudioEl.duration);
     });
 
     const handlePauseWalk = () => {
@@ -3318,6 +3769,7 @@
         const wasPlaying = Boolean(state.podcastPlaying);
         state.podcastSpeed = nextSpeed;
         state.podcastTrackKey = "";
+        saveWalkResumeState();
         toast(`Speed set to ${state.podcastSpeed === 1 ? "1.0×" : state.podcastSpeed.toFixed(2) + "×"}`, "info");
         if (wasPlaying) {
           generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
@@ -3340,31 +3792,89 @@
     });
     root.querySelector("#fl-pod-export-md")?.addEventListener("click", () => exportWalkAndListenGoodnotes(state.podcastEpisodeId, "md"));
 
-    // Tab 3: Notebook & Drills (Goodnotes Master Tables + Quick A1 Practice Quiz)
+    // Tab 3: Notebook & Drills (Quick A1 Practice Quiz + Goodnotes Master Tables)
     root.querySelectorAll("[data-fl-nb-table]").forEach((b) => {
       b.onclick = () => {
         state.notebookTableId = b.getAttribute("data-fl-nb-table") || "olla";
         renderActiveView();
       };
     });
+    root.querySelector("#fl-nb-spoken-toggle")?.addEventListener("click", () => {
+      state.showSpokenTable = !state.showSpokenTable;
+      renderActiveView();
+    });
+    const addNotebookWord = async () => {
+      const fiInp = document.getElementById("fl-nb-add-fi");
+      const enInp = document.getElementById("fl-nb-add-en");
+      const fi = (fiInp?.value || "").trim();
+      const en = (enInp?.value || "").trim();
+      if (!fi || !en) {
+        toast("Enter both a Finnish word and its English meaning.", "warning");
+        return;
+      }
+      await DB.addFlashcard({ fi, en });
+      state.flashcards = await DB.listFlashcards();
+      scheduleAutoSync();
+      toast(`Added "${fi}" — now in Vocabulary, Walk & Listen, and Quiz!`, "success");
+      renderActiveView();
+    };
+    root.querySelector("#fl-nb-add-btn")?.addEventListener("click", addNotebookWord);
+    root.querySelector("#fl-nb-add-en")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); addNotebookWord(); }
+    });
     root.querySelector("#fl-nb-export-md")?.addEventListener("click", () => exportNotebookGoodnotes("md"));
     root.querySelector("#fl-nb-export-pdf")?.addEventListener("click", () => exportNotebookGoodnotes("pdf"));
 
-    root.querySelectorAll("[data-fl-street-ans]").forEach((b) => {
+    root.querySelectorAll("[data-fl-quiz-source]").forEach((b) => {
       b.onclick = () => {
-        const pool = getCombinedQuizPool();
-        const q = pool[state.streetIdx % pool.length];
-        const picked = (b.getAttribute("data-fl-street-ans") || "").trim();
-        const ok = picked.toLowerCase().startsWith(String(q.answer || "").toLowerCase());
-        if (ok) {
-          state.streetScore++;
-          getRoastLine(false);
-          state.streetFeedback = { ok: true, roast: "" };
-        } else {
-          state.streetFeedback = { ok: false, roast: getRoastLine(true) };
-        }
+        state.quizSource = b.getAttribute("data-fl-quiz-source") || "mixed";
+        state.streetIdx = 0;
+        state.streetFeedback = null;
         renderActiveView();
       };
+    });
+    root.querySelectorAll("[data-fl-quiz-mode]").forEach((b) => {
+      b.onclick = () => {
+        state.quizInputMode = b.getAttribute("data-fl-quiz-mode") || "mc";
+        state.streetFeedback = null;
+        renderActiveView();
+      };
+    });
+
+    const evaluateQuizAnswer = (rawPicked) => {
+      const pool = getCombinedQuizPool();
+      const q = pool[state.streetIdx % pool.length];
+      const norm = (s) => String(s || "").toLowerCase().replace(/[.,!?;:"'()]/g, "").replace(/\s+/g, " ").trim();
+      const picked = norm(rawPicked);
+      const ans = norm(q.answer);
+      const alt = norm(q.altAnswer || "");
+      const ok = Boolean(
+        picked &&
+          (picked === ans ||
+            (ans.length >= 3 && (picked.startsWith(ans) || ans.startsWith(picked))) ||
+            (alt && (picked === alt || (alt.length >= 3 && picked.startsWith(alt)))))
+      );
+      if (ok) {
+        state.streetScore++;
+        getRoastLine(false);
+        state.streetFeedback = { ok: true, roast: "" };
+      } else {
+        state.streetFeedback = { ok: false, roast: getRoastLine(true) };
+      }
+      renderActiveView();
+    };
+
+    root.querySelectorAll("[data-fl-street-ans]").forEach((b) => {
+      b.onclick = () => evaluateQuizAnswer(b.getAttribute("data-fl-street-ans") || "");
+    });
+    const submitTypedQuiz = () => {
+      const inp = document.getElementById("fl-quiz-type-input");
+      if (!inp || !inp.value.trim()) return;
+      evaluateQuizAnswer(inp.value.trim());
+    };
+    root.querySelector("#fl-quiz-type-submit")?.addEventListener("click", submitTypedQuiz);
+    root.querySelector("#fl-quiz-type-input")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); submitTypedQuiz(); }
     });
     root.querySelector("#fl-street-next")?.addEventListener("click", () => {
       state.streetIdx++;
@@ -3590,6 +4100,7 @@
 
   /* ---------- INIT ---------- */
   async function initFinnishLab() {
+    loadWalkResumeState();
     await refreshRole();
     await loadAllData();
     mountFloatingAndSidePanel();
