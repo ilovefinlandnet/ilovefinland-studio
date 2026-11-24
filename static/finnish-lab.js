@@ -66,6 +66,7 @@
     recordTimer: null,
     isLiveTranslating: false,
     livePanelOpen: false,
+    chatRailOpen: true,
     liveRecognition: null,
     liveInterimText: "",
     liveStream: null,
@@ -2334,49 +2335,109 @@
     const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, curItems.length - 1));
     const curWalkItem = curItems[activeIdx] || { fi: "Hyvää huomenta", en: "Good morning" };
 
+    const firstName = (state.userName || "").trim().split(/\s+/)[0] || "";
+    const railVisible = Boolean(state.chatRailOpen && activeTab === "chat");
+
     root.innerHTML = `
-      <div class="fl3-shell ${activeTab === "chat" ? "is-chat-mode" : ""} ${showMiniPlayer ? "has-mini-player" : ""}">
-        <!-- Ultra-Slim Top Bar: Brand + 2 Clean Tabs (Chat | Study) + New Chat -->
-        <header class="fl3-topbar fl3-topbar-slim">
-          <div class="fl3-brand-group">
-            <button type="button" class="fl3-menu-btn" id="fl-open-drawer" title="Saved Chats, Flashcards, Notes &amp; Settings" aria-label="Open Finnish Lab menu">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-            <div class="fl3-title">
-              <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
-              <span>Finnish Lab</span>
-            </div>
-          </div>
-
-          <nav class="fl3-tabs-nav fl3-tabs-2" role="tablist" aria-label="Finnish Study Lab Tabs">
-            <button type="button" role="tab" aria-selected="${activeTab === "chat"}" class="fl3-tab-pill ${activeTab === "chat" ? "active" : ""}" data-fl-tab="chat">
-              <span>💬</span><span>Chat</span>
-            </button>
-            <button type="button" role="tab" aria-selected="${activeTab === "study"}" class="fl3-tab-pill ${activeTab === "study" ? "active" : ""}" data-fl-tab="study">
-              <span>📚</span><span>Study</span>
-            </button>
-          </nav>
-
-          <div class="fl3-actions-group">
-            <button type="button" class="fl3-btn" id="fl-new-chat-top" style="padding:7px 12px;min-height:36px;" title="Start a fresh tutor chat">+ New</button>
-          </div>
-        </header>
-
+      <div class="fl3-app-frame ${activeTab === "chat" ? "is-chat-mode" : ""} ${showMiniPlayer ? "has-mini-player" : ""}">
         ${
-          activeTab === "chat"
-            ? renderTabChatAndClass()
-            : `<div class="fl3-study-wrap">
-                <div class="fl3-study-subnav" role="tablist" aria-label="Study Sections">
-                  <button type="button" role="tab" aria-selected="${studySubTab === "walk"}" class="fl3-sub-pill ${studySubTab === "walk" ? "active" : ""}" data-fl-study-sub="walk">
-                    <span>🎧</span><span>Walk &amp; Listen</span>
-                  </button>
-                  <button type="button" role="tab" aria-selected="${studySubTab === "notebook"}" class="fl3-sub-pill ${studySubTab === "notebook" ? "active" : ""}" data-fl-study-sub="notebook">
-                    <span>🎯</span><span>Notebook &amp; Drills</span>
+          railVisible
+            ? `<aside class="fl3-chat-rail" aria-label="Recent Finnish Chats">
+                <div class="fl3-rail-head">
+                  <div class="fl3-title" style="font-size:0.94rem;">
+                    <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
+                    <span>Finnish Lab</span>
+                  </div>
+                  <button type="button" class="fl3-icon-btn" id="fl-toggle-rail" title="Hide chat sidebar" aria-label="Hide chat sidebar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
                   </button>
                 </div>
-                ${studySubTab === "walk" ? renderTabWalkAndListen() : renderTabNotebookAndDrills()}
-              </div>`
+
+                <button type="button" class="fl3-rail-new-btn" id="fl-new-chat-top">
+                  <span>✏️</span><span>New chat</span>
+                </button>
+
+                <div class="fl3-rail-section-label">Recents</div>
+                <div class="fl3-rail-list">
+                  ${
+                    state.conversations.length
+                      ? state.conversations
+                          .slice(0, 20)
+                          .map(
+                            (c) => `
+                          <div class="fl3-rail-item ${c.id === state.activeConvId ? "active" : ""}" data-fl-select-conv="${esc(c.id)}">
+                            <span class="fl3-rail-item-title">${esc(c.title || "Finnish Chat")}</span>
+                            <button type="button" class="fl3-rail-del" data-fl-del-conv="${esc(c.id)}" title="Delete chat" aria-label="Delete chat">✕</button>
+                          </div>
+                        `
+                          )
+                          .join("")
+                      : `<div style="padding:8px 10px;font-size:0.78rem;color:#64748B;">No chats yet</div>`
+                  }
+                </div>
+
+                <div class="fl3-rail-footer">
+                  <button type="button" class="fl3-rail-foot-btn" id="fl-rail-cards-btn">
+                    <span>🃏</span><span>Cards${dueCount ? ` (${dueCount})` : ""}</span>
+                  </button>
+                  <button type="button" class="fl3-rail-foot-btn" id="fl-rail-settings-btn">
+                    <span>⚙️</span><span>Settings</span>
+                  </button>
+                </div>
+              </aside>`
+            : ""
         }
+
+        <div class="fl3-main-col ${activeTab === "chat" ? "is-chat-mode" : ""}">
+          <!-- Clean Borderless Floating Top Bar (ChatGPT Style) -->
+          <header class="fl3-floating-topbar">
+            <div class="fl3-float-left">
+              ${
+                activeTab === "chat" && !railVisible
+                  ? `<button type="button" class="fl3-icon-btn fl3-desktop-only" id="fl-toggle-rail" title="Show chat sidebar" aria-label="Show chat sidebar">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                    </button>`
+                  : ""
+              }
+              <button type="button" class="fl3-icon-btn ${activeTab === "chat" && railVisible ? "fl3-mobile-only" : ""}" id="fl-open-drawer" title="Chats, Cards, Notes &amp; Settings" aria-label="Open Finnish Lab menu">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              </button>
+              <div class="fl3-title ${railVisible ? "fl3-mobile-only" : ""}" style="font-size:0.95rem;">
+                <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
+                <span>Finnish Lab</span>
+              </div>
+            </div>
+
+            <nav class="fl3-tabs-nav fl3-tabs-2 fl3-tabs-floating" role="tablist" aria-label="Finnish Study Lab Tabs">
+              <button type="button" role="tab" aria-selected="${activeTab === "chat"}" class="fl3-tab-pill ${activeTab === "chat" ? "active" : ""}" data-fl-tab="chat">
+                <span>Chat</span>
+              </button>
+              <button type="button" role="tab" aria-selected="${activeTab === "study"}" class="fl3-tab-pill ${activeTab === "study" ? "active" : ""}" data-fl-tab="study">
+                <span>Study</span>
+              </button>
+            </nav>
+
+            <div class="fl3-float-right">
+              <button type="button" class="fl3-icon-btn ${railVisible ? "fl3-mobile-only" : ""}" id="fl-new-chat-mobile" title="New chat" aria-label="Start new chat">✏️</button>
+            </div>
+          </header>
+
+          ${
+            activeTab === "chat"
+              ? renderTabChatAndClass(firstName)
+              : `<div class="fl3-study-wrap">
+                  <div class="fl3-study-subnav" role="tablist" aria-label="Study Sections">
+                    <button type="button" role="tab" aria-selected="${studySubTab === "walk"}" class="fl3-sub-pill ${studySubTab === "walk" ? "active" : ""}" data-fl-study-sub="walk">
+                      <span>🎧</span><span>Walk &amp; Listen</span>
+                    </button>
+                    <button type="button" role="tab" aria-selected="${studySubTab === "notebook"}" class="fl3-sub-pill ${studySubTab === "notebook" ? "active" : ""}" data-fl-study-sub="notebook">
+                      <span>🎯</span><span>Notebook &amp; Drills</span>
+                    </button>
+                  </div>
+                  ${studySubTab === "walk" ? renderTabWalkAndListen() : renderTabNotebookAndDrills()}
+                </div>`
+          }
+        </div>
       </div>
 
       ${
@@ -2521,7 +2582,7 @@
   }
 
   /* ---------- TAB 1: CHATGPT-STYLE FULL-HEIGHT CHAT + ON-DEMAND SILENT LIVE CLASS ---------- */
-  function renderTabChatAndClass() {
+  function renderTabChatAndClass(firstName) {
     const conv = getActiveConv();
     const allMsgs = conv ? conv.messages || [] : [];
     const isLegacyLiveBubble = (m) =>
@@ -2536,6 +2597,7 @@
     const { latest: liveData, history: liveHistory } = parseAllLiveCards(allMsgs);
     const hasPendingPhoto = state.pendingAttachments.some((a) => (a.mime_type || "").startsWith("image/"));
     const showLiveDrawer = Boolean(state.livePanelOpen || state.isLiveTranslating);
+    const greeting = firstName ? `How can I help, ${esc(firstName)}?` : "How can I help with your Finnish?";
 
     return `
       <div class="fl3-chatgpt-wrap" aria-label="AI Finnish Tutor">
@@ -2630,15 +2692,12 @@
           ${
             tutorMsgs.length
               ? tutorMsgs.map(({ m, idx }) => renderMessageBubble(m, idx)).join("")
-              : `<div style="margin:auto 0;padding:36px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
-                  <div style="width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
+              : `<div style="margin:auto 0;padding:36px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;">
+                  <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
                     <img src="/assets/ilf-heart.png" alt="ILoveFinland" style="width:100%;height:100%;object-fit:contain;" />
                   </div>
-                  <strong style="font-size:1.15rem;color:#FFFFFF;">Hei! How can I help with your Finnish today?</strong>
-                  <p style="margin:0;font-size:0.86rem;color:#94A3B8;max-width:460px;line-height:1.5;">
-                    Ask anything, snap homework with <strong>+</strong>, tap <strong>🔇</strong> in class for silent live translation, or start a 2-minute practice:
-                  </p>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px;">
+                  <h2 style="margin:0;font-size:1.5rem;font-weight:700;color:#FFFFFF;letter-spacing:-0.02em;">${greeting}</h2>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
                     <button type="button" class="fl3-btn" data-fl-starter="How is the weather today in Pori? Teach me how to ask and say it in Finnish.">🌤️ Weather</button>
                     <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am ordering coffee and food at a Finnish café. Start with 1 simple line.">🛒 Store / Café</button>
                     <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am at the doctor or Kela in Finland. Start with 1 simple line.">🏥 Doctor / Kela</button>
@@ -2675,21 +2734,24 @@
               : ""
           }
 
-          <div class="fl3-composer-inline">
-            <label class="fl3-btn" style="cursor:pointer;padding:0;width:40px;height:40px;min-height:40px;flex-shrink:0;" title="Add homework photo, camera snap, or PDF" aria-label="Add photo or file">
-              <span style="font-size:1.15rem;font-weight:700;">+</span>
+          <textarea id="fl-chat-input" class="fl3-composer-input" rows="2" placeholder="Ask anything in English or Finnish..."></textarea>
+
+          <div class="fl3-composer-actions">
+            <label class="fl3-composer-icon-btn" style="cursor:pointer;" title="Add homework photo, camera snap, or PDF" aria-label="Add photo or file">
+              <span style="font-size:1.2rem;font-weight:500;line-height:1;">+</span>
               <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
             </label>
-            <textarea id="fl-chat-input" class="fl3-composer-input" rows="1" placeholder="Ask anything in English or Finnish..."></textarea>
-            <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : showLiveDrawer ? "active" : ""}" id="fl-toggle-live-panel" style="padding:0 10px;height:40px;min-height:40px;flex-shrink:0;" title="Silent Classroom Live (100% muted continuous teacher listener)" aria-label="Toggle Silent Classroom Live">
-              ${state.isLiveTranslating ? "🔴 Live" : "🔇"}
-            </button>
-            ${
-              state.isRecording
-                ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 12px;height:40px;min-height:40px;flex-shrink:0;" title="Stop Voice Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
-                : `<button type="button" class="fl3-btn" id="fl-start-rec" style="padding:0;width:40px;height:40px;min-height:40px;flex-shrink:0;" title="Record voice message in Finnish or English" aria-label="Record Voice Message">🎙️</button>`
-            }
-            <button type="button" class="fl3-btn primary" id="fl-chat-send" style="padding:0 14px;height:40px;min-height:40px;flex-shrink:0;" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="fl3-composer-icon-btn ${state.isLiveTranslating ? "danger" : showLiveDrawer ? "active" : ""}" id="fl-toggle-live-panel" title="Silent Classroom Live (100% muted continuous teacher listener)" aria-label="Toggle Silent Classroom Live">
+                ${state.isLiveTranslating ? "🔴" : "🔇"}
+              </button>
+              ${
+                state.isRecording
+                  ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 10px;height:36px;min-height:36px;border-radius:999px;" title="Stop Voice Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
+                  : `<button type="button" class="fl3-composer-icon-btn" id="fl-start-rec" title="Record voice message in Finnish or English" aria-label="Record Voice Message">🎙️</button>`
+              }
+              <button type="button" class="fl3-send-round-btn" id="fl-chat-send" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
+            </div>
           </div>
         </div>
       </div>
@@ -3491,6 +3553,20 @@
       state.drawerOpen = true;
       renderActiveView();
     });
+    root.querySelector("#fl-toggle-rail")?.addEventListener("click", () => {
+      state.chatRailOpen = !state.chatRailOpen;
+      renderActiveView();
+    });
+    root.querySelector("#fl-rail-cards-btn")?.addEventListener("click", () => {
+      state.drawerTab = "flashcards";
+      state.drawerOpen = true;
+      renderActiveView();
+    });
+    root.querySelector("#fl-rail-settings-btn")?.addEventListener("click", () => {
+      state.drawerTab = "settings";
+      state.drawerOpen = true;
+      renderActiveView();
+    });
 
     const startFreshChat = async () => {
       const c = await DB.saveConversation({ title: "New Chat", kind: "chat", messages: [] });
@@ -3502,6 +3578,7 @@
       renderActiveView();
     };
     root.querySelector("#fl-new-chat-top")?.addEventListener("click", startFreshChat);
+    root.querySelector("#fl-new-chat-mobile")?.addEventListener("click", startFreshChat);
     root.querySelector("#fl-drawer-new-chat")?.addEventListener("click", startFreshChat);
 
     // Tab 1: AI Finnish Tutor attachments & Send Photo to Walk & Listen
