@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=103.0" />
+  <link rel="stylesheet" href="/styles.css?v=110.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
   <link rel="stylesheet" href="/finnish-lab.css?v=109.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
@@ -2069,25 +2069,22 @@
               </details>
             </section>
 
-            <!-- Interactive Static Social Post (1080×1350) & 3:4 Profile Crop Card -->
-            <!-- Interactive Social Post & 6-Slide Carousel Story Deck Studio -->
+            <!-- Interactive Social Post & 6-Slide Carousel Studio (Clean 2-Mode + 2-Tab Layout) -->
             <section id="panel-ig" class="card panel" data-panel="ig">
-              <div class="panel-header">
+              <div class="panel-header" style="gap:12px;flex-wrap:wrap;">
                 <div class="card-header-left">
                   <div class="card-header-icon bg-pink">
                     <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
                   </div>
-                  <div>
-                    <h2 class="panel-title">2. Instagram &amp; Facebook Post (1080×1350)</h2>
-                    <div class="panel-subtitle-row">
-                      <span class="badge" style="background:#0284c7;color:#fff;font-weight:700;">Design - 1: Default Post</span>
-                      <span class="badge" style="background:#10B981;color:#fff;font-weight:700;">Design - 2: 6-Slide Deck</span>
-                      <span class="badge" style="background:#E1306C;color:#fff;">📸 Instagram (1080×1350)</span>
-                      <span class="badge" style="background:#1877F2;color:#fff;">📘 Facebook Link Post</span>
-                      <span class="badge badge-check">Synced with Article Photo</span>
-                    </div>
-                  </div>
+                  <h2 class="panel-title" style="margin:0;">Social Post (1080×1350)</h2>
                 </div>
+
+                <!-- Clean 2-Pill Mode Switcher (Zero Double Editors!) -->
+                <div class="social-mode-pill-bar" role="tablist" aria-label="Social Post Mode">
+                  <button type="button" role="tab" class="btn-design-studio-switch active" data-design="1">🖼️ Single Post</button>
+                  <button type="button" role="tab" class="btn-design-studio-switch" data-design="2">📑 6-Slide Carousel</button>
+                </div>
+
                 <div class="card-header-actions">
                   <button id="btn-approve-ig" class="btn btn-approve">
                     <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -2096,16 +2093,24 @@
                 </div>
               </div>
 
-              <!-- PART 2: CLEAN INSTA POST (1080×1350) — ESSENTIALS VISIBLE -->
+              <!-- MODE 1: SINGLE POST (1080×1350) -->
               <div id="design-1-workspace" class="studio-app-grid">
-                <!-- Left: 1080×1350 Live Preview (Twilight Navy #0A192F -> #003580 + Top-Left Heart Logo) & Downloads -->
+                <!-- Left: Sticky Live Preview + 2 Clean Export Actions -->
                 <div class="studio-stage-column">
                   <div class="studio-stage-card">
-                    <!-- No Image Uploaded Warning Banner -->
-                    <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:10px 14px;border-radius:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                      <span style="font-size:0.78rem;">⚠️ No photo uploaded for social post yet.</span>
-                      <button type="button" class="btn btn-primary btn-xs" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#029CD8;font-size:0.72rem;padding:3px 8px;font-weight:700;">📷 Upload Photo</button>
+                    <!-- Format Switcher + Safe-Zone Guide -->
+                    <div class="social-format-tabs" role="tablist" style="background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;margin-bottom:10px;">
+                      <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.73rem;padding:6px 6px;text-align:center;">Feed 4:5</button>
+                      <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.73rem;padding:6px 6px;text-align:center;">Facebook</button>
+                      <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.73rem;padding:6px 6px;text-align:center;">Grid 3:4</button>
+                      <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐</button>
                     </div>
+
+                    <!-- No Image Warning -->
+                    <div id="static-no-image-banner" class="alert-box hidden" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#FCA5A5;padding:8px 12px;border-radius:10px;margin-bottom:10px;font-size:0.76rem;">
+                      ⚠️ No photo uploaded yet — open <strong>Photo &amp; Framing</strong> on the right.
+                    </div>
+
                     <div class="static-canvas-views canvas-safe-zone-wrap" style="position:relative;">
                       <div id="d1-safe-zone-overlay" class="canvas-safe-zone-overlay hidden"></div>
                       <div class="static-canvas-col format-col active-format" id="format-view-feed">
@@ -2119,248 +2124,200 @@
                       </div>
                     </div>
 
-                    <!-- Direct Mobile & Desktop Exports -->
-                    <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:12px;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
-                      📲 Save to Photos / Camera Roll
+                    <!-- 2 Clean Export Actions -->
+                    <button type="button" id="btn-save-photos-45" class="btn-save-photos-direct" style="width:100%;margin-top:12px;background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.32);">
+                      📲 Save to Photos
                     </button>
                     <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
-                      <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
-                      <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
-                      <button type="button" onclick="document.getElementById('input-upload-post-photo')?.click()" class="btn btn-ghost btn-sm" title="Upload or replace synced photo">📷 Photo</button>
+                      <button type="button" id="btn-dl-static-45-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPG</button>
+                      <button type="button" id="btn-dl-static-45-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG</button>
                     </div>
                   </div>
                 </div>
 
-                <!-- Right: Caption + Design-1 Framing/Text/Typography Controls (Always side-by-side with Sticky 1080×1350 Preview!) -->
-                <div class="studio-inspector-card" style="padding:18px;gap:14px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                    <strong style="color:#fff;font-size:0.95rem;">📝 Caption &amp; Graphic Controls</strong>
-                    <span class="badge" style="background:rgba(2,156,216,0.2);color:#38BDF8;font-size:0.7rem;padding:2px 8px;">1080×1350 • Live Preview Left</span>
+                <!-- Right: Clean 2-Tab Inspector (Text & Caption | Photo & Framing) -->
+                <div class="studio-inspector-card">
+                  <div class="studio-inspector-tab-bar" role="tablist">
+                    <button type="button" class="btn-inspector-tab active" data-d1-tab="text">✍️ Text &amp; Caption</button>
+                    <button type="button" class="btn-inspector-tab" data-d1-tab="photo">📸 Photo &amp; Framing</button>
                   </div>
 
-                  <!-- Format Switcher + Safe-Zone Guide (Updates sticky preview immediately!) -->
-                  <div class="social-format-tabs" role="tablist" style="background:rgba(2,14,28,0.7);padding:4px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;align-items:center;">
-                    <button type="button" class="social-tab-btn active" data-format-target="format-view-feed" id="tab-btn-format-feed" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📱 Feed (4:5)</button>
-                    <button type="button" class="social-tab-btn" data-format-target="format-view-fb" id="tab-btn-format-fb" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">📘 Facebook (1200×630)</button>
-                    <button type="button" class="social-tab-btn" data-format-target="format-view-crop" id="tab-btn-format-crop" style="flex:1;font-size:0.74rem;padding:6px 8px;text-align:center;">🔍 Grid (3:4)</button>
-                    <button type="button" id="btn-toggle-d1-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:5px 8px;white-space:nowrap;">📐 Guide</button>
-                  </div>
-
-                  <!-- Caption & Hashtags -->
-                  <div id="d1-pane-caption" class="inspector-pane active" style="display:block;padding:0;">
+                  <!-- Tab 1: Text & Caption -->
+                  <div id="d1-pane-text" class="inspector-pane active">
+                    <!-- Category Badge -->
                     <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-caption">Caption (Hashtags Included at End)</label>
-                        <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy Caption</button>
-                      </div>
-                      <textarea id="static-edit-caption" class="wp-textarea" rows="6" style="line-height:1.5;font-size:0.86rem;"></textarea>
+                      <label class="label-sm" for="static-edit-badge">Category Badge</label>
+                      <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" placeholder="e.g. NEWS or FINLAND" />
                     </div>
 
+                    <!-- Line 1 -->
                     <div class="wp-field-wrap">
                       <div class="wp-field-label-row">
-                        <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5 max)</label>
-                        <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
+                        <label class="label-sm" for="static-edit-line1">Headline Line 1</label>
+                        <select id="static-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white" selected>⚪ White</option>
+                          <option value="blue">🔵 Blue</option>
+                        </select>
                       </div>
-                      <input type="text" id="static-edit-hashtags" class="wp-input" />
-                      <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
+                      <input type="text" id="static-edit-line1" class="wp-input" />
                     </div>
 
-                    <div style="margin-top:8px;">
-                      <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;width:100%;justify-content:center;" title="Preview &amp; Polish Caption &amp; Hashtags with Google Gemini (Free Tier)">
-                        <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                        <span>Polish Caption with Gemini</span>
+                    <!-- Line 2 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-line2">Headline Line 2</label>
+                        <select id="static-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white" selected>⚪ White</option>
+                          <option value="blue">🔵 Blue</option>
+                        </select>
+                      </div>
+                      <input type="text" id="static-edit-line2" class="wp-input" />
+                    </div>
+
+                    <!-- Line 3 -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-line3">Headline Line 3 (Optional)</label>
+                        <select id="static-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="blue" selected>🔵 Blue</option>
+                          <option value="white">⚪ White</option>
+                        </select>
+                      </div>
+                      <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
+                    </div>
+
+                    <!-- Font Size -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-fontsize">Font Size</label>
+                        <span class="hint-inline" id="static-line2-size-val">32px</span>
+                      </div>
+                      <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;cursor:pointer;" />
+                    </div>
+
+                    <!-- Footer CTA -->
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="static-edit-cta">Footer CTA (Optional)</label>
+                        <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white" selected>⚪ White</option>
+                          <option value="blue">🔵 Blue</option>
+                        </select>
+                      </div>
+                      <input type="text" id="static-edit-cta" class="wp-input" placeholder="DISCOVER MORE AT ILOVEFINLAND.NET" />
+                      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;">+ Discover More</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;">+ Read Guide</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;">✕ Clear</button>
+                      </div>
+                    </div>
+
+                    <!-- Caption & Hashtags -->
+                    <div style="border-top:1px solid rgba(75,137,188,0.2);padding-top:12px;margin-top:6px;">
+                      <div class="wp-field-wrap">
+                        <div class="wp-field-label-row">
+                          <label class="label-sm" for="static-edit-caption">Post Caption</label>
+                          <button type="button" id="btn-copy-static-caption" class="btn-copy-field" data-copy-target="static-edit-caption">📋 Copy</button>
+                        </div>
+                        <textarea id="static-edit-caption" class="wp-textarea" rows="5" style="line-height:1.5;font-size:0.86rem;"></textarea>
+                      </div>
+
+                      <div class="wp-field-wrap">
+                        <div class="wp-field-label-row">
+                          <label class="label-sm" for="static-edit-hashtags">Hashtags (<span id="static-hashtag-count">0</span>/5)</label>
+                          <button type="button" id="btn-copy-static-hashtags" class="btn-copy-field" data-copy-target="static-edit-hashtags">📋 Copy</button>
+                        </div>
+                        <input type="text" id="static-edit-hashtags" class="wp-input" />
+                        <div id="static-hashtags-pills" class="hashtag-list" style="margin-top:6px;"></div>
+                      </div>
+
+                      <button type="button" id="btn-claude-caption-bottom" class="btn btn-claude btn-sm" style="gap:5px;width:100%;justify-content:center;" title="Polish Caption &amp; Hashtags with Google Gemini (Free Tier)">
+                        <span>✨ Polish Caption with Gemini</span>
                       </button>
                     </div>
                   </div>
 
-                  <!-- Design-1 Photo Framing, Zoom, Headline Lines, Colors & Font Size (Directly beside sticky preview!) -->
-                  <details id="d1-style-controls-drawer" class="inspector-drawer" open style="margin-top:4px;">
-                    <summary style="padding:11px 14px;font-size:0.84rem;">
-                      <span>🎨 Photo Framing, Headline Lines, Colors &amp; Font Size</span>
-                      <span style="font-size:0.72rem;color:#94A3B8;font-weight:500;">Live Preview ▾</span>
-                    </summary>
-                    <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:14px;">
-                      <div id="d1-pane-photo" style="display:block;">
-                        <!-- Photo Upload Box -->
-                        <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:12px;">
-                          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Social Post Background Photo</label>
-                            <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
-                          </div>
-                          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                            <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
-                              <span>📷 Upload / Replace Photo</span>
-                            </button>
-                            <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                            <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
-                          </div>
-                        </div>
-
-                        <!-- Picture Adjustment (Zoom & Framing) -->
-                        <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:0;">
-                          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
-                            <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
-                          </div>
-                          <!-- Zoom -->
-                          <div style="margin-bottom:10px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                              <span>🔍 Zoom Picture:</span>
-                              <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
-                            </div>
-                            <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
-                          </div>
-                          <!-- Horizontal Pan -->
-                          <div style="margin-bottom:10px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;flex-wrap:wrap;gap:4px;">
-                              <span>↔️ Show Left / Center / Right:</span>
-                              <div style="display:flex;gap:4px;">
-                                <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
-                                <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                                <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
-                              </div>
-                            </div>
-                            <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
-                          </div>
-                          <!-- Vertical Pan -->
-                          <div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;flex-wrap:wrap;gap:4px;">
-                              <span>↕️ Vertical Framing (Pan):</span>
-                              <div style="display:flex;gap:4px;">
-                                <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
-                                <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                                <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
-                              </div>
-                            </div>
-                            <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
-                          </div>
-                        </div>
+                  <!-- Tab 2: Photo & Framing -->
+                  <div id="d1-pane-photo" class="inspector-pane">
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">📸 Background Photo</label>
+                        <span id="static-photo-status-badge" class="badge badge-alert">No Photo</span>
                       </div>
-
-                      <div id="d1-pane-text" style="display:block;border-top:1px solid rgba(75,137,188,0.22);padding-top:12px;">
-                        <div style="font-size:0.78rem;font-weight:800;color:#38BDF8;margin-bottom:10px;">✍️ Headline Lines, Colors &amp; Typography</div>
-                        <!-- Category Badge -->
-                        <div class="wp-field-wrap">
-                          <label class="label-sm" for="static-edit-badge">Category Badge Text (#003882)</label>
-                          <input type="text" id="static-edit-badge" class="wp-input" maxlength="16" />
-                        </div>
-
-                        <!-- Line 1 -->
-                        <div class="wp-field-wrap">
-                          <div class="wp-field-label-row">
-                            <label class="label-sm" for="static-edit-line1">Headline Line 1</label>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                              <select id="static-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                                <option value="white" selected>⚪ White</option>
-                                <option value="blue">🔵 Electric Blue</option>
-                              </select>
-                            </div>
-                          </div>
-                          <input type="text" id="static-edit-line1" class="wp-input" />
-                        </div>
-
-                        <!-- Line 2 -->
-                        <div class="wp-field-wrap">
-                          <div class="wp-field-label-row">
-                            <label class="label-sm" for="static-edit-line2">Headline Line 2</label>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                              <select id="static-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                                <option value="white" selected>⚪ White</option>
-                                <option value="blue">🔵 Electric Blue</option>
-                              </select>
-                            </div>
-                          </div>
-                          <input type="text" id="static-edit-line2" class="wp-input" />
-                        </div>
-
-                        <!-- Line 3 -->
-                        <div class="wp-field-wrap">
-                          <div class="wp-field-label-row">
-                            <label class="label-sm" for="static-edit-line3">Headline Line 3 (Optional)</label>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                              <select id="static-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                                <option value="blue" selected>🔵 Electric Blue</option>
-                                <option value="white">⚪ White</option>
-                              </select>
-                            </div>
-                          </div>
-                          <input type="text" id="static-edit-line3" class="wp-input" placeholder="Optional 3rd line (e.g. IN FINNISH WINTER!)" />
-                        </div>
-
-                        <!-- CTA Line -->
-                        <div class="wp-field-wrap">
-                          <div class="wp-field-label-row">
-                            <label class="label-sm" for="static-edit-cta">Website CTA / Footer Line (Optional)</label>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                              <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                              <select id="static-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                                <option value="white" selected>⚪ White (Default)</option>
-                                <option value="blue">🔵 Electric Blue</option>
-                              </select>
-                            </div>
-                          </div>
-                          <input type="text" id="static-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
-                          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                            <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ DISCOVER MORE</button>
-                            <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="READ FULL GUIDE • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:pointer;border-radius:4px;">+ READ FULL GUIDE</button>
-                            <button type="button" class="btn btn-ghost btn-xs btn-preset-static-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:pointer;border-radius:4px;">✕ Clear</button>
-                          </div>
-                        </div>
-
-                        <!-- Typography Font Size Slider -->
-                        <div class="wp-field-wrap" style="margin-bottom:0;">
-                          <div class="wp-field-label-row">
-                            <label class="label-sm" for="static-edit-fontsize">Typography Font Size (Scales All Lines &amp; Badge)</label>
-                            <span class="hint-inline" id="static-line2-size-val">32px</span>
-                          </div>
-                          <input type="range" id="static-edit-fontsize" min="20" max="48" step="1" value="32" style="width:100%;cursor:pointer;" />
-                        </div>
+                      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <button type="button" id="btn-upload-post-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-post-photo').click()" style="background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                          📷 Replace Photo
+                        </button>
+                        <input type="file" id="input-upload-post-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                        <span id="static-post-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
                       </div>
                     </div>
-                  </details>
 
-                  <div class="inspector-sticky-save" style="border-radius:10px;">
-                    <button type="button" id="btn-save-static-post" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
-                      <span>💾 Save Changes to Article &amp; Post</span>
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:0;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Zoom &amp; Framing</label>
+                        <button type="button" id="btn-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;">↺ Reset</button>
+                      </div>
+                      <div style="margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>Zoom</span>
+                          <span id="photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
+                        </div>
+                        <input type="range" id="photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
+                      </div>
+                      <div style="margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>Horizontal</span>
+                          <div style="display:flex;gap:4px;">
+                            <button type="button" id="btn-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">◀</button>
+                            <button type="button" id="btn-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">●</button>
+                            <button type="button" id="btn-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">▶</button>
+                          </div>
+                        </div>
+                        <input type="range" id="photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                      </div>
+                      <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>Vertical</span>
+                          <div style="display:flex;gap:4px;">
+                            <button type="button" id="btn-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">▲</button>
+                            <button type="button" id="btn-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">●</button>
+                            <button type="button" id="btn-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">▼</button>
+                          </div>
+                        </div>
+                        <input type="range" id="photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="inspector-sticky-save">
+                    <button type="button" id="btn-save-static-post" class="btn btn-primary" style="width:100%;background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;justify-content:center;">
+                      💾 Save Changes
                     </button>
                   </div>
                 </div>
               </div>
 
-              <!-- CLOSED ACCORDION: 6-SLIDE CAROUSEL DECK (DESIGN - 2) -->
-              <details id="carousel-and-style-drawer" class="inspector-drawer" style="margin-top:18px;">
-                <summary style="padding:12px 16px;font-size:0.86rem;">
-                  <span>📑 6-Slide Carousel Story Deck (Design - 2: Slides 1–6, Frosted Glass Cards, Darkness &amp; Batch Export)</span>
-                  <span style="font-size:0.74rem;color:#94A3B8;font-weight:500;">Click to expand ▾</span>
-                </summary>
-                <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:14px;">
-                  <!-- Design-2: 6-Slide Story Deck -->
-                  <div>
-                    <div style="font-size:0.9rem;font-weight:800;color:#fff;margin-bottom:10px;">📑 Design - 2: 6-Slide Story Deck (Slides 1–6)</div>
-                    <!-- WORKSPACE: DESIGN - 2 (6-SLIDE INSTAGRAM CAROUSEL DECK)        -->
-              <!-- ============================================================== -->
-              <div id="design-2-workspace" class="studio-app-grid" style="display:grid;margin-top:14px;">
-                <!-- Left Column: Sticky Carousel Stage -->
+              <!-- MODE 2: 6-SLIDE CAROUSEL (CLEAN 2-TAB INSPECTOR + APPLY STYLE TO ALL) -->
+              <div id="design-2-workspace" class="studio-app-grid hidden-mode" style="display:none;">
+                <!-- Left: Sticky Carousel Stage -->
                 <div class="studio-stage-column">
                   <div class="studio-stage-card">
-                    <!-- Slide Selector Pills (1 to 6) right on top of canvas -->
-                    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                      <button type="button" class="btn-carousel-tab active" data-slide="1" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;white-space:nowrap;">1 (Cover)</button>
-                      <button type="button" class="btn-carousel-tab" data-slide="2" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 2</button>
-                      <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 3</button>
-                      <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 4</button>
-                      <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">Slide 5</button>
-                      <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:6px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;">6 (CTA)</button>
+                    <!-- Slide Selector Pills (1–6) -->
+                    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                      <button type="button" class="btn-carousel-tab active" data-slide="1" style="padding:6px 4px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;background:#029CD8;color:#fff;border:1px solid #38BDF8;">1</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="2" style="padding:6px 4px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">2</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="3" style="padding:6px 4px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">3</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="4" style="padding:6px 4px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">4</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="5" style="padding:6px 4px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">5</button>
+                      <button type="button" class="btn-carousel-tab" data-slide="6" style="padding:6px 4px;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;background:rgba(2,24,48,0.7);color:#94A3B8;border:1px solid rgba(255,255,255,0.12);">6</button>
                     </div>
 
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
-                      <strong id="carousel-active-slide-title" style="font-size:0.86rem;color:#38BDF8;font-weight:800;">Slide 1 (Main Cover Story)</strong>
+                      <strong id="carousel-active-slide-title" style="font-size:0.84rem;color:#38BDF8;font-weight:800;">Slide 1 (Cover)</strong>
                       <div style="display:flex;align-items:center;gap:6px;">
-                        <button type="button" id="btn-toggle-d2-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide Overlay" style="font-size:0.7rem;padding:3px 7px;">📐 Guide</button>
-                        <span id="carousel-active-slide-badge" class="badge" style="background:#0284c7;color:#fff;font-weight:800;font-size:0.68rem;padding:2px 7px;">Slide 1 of 6</span>
+                        <button type="button" id="btn-toggle-d2-safezone" class="btn btn-ghost btn-xs" title="Toggle Safe-Zone Guide" style="font-size:0.7rem;padding:3px 7px;">📐</button>
+                        <span id="carousel-active-slide-badge" class="badge" style="background:#0284c7;color:#fff;font-weight:800;font-size:0.68rem;padding:2px 7px;">1 / 6</span>
                       </div>
                     </div>
 
@@ -2370,248 +2327,192 @@
                       <canvas id="carousel-canvas" width="1080" height="1350" style="width:100%;height:auto;aspect-ratio:4/5;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block;background:#061426;"></canvas>
                     </div>
 
-                    <!-- Direct Action Bar -->
-                    <button type="button" id="btn-save-carousel-slide-photos" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #029CD8 0%, #10B981 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">
-                      📲 Save This Slide to Photos
+                    <!-- 2 Clean Export Actions -->
+                    <button type="button" id="btn-download-all-carousel-slides" class="btn-save-photos-direct" style="width:100%;background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:10px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.32);">
+                      📦 Download All 6 Slides + Caption (.ZIP)
                     </button>
-                    <div class="static-dl-row" style="display:flex;gap:8px;margin-top:8px;">
-                      <button type="button" id="btn-dl-carousel-slide-jpg" class="btn btn-ghost btn-sm" style="flex:1;">📥 JPEG (4:5)</button>
-                      <button type="button" id="btn-dl-carousel-slide-png" class="btn btn-ghost btn-sm" style="flex:1;">📥 PNG (4:5)</button>
+                    <div class="static-dl-row" style="display:flex;gap:6px;margin-top:8px;">
+                      <button type="button" id="btn-save-carousel-slide-photos" class="btn btn-ghost btn-sm" style="flex:1.2;">📲 This Slide</button>
+                      <button type="button" id="btn-dl-carousel-slide-jpg" class="btn btn-ghost btn-sm" style="flex:1;">JPG</button>
+                      <button type="button" id="btn-dl-carousel-slide-png" class="btn btn-ghost btn-sm" style="flex:1;">PNG</button>
                     </div>
-                    <button type="button" id="btn-download-all-carousel-slides" class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;background:rgba(2,156,216,0.15);border:1px solid rgba(56,189,248,0.4);color:#38BDF8;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
-                      <span>📦 Download All 6 Slides + Caption (.ZIP)</span>
-                    </button>
                   </div>
                 </div>
 
-                <!-- Right Column: Tabbed Carousel Inspector -->
+                <!-- Right: Clean 2-Tab Carousel Inspector (Text | Photo & Style) -->
                 <div class="studio-inspector-card">
-                  <!-- Inspector Tabs Bar -->
                   <div class="studio-inspector-tab-bar" role="tablist">
-                    <button type="button" class="btn-inspector-tab active" data-d2-tab="photo">📸 Slide Photo</button>
-                    <button type="button" class="btn-inspector-tab" data-d2-tab="text">✍️ Headlines &amp; Text</button>
-                    <button type="button" class="btn-inspector-tab" data-d2-tab="style">🎨 Card Tone &amp; Arrow</button>
+                    <button type="button" class="btn-inspector-tab active" data-d2-tab="text">✍️ Headlines &amp; Text</button>
+                    <button type="button" class="btn-inspector-tab" data-d2-tab="photo">📸 Photo &amp; Style</button>
                   </div>
 
-                  <!-- Tab 1: Slide Photo & Framing -->
-                  <div id="d2-pane-photo" class="inspector-pane active">
-                    <!-- Photo Upload Box -->
-                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                  <!-- Tab 1: Headlines & Text -->
+                  <div id="d2-pane-text" class="inspector-pane active">
+                    <div class="wp-field-wrap">
+                      <label class="label-sm" for="carousel-edit-badge">Slide Badge</label>
+                      <input type="text" id="carousel-edit-badge" class="wp-input" maxlength="20" placeholder="e.g. NEWS or SLIDE 01" />
+                    </div>
+
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-line1">Headline Line 1</label>
+                        <select id="carousel-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white" selected>⚪ White</option>
+                          <option value="blue">🔵 Blue</option>
+                        </select>
+                      </div>
+                      <input type="text" id="carousel-edit-line1" class="wp-input" placeholder="e.g. The Paperless Lie:" />
+                    </div>
+
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-line2">Headline Line 2</label>
+                        <select id="carousel-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white" selected>⚪ White</option>
+                          <option value="blue">🔵 Blue</option>
+                        </select>
+                      </div>
+                      <input type="text" id="carousel-edit-line2" class="wp-input" placeholder="e.g. Examining Digital Illusions" />
+                    </div>
+
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-line3">Headline Line 3 (Optional)</label>
+                        <select id="carousel-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="blue" selected>🔵 Blue</option>
+                          <option value="white">⚪ White</option>
+                        </select>
+                      </div>
+                      <input type="text" id="carousel-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
+                    </div>
+
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-fontsize">Font Size</label>
+                        <span class="hint-inline" id="carousel-fontsize-val">44px</span>
+                      </div>
+                      <input type="range" id="carousel-edit-fontsize" min="20" max="52" step="1" value="44" style="width:100%;cursor:pointer;" />
+                    </div>
+
+                    <div class="wp-field-wrap">
+                      <div class="wp-field-label-row">
+                        <label class="label-sm" for="carousel-edit-cta">Footer CTA (Optional)</label>
+                        <select id="carousel-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
+                          <option value="white">⚪ White</option>
+                          <option value="blue" selected>🔵 Blue</option>
+                        </select>
+                      </div>
+                      <input type="text" id="carousel-edit-cta" class="wp-input" placeholder="DISCOVER MORE AT ILOVEFINLAND.NET" />
+                      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;">+ Discover More</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="READ FULL STORY • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;">+ Read Story</button>
+                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;">✕ Clear</button>
+                        <button type="button" id="btn-carousel-autotitlecase" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:3px 8px;margin-left:auto;">🔤 Title Case</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Tab 2: Photo & Style (Merged — Zero Duplicate Controls!) -->
+                  <div id="d2-pane-photo" class="inspector-pane">
+                    <!-- Photo Upload -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:12px;">
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                         <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;" id="carousel-photo-label">📸 Slide Photo</label>
                         <span id="carousel-photo-status-badge" class="badge badge-alert">No Photo</span>
                       </div>
                       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                        <button type="button" id="btn-upload-carousel-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-carousel-photo').click()" style="display:inline-flex;align-items:center;gap:6px;background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
-                          <span>📷 Upload Photo for This Slide</span>
+                        <button type="button" id="btn-upload-carousel-photo" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-carousel-photo').click()" style="background:#029CD8;border:1px solid #168BFF;color:#FFFFFF;font-weight:700;">
+                          📷 Replace Photo
                         </button>
                         <input type="file" id="input-upload-carousel-photo" accept="image/jpeg,image/png,image/webp" style="display:none;" />
                         <span id="carousel-photo-name" class="hint-text" style="margin:0;font-size:0.75rem;color:#B8C4D4;">No photo selected</span>
                       </div>
                     </div>
 
-                    <!-- Slide Picture Adjustment -->
-                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
+                    <!-- Zoom & Framing -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:12px;">
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Picture Adjustment (Zoom &amp; Framing)</label>
-                        <button type="button" id="btn-carousel-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:4px;cursor:pointer;">↺ Reset Framing</button>
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🖼️ Zoom &amp; Framing</label>
+                        <button type="button" id="btn-carousel-reset-photo-framing" class="btn btn-ghost btn-xs" style="font-size:0.7rem;padding:2px 8px;">↺ Reset</button>
                       </div>
-                      <!-- Zoom -->
                       <div style="margin-bottom:10px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                          <span>🔍 Zoom Picture:</span>
+                        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
+                          <span>Zoom</span>
                           <span id="carousel-photo-zoom-val" style="color:#38BDF8;font-weight:700;">100%</span>
                         </div>
                         <input type="range" id="carousel-photo-zoom-range" min="100" max="220" step="5" value="100" style="width:100%;cursor:pointer;" />
                       </div>
-                      <!-- Horizontal Pan -->
                       <div style="margin-bottom:10px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                          <span>↔️ Show Left / Center / Right:</span>
+                          <span>Horizontal</span>
                           <div style="display:flex;gap:4px;">
-                            <button type="button" id="btn-carousel-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">◀ Left</button>
-                            <button type="button" id="btn-carousel-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                            <button type="button" id="btn-carousel-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">Right ▶</button>
+                            <button type="button" id="btn-carousel-photo-pan-left" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">◀</button>
+                            <button type="button" id="btn-carousel-photo-pan-center-x" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">●</button>
+                            <button type="button" id="btn-carousel-photo-pan-right" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">▶</button>
                           </div>
                         </div>
                         <input type="range" id="carousel-photo-shift-x-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
                       </div>
-                      <!-- Vertical Pan -->
                       <div>
                         <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#CBD5E1;margin-bottom:4px;">
-                          <span>↕️ Vertical Framing (Pan):</span>
+                          <span>Vertical</span>
                           <div style="display:flex;gap:4px;">
-                            <button type="button" id="btn-carousel-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▲ Top</button>
-                            <button type="button" id="btn-carousel-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(255,255,255,0.15);color:#FFFFFF;cursor:pointer;border-radius:4px;">● Center</button>
-                            <button type="button" id="btn-carousel-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;background:rgba(2,24,48,0.8);border:1px solid rgba(56,189,248,0.3);color:#38BDF8;cursor:pointer;border-radius:4px;">▼ Bottom</button>
+                            <button type="button" id="btn-carousel-photo-pan-top" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">▲</button>
+                            <button type="button" id="btn-carousel-photo-pan-center-y" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">●</button>
+                            <button type="button" id="btn-carousel-photo-pan-bottom" class="btn btn-ghost btn-xs" style="font-size:0.68rem;padding:2px 7px;">▼</button>
                           </div>
                         </div>
                         <input type="range" id="carousel-photo-shift-y-range" min="-100" max="100" step="5" value="0" style="width:100%;cursor:pointer;" />
                       </div>
                     </div>
-                  </div>
 
-                  <!-- Tab 2: Headlines & Text -->
-                  <div id="d2-pane-text" class="inspector-pane">
-                    <!-- Badge -->
-                    <div class="wp-field-wrap">
-                      <label class="label-sm" for="carousel-edit-badge">Category / Slide Badge Text</label>
-                      <input type="text" id="carousel-edit-badge" class="wp-input" maxlength="20" placeholder="e.g. NEWS or SLIDE 01" />
-                    </div>
-
-                    <!-- Line 1 -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="carousel-edit-line1">Headline Line 1</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="carousel-edit-line1-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="white" selected>⚪ White</option>
-                            <option value="blue">🔵 Electric Blue</option>
-                          </select>
-                        </div>
+                    <!-- Card Style, Single Darkness Slider & Swipe Arrow -->
+                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:10px;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <label class="label-sm" style="margin:0;color:#FFFFFF;font-weight:700;">🎨 Card Style</label>
+                        <button type="button" id="btn-carousel-apply-style-all" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 9px;color:#38BDF8;border-color:rgba(56,189,248,0.45);font-weight:700;">✨ Apply to All 6 Slides</button>
                       </div>
-                      <input type="text" id="carousel-edit-line1" class="wp-input" placeholder="e.g. The Paperless Lie:" />
-                    </div>
 
-                    <!-- Line 2 -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="carousel-edit-line2">Headline Line 2</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="carousel-edit-line2-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="white" selected>⚪ White</option>
-                            <option value="blue">🔵 Electric Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="carousel-edit-line2" class="wp-input" placeholder="e.g. Examining Digital Illusions" />
-                    </div>
-
-                    <!-- Line 3 -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="carousel-edit-line3">Headline Line 3 (Optional)</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="carousel-edit-line3-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="blue" selected>🔵 Electric Blue</option>
-                            <option value="white">⚪ White</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="carousel-edit-line3" class="wp-input" placeholder="Optional 3rd line" />
-                    </div>
-
-                    <!-- CTA -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="carousel-edit-cta">Website CTA / Footer Line (Optional)</label>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-size:0.72rem;color:#B8C4D4;font-weight:600;">Color:</span>
-                          <select id="carousel-edit-cta-color" class="wp-input" style="width:auto;padding:2px 8px;font-size:0.74rem;height:auto;font-weight:700;cursor:pointer;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;">
-                            <option value="white">⚪ White (Default)</option>
-                            <option value="blue" selected>🔵 Electric Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                      <input type="text" id="carousel-edit-cta" class="wp-input" placeholder="e.g. DISCOVER MORE AT ILOVEFINLAND.NET (leave empty to hide)" />
-                      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="DISCOVER MORE AT ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:border-radius:4px;">+ DISCOVER MORE</button>
-                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="READ FULL STORY • ILOVEFINLAND.NET" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;cursor:border-radius:4px;">+ READ FULL STORY</button>
-                        <button type="button" class="btn btn-ghost btn-xs btn-preset-carousel-cta" data-cta="" style="font-size:0.7rem;padding:3px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#94a3b8;font-weight:600;cursor:border-radius:4px;">✕ Clear</button>
-                      </div>
-                    </div>
-
-                    <!-- Typography Slider -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="carousel-edit-fontsize">Typography Font Size (Scales Slide Lines &amp; Badge)</label>
-                        <span class="hint-inline" id="carousel-fontsize-val">44px</span>
-                      </div>
-                      <input type="range" id="carousel-edit-fontsize" min="20" max="52" step="1" value="44" style="width:100%;cursor:pointer;" />
-                    </div>
-
-                    <!-- Quick Actions -->
-                    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-                      <button type="button" id="btn-carousel-clean-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#38BDF8;font-weight:700;border-radius:4px;">🖼️ Clean Photo</button>
-                      <button type="button" id="btn-carousel-frosted-preset" class="btn btn-ghost btn-xs" style="font-size:0.72rem;padding:4px 8px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;font-weight:700;border-radius:4px;">📄 Frosted Glass</button>
-                      <button type="button" id="btn-carousel-autotitlecase" class="btn btn-secondary btn-xs" style="font-size:0.72rem;padding:4px 8px;border-radius:4px;">🔤 Title Case</button>
-                      <button type="button" id="btn-carousel-rerender" class="btn btn-primary btn-xs" style="font-size:0.72rem;padding:4px 8px;background:#029CD8;font-weight:700;border-radius:4px;">✨ Re-render</button>
-                    </div>
-                  </div>
-
-                  <!-- Tab 3: Card Tone & Slide Arrow -->
-                  <div id="d2-pane-style" class="inspector-pane">
-                    <!-- Location Stamp -->
-                    <div class="wp-field-wrap">
-                      <label class="label-sm" for="carousel-input-location">📍 Location Stamp</label>
-                      <input type="text" id="carousel-input-location" class="wp-input" placeholder="Leave empty to hide" />
-                    </div>
-
-                    <!-- Layout Variant -->
-                    <div class="wp-field-wrap">
-                      <label class="label-sm" for="carousel-select-card-style">Layout Variant</label>
-                      <select id="carousel-select-card-style" class="wp-input">
-                        <option value="frosted" selected>Frosted Glass Card (Modern)</option>
-                        <option value="minimal">Minimal Floating Pill</option>
-                        <option value="clean">Clean Photo (Full Bleed)</option>
-                        <option value="magazine">Magazine Cover (Vignette)</option>
-                      </select>
-                    </div>
-
-                    <!-- Card Tone / Darkness -->
-                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;margin-bottom:14px;">
-                      <label class="label-sm" for="carousel-select-card-tone" style="color:#FFFFFF;font-weight:700;">🎨 Card Tone / Darkness (Lighter or Darker)</label>
-                      <select id="carousel-select-card-tone" class="wp-input" style="margin-bottom:8px;">
-                        <option value="86" selected>Dark Navy (86% Default)</option>
-                        <option value="96">Deep Midnight (96% Darker)</option>
-                        <option value="100">Solid Navy (100% Max Dark)</option>
-                        <option value="70">Medium Translucent (70%)</option>
-                        <option value="50">Light Translucent (50%)</option>
-                        <option value="35">Soft Glass (35% Lightest)</option>
-                        <option value="custom">Custom Opacity</option>
-                      </select>
-                      <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:0.72rem;color:#94A3B8;">Darkness:</span>
-                        <input type="range" id="carousel-range-card-opacity" min="25" max="100" step="1" value="86" style="flex:1;cursor:pointer;" />
-                        <span id="carousel-card-opacity-val" style="font-size:0.74rem;color:#38BDF8;font-weight:700;min-width:34px;">86%</span>
-                      </div>
-                    </div>
-
-                    <!-- Next Slide Arrow -->
-                    <div class="wp-field-wrap" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px;">
-                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                        <label class="label-sm" for="carousel-check-swipe-arrow" style="margin:0;color:#FFFFFF;font-weight:700;">👉 Next Slide Arrow</label>
-                        <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#38BDF8;font-weight:700;cursor:pointer;margin:0;">
-                          <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
-                          <span>Show Slide Arrow</span>
-                        </label>
-                      </div>
-                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                        <label style="font-size:0.72rem;color:#94A3B8;margin:0;" for="carousel-select-arrow-style">Arrow Style:</label>
-                        <select id="carousel-select-arrow-style" class="wp-input" style="flex:1;max-width:210px;font-size:0.76rem;padding:4px 6px;border-radius:6px;">
-                          <option value="brand" selected>ILoveFinland ➔ (Brand Slide)</option>
-                          <option value="swipe">Swipe ➔ (Action Prompt)</option>
-                          <option value="next">Next ➔ (Story Flow)</option>
-                          <option value="arrow_only">➔ (Large Glowing Arrow Only)</option>
+                      <div class="wp-field-wrap" style="margin-bottom:10px;">
+                        <select id="carousel-select-card-style" class="wp-input">
+                          <option value="frosted" selected>Frosted Glass Card (Modern)</option>
+                          <option value="minimal">Minimal Floating Pill</option>
+                          <option value="clean">Clean Photo (Full Bleed)</option>
+                          <option value="magazine">Magazine Cover (Vignette)</option>
                         </select>
                       </div>
+
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <span style="font-size:0.74rem;color:#CBD5E1;min-width:60px;">Darkness</span>
+                        <input type="range" id="carousel-range-card-opacity" min="25" max="100" step="1" value="86" style="flex:1;cursor:pointer;" />
+                        <span id="carousel-card-opacity-val" style="font-size:0.74rem;color:#38BDF8;font-weight:700;min-width:34px;text-align:right;">86%</span>
+                      </div>
+
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                        <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.76rem;color:#E2E8F0;font-weight:600;cursor:pointer;margin:0;">
+                          <input type="checkbox" id="carousel-check-swipe-arrow" style="cursor:pointer;" checked />
+                          <span>Slide Arrow</span>
+                        </label>
+                        <select id="carousel-select-arrow-style" class="wp-input" style="flex:1;max-width:200px;font-size:0.75rem;padding:4px 6px;">
+                          <option value="brand" selected>ILoveFinland ➔</option>
+                          <option value="swipe">Swipe ➔</option>
+                          <option value="next">Next ➔</option>
+                          <option value="arrow_only">➔ Only</option>
+                        </select>
+                      </div>
+
+                      <input type="text" id="carousel-input-location" class="wp-input" placeholder="📍 Location stamp (optional)" />
                     </div>
                   </div>
 
                   <!-- Sticky Save Footer -->
                   <div class="inspector-sticky-save">
-                    <button type="button" id="btn-save-carousel-changes" class="btn btn-primary" style="background:linear-gradient(135deg, #0284c7 0%, #10b981 100%);color:#fff;font-weight:800;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(2,132,199,0.35);">
-                      <span>💾 Save Changes to Article &amp; Post</span>
+                    <button type="button" id="btn-save-carousel-changes" class="btn btn-primary" style="width:100%;background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;justify-content:center;">
+                      💾 Save Changes
                     </button>
                   </div>
                 </div>
               </div>
-                  </div>
-                </div>
-              </details>
 
               <!-- Hidden backwards-compatibility containers for legacy DOM elements -->
               <div style="display:none;" aria-hidden="true">
@@ -3624,7 +3525,7 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=104.0"></script>
+  <script src="/app.js?v=110.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
   <script src="/finnish-lab.js?v=109.0"></script>

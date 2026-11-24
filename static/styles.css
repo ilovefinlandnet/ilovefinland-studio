@@ -7333,4 +7333,52 @@ body:has(#view-finnish-lab:not(.hidden)) .studio-utility-bar {
     font-size: 0.78rem !important;
     padding: 4px 8px !important;
   }
+
+  .social-mode-pill-bar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* v110.0 Minimal 2-Pill Social Post Mode Switcher (Matches Finnish Lab Floating Pill) */
+.social-mode-pill-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #0A192F;
+  border: 1px solid #1E3A5F;
+}
+
+.social-mode-pill-bar .btn-design-studio-switch {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 7px 16px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94A3B8;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.social-mode-pill-bar .btn-design-studio-switch:hover {
+  color: #FFFFFF;
+}
+
+.social-mode-pill-bar .btn-design-studio-switch.active {
+  background: linear-gradient(135deg, #003580 0%, #0052B4 100%);
+  color: #FFFFFF;
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+#design-1-workspace.hidden-mode,
+#design-2-workspace.hidden-mode {
+  display: none !important;
 }

@@ -6900,8 +6900,14 @@
         document.querySelectorAll(".btn-design-studio-switch").forEach((b) => b.classList.toggle("active", b === btn));
         const w1 = $("design-1-workspace");
         const w2 = $("design-2-workspace");
-        if (w1) w1.style.display = (d === "1") ? "grid" : "none";
-        if (w2) w2.style.display = (d === "2") ? "grid" : "none";
+        if (w1) {
+          w1.style.display = (d === "1") ? "grid" : "none";
+          w1.classList.toggle("hidden-mode", d !== "1");
+        }
+        if (w2) {
+          w2.style.display = (d === "2") ? "grid" : "none";
+          w2.classList.toggle("hidden-mode", d !== "2");
+        }
         if (d === "1" && currentStaticPost) {
           drawStaticPostCanvases(currentStaticPost);
         }
@@ -6932,6 +6938,44 @@
     bindInspectorTabs("data-d2-tab", "#design-2-workspace", "d2-pane-");
     bindInspectorTabs("data-art-tab", "#panel-article", "art-pane-");
     bindInspectorTabs("data-reel-tab", "#reel-inspector-panel", "reel-pane-");
+
+    // v110.0: 1-Tap Apply Style to All 6 Slides + Keyboard Arrow Slide Navigation
+    $("btn-carousel-apply-style-all")?.addEventListener("click", () => {
+      if (typeof saveActiveCarouselSlideInputs === "function") saveActiveCarouselSlideInputs();
+      const cardStyle = $("carousel-select-card-style")?.value || "frosted";
+      const cardOpacity = parseInt($("carousel-range-card-opacity")?.value, 10) || 86;
+      const showArrow = $("carousel-check-swipe-arrow")?.checked !== false;
+      const arrowStyle = $("carousel-select-arrow-style")?.value || "brand";
+      const locStamp = $("carousel-input-location")?.value || "";
+      const fontSize = parseInt($("carousel-edit-fontsize")?.value, 10) || 44;
+      for (let i = 1; i <= 6; i++) {
+        if (!carouselSlidesData[i]) carouselSlidesData[i] = {};
+        carouselSlidesData[i].cardStyle = cardStyle;
+        carouselSlidesData[i].cardOpacity = cardOpacity;
+        carouselSlidesData[i].showArrow = i < 6 ? showArrow : false;
+        carouselSlidesData[i].arrowStyle = arrowStyle;
+        carouselSlidesData[i].locationStamp = locStamp;
+        carouselSlidesData[i].fontSize = fontSize;
+      }
+      if (typeof renderActiveCarouselSlideCanvas === "function") renderActiveCarouselSlideCanvas();
+      showToast("✨ Applied style to all 6 slides!");
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target?.isContentEditable) return;
+      const w2 = $("design-2-workspace");
+      if (!w2 || w2.style.display === "none") return;
+      const panelIg = $("panel-ig");
+      if (!panelIg || panelIg.offsetParent === null) return;
+      const cur = typeof activeCarouselSlide !== "undefined" ? activeCarouselSlide : 1;
+      const next = e.key === "ArrowRight" ? Math.min(6, cur + 1) : Math.max(1, cur - 1);
+      if (next !== cur) {
+        e.preventDefault();
+        document.querySelector(`.btn-carousel-tab[data-slide="${next}"]`)?.click();
+      }
+    });
 
     // Safe-Zone Guide Toggles for Social Graphics Canvases + Carousel Accordion Redraw
     $("btn-toggle-d1-safezone")?.addEventListener("click", () => {
@@ -8284,11 +8328,13 @@
 
         const prevSlide = activeCarouselSlide;
         await loadPackage(currentPackageId);
-        if ($("carousel-and-style-drawer")) $("carousel-and-style-drawer").open = true;
+        // Keep Mode 2 (6-Slide Carousel) active after saving
+        document.querySelector('.btn-design-studio-switch[data-design="2"]')?.click();
         if (prevSlide && typeof loadActiveCarouselSlideInputs === "function") {
           loadActiveCarouselSlideInputs(prevSlide);
+          if (typeof renderActiveCarouselSlideCanvas === "function") renderActiveCarouselSlideCanvas();
         }
-        showToast("✅ Saved all Carousel & Post changes to database!", "success");
+        showToast("✅ Saved all Carousel & Post changes!", "success");
         if (saveBtn) {
           saveBtn.innerHTML = `<span>✓ Saved Changes!</span>`;
           setTimeout(() => {
