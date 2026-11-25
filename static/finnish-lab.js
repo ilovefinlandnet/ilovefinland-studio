@@ -1190,12 +1190,13 @@
       return;
     }
 
-    const fiSpeed = Number(state.podcastSpeed) || 0.75;
+    const fiSpeed = Number(state.podcastSpeed) || 0.85;
+    const fiVoice = state.podcastVoice || "fi-FI-NooraNeural";
     const audioMode = state.podcastRecallMode ? "recall" : "normal";
     const targetIdx = typeof startIndex === "number" ? Math.max(0, Math.min(items.length - 1, startIndex)) : (state.podcastItemIdx || 0);
 
-    // If same track + speed + mode is already loaded in HTML5 <audio>, seek & resume instantaneously!
-    const trackKey = `${ep.id}|${fiSpeed.toFixed(2)}|${audioMode}|${items.length}`;
+    // If same track + voice + speed + mode is already loaded in HTML5 <audio>, seek & resume instantaneously!
+    const trackKey = `${ep.id}|${fiVoice}|${fiSpeed.toFixed(2)}|${audioMode}|${items.length}`;
     if (state.podcastTrackKey === trackKey && state.podcastAudioUrl && _walkAudioEl && _walkAudioEl.src) {
       const aud = getWalkAudioEl();
       const offs = state.podcastItemOffsets || [];
@@ -1214,70 +1215,92 @@
 
     stopActiveAudio(true);
     stopPodcastPlayback(true);
+
+    // Unlock HTML5 <audio> synchronously inside the user tap gesture so iPhone/iPad Safari
+    // still allows playback after a 10-20s neural MP3 build without falling back to browser TTS.
+    const audPrime = getWalkAudioEl();
+    try {
+      audPrime.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+      const p = audPrime.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => { try { audPrime.pause(); } catch (_) {} }).catch(() => {});
+      }
+    } catch (_) {}
+
     state.podcastEpisodeId = ep.id;
     state.podcastItemIdx = targetIdx;
     state.podcastLoading = true;
+    const shortVoice = fiVoice.includes("Harri") ? "Harri (Native FI)" : "Noora (Native FI)";
     state.podcastPhase = state.podcastRecallMode
-      ? "🧠 Preparing Recall Audio (English → Pause → Finnish)..."
-      : "🎙️ Preparing Neural Finnish MP3 (NooraNeural)...";
+      ? `Preparing Recall Audio (${shortVoice})...`
+      : `Preparing Native Finnish Audio (${shortVoice})...`;
     DB.touchStudyStreak("listening");
     renderActiveView();
 
     // Priority 1: Seamless server-side edge-tts MP3 track (works on iPhone/iPad Lock Screen!)
+    let apiRes = null;
     try {
-      const res = await flApi("/api/finnish-lab/walk-listen-audio", {
+      apiRes = await flApi("/api/finnish-lab/walk-listen-audio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: ep.title, items, rate: fiSpeed, mode: audioMode }),
+        body: JSON.stringify({ title: ep.title, items, rate: fiSpeed, mode: audioMode, voice: fiVoice }),
         timeoutMs: 90000,
       });
-      if (res && res.ok && res.audio_url && !state.isLiveTranslating) {
-        state.podcastLoading = false;
-        state.podcastTrackKey = trackKey;
-        state.podcastAudioUrl = res.audio_url;
-        state.podcastItemOffsets = res.item_offsets || [];
-        state.podcastVoiceLabel = res.voice || "fi-FI-NooraNeural";
-        state.podcastPlaying = true;
-        state.podcastPaused = false;
-        state.podcastPhase = `🎧 Neural Lock-Screen Audio (${fiSpeed.toFixed(2)}×)`;
-
-        const aud = getWalkAudioEl();
-        aud.src = res.audio_url;
-        aud.loop = Boolean(state.podcastLoop);
-        aud.onloadedmetadata = () => {
-          const offs = state.podcastItemOffsets || [];
-          if (targetIdx > 0 && offs[targetIdx] != null) {
-            aud.currentTime = offs[targetIdx];
-          }
-          updateWalkProgressDom(aud.currentTime || 0, aud.duration || res.total_duration || 0);
-        };
-        aud.ontimeupdate = () => {
-          const offs = state.podcastItemOffsets || [];
-          const t = aud.currentTime || 0;
-          updateWalkProgressDom(t, aud.duration || res.total_duration || 0);
-          if (!offs.length) return;
-          let found = 0;
-          for (let i = 0; i < offs.length; i++) {
-            if (t + 0.15 >= offs[i]) found = i;
-            else break;
-          }
-          updateWalkActiveCardHighlight(found);
-        };
-        aud.onended = () => {
-          if (!aud.loop) {
-            state.podcastPlaying = false;
-            state.podcastPaused = false;
-            renderActiveView();
-            toast("🎉 Completed Walk & Listen session!", "success");
-          }
-        };
-        setupWalkMediaSession(ep, items);
-        await aud.play();
-        renderActiveView();
-        return;
-      }
     } catch (_) {
-      // Fall back smoothly to smart fi-FI browser speechSynthesis below
+      apiRes = null;
+    }
+
+    if (apiRes && apiRes.ok && apiRes.audio_url && !state.isLiveTranslating) {
+      state.podcastLoading = false;
+      state.podcastTrackKey = trackKey;
+      state.podcastAudioUrl = apiRes.audio_url;
+      state.podcastItemOffsets = apiRes.item_offsets || [];
+      state.podcastVoiceLabel = apiRes.voice || fiVoice;
+      state.podcastPlaying = true;
+      state.podcastPaused = false;
+      state.podcastPhase = `Native Finnish Audio (${shortVoice} • ${fiSpeed.toFixed(2)}×)`;
+
+      const aud = getWalkAudioEl();
+      aud.src = apiRes.audio_url;
+      aud.loop = Boolean(state.podcastLoop);
+      aud.onloadedmetadata = () => {
+        const offs = state.podcastItemOffsets || [];
+        if (targetIdx > 0 && offs[targetIdx] != null) {
+          aud.currentTime = offs[targetIdx];
+        }
+        updateWalkProgressDom(aud.currentTime || 0, aud.duration || apiRes.total_duration || 0);
+      };
+      aud.ontimeupdate = () => {
+        const offs = state.podcastItemOffsets || [];
+        const t = aud.currentTime || 0;
+        updateWalkProgressDom(t, aud.duration || apiRes.total_duration || 0);
+        if (!offs.length) return;
+        let found = 0;
+        for (let i = 0; i < offs.length; i++) {
+          if (t + 0.15 >= offs[i]) found = i;
+          else break;
+        }
+        updateWalkActiveCardHighlight(found);
+      };
+      aud.onended = () => {
+        if (!aud.loop) {
+          state.podcastPlaying = false;
+          state.podcastPaused = false;
+          renderActiveView();
+          toast("Completed Walk & Listen session!", "success");
+        }
+      };
+      setupWalkMediaSession(ep, items);
+      try {
+        await aud.play();
+      } catch (_) {
+        // NEVER discard the real native Finnish MP3 on iOS NotAllowedError — keep it loaded for 1-tap instant play!
+        state.podcastPaused = true;
+        state.podcastPhase = "Native Finnish MP3 ready — tap Play";
+        toast("Native Finnish audio ready — tap ▶ to play.", "info");
+      }
+      renderActiveView();
+      return;
     }
 
     // Priority 2: Fallback Passive Memorization Loop (Smart fi-FI Browser Voice)
@@ -1928,10 +1951,10 @@
     const rawB64 = await blobToBase64(file);
     let mime = file.type || "image/jpeg";
     if (mime.startsWith("image/")) {
-      // Auto-compress camera photos to ~100-150 KB JPEG for fast 4G upload & tiny phone storage
+      // Keep textbook & handwritten notes razor-sharp for accurate Finnish OCR
       const rawUrl = `data:${mime};base64,${rawB64}`;
-      const compressedUrl = await compressImageDataUrl(rawUrl, 1280, 0.78);
-      const thumbUrl = await compressImageDataUrl(compressedUrl, 320, 0.65);
+      const compressedUrl = await compressImageDataUrl(rawUrl, 1600, 0.88);
+      const thumbUrl = await compressImageDataUrl(compressedUrl, 800, 0.80);
       const compB64 = compressedUrl.includes(",") ? compressedUrl.split(",")[1] : rawB64;
       return {
         id: DB.uid("att"),
@@ -2837,10 +2860,22 @@
               </button>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:0.78rem;color:#CBD5E1;font-weight:600;">Voice</span>
+              <div style="display:flex;gap:6px;">
+                ${[
+                  { id: "fi-FI-NooraNeural", label: "Noora (FI)" },
+                  { id: "fi-FI-HarriNeural", label: "Harri (FI)" },
+                ].map((v) => {
+                  const isAct = (state.podcastVoice || "fi-FI-NooraNeural") === v.id;
+                  return `<button type="button" class="fl3-btn ${isAct ? "active" : ""}" data-fl-pod-voice="${v.id}" style="padding:7px 12px;">${v.label}</button>`;
+                }).join("")}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
               <span style="font-size:0.78rem;color:#CBD5E1;font-weight:600;">Speed</span>
               <div style="display:flex;gap:6px;">
-                ${[0.75, 0.90, 1.0].map((spd) => {
-                  const isAct = Math.abs((Number(state.podcastSpeed) || 0.75) - spd) < 0.05;
+                ${[0.75, 0.85, 1.0].map((spd) => {
+                  const isAct = Math.abs((Number(state.podcastSpeed) || 0.85) - spd) < 0.04;
                   const lbl = spd === 1.0 ? "1.0×" : `${spd.toFixed(2)}×`;
                   return `<button type="button" class="fl3-btn ${isAct ? "active" : ""}" data-fl-pod-speed="${spd}" style="padding:7px 12px;">${lbl}</button>`;
                 }).join("")}
@@ -3603,8 +3638,8 @@
       const imgAtts = state.pendingAttachments.filter((a) => (a.mime_type || "").startsWith("image/"));
       if (!imgAtts.length) return;
       state.pendingAttachments = [];
-      state.activeTab = "walk";
-      state.mode = "study";
+      state.activeTab = "study";
+      state.studySubTab = "walk";
       renderActiveView();
       await createCustomPodcastEpisode("Homework Photo Course", imgAtts);
     });
@@ -3629,8 +3664,8 @@
           toast("Upload a fresh homework photo to build a Walk & Listen episode.", "warning");
           return;
         }
-        state.activeTab = "walk";
-        state.mode = "study";
+        state.activeTab = "study";
+        state.studySubTab = "walk";
         renderActiveView();
         await createCustomPodcastEpisode("Homework Photo Course", resolvedAtts);
       };
@@ -3903,9 +3938,23 @@
       state.mode = "study";
       renderActiveView();
     });
+    root.querySelectorAll("[data-fl-pod-voice]").forEach((b) => {
+      b.onclick = () => {
+        const nextVoice = b.getAttribute("data-fl-pod-voice") || "fi-FI-NooraNeural";
+        const wasPlaying = Boolean(state.podcastPlaying);
+        state.podcastVoice = nextVoice;
+        state.podcastTrackKey = "";
+        toast(`Voice set to ${nextVoice.includes("Harri") ? "Harri (Native Finnish)" : "Noora (Native Finnish)"}`, "info");
+        if (wasPlaying) {
+          generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+        } else {
+          renderActiveView();
+        }
+      };
+    });
     root.querySelectorAll("[data-fl-pod-speed]").forEach((b) => {
       b.onclick = () => {
-        const nextSpeed = parseFloat(b.getAttribute("data-fl-pod-speed")) || 0.75;
+        const nextSpeed = parseFloat(b.getAttribute("data-fl-pod-speed")) || 0.85;
         const wasPlaying = Boolean(state.podcastPlaying);
         state.podcastSpeed = nextSpeed;
         state.podcastTrackKey = "";

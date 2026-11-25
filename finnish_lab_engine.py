@@ -2044,19 +2044,32 @@ def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINN
     if limit_err:
         return limit_err, 429
 
-    sys_prompt = (
-        f"You design calm, high-retention {level}-level Finnish 'Walk & Listen' passive memorization audio courses (10–15+ minutes). "
-        "Return ONLY valid JSON with keys: "
-        "title (short clean English title, max 42 chars), "
-        f"items (array of {item_count} objects, each with keys: fi (clear standard school-grade Finnish word or short phrase), en (clear natural English meaning), note (optional brief 3–6 word grammar/category tag)). "
-        "Order items from easiest single words to short practical beginner sentences so learners memorize naturally while walking."
-    )
-    user_ask = (
-        f"Extract and expand {item_count} beginner Finnish memorization items from this uploaded homework/class photo"
-        + (f" focusing on: {topic}." if topic else ".")
-        if attachments
-        else f"Create a {item_count}-item beginner Finnish 'Walk & Listen' memorization course for: {topic}."
-    )
+    if attachments:
+        sys_prompt = (
+            f"You are an expert Finnish language teacher designing a high-retention {level}-level 'Walk & Listen' audio course from a student's uploaded textbook, worksheet, or whiteboard photo. "
+            "CRITICAL OCR RULES — FOLLOW STRICTLY:\n"
+            "1. FIRST carefully read and transcribe EVERY visible Finnish word, phrase, verb conjugation, grammar example, and sentence printed or handwritten on the uploaded photo. Preserve exact Finnish spelling (ä, ö, å).\n"
+            "2. Include 100% of those exact items from the photo FIRST in the items array, with note set to 'From your photo' (or a brief 2-4 word grammar label).\n"
+            "3. ONLY AFTER covering every visible Finnish word/sentence from the photo, add short practical beginner practice sentences using those EXACT words to reach the requested count. NEVER invent unrelated generic topics.\n"
+            "4. If the photo contains an exercise or dialogue, turn each line/answer into a clear Finnish -> English audio pair.\n"
+            "Return ONLY valid JSON with keys: "
+            "title (short clean English title describing the actual photo topic, max 42 chars), "
+            f"items (array of up to {item_count} objects, each with keys: fi (exact Finnish word or short sentence), en (clear natural English meaning), note (brief 2-5 word tag))."
+        )
+        user_ask = (
+            f"Carefully read every single Finnish word, phrase, and sentence in this uploaded photo and build a {item_count}-item Walk & Listen audio course covering 100% of the photo's content first"
+            + (f" (student focus: {topic})." if topic and "homework photo" not in topic.lower() else ".")
+        )
+    else:
+        sys_prompt = (
+            f"You design calm, high-retention {level}-level Finnish 'Walk & Listen' passive memorization audio courses (10–15+ minutes). "
+            "Return ONLY valid JSON with keys: "
+            "title (short clean English title, max 42 chars), "
+            f"items (array of {item_count} objects, each with keys: fi (clear standard school-grade Finnish word or short phrase), en (clear natural English meaning), note (optional brief 3–6 word grammar/category tag)). "
+            "Order items from easiest single words to short practical beginner sentences so learners memorize naturally while walking."
+        )
+        user_ask = f"Create a {item_count}-item beginner Finnish 'Walk & Listen' memorization course for: {topic}."
+
     parts, val_err = _validate_and_build_parts(user_ask, attachments)
     if val_err:
         return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
@@ -2065,8 +2078,8 @@ def handle_generate_podcast_episode(payload: Dict[str, Any], db_path: str = FINN
         system_instruction=sys_prompt,
         contents=[{"role": "user", "parts": parts}],
         expect_json=True,
-        temperature=0.35,
-        max_output_tokens=2800,
+        temperature=0.2 if attachments else 0.35,
+        max_output_tokens=3600 if attachments else 2800,
     )
     if ai_err:
         status = 429 if "QUOTA" in ai_err.get("error", "") else 503
@@ -2229,7 +2242,7 @@ def handle_pronunciation_check(payload: Dict[str, Any], db_path: str = FINNISH_L
 # NATURAL NEURAL FINNISH & ENGLISH TTS (edge-tts — $0 Free, No API Key Required)
 # Cached persistently in /data/uploads/finnish_tts/
 # =============================================================================
-EDGE_FI_VOICES = ("fi-FI-NooraNeural", "fi-FI-SelmaNeural")
+EDGE_FI_VOICES = ("fi-FI-NooraNeural", "fi-FI-HarriNeural", "fi-FI-SelmaNeural")
 EDGE_EN_VOICES = ("en-US-AriaNeural", "en-GB-SoniaNeural")
 
 
@@ -2455,12 +2468,14 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
     if not items:
         return {"ok": False, "error": "EMPTY_ITEMS", "message": "No Walk & Listen items provided."}, 400
 
-    rate = payload.get("rate", 0.75)
+    rate = payload.get("rate", 0.85)
     rate_str = _rate_float_to_edge_str(rate)
     audio_mode = "recall" if str(payload.get("mode") or "").strip().lower() == "recall" else "normal"
+    req_voice = str(payload.get("voice") or "").strip()
+    fi_voice = req_voice if req_voice in EDGE_FI_VOICES else EDGE_FI_VOICES[0]
     cache_dir = _resolve_tts_cache_dir()
 
-    sig = json.dumps({"v": 3, "mode": audio_mode, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
+    sig = json.dumps({"v": 4, "voice": fi_voice, "mode": audio_mode, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
     digest = hashlib.sha256(sig.encode("utf-8")).hexdigest()[:20]
     out_mp3_name = f"walk_course_{digest}.mp3"
     out_mp3_path = os.path.join(cache_dir, out_mp3_name)
@@ -2483,13 +2498,13 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
     segment_paths: List[str] = []
     item_offsets: List[float] = []
     running_sec = 0.0
-    used_voice = EDGE_FI_VOICES[0]
+    used_voice = fi_voice
 
     # Synthesize all Finnish + English clips concurrently (6 workers -> ~6s for 24 items, 0ms when cached)
     from concurrent.futures import ThreadPoolExecutor
 
     def _synth_pair(it_obj: Dict[str, str]):
-        fi_p, _, v_fi, e_fi = synthesize_edge_tts_mp3(it_obj["fi"], lang="fi", rate=rate_str)
+        fi_p, _, v_fi, e_fi = synthesize_edge_tts_mp3(it_obj["fi"], lang="fi", rate=rate_str, voice=fi_voice)
         if e_fi or not fi_p:
             return None, None, None, e_fi or "Neural TTS unavailable."
         en_text = it_obj["en"] if audio_mode == "recall" else f"means {it_obj['en']}"
