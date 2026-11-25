@@ -1441,11 +1441,71 @@
   function getActivePodcastItems(ep) {
     const all = getPodcastItems(ep);
     if (all.length <= 16) return all;
-    const ck = state.podcastChunk || "all";
+    const ck = state.podcastChunk || "p1";
     if (ck === "p1") return all.slice(0, 12);
     if (ck === "p2") return all.slice(12, 24);
     if (ck === "p3") return all.slice(24);
     return all;
+  }
+
+  function advanceToNextChapterOrChunk() {
+    const allEps = getAllPodcastEpisodes();
+    const queue = Array.isArray(state.podcastQueue) ? state.podcastQueue : [];
+    // 1. Custom Multi-Chapter Queue (e.g. 01 + 05)
+    if (queue.length > 1) {
+      const qIdx = queue.indexOf(state.podcastEpisodeId);
+      const nextQIdx = qIdx >= 0 ? qIdx + 1 : 0;
+      if (nextQIdx < queue.length) {
+        const nextId = queue[nextQIdx];
+        state.podcastEpisodeId = nextId;
+        state.podcastItemIdx = 0;
+        state.podcastTrackKey = "";
+        generateAndPlayPodcast(nextId, 0);
+        return;
+      }
+      if (state.podcastLoop) {
+        const firstId = queue[0];
+        state.podcastEpisodeId = firstId;
+        state.podcastItemIdx = 0;
+        state.podcastTrackKey = "";
+        generateAndPlayPodcast(firstId, 0);
+        return;
+      }
+      state.podcastPlaying = false;
+      state.podcastPaused = false;
+      renderActiveView();
+      toast("Completed your custom chapter queue!", "success");
+      return;
+    }
+
+    // 2. Continuous Auto-Next (when Loop is OFF): p1 -> p2 -> p3 -> Next Chapter (11 -> 12 -> 13 -> 14)
+    const curEp = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
+    const fullLen = getPodcastItems(curEp).length;
+    const ck = state.podcastChunk || "p1";
+    if (fullLen > 16 && ck === "p1") {
+      state.podcastChunk = "p2";
+      state.podcastItemIdx = 0;
+      state.podcastTrackKey = "";
+      generateAndPlayPodcast(curEp.id, 0);
+      return;
+    }
+    if (fullLen > 24 && ck === "p2") {
+      state.podcastChunk = "p3";
+      state.podcastItemIdx = 0;
+      state.podcastTrackKey = "";
+      generateAndPlayPodcast(curEp.id, 0);
+      return;
+    }
+    const idx = allEps.findIndex((x) => x.id === curEp.id);
+    const nextEp = allEps[(idx + 1) % allEps.length];
+    if (nextEp) {
+      state.podcastEpisodeId = nextEp.id;
+      state.podcastChunk = ck === "all" ? "all" : "p1";
+      state.podcastItemIdx = 0;
+      state.podcastTrackKey = "";
+      toast(`Continuing to ${nextEp.title}`, "info");
+      generateAndPlayPodcast(nextEp.id, 0);
+    }
   }
 
   function speakUtteranceAsync(text, lang, rate) {
@@ -1497,7 +1557,7 @@
     const fiSpeed = Number(state.podcastSpeed) || 0.85;
     const fiVoice = state.podcastVoice || "fi-FI-NooraNeural";
     const audioMode = state.podcastRecallMode ? "recall" : "normal";
-    const chunkKey = state.podcastChunk || "all";
+    const chunkKey = state.podcastChunk || "p1";
     const targetIdx = typeof startIndex === "number" ? Math.max(0, Math.min(items.length - 1, startIndex)) : (state.podcastItemIdx || 0);
 
     // If same track + chunk + voice + speed + mode is already loaded in HTML5 <audio>, seek & resume instantaneously!
@@ -1566,8 +1626,9 @@
       state.podcastPhase = `Native Finnish Audio (${shortVoice} • ${fiSpeed.toFixed(2)}×)`;
 
       const aud = getWalkAudioEl();
+      const hasMultiQueue = Array.isArray(state.podcastQueue) && state.podcastQueue.length > 1;
       aud.src = apiRes.audio_url;
-      aud.loop = Boolean(state.podcastLoop);
+      aud.loop = Boolean(state.podcastLoop && !hasMultiQueue);
       aud.onloadedmetadata = () => {
         const offs = state.podcastItemOffsets || [];
         if (targetIdx > 0 && offs[targetIdx] != null) {
@@ -1589,10 +1650,7 @@
       };
       aud.onended = () => {
         if (!aud.loop) {
-          state.podcastPlaying = false;
-          state.podcastPaused = false;
-          renderActiveView();
-          toast("Completed Walk & Listen session!", "success");
+          advanceToNextChapterOrChunk();
         }
       };
       setupWalkMediaSession(ep, items);
@@ -3243,7 +3301,8 @@
     const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
     const fullItems = getPodcastItems(ep);
     const items = getActivePodcastItems(ep);
-    const curChunk = state.podcastChunk || "all";
+    const curChunk = state.podcastChunk || "p1";
+    const queue = Array.isArray(state.podcastQueue) ? state.podcastQueue : [];
     const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, items.length - 1));
     const currentItem = items[activeIdx] || { fi: "kevät", en: "spring" };
     const estTotalSec = state.podcastTotalDur > 0 ? state.podcastTotalDur : Math.round(items.length * 10);
@@ -3259,7 +3318,35 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
               <span>Pocket Audio Player</span>
             </h2>
+            <button type="button" class="fl3-btn ${queue.length ? "active" : ""}" id="fl-pod-queue-toggle" style="padding:5px 10px;font-size:0.74rem;min-height:30px;">
+              ${queue.length ? `Queue (${queue.length})` : "Playlist"}
+            </button>
           </div>
+
+          ${
+            state.podcastQueueOpen
+              ? `<div style="background:rgba(7,17,34,0.82);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:10px;margin-bottom:12px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="font-size:0.75rem;font-weight:700;color:#CBD5E1;">Pick chapters to play back-to-back (e.g. 01 + 05)</span>
+                    ${queue.length ? `<button type="button" class="fl3-btn" id="fl-pod-queue-clear" style="padding:3px 8px;font-size:0.7rem;min-height:24px;">Clear</button>` : ""}
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:4px;max-height:165px;overflow-y:auto;margin-bottom:8px;">
+                    ${allEps
+                      .map((e) => {
+                        const checked = queue.includes(e.id);
+                        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;background:${checked ? "rgba(0,82,180,0.28)" : "rgba(17,34,64,0.45)"};cursor:pointer;font-size:0.78rem;color:#E2E8F0;">
+                          <input type="checkbox" data-fl-queue-chk="${esc(e.id)}" ${checked ? "checked" : ""} style="width:15px;height:15px;accent-color:#38BDF8;margin:0;" />
+                          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(e.title)}</span>
+                        </label>`;
+                      })
+                      .join("")}
+                  </div>
+                  <button type="button" class="fl3-btn primary" id="fl-pod-queue-play" style="width:100%;padding:8px;font-size:0.8rem;" ${queue.length ? "" : "disabled"}>
+                    Play Selected (${queue.length})
+                  </button>
+                </div>`
+              : ""
+          }
 
           <!-- 1 Clean Chapter Dropdown (01–14 A1 Curriculum + Saved Courses) -->
           <div style="margin-bottom:10px;">
@@ -3267,7 +3354,7 @@
             <select id="fl-walk-chapter-select" class="fl3-select" aria-label="Select A1 Finnish Book Chapter">
               ${allEps
                 .map(
-                  (e) => `<option value="${esc(e.id)}" ${e.id === ep.id ? "selected" : ""}>${esc(e.title)} (${getPodcastItems(e).length} items)</option>`
+                  (e) => `<option value="${esc(e.id)}" ${e.id === ep.id ? "selected" : ""}>${esc(e.title)} (${getPodcastItems(e).length})</option>`
                 )
                 .join("")}
             </select>
@@ -3275,11 +3362,11 @@
 
           ${
             fullItems.length > 16
-              ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;" role="group" aria-label="Memorization Chunks">
-                  <button type="button" class="fl3-btn ${curChunk === "p1" ? "active" : ""}" data-fl-pod-chunk="p1" style="padding:6px 4px;font-size:0.73rem;">Part 1 (1–12)</button>
-                  <button type="button" class="fl3-btn ${curChunk === "p2" ? "active" : ""}" data-fl-pod-chunk="p2" style="padding:6px 4px;font-size:0.73rem;">Part 2 (13–24)</button>
-                  <button type="button" class="fl3-btn ${curChunk === "p3" ? "active" : ""}" data-fl-pod-chunk="p3" style="padding:6px 4px;font-size:0.73rem;">Part 3 (25–${fullItems.length})</button>
-                  <button type="button" class="fl3-btn ${curChunk === "all" ? "active" : ""}" data-fl-pod-chunk="all" style="padding:6px 4px;font-size:0.73rem;">All (${fullItems.length})</button>
+              ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;" role="group" aria-label="Memorization Chunks">
+                  <button type="button" class="fl3-btn ${curChunk === "p1" ? "active" : ""}" data-fl-pod-chunk="p1" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">1–12</button>
+                  <button type="button" class="fl3-btn ${curChunk === "p2" ? "active" : ""}" data-fl-pod-chunk="p2" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">13–24</button>
+                  <button type="button" class="fl3-btn ${curChunk === "p3" ? "active" : ""}" data-fl-pod-chunk="p3" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">25–${fullItems.length}</button>
+                  <button type="button" class="fl3-btn ${curChunk === "all" ? "active" : ""}" data-fl-pod-chunk="all" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">All</button>
                 </div>`
               : ""
           }
@@ -3371,8 +3458,8 @@
             <div style="font-size:0.72rem;font-weight:600;color:#94A3B8;background:rgba(17,34,64,0.7);border:1px solid rgba(255,255,255,0.08);padding:4px 10px;border-radius:999px;">
               ${
                 state.podcastRecallMode
-                  ? `Recall Mode: English → 3s Pause (You Say Finnish) → Confirm (${(Number(state.podcastSpeed) || 0.75).toFixed(2)}×)`
-                  : `Slow Finnish (${(Number(state.podcastSpeed) || 0.75).toFixed(2)}×) → English → Pause → Repeat`
+                  ? `Recall Mode: English → 2.6s Pause (You Say Finnish) → Confirm (${(Number(state.podcastSpeed) || 0.85).toFixed(2)}×)`
+                  : `Finnish (${(Number(state.podcastSpeed) || 0.85).toFixed(2)}×) → English → Pause → Finnish → English`
               }
             </div>
             <div id="fl-walk-now-fi" class="fl3-now-fi" style="margin-top:6px;">${esc(currentItem.fi)}</div>
@@ -4427,6 +4514,38 @@
       state.activeTab = "notebook";
       state.mode = "study";
       renderActiveView();
+    });
+    root.querySelector("#fl-pod-queue-toggle")?.addEventListener("click", () => {
+      state.podcastQueueOpen = !state.podcastQueueOpen;
+      renderActiveView();
+    });
+    root.querySelector("#fl-pod-queue-clear")?.addEventListener("click", () => {
+      state.podcastQueue = [];
+      renderActiveView();
+    });
+    root.querySelectorAll("[data-fl-queue-chk]").forEach((chk) => {
+      chk.onchange = () => {
+        const id = chk.getAttribute("data-fl-queue-chk");
+        if (!id) return;
+        const cur = Array.isArray(state.podcastQueue) ? [...state.podcastQueue] : [];
+        if (chk.checked && !cur.includes(id)) cur.push(id);
+        else if (!chk.checked) {
+          const i = cur.indexOf(id);
+          if (i >= 0) cur.splice(i, 1);
+        }
+        state.podcastQueue = cur;
+        renderActiveView();
+      };
+    });
+    root.querySelector("#fl-pod-queue-play")?.addEventListener("click", () => {
+      const q = Array.isArray(state.podcastQueue) ? state.podcastQueue : [];
+      if (!q.length) return;
+      state.podcastQueueOpen = false;
+      state.podcastEpisodeId = q[0];
+      state.podcastChunk = "all";
+      state.podcastItemIdx = 0;
+      state.podcastTrackKey = "";
+      generateAndPlayPodcast(q[0], 0);
     });
     root.querySelectorAll("[data-fl-pod-chunk]").forEach((b) => {
       b.onclick = () => {

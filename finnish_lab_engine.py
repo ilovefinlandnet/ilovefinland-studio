@@ -2476,7 +2476,7 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
     fi_voice = req_voice if req_voice in EDGE_FI_VOICES else EDGE_FI_VOICES[0]
     cache_dir = _resolve_tts_cache_dir()
 
-    sig = json.dumps({"v": 4, "voice": fi_voice, "mode": audio_mode, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
+    sig = json.dumps({"v": 5, "voice": fi_voice, "mode": audio_mode, "rate": rate_str, "items": items}, ensure_ascii=False, sort_keys=True)
     digest = hashlib.sha256(sig.encode("utf-8")).hexdigest()[:20]
     out_mp3_name = f"walk_course_{digest}.mp3"
     out_mp3_path = os.path.join(cache_dir, out_mp3_name)
@@ -2491,35 +2491,50 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
         except Exception:
             pass
 
-    sil_short = _ensure_silence_mp3(0.35, cache_dir)
-    sil_pause = _ensure_silence_mp3(1.25, cache_dir)
+    sil_short = _ensure_silence_mp3(0.45, cache_dir)
+    sil_pause = _ensure_silence_mp3(1.10, cache_dir)
     sil_recall = _ensure_silence_mp3(2.60, cache_dir) if audio_mode == "recall" else None
-    sil_gap = _ensure_silence_mp3(0.85, cache_dir)
+    sil_gap = _ensure_silence_mp3(0.95, cache_dir)
 
     segment_paths: List[str] = []
     item_offsets: List[float] = []
     running_sec = 0.0
     used_voice = fi_voice
 
-    # Synthesize all Finnish + English clips concurrently (6 workers -> ~6s for 24 items, 0ms when cached)
+    # Synthesize all Finnish + English clips concurrently with 1 automatic retry per clip
     from concurrent.futures import ThreadPoolExecutor
 
     def _synth_pair(it_obj: Dict[str, str]):
-        fi_p, _, v_fi, e_fi = synthesize_edge_tts_mp3(it_obj["fi"], lang="fi", rate=rate_str, voice=fi_voice)
+        fi_p, v_fi, e_fi = None, None, None
+        for _attempt in range(2):
+            fi_p, _, v_fi, e_fi = synthesize_edge_tts_mp3(it_obj["fi"], lang="fi", rate=rate_str, voice=fi_voice)
+            if fi_p and not e_fi:
+                break
         if e_fi or not fi_p:
             return None, None, None, e_fi or "Neural TTS unavailable."
-        en_text = it_obj["en"] if audio_mode == "recall" else f"means {it_obj['en']}"
-        en_p, _, _, e_en = synthesize_edge_tts_mp3(en_text, lang="en", rate="+0%")
+        en_text = it_obj["en"]
+        en_p, e_en = None, None
+        for _attempt in range(2):
+            en_p, _, _, e_en = synthesize_edge_tts_mp3(en_text, lang="en", rate="+0%")
+            if en_p and not e_en:
+                break
         if e_en or not en_p:
             return None, None, None, e_en or "English neural TTS unavailable."
         return fi_p, en_p, v_fi, None
 
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=8) as pool:
         pair_results = list(pool.map(_synth_pair, items))
+
+    valid_pairs = [p for p in pair_results if p[0] and p[1] and not p[3]]
+    if not valid_pairs:
+        first_err = next((p[3] for p in pair_results if p[3]), "Neural TTS unavailable.")
+        return {"ok": False, "error": "TTS_UNAVAILABLE", "message": first_err}, 503
 
     for fi_path, en_path, v_fi, pair_err in pair_results:
         if pair_err or not fi_path or not en_path:
-            return {"ok": False, "error": "TTS_UNAVAILABLE", "message": pair_err or "Neural TTS unavailable."}, 503
+            # Keep offset aligned even if a single transient clip failed, never abort the whole chapter!
+            item_offsets.append(round(running_sec, 2))
+            continue
         if v_fi:
             used_voice = v_fi
 
@@ -2529,7 +2544,7 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
         item_offsets.append(round(running_sec, 2))
 
         if audio_mode == "recall":
-            # Recall Mode: English FIRST -> 2.6s silent pause (user says Finnish out loud) -> Slow Finnish -> Repeat Finnish
+            # Recall Mode: English FIRST -> 2.6s silent pause (you say Finnish) -> Native Finnish x2
             segment_paths.append(en_path)
             running_sec += en_dur
             if sil_recall:
@@ -2539,26 +2554,34 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
             running_sec += fi_dur
             if sil_gap:
                 segment_paths.append(sil_gap)
-                running_sec += 0.85
+                running_sec += 0.95
             segment_paths.append(fi_path)
             running_sec += fi_dur
             if sil_gap:
                 segment_paths.append(sil_gap)
-                running_sec += 0.85
+                running_sec += 0.95
         else:
-            # Normal Mode: Slow Finnish -> "means [English]" -> Pause -> Repeat Finnish
+            # Effortless Listening Mode: Native Finnish -> English -> 1.1s pause -> Native Finnish -> English
             segment_paths.append(fi_path)
             running_sec += fi_dur
             if sil_short:
                 segment_paths.append(sil_short)
-                running_sec += 0.35
+                running_sec += 0.45
             segment_paths.append(en_path)
             running_sec += en_dur
             if sil_pause:
                 segment_paths.append(sil_pause)
-                running_sec += 1.25
+                running_sec += 1.10
             segment_paths.append(fi_path)
             running_sec += fi_dur
+            if sil_short:
+                segment_paths.append(sil_short)
+                running_sec += 0.45
+            segment_paths.append(en_path)
+            running_sec += en_dur
+            if sil_gap:
+                segment_paths.append(sil_gap)
+                running_sec += 0.95
             if sil_gap:
                 segment_paths.append(sil_gap)
                 running_sec += 0.85
