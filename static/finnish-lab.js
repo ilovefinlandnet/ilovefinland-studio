@@ -3831,7 +3831,7 @@
     `;
   }
 
-  /* ---------- TAB 2: WALK & LISTEN (CLEAN SPOTIFY-STYLE 20+ MIN PLAYER + RECALL MODE) ---------- */
+  /* ---------- TAB 2: WALK & LISTEN (APPLE MUSIC MINIMUM PLAYER + 17-CHAPTER A1 BOOK) ---------- */
   function renderTabWalkAndListen() {
     const allEps = getAllPodcastEpisodes();
     const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
@@ -3844,29 +3844,48 @@
     const estTotalSec = state.podcastTotalDur > 0 ? state.podcastTotalDur : Math.round(items.length * 10);
     const curSec = state.podcastCurSec || 0;
     const pct = estTotalSec > 0 ? Math.min(100, Math.max(0, (curSec / estTotalSec) * 100)) : 0;
+    const curSpeed = Number(state.podcastSpeed) || 0.85;
+    const speedLabel = curSpeed >= 0.98 ? "1.0×" : `${curSpeed.toFixed(2)}×`;
+    const curVoiceName = (state.podcastVoice || "fi-FI-NooraNeural").includes("Selma") ? "Selma" : "Noora";
 
     return `
       <div class="fl3-grid-walk">
-        <!-- LEFT PANEL: CLEAN POCKET PLAYER CARD -->
+        <!-- LEFT PANEL: APPLE MUSIC-STYLE MINIMUM PLAYER -->
         <section class="fl3-card" aria-label="Walk and Listen Pocket Player">
-          <div class="fl3-card-head">
+          <div class="fl3-card-head" style="margin-bottom:10px;">
             <h2 class="fl3-card-title">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
-              <span>Pocket Audio Player</span>
+              <span>Pocket Audio</span>
             </h2>
-            <button type="button" class="fl3-btn ${queue.length ? "active" : ""}" id="fl-pod-queue-toggle" style="padding:5px 10px;font-size:0.74rem;min-height:30px;">
-              ${queue.length ? `Queue (${queue.length})` : "Playlist"}
-            </button>
+            <div style="display:inline-flex;gap:6px;align-items:center;">
+              <button type="button" class="fl3-btn ${state.podcastCreateOpen ? "active" : ""}" id="fl-pod-create-toggle" style="width:32px;height:32px;min-height:32px;padding:0;border-radius:999px;" title="Create custom topic or photo podcast" aria-label="Create custom podcast">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+              <button type="button" class="fl3-btn ${queue.length ? "active" : ""}" id="fl-pod-queue-toggle" style="padding:5px 11px;font-size:0.74rem;min-height:32px;border-radius:999px;">
+                ${queue.length ? `Queue (${queue.length})` : "Playlist"}
+              </button>
+            </div>
           </div>
 
           ${
+            state.podcastCreateOpen
+              ? `<div style="display:flex;gap:6px;margin-bottom:10px;padding:8px;border-radius:14px;background:rgba(7,17,34,0.82);border:1px solid rgba(56,189,248,0.25);">
+                  <input type="text" id="fl-pod-custom-topic" class="fl3-input-sm" placeholder="Topic (e.g. doctor, bus, kitchen)..." aria-label="Custom podcast topic" />
+                  <button type="button" class="fl3-btn" id="fl-walk-photo-btn" style="width:40px;padding:0;flex-shrink:0;" title="Build course from Homework Photo" aria-label="Upload Homework Photo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></button>
+                  <button type="button" class="fl3-btn primary" id="fl-pod-create-btn" style="padding:8px 12px;flex-shrink:0;" ${state.podcastCreating ? "disabled" : ""}>${state.podcastCreating ? `<span class="fl3-spin" aria-hidden="true"></span>` : "Create"}</button>
+                </div>`
+              : ""
+          }
+          <input type="file" id="fl-pod-hw-photo" accept="image/*" style="display:none;" />
+
+          ${
             state.podcastQueueOpen
-              ? `<div style="background:rgba(7,17,34,0.82);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:10px;margin-bottom:12px;">
+              ? `<div style="background:rgba(7,17,34,0.82);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:10px;margin-bottom:10px;">
                   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <span style="font-size:0.75rem;font-weight:700;color:#CBD5E1;">Pick chapters to play back-to-back (e.g. 01 + 05)</span>
+                    <span style="font-size:0.75rem;font-weight:700;color:#CBD5E1;">Pick chapters to play back-to-back</span>
                     ${queue.length ? `<button type="button" class="fl3-btn" id="fl-pod-queue-clear" style="padding:3px 8px;font-size:0.7rem;min-height:24px;">Clear</button>` : ""}
                   </div>
-                  <div style="display:flex;flex-direction:column;gap:4px;max-height:165px;overflow-y:auto;margin-bottom:8px;">
+                  <div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;margin-bottom:8px;">
                     ${allEps
                       .map((e) => {
                         const checked = queue.includes(e.id);
@@ -3884,9 +3903,8 @@
               : ""
           }
 
-          <!-- 1 Clean Chapter Dropdown (01–14 A1 Curriculum + Saved Courses) -->
-          <div style="margin-bottom:10px;">
-            <label for="fl-walk-chapter-select" style="display:block;font-size:0.72rem;font-weight:600;color:#94A3B8;margin-bottom:5px;">A1 Book Chapters &amp; Saved Courses</label>
+          <!-- Clean Chapter Dropdown (01–17 A1 Curriculum) -->
+          <div style="margin-bottom:8px;">
             <select id="fl-walk-chapter-select" class="fl3-select" aria-label="Select A1 Finnish Book Chapter">
               ${allEps
                 .map(
@@ -3898,29 +3916,27 @@
 
           ${
             fullItems.length > 16
-              ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;" role="group" aria-label="Memorization Chunks">
-                  <button type="button" class="fl3-btn ${curChunk === "p1" ? "active" : ""}" data-fl-pod-chunk="p1" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">1–12</button>
-                  <button type="button" class="fl3-btn ${curChunk === "p2" ? "active" : ""}" data-fl-pod-chunk="p2" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">13–24</button>
-                  <button type="button" class="fl3-btn ${curChunk === "p3" ? "active" : ""}" data-fl-pod-chunk="p3" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">25–${fullItems.length}</button>
-                  <button type="button" class="fl3-btn ${curChunk === "all" ? "active" : ""}" data-fl-pod-chunk="all" style="padding:7px 4px;font-size:0.78rem;white-space:nowrap;">All</button>
+              ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;" role="group" aria-label="Memorization Chunks">
+                  <button type="button" class="fl3-btn ${curChunk === "p1" ? "active" : ""}" data-fl-pod-chunk="p1" style="padding:6px 4px;font-size:0.76rem;min-height:34px;white-space:nowrap;">1–12</button>
+                  <button type="button" class="fl3-btn ${curChunk === "p2" ? "active" : ""}" data-fl-pod-chunk="p2" style="padding:6px 4px;font-size:0.76rem;min-height:34px;white-space:nowrap;">13–24</button>
+                  <button type="button" class="fl3-btn ${curChunk === "p3" ? "active" : ""}" data-fl-pod-chunk="p3" style="padding:6px 4px;font-size:0.76rem;min-height:34px;white-space:nowrap;">25–${fullItems.length}</button>
+                  <button type="button" class="fl3-btn ${curChunk === "all" ? "active" : ""}" data-fl-pod-chunk="all" style="padding:6px 4px;font-size:0.76rem;min-height:34px;white-space:nowrap;">All</button>
                 </div>`
               : ""
           }
 
-          <!-- 1 Smart Create Bar: Type ANY Topic OR Upload Homework Photo -->
-          <div style="display:flex;gap:6px;margin-bottom:14px;">
-            <input type="text" id="fl-pod-custom-topic" class="fl3-input-sm" placeholder="+ Any topic (e.g. doctor, bus, kitchen)..." aria-label="Custom podcast topic" />
-            <button type="button" class="fl3-btn" id="fl-walk-photo-btn" style="width:42px;padding:0;flex-shrink:0;" title="Build 20-min course from Homework Photo" aria-label="Upload Homework Photo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></button>
-            <button type="button" class="fl3-btn primary" id="fl-pod-create-btn" style="padding:8px 14px;flex-shrink:0;" ${state.podcastCreating ? "disabled" : ""}>${state.podcastCreating ? `<span class="fl3-spin" aria-hidden="true"></span>` : "+ Create"}</button>
+          <!-- Now Playing Hero (Apple Music Focus) -->
+          <div style="text-align:center;padding:12px 8px 8px;">
+            <div id="fl-walk-now-fi" class="fl3-now-fi" style="margin:0;">${esc(currentItem.fi)}</div>
+            <div id="fl-walk-now-en" class="fl3-now-en" style="margin-top:4px;">${esc(currentItem.en)}</div>
           </div>
-          <input type="file" id="fl-pod-hw-photo" accept="image/*" style="display:none;" />
 
           <!-- Center Transport: Prev | Large Play/Pause Circle | Next -->
-          <div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px 0 14px;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:22px;padding:10px 0 14px;">
             <button type="button" class="fl3-btn" id="fl-pod-prev" style="width:46px;height:46px;border-radius:50%;padding:0;" title="Previous phrase" aria-label="Previous phrase"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20" fill="currentColor"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg></button>
             ${
               state.podcastLoading
-                ? `<button type="button" class="fl3-play-circle" disabled title="Preparing Neural MP3" aria-label="Preparing audio"><span class="fl3-spin fl3-spin-lg" aria-hidden="true"></span></button>`
+                ? `<button type="button" class="fl3-play-circle" disabled title="Preparing Native Finnish Audio" aria-label="Preparing audio"><span class="fl3-spin fl3-spin-lg" aria-hidden="true"></span></button>`
                 : state.podcastPlaying && !state.podcastPaused
                 ? `<button type="button" class="fl3-play-circle" id="fl-pod-pause-btn" title="Pause Walk &amp; Listen" aria-label="Pause"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1.2"></rect><rect x="14" y="4" width="4" height="16" rx="1.2"></rect></svg></button>`
                 : `<button type="button" class="fl3-play-circle" id="fl-pod-play-btn" title="Play Walk &amp; Listen" aria-label="Play"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px;" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg></button>`
@@ -3928,83 +3944,37 @@
             <button type="button" class="fl3-btn" id="fl-pod-next" style="width:46px;height:46px;border-radius:50%;padding:0;" title="Next phrase" aria-label="Next phrase"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg></button>
           </div>
 
-          <!-- Slim Progress Bar + Elapsed / Total Time -->
+          <!-- Slim Progress Bar + Status -->
           <div class="fl3-progress-wrap">
             <div id="fl-walk-progress-bar" class="fl3-progress-track" title="Click to seek audio">
               <div id="fl-walk-progress-fill" class="fl3-progress-fill" style="width:${pct.toFixed(1)}%;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#94A3B8;margin-top:5px;">
               <span id="fl-walk-time-cur">${fmtMmSs(curSec)}</span>
+              <span style="font-size:0.71rem;color:#94A3B8;">${state.podcastLoading ? esc((state.podcastPhase || "Preparing audio...").replace(/^[^\w\s]+\s*/, "")) : state.podcastPlaying ? `Playing • ${esc(state.podcastVoiceLabel || "fi-FI-NooraNeural")}` : `${items.length} phrases`}</span>
               <span id="fl-walk-time-dur">${fmtMmSs(estTotalSec)}</span>
             </div>
           </div>
 
-          <div style="text-align:center;font-size:0.76rem;color:#94A3B8;margin-bottom:14px;">
-            ${state.podcastLoading ? esc((state.podcastPhase || "Preparing neural audio...").replace(/^[^\w\s]+\s*/, "")) : state.podcastPlaying ? `Playing • ${esc(state.podcastVoiceLabel || "fi-FI-NooraNeural")}` : `${items.length} phrases • Lock-screen ready`}
-          </div>
-
-          <!-- Compact Controls: Loop + Recall Mode + Speed -->
-          <div style="display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="fl3-btn ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop" style="flex:1;padding:8px 10px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                <span>Loop: ${state.podcastLoop ? "ON" : "OFF"}</span>
-              </button>
-              <button type="button" class="fl3-btn ${state.podcastRecallMode ? "active" : ""}" id="fl-pod-recall" style="flex:1;padding:8px 10px;" title="Recall Mode: English first → 3s silent pause for you to say the Finnish → Noora confirms">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"></path></svg>
-                <span>Recall: ${state.podcastRecallMode ? "ON" : "OFF"}</span>
-              </button>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-              <span style="font-size:0.78rem;color:#CBD5E1;font-weight:600;">Voice</span>
-              <div style="display:flex;gap:6px;">
-                ${[
-                  { id: "fi-FI-NooraNeural", label: "Noora (FI)" },
-                  { id: "fi-FI-SelmaNeural", label: "Selma (FI)" },
-                ].map((v) => {
-                  const isAct = (state.podcastVoice || "fi-FI-NooraNeural") === v.id;
-                  return `<button type="button" class="fl3-btn ${isAct ? "active" : ""}" data-fl-pod-voice="${v.id}" style="padding:7px 12px;">${v.label}</button>`;
-                }).join("")}
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-              <span style="font-size:0.78rem;color:#CBD5E1;font-weight:600;">Speed</span>
-              <div style="display:flex;gap:6px;">
-                ${[0.75, 0.85, 1.0].map((spd) => {
-                  const isAct = Math.abs((Number(state.podcastSpeed) || 0.85) - spd) < 0.04;
-                  const lbl = spd === 1.0 ? "1.0×" : `${spd.toFixed(2)}×`;
-                  return `<button type="button" class="fl3-btn ${isAct ? "active" : ""}" data-fl-pod-speed="${spd}" style="padding:7px 12px;">${lbl}</button>`;
-                }).join("")}
-              </div>
-            </div>
+          <!-- Single Minimal 4-Pill Control Row: Loop | Recall | Speed | Voice -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
+            <button type="button" class="fl3-btn ${state.podcastLoop ? "active" : ""}" id="fl-pod-loop" style="padding:7px 4px;font-size:0.75rem;min-height:36px;white-space:nowrap;" title="Repeat current chapter">Loop</button>
+            <button type="button" class="fl3-btn ${state.podcastRecallMode ? "active" : ""}" id="fl-pod-recall" style="padding:7px 4px;font-size:0.75rem;min-height:36px;white-space:nowrap;" title="Recall Mode: English first → 2.6s pause → Finnish">Recall</button>
+            <button type="button" class="fl3-btn" id="fl-pod-speed-cycle" style="padding:7px 4px;font-size:0.75rem;min-height:36px;white-space:nowrap;" title="Tap to cycle speed (0.75× / 0.85× / 1.0×)">${speedLabel}</button>
+            <button type="button" class="fl3-btn" id="fl-pod-voice-cycle" style="padding:7px 4px;font-size:0.75rem;min-height:36px;white-space:nowrap;" title="Tap to switch native Finnish voice (Noora / Selma)">${curVoiceName}</button>
           </div>
         </section>
 
-        <!-- RIGHT PANEL: LARGE HIGH-CONTRAST PLAYING NOW CARD -->
-        <section class="fl3-card accent" aria-label="Playing Now">
-          <div class="fl3-card-head">
-            <h2 class="fl3-card-title">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-              <span>${esc(ep.title.replace(/^[^\w\s]+\s*/, ""))}</span>
-            </h2>
-            <span id="fl-walk-now-counter" class="fl3-badge">Phrase ${activeIdx + 1} of ${items.length}</span>
-          </div>
-
-          <div class="fl3-playing-hero">
-            <div style="font-size:0.72rem;font-weight:600;color:#94A3B8;background:rgba(17,34,64,0.7);border:1px solid rgba(255,255,255,0.08);padding:4px 10px;border-radius:999px;">
-              ${
-                state.podcastRecallMode
-                  ? `Recall Mode: English → 2.6s Pause (You Say Finnish) → Confirm (${(Number(state.podcastSpeed) || 0.85).toFixed(2)}×)`
-                  : `Finnish (${(Number(state.podcastSpeed) || 0.85).toFixed(2)}×) → English → Pause → Finnish → English`
-              }
+        <!-- RIGHT PANEL: CLEAN PHRASE TRACKLIST + QUIZ -->
+        <section class="fl3-card accent" aria-label="Chapter Phrases">
+          <div class="fl3-card-head" style="margin-bottom:10px;">
+            <div style="min-width:0;">
+              <h2 class="fl3-card-title" style="font-size:0.95rem;">
+                <span>${esc(ep.title.replace(/^[^\w\s]+\s*/, ""))}</span>
+              </h2>
+              <div id="fl-walk-now-counter" style="font-size:0.72rem;color:#94A3B8;margin-top:2px;">Phrase ${activeIdx + 1} of ${items.length}</div>
             </div>
-            <div id="fl-walk-now-fi" class="fl3-now-fi" style="margin-top:6px;">${esc(currentItem.fi)}</div>
-            <div id="fl-walk-now-en" class="fl3-now-en">${esc(currentItem.en)}</div>
-            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
-              <button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(currentItem.fi)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> 0.75×</button>
-              <button type="button" class="fl3-btn primary" id="fl-pod-quiz-chapter" style="padding:6px 12px;font-size:0.78rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg> Quiz This Chapter</button>
-              <button type="button" class="fl3-speaker-btn" id="fl-pod-export-md"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Export</button>
-            </div>
+            <button type="button" class="fl3-btn primary" id="fl-pod-quiz-chapter" style="padding:6px 12px;font-size:0.76rem;min-height:34px;flex-shrink:0;">Quiz</button>
           </div>
 
           <div class="fl3-tracklist" aria-label="Episode Phrases">
@@ -5113,6 +5083,32 @@
       state.activeTab = "notebook";
       state.mode = "study";
       renderActiveView();
+    });
+    root.querySelector("#fl-pod-create-toggle")?.addEventListener("click", () => {
+      state.podcastCreateOpen = !state.podcastCreateOpen;
+      if (state.podcastCreateOpen) state.podcastQueueOpen = false;
+      renderActiveView();
+    });
+    root.querySelector("#fl-pod-speed-cycle")?.addEventListener("click", () => {
+      const cur = Number(state.podcastSpeed) || 0.85;
+      const nextSpeed = cur < 0.8 ? 0.85 : cur < 0.95 ? 1.0 : 0.75;
+      const wasPlaying = Boolean(state.podcastPlaying);
+      state.podcastSpeed = nextSpeed;
+      state.podcastTrackKey = "";
+      saveWalkResumeState();
+      toast(`Speed: ${nextSpeed === 1 ? "1.0×" : nextSpeed.toFixed(2) + "×"}`, "info");
+      if (wasPlaying) generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      else renderActiveView();
+    });
+    root.querySelector("#fl-pod-voice-cycle")?.addEventListener("click", () => {
+      const cur = state.podcastVoice || "fi-FI-NooraNeural";
+      const nextVoice = cur.includes("Selma") ? "fi-FI-NooraNeural" : "fi-FI-SelmaNeural";
+      const wasPlaying = Boolean(state.podcastPlaying);
+      state.podcastVoice = nextVoice;
+      state.podcastTrackKey = "";
+      toast(`Voice: ${nextVoice.includes("Selma") ? "Selma (FI)" : "Noora (FI)"}`, "info");
+      if (wasPlaying) generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
+      else renderActiveView();
     });
     root.querySelector("#fl-pod-queue-toggle")?.addEventListener("click", () => {
       state.podcastQueueOpen = !state.podcastQueueOpen;
