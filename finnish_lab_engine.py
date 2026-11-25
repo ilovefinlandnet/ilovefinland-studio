@@ -2690,16 +2690,16 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
         return limit_err, 429
 
     sys_prompt = (
-        f"You are a warm, encouraging, normal-sounding personal Finnish pronunciation and grammar voice coach for an {level}-level learner in Finland. "
-        "Speak like a friendly human tutor — short, natural, crystal-clear, never robotic or overly long.\n"
+        f"You are a warm, fast, human-sounding Finnish pronunciation AND A1–A2 grammar voice coach for a learner in Finland (level: {level}). "
+        "Keep every reply super short, natural, and crisp (1–2 brief sentences).\n"
         "RULES:\n"
-        "1. If the student spoke Finnish audio, listen closely to their pronunciation (vowel length like a/aa, ä/ö, double consonants, stress on first syllable) AND grammar. Gently praise what sounded good, clearly correct any mistake, and give the natural Finnish form.\n"
-        "2. If the student asked how to pronounce a word/sentence or asked a grammar question, explain it simply in 1-2 short conversational sentences and demonstrate the Finnish clearly (plus syllable breakdown in display_text if helpful).\n"
+        "1. Always check BOTH pronunciation (vowel length a/aa, ä/ö, double consonants, 1st-syllable stress) AND A1/A2 grammar (location cases -ssa/-sta/-Vn/-lla, partitive -a/-ä/-ta, verb endings, K-P-T gradation, negative en/et/ei, A2 past tense).\n"
+        "2. If there is a grammar or pronunciation mistake, clearly point out the exact fix in 1 friendly sentence and model the correct Finnish.\n"
         "3. Return ONLY valid JSON with keys:\n"
-        "   - heard: short transcript of what the student said/asked (max 140 chars)\n"
-        "   - display_text: clean written coaching note (concise, warm, Finnish words in **bold**, optional syllable tip like ys-tä-väl-li-nen)\n"
-        "   - segments: array of 2 to 6 short spoken audio turns, each {\"lang\": \"en\" or \"fi\", \"text\": \"...\"}. "
-        "CRITICAL: Put ALL English words in lang='en' segments and ALL Finnish words/sentences in lang='fi' segments so the English voice speaks English and the native Finnish voice speaks Finnish! Keep total spoken time calm and brief (under ~15 seconds)."
+        "   - heard: short transcript of what the student said/asked (max 120 chars)\n"
+        "   - display_text: concise written coaching note (show Fix → **correct Finnish** + tiny grammar/syllable reason)\n"
+        "   - segments: array of 2 to 3 short spoken turns, each {\"lang\": \"en\" or \"fi\", \"text\": \"...\"}. "
+        "Put English in lang='en' and Finnish in lang='fi'. Keep total spoken time under 8 seconds."
     )
 
     contents: List[Dict[str, Any]] = []
@@ -2719,8 +2719,8 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
         system_instruction=sys_prompt,
         contents=contents,
         expect_json=True,
-        temperature=0.35,
-        max_output_tokens=900,
+        temperature=0.3,
+        max_output_tokens=360,
     )
     if ai_err:
         status = 429 if "QUOTA" in ai_err.get("error", "") else 503
@@ -2786,38 +2786,16 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
         public_url = f"/assets/uploads/finnish_tts/{out_name}"
         if not (os.path.exists(out_path) and os.path.getsize(out_path) > 500):
             import shutil
-            import subprocess
+            # Fast ~2ms binary concat (all edge-tts clips share identical 24kHz mono 48kbps MP3 frames)
             built_ok = False
-            ffmpeg_bin = shutil.which("ffmpeg")
-            if ffmpeg_bin and len(clip_paths) > 1:
-                list_file = os.path.join(cache_dir, f".coach_{digest}.txt")
-                try:
-                    with open(list_file, "w", encoding="utf-8") as lf:
-                        for cp in clip_paths:
-                            lf.write(f"file '{cp.replace(chr(39), chr(92) + chr(39))}'\n")
-                    r = subprocess.run(
-                        [ffmpeg_bin, "-y", "-f", "concat", "-safe", "0", "-i", list_file, "-c:a", "libmp3lame", "-ar", "24000", "-ac", "1", "-b:a", "48k", out_path],
-                        capture_output=True,
-                        timeout=30,
-                    )
-                    built_ok = r.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 500
-                except Exception:
-                    built_ok = False
-                finally:
-                    try:
-                        if os.path.exists(list_file):
-                            os.remove(list_file)
-                    except Exception:
-                        pass
-            if not built_ok:
-                try:
-                    with open(out_path, "wb") as out_f:
-                        for cp in clip_paths:
-                            with open(cp, "rb") as in_f:
-                                out_f.write(in_f.read())
-                    built_ok = os.path.exists(out_path) and os.path.getsize(out_path) > 500
-                except Exception:
-                    built_ok = False
+            try:
+                with open(out_path, "wb") as out_f:
+                    for cp in clip_paths:
+                        with open(cp, "rb") as in_f:
+                            out_f.write(in_f.read())
+                built_ok = os.path.exists(out_path) and os.path.getsize(out_path) > 500
+            except Exception:
+                built_ok = False
             if built_ok:
                 local_mirror_dir = os.path.join(BASE_DIR, "static", "assets", "uploads", "finnish_tts")
                 if os.path.abspath(cache_dir) != os.path.abspath(local_mirror_dir):

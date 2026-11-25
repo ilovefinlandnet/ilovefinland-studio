@@ -3362,6 +3362,27 @@ body:has(#view-finnish-lab:not(.hidden)),
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.fl-vc-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.fl-vc-close-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
 .fl-vc-feed {
   flex: 1;
   min-height: 0;

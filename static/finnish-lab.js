@@ -3107,11 +3107,13 @@
     }
   }
 
-  /* ---------- BILINGUAL SIRI/GEMINI VOICE COACH (EN + FI NEURAL AUDIO) ---------- */
+  /* ---------- BILINGUAL SIRI/GEMINI VOICE COACH (EN + FI NEURAL AUDIO + HANDS-FREE) ---------- */
   let _vcAudioEl = null;
   let _vcRecorder = null;
   let _vcStream = null;
   let _vcChunks = [];
+  let _vcVadTimer = null;
+  let _vcAudioCtx = null;
 
   function getVcAudioEl() {
     if (!_vcAudioEl) {
@@ -3131,6 +3133,11 @@
     } catch (_) {}
   }
 
+  function clearVcVad() {
+    if (_vcVadTimer) { clearInterval(_vcVadTimer); _vcVadTimer = null; }
+    if (_vcAudioCtx) { try { _vcAudioCtx.close(); } catch (_) {} _vcAudioCtx = null; }
+  }
+
   function stopVoiceCoachPlayback() {
     if (_vcAudioEl) {
       try { _vcAudioEl.pause(); _vcAudioEl.currentTime = 0; } catch (_) {}
@@ -3139,6 +3146,7 @@
   }
 
   function stopVoiceCoachMic(cancelSend) {
+    clearVcVad();
     if (_vcRecorder && _vcRecorder.state === "recording") {
       if (cancelSend) _vcRecorder._cancelSend = true;
       try { _vcRecorder.stop(); } catch (_) {}
@@ -3158,7 +3166,18 @@
     a.src = url;
     state.vcSpeaking = true;
     renderActiveView();
-    a.onended = () => { state.vcSpeaking = false; renderActiveView(); };
+    a.onended = () => {
+      state.vcSpeaking = false;
+      renderActiveView();
+      // Hands-Free continuous loop: automatically open mic after Coach finishes speaking!
+      if (state.voiceCoachOpen && state.vcAutoTalk && !state.vcRecording && !state.vcThinking) {
+        setTimeout(() => {
+          if (state.voiceCoachOpen && state.vcAutoTalk && !state.vcRecording && !state.vcSpeaking && !state.vcThinking) {
+            toggleVoiceCoachOrb();
+          }
+        }, 350);
+      }
+    };
     a.onerror = () => { state.vcSpeaking = false; renderActiveView(); };
     a.play().catch(() => {
       state.vcSpeaking = false;
@@ -3256,6 +3275,7 @@
       rec._cancelSend = false;
       rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) _vcChunks.push(ev.data); };
       rec.onstop = () => {
+        clearVcVad();
         const shouldCancel = rec._cancelSend;
         if (_vcStream) {
           try { _vcStream.getTracks().forEach((t) => t.stop()); } catch (_) {}
@@ -3272,6 +3292,46 @@
       rec.start();
       state.vcRecording = true;
       renderActiveView();
+
+      // Hands-Free Auto-Stop VAD: automatically send after 1.4s of silence once you finish speaking!
+      if (state.vcAutoTalk) {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) {
+            const ctx = new AC();
+            if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+            if (ctx.state === "running") {
+              const src = ctx.createMediaStreamSource(stream);
+              const analyser = ctx.createAnalyser();
+              analyser.fftSize = 512;
+              src.connect(analyser);
+              const buf = new Uint8Array(analyser.frequencyBinCount);
+              _vcAudioCtx = ctx;
+              let heardSpeech = false;
+              let lastLoudMs = Date.now();
+              const startMs = Date.now();
+              _vcVadTimer = setInterval(() => {
+                if (!state.vcRecording || rec.state !== "recording") { clearVcVad(); return; }
+                analyser.getByteTimeDomainData(buf);
+                let sum = 0;
+                for (let i = 0; i < buf.length; i++) { const d = buf[i] - 128; sum += d * d; }
+                const vol = Math.sqrt(sum / buf.length);
+                const now = Date.now();
+                if (vol > 1.2) { heardSpeech = true; lastLoudMs = now; }
+                if (heardSpeech && now - lastLoudMs >= 1400 && now - startMs >= 1200) {
+                  clearVcVad();
+                  try { rec.stop(); } catch (_) {}
+                } else if (!heardSpeech && now - startMs >= 10000) {
+                  // Quiet timeout: cancel silently without wasting a turn
+                  rec._cancelSend = true;
+                  clearVcVad();
+                  try { rec.stop(); } catch (_) {}
+                }
+              }, 160);
+            }
+          }
+        } catch (_) {}
+      }
     } catch (_) {
       toast("Microphone permission denied — you can still type below!", "warning");
       state.vcRecording = false;
@@ -3297,9 +3357,13 @@
             <div style="display:inline-flex;align-items:center;gap:8px;">
               <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
               <strong style="font-size:0.98rem;color:#FFFFFF;">Voice Coach</strong>
-              <span style="font-size:0.72rem;color:#38BDF8;font-weight:600;">EN + FI</span>
             </div>
-            <button type="button" class="fl3-icon-btn" id="fl-vc-close" aria-label="Close Voice Coach">✕</button>
+            <div style="display:inline-flex;align-items:center;gap:8px;">
+              <button type="button" class="fl3-btn ${state.vcAutoTalk ? "active" : ""}" id="fl-vc-autotalk-toggle" style="padding:5px 11px;font-size:0.74rem;min-height:32px;border-radius:999px;" title="Hands-Free continuous conversation (auto-sends when you pause and listens again after Coach speaks)">
+                Auto: ${state.vcAutoTalk ? "ON" : "OFF"}
+              </button>
+              <button type="button" class="fl-vc-close-btn" id="fl-vc-close" aria-label="Close Voice Coach">✕</button>
+            </div>
           </div>
 
           <div class="fl-vc-feed" id="fl-vc-feed">
@@ -4680,6 +4744,16 @@
       stopActiveAudio(true);
       stopPodcastPlayback(true);
       state.voiceCoachOpen = true;
+      renderActiveView();
+    });
+    root.querySelector("#fl-vc-autotalk-toggle")?.addEventListener("click", () => {
+      state.vcAutoTalk = !state.vcAutoTalk;
+      toast(
+        state.vcAutoTalk
+          ? "Hands-Free ON — just speak naturally, no need to tap mic each time!"
+          : "Hands-Free OFF — tap orb to speak and tap to send.",
+        "info"
+      );
       renderActiveView();
     });
     root.querySelector("#fl-vc-close")?.addEventListener("click", () => {
