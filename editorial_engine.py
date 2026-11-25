@@ -525,6 +525,22 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
 
     # --- FINLAND CONTENT: ROUTE TO PROPER ILF SECTION ---
 
+    # 0. Hard News Guard: Police/Crime, Emergency Alerts, Politics, Layoffs & Weekly Roundups
+    # Must run BEFORE Travel/Lifestyle so regional mentions (Lapland, Rovaniemi, Jyväskylä, Rauma)
+    # in crime, healthcare, politics, or emergency stories never leak into Travel.
+    if any(k in combined for k in [
+        "fi-alert", "112 suomi", "emergency warning", "emergency alert", "emergency system", "vaaratiedote",
+        "this week in finland", "week's headlines", "news roundup",
+        "police investigate", "police station", "poliisi", "poliisiasema", "resisted arrest", "arrested",
+        "threat against", "uhkaus", "suspect", "stabbing", "shooting", "murder", "homicide", "crime",
+        "prison", "court rules", "district court", "käräjäoikeus", "drove into", "törmäsi", "onnettomuus",
+        "laid off", "layoffs", "layoff", "työpaikkaa", "muutosneuvottelu", "yt-neuvottelu", "bankruptcies", "bankruptcy",
+        "social democrats", "sdp", "kokoomus", "perussuomalaiset", "keskusta", "council group", "valtuusto",
+        "demari", "parliament", "eduskunta", "prime minister", "minister", "coalition", "election", "strike", "lakko",
+        "migri backlogs", "hospital doors", "sairaalasta", "nurses laid off"
+    ]):
+        return ("News", "Finland", "Timely Finnish national news, public safety, civic, or political reporting.", 0.97)
+
     # 1. Severe Weather Warnings & Alerts (News -> Weather)
     if any(k in combined for k in ["fmi", "weather warning", "severe wind", "near-gale", "gale warning", "gale", "snowstorm", "blizzard", "sub-zero frost", "black ice"]):
         return ("News", "Weather", "Timely meteorological forecast and severe weather alerts from the Finnish Meteorological Institute.", 0.98)
@@ -553,13 +569,28 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
         return ("Food & Restaurants", "Finnish Food", "Finnish culinary culture, traditional recipes, and local dining.", 0.96)
 
     # 3. Travel (All Across Finland: Lapland, Lakeland, Archipelago, Helsinki)
-    if any(k in combined for k in ["lapland", "aurora", "northern lights", "rovaniemi", "levi", "ylläs", "saariselkä", "inari", "arctic circle", "glass igloo"]):
+    # Require explicit travel/visitor/nature context when matching general region/city names
+    # so local civic/business/crime news in those towns does not get misfiled as Travel.
+    has_travel_intent = any(k in combined for k in [
+        "travel", "visit", "tourism", "tourist", "visitor", "hotel", "cabin", "resort", "igloo",
+        "aurora", "northern lights", "revontulet", "national park", "kansallispuisto", "wilderness",
+        "hiking", "trail", "cruise", "ferry", "itinerary", "attraction", "sightseeing", "holiday",
+        "vacation", "getaway", "mökki", "cottage", "old town", "wooden town", "santa claus",
+        "arctic circle", "ski", "reindeer safari", "husky", "fell", "tunturi", "camping", "road trip"
+    ])
+    if any(k in combined for k in ["aurora", "northern lights", "revontulet", "glass igloo", "arctic circle", "santa claus village"]):
         if any(k in combined for k in ["aurora", "northern lights", "revontulet"]):
             return ("Travel", "Northern Lights", "Arctic travel destinations, northern lights chasing, and winter resorts.", 0.96)
         return ("Travel", "Lapland", "Arctic travel destinations, fells, and winter resorts across Finnish Lapland.", 0.96)
-    if any(k in combined for k in ["archipelago", "saaristo", "åland", "aland", "turku archipelago", "naantali", "utö", "wooden town", "rauma", "porvoo"]):
+    if has_travel_intent and any(k in combined for k in ["lapland", "rovaniemi", "levi", "ylläs", "saariselkä", "inari"]):
+        return ("Travel", "Lapland", "Arctic travel destinations, fells, and winter resorts across Finnish Lapland.", 0.96)
+    if any(k in combined for k in ["turku archipelago", "archipelago trail", "wooden town"]) or (
+        has_travel_intent and any(k in combined for k in ["archipelago", "saaristo", "åland", "aland", "naantali", "utö", "rauma", "porvoo"])
+    ):
         return ("Travel", "Finnish Archipelago", "Coastal travel, island ferries, and maritime archipelagos in Finland.", 0.96)
-    if any(k in combined for k in ["saimaa", "lakeland", "järvisuomi", "lake cottage", "mökki", "tampere travel", "kuopio", "jyväskylä", "ringed seal", "lake cruise"]):
+    if any(k in combined for k in ["lake cottage", "lake cruise", "lakeland travel", "tampere travel"]) or (
+        has_travel_intent and any(k in combined for k in ["saimaa", "lakeland", "järvisuomi", "mökki", "kuopio", "jyväskylä"])
+    ):
         return ("Travel", "Finnish Lakeland", "Lakeside holidays, sauna lake culture, and cottage getaways in Finland.", 0.96)
     if any(k in combined for k in ["visit helsinki", "helsinki travel", "helsinki attractions", "suomenlinna", "kamppi guide", "oodi"]):
         return ("Travel", "Helsinki", "Helsinki neighborhood guides, urban attractions, and visiting highlights.", 0.95)

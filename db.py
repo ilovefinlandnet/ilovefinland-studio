@@ -4558,6 +4558,40 @@ def get_last_scan_info(db_path: str = DB_PATH) -> Dict[str, Any]:
         conn.close()
 
 
+def reclassify_misplaced_travel_ideas(db_path: str = DB_PATH) -> int:
+    """Re-run section/category classification on existing 'Travel' plan_ideas
+    so crime, layoffs, politics, and emergency alerts that only mentioned a
+    Finnish city/region move to their true section (e.g. News -> Finland).
+    """
+    updated = 0
+    try:
+        import editorial_engine
+        conn = get_connection(db_path)
+        try:
+            rows = conn.execute(
+                "SELECT id, title, angle, source_claim, section, category FROM plan_ideas WHERE section = 'Travel'"
+            ).fetchall()
+            for r in rows:
+                title = (r["title"] or "").strip()
+                desc = (r["angle"] or r["source_claim"] or "").strip()
+                if not title:
+                    continue
+                rec_sec, rec_cat, _, _ = editorial_engine.recommend_section_and_category(title, desc)
+                if rec_sec and (rec_sec != r["section"] or rec_cat != r["category"]):
+                    conn.execute(
+                        "UPDATE plan_ideas SET section = ?, category = ? WHERE id = ?",
+                        (rec_sec, rec_cat, r["id"]),
+                    )
+                    updated += 1
+            if updated:
+                conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+    return updated
+
+
 def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
     """Sync today's live breaking news and hot topics into suggested plan ideas.
     
@@ -4568,6 +4602,7 @@ def sync_live_news_plan_ideas(db_path: str = DB_PATH) -> None:
     4. Automatically recommends valid existing website sections & categories according to ilovefinland.net taxonomy.
     5. Discards clickbait or low-value fluff.
     """
+    reclassify_misplaced_travel_ideas(db_path=db_path)
     try:
         import live_sources
         import editorial_engine
