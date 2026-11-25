@@ -3570,19 +3570,26 @@ body:has(#view-finnish-lab:not(.hidden)),
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .fl3-app-frame.is-chat-mode {
-    height: auto;
-    max-height: none;
-    min-height: calc(100dvh - 58px);
-    overflow: visible;
+    height: 100vh;
+    height: -webkit-fill-available;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
 
-  .fl3-main-col,
-  .fl3-main-col.is-chat-mode {
+  .fl3-main-col {
     padding: 8px 12px 14px;
     height: auto;
     overflow: visible;
+  }
+
+  .fl3-main-col.is-chat-mode {
+    padding: 6px 12px max(8px, env(safe-area-inset-bottom));
+    height: 100%;
+    overflow: hidden;
   }
 
   .fl3-floating-topbar {
@@ -3604,11 +3611,13 @@ body:has(#view-finnish-lab:not(.hidden)),
   }
 
   .fl3-chatgpt-feed {
-    min-height: calc(100dvh - 285px);
-    max-height: calc(100dvh - 255px);
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   .fl3-app-frame.has-mini-player .fl3-main-col {
-    padding-bottom: 86px !important;
+    padding-bottom: 84px !important;
   }
 }
