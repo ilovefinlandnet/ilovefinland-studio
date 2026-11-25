@@ -335,14 +335,14 @@
   const PODCAST_EPISODES = [
     {
       id: "pod_today_a1",
-      title: "🌅 Today's A1 Words",
+      title: "Today's A1 Words",
       duration: "~20 min",
       dynamicToday: true,
       items: [],
     },
     {
       id: "pod_fruits_food",
-      title: "🍎 Fruits, Vegetables & Food",
+      title: "03. Fruits, Vegetables & Food",
       duration: "~20–24 min",
       items: [
         { fi: "omena", en: "apple" },
@@ -385,7 +385,7 @@
     },
     {
       id: "pod_clothes_colors",
-      title: "👕 Clothes & Colors",
+      title: "05. Clothes & Colors",
       duration: "~20–24 min",
       items: [
         { fi: "takki", en: "jacket or coat" },
@@ -428,7 +428,7 @@
     },
     {
       id: "pod_numbers_dates_time",
-      title: "🔢 Numbers, Dates & Time",
+      title: "02. Numbers, Days, Months & Time",
       duration: "~20–24 min",
       items: [
         { fi: "nolla, yksi, kaksi, kolme", en: "zero, one, two, three" },
@@ -471,7 +471,7 @@
     },
     {
       id: "pod_seasons",
-      title: "🍂 Seasons & Weather",
+      title: "06. Seasons & Weather",
       duration: "~19–22 min",
       items: [
         { fi: "kevät", en: "spring" },
@@ -512,7 +512,7 @@
     },
     {
       id: "pod_home_objects",
-      title: "🏠 Home, Rooms & Objects",
+      title: "07. Home, Rooms & Objects",
       duration: "~19–22 min",
       items: [
         { fi: "koti", en: "home" },
@@ -553,7 +553,7 @@
     },
     {
       id: "pod_family_body",
-      title: "👨‍👩‍👧 Family, People & Body",
+      title: "08. Family, People & Body",
       duration: "~19–22 min",
       items: [
         { fi: "perhe", en: "family" },
@@ -594,7 +594,7 @@
     },
     {
       id: "pod_olla_q",
-      title: "🧩 Olla, Core Verbs & Questions",
+      title: "12. Olla, Core Verbs & Questions",
       duration: "~20–24 min",
       items: [
         { fi: "minä olen", en: "I am" },
@@ -633,6 +633,293 @@
         { fi: "anteeksi, voitko toistaa hitaasti?", en: "excuse me, can you repeat slowly?" },
         { fi: "mitä tämä tarkoittaa?", en: "what does this mean?" },
         { fi: "nähdään huomenna!", en: "see you tomorrow!" },
+      ],
+    },
+    {
+      id: "greetings_countries",
+      title: "01. Greetings, Introductions & Countries",
+      duration: "~19–22 min",
+      items: [
+        { fi: "hei", en: "hi or hello" },
+        { fi: "moi", en: "hi (informal)" },
+        { fi: "terve", en: "hello" },
+        { fi: "hyvää huomenta", en: "good morning" },
+        { fi: "hyvää päivää", en: "good day or good afternoon" },
+        { fi: "hyvää iltaa", en: "good evening" },
+        { fi: "hyvää yötä", en: "good night" },
+        { fi: "kiitos", en: "thank you" },
+        { fi: "kiitos paljon", en: "thank you very much" },
+        { fi: "ole hyvä", en: "you are welcome or here you go" },
+        { fi: "anteeksi", en: "excuse me or sorry" },
+        { fi: "ei se mitään", en: "no problem or never mind" },
+        { fi: "näkemiin", en: "goodbye (formal)" },
+        { fi: "hei hei", en: "bye bye" },
+        { fi: "nähdään pian", en: "see you soon" },
+        { fi: "hauska tutustua", en: "nice to meet you" },
+        { fi: "mikä sinun nimesi on?", en: "what is your name?" },
+        { fi: "minun nimeni on...", en: "my name is..." },
+        { fi: "mistä sinä olet kotoisin?", en: "where are you from?" },
+        { fi: "kotimaa", en: "home country" },
+        { fi: "äidinkieli", en: "mother tongue or native language" },
+        { fi: "Suomi — suomi", en: "Finland — Finnish language" },
+        { fi: "Ruotsi — ruotsi", en: "Sweden — Swedish language" },
+        { fi: "Englanti — englanti", en: "England — English language" },
+        { fi: "puhun vähän suomea", en: "I speak a little Finnish" },
+        { fi: "puhun englantia", en: "I speak English" },
+        { fi: "en puhu vielä hyvin suomea", en: "I do not speak Finnish well yet" },
+        { fi: "asun Suomessa", en: "I live in Finland" },
+        { fi: "asun Porissa", en: "I live in Pori" },
+        { fi: "kuinka vanha sinä olet?", en: "how old are you?" },
+        { fi: "mitä sinulle kuuluu?", en: "how are you?" },
+        { fi: "kiitos hyvää, entä sinulle?", en: "good thanks, and you?" },
+        { fi: "voitko puhua hitaammin?", en: "can you speak more slowly?" },
+        { fi: "ymmärrän vähän", en: "I understand a little" },
+      ],
+    },
+    {
+      id: "daily_routine_kitchen",
+      title: "04. Daily Routine & Kitchen",
+      duration: "~19–22 min",
+      items: [
+        { fi: "herätä — herään seitsemältä", en: "to wake up — I wake up at seven" },
+        { fi: "nousta ylös", en: "to get up" },
+        { fi: "käydä suihkussa", en: "to take a shower" },
+        { fi: "pestä hampaat", en: "to brush teeth" },
+        { fi: "pukea vaatteet päälle", en: "to put clothes on" },
+        { fi: "syödä aamupalaa", en: "to eat breakfast" },
+        { fi: "juoda kahvia", en: "to drink coffee" },
+        { fi: "lähteä kotoa", en: "to leave home" },
+        { fi: "mennä kouluun", en: "to go to school" },
+        { fi: "mennä töihin", en: "to go to work" },
+        { fi: "syödä lounasta", en: "to eat lunch" },
+        { fi: "tulla kotiin", en: "to come home" },
+        { fi: "tehdä ruokaa", en: "to cook food" },
+        { fi: "siivota", en: "to clean" },
+        { fi: "katsella televisiota", en: "to watch television" },
+        { fi: "mennä nukkumaan", en: "to go to sleep" },
+        { fi: "aamulla", en: "in the morning" },
+        { fi: "päivällä", en: "in the daytime" },
+        { fi: "illalla", en: "in the evening" },
+        { fi: "yöllä", en: "at night" },
+        { fi: "kuppi", en: "cup or mug" },
+        { fi: "lasi", en: "glass" },
+        { fi: "lautanen", en: "plate" },
+        { fi: "veitsi", en: "knife" },
+        { fi: "haarukka", en: "fork" },
+        { fi: "lusikka", en: "spoon" },
+        { fi: "kattila", en: "cooking pot" },
+        { fi: "paistinpannu", en: "frying pan" },
+        { fi: "jääkaappi", en: "refrigerator" },
+        { fi: "uuni", en: "oven" },
+        { fi: "liesi", en: "stove" },
+        { fi: "mikroaaltouuni", en: "microwave oven" },
+        { fi: "kahvinkeitin", en: "coffee maker" },
+        { fi: "tiskata", en: "to wash the dishes" },
+      ],
+    },
+    {
+      id: "shopping_city_transport",
+      title: "09. Shopping, Café & City Places",
+      duration: "~19–22 min",
+      items: [
+        { fi: "kauppa", en: "shop or grocery store" },
+        { fi: "kahvila", en: "café" },
+        { fi: "ravintola", en: "restaurant" },
+        { fi: "apteekki", en: "pharmacy" },
+        { fi: "kirjasto", en: "library" },
+        { fi: "sairaala", en: "hospital" },
+        { fi: "terveyskeskus", en: "health center" },
+        { fi: "posti", en: "post office" },
+        { fi: "pankki", en: "bank" },
+        { fi: "asema", en: "station" },
+        { fi: "bussipysäkki", en: "bus stop" },
+        { fi: "paljonko tämä maksaa?", en: "how much does this cost?" },
+        { fi: "hinta", en: "price" },
+        { fi: "kassa", en: "cashier or checkout" },
+        { fi: "kuitti", en: "receipt" },
+        { fi: "maksan kortilla", en: "I will pay by card" },
+        { fi: "käteinen", en: "cash" },
+        { fi: "tarjous", en: "special offer" },
+        { fi: "alennus", en: "discount" },
+        { fi: "muovipussi", en: "plastic bag" },
+        { fi: "saanko yhden kahvin?", en: "can I have one coffee?" },
+        { fi: "saanko laskun, kiitos?", en: "can I have the bill, please?" },
+        { fi: "auki — kauppa on auki", en: "open — the store is open" },
+        { fi: "kiinni — kauppa on kiinni", en: "closed — the store is closed" },
+        { fi: "missä on asema?", en: "where is the station?" },
+        { fi: "vasemmalla", en: "on the left" },
+        { fi: "oikealla", en: "on the right" },
+        { fi: "suoraan eteenpäin", en: "straight ahead" },
+        { fi: "lähellä", en: "near or close" },
+        { fi: "kaukana", en: "far away" },
+        { fi: "bussi — menen bussilla", en: "bus — I go by bus" },
+        { fi: "juna — menen junalla", en: "train — I go by train" },
+        { fi: "polkupyörä", en: "bicycle" },
+        { fi: "lippu — ostan lipun", en: "ticket — I buy a ticket" },
+      ],
+    },
+    {
+      id: "health_doctor_work",
+      title: "10. Health, Doctor & Work",
+      duration: "~19–22 min",
+      items: [
+        { fi: "terveys", en: "health" },
+        { fi: "olen terve", en: "I am healthy" },
+        { fi: "olen sairas", en: "I am sick" },
+        { fi: "minulla on kuumetta", en: "I have a fever" },
+        { fi: "minulla on flunssa", en: "I have a cold or flu" },
+        { fi: "minulla on päänsärky", en: "I have a headache" },
+        { fi: "minulla on kurkkukipu", en: "I have a sore throat" },
+        { fi: "minulla on yskä", en: "I have a cough" },
+        { fi: "minuun sattuu", en: "it hurts or I am in pain" },
+        { fi: "vatsaan sattuu", en: "my stomach hurts" },
+        { fi: "selkään sattuu", en: "my back hurts" },
+        { fi: "lääkäri", en: "doctor" },
+        { fi: "sairaanhoitaja", en: "nurse" },
+        { fi: "ajanvaraus", en: "appointment booking" },
+        { fi: "haluan varata ajan", en: "I want to book an appointment" },
+        { fi: "lääke", en: "medicine" },
+        { fi: "resepti", en: "prescription" },
+        { fi: "hätänumero on sata kaksitoista", en: "the emergency number is 112" },
+        { fi: "työ", en: "work or job" },
+        { fi: "työpaikka", en: "workplace" },
+        { fi: "ammatti", en: "profession or occupation" },
+        { fi: "opettaja", en: "teacher" },
+        { fi: "opiskelija", en: "student" },
+        { fi: "kokki", en: "chef or cook" },
+        { fi: "kuljettaja", en: "driver" },
+        { fi: "myyjä", en: "salesperson or shop assistant" },
+        { fi: "siivooja", en: "cleaner" },
+        { fi: "työtön", en: "unemployed" },
+        { fi: "työkaveri", en: "coworker" },
+        { fi: "harrastus", en: "hobby" },
+        { fi: "kävelen joka päivä", en: "I walk every day" },
+        { fi: "kuuntelen musiikkia", en: "I listen to music" },
+        { fi: "tapaan kavereita", en: "I meet friends" },
+        { fi: "viikonloppuna lepään", en: "on the weekend I rest" },
+      ],
+    },
+    {
+      id: "opposites_adjectives",
+      title: "11. Opposites & Everyday Adjectives",
+      duration: "~19–22 min",
+      items: [
+        { fi: "iso — pieni", en: "big — small" },
+        { fi: "uusi — vanha", en: "new — old" },
+        { fi: "hyvä — huono", en: "good — bad" },
+        { fi: "halpa — kallis", en: "cheap — expensive" },
+        { fi: "helppo — vaikea", en: "easy — difficult" },
+        { fi: "kylmä — kuuma", en: "cold — hot" },
+        { fi: "lämmin — viileä", en: "warm — cool" },
+        { fi: "nopea — hidas", en: "fast — slow" },
+        { fi: "pitkä — lyhyt", en: "long or tall — short" },
+        { fi: "lähellä — kaukana", en: "near — far" },
+        { fi: "auki — kiinni", en: "open — closed" },
+        { fi: "täysi — tyhjä", en: "full — empty" },
+        { fi: "puhdas — likainen", en: "clean — dirty" },
+        { fi: "valoisa — pimeä", en: "bright — dark" },
+        { fi: "hiljainen — äänekäs", en: "quiet — loud" },
+        { fi: "iloinen — surullinen", en: "happy — sad" },
+        { fi: "väsynyt — virkeä", en: "tired — refreshed or energetic" },
+        { fi: "nälkäinen — kylläinen", en: "hungry — full" },
+        { fi: "oikea — väärä", en: "right or correct — wrong" },
+        { fi: "kaunis — ruma", en: "beautiful — ugly" },
+        { fi: "tärkeä", en: "important" },
+        { fi: "mielenkiintoinen", en: "interesting" },
+        { fi: "mukava", en: "nice or comfortable" },
+        { fi: "ystävällinen", en: "friendly" },
+        { fi: "kiireinen", en: "busy" },
+        { fi: "valmis", en: "ready" },
+        { fi: "tämä kahvi on kuumaa", en: "this coffee is hot" },
+        { fi: "ulkona on kylmä", en: "it is cold outside" },
+        { fi: "suomen kieli on mielenkiintoista", en: "the Finnish language is interesting" },
+        { fi: "tämä tehtävä on helppo", en: "this exercise is easy" },
+        { fi: "talo on iso ja uusi", en: "the house is big and new" },
+        { fi: "kauppa on lähellä kotia", en: "the store is near home" },
+        { fi: "opettaja on ystävällinen", en: "the teacher is friendly" },
+        { fi: "olen vähän väsynyt tänään", en: "I am a little tired today" },
+      ],
+    },
+    {
+      id: "location_cases_drill",
+      title: "13. Location Cases (Missä / Mistä / Mihin)",
+      duration: "~19–22 min",
+      items: [
+        { fi: "missä? — mistä? — mihin?", en: "where? — from where? — to where?" },
+        { fi: "kotona — kotoa — kotiin", en: "at home — from home — to home" },
+        { fi: "olen kotona", en: "I am at home" },
+        { fi: "lähden kotoa aamulla", en: "I leave home in the morning" },
+        { fi: "tulen kotiin illalla", en: "I come home in the evening" },
+        { fi: "kaupassa — kaupasta — kauppaan", en: "in the store — from the store — to the store" },
+        { fi: "olen kaupassa", en: "I am at the store" },
+        { fi: "tulen kaupasta", en: "I am coming from the store" },
+        { fi: "menen kauppaan", en: "I am going to the store" },
+        { fi: "koulussa — koulusta — kouluun", en: "at school — from school — to school" },
+        { fi: "opiskelen koulussa", en: "I study at school" },
+        { fi: "menen kouluun bussilla", en: "I go to school by bus" },
+        { fi: "Suomessa — Suomesta — Suomeen", en: "in Finland — from Finland — to Finland" },
+        { fi: "asun Suomessa", en: "I live in Finland" },
+        { fi: "muutin Suomeen", en: "I moved to Finland" },
+        { fi: "Porissa — Porista — Poriin", en: "in Pori — from Pori — to Pori" },
+        { fi: "Helsingissä — Helsingistä — Helsinkiin", en: "in Helsinki — from Helsinki — to Helsinki" },
+        { fi: "töissä — töistä — töihin", en: "at work — from work — to work" },
+        { fi: "olen töissä", en: "I am at work" },
+        { fi: "tulen töistä kello neljä", en: "I come from work at four o'clock" },
+        { fi: "torilla — torilta — torille", en: "at the market square — from — to" },
+        { fi: "asemalla — asemalta — asemalle", en: "at the station — from — to" },
+        { fi: "pysäkillä — pysäkiltä — pysäkille", en: "at the stop — from — to" },
+        { fi: "pöydällä — pöydältä — pöydälle", en: "on the table — off the table — onto the table" },
+        { fi: "kirja on pöydällä", en: "the book is on the table" },
+        { fi: "avain on laukussa", en: "the key is in the bag" },
+        { fi: "maito on jääkaapissa", en: "the milk is in the fridge" },
+        { fi: "menen kirjastoon", en: "I am going to the library" },
+        { fi: "olen kirjastossa", en: "I am at the library" },
+        { fi: "käyn apteekissa", en: "I am visiting the pharmacy" },
+        { fi: "menen lääkäriin", en: "I am going to the doctor" },
+        { fi: "ulkona — sisällä", en: "outside — inside" },
+        { fi: "täällä — tuolla — siellä", en: "here — over there — there" },
+        { fi: "tänne — sinne", en: "to here — to there" },
+      ],
+    },
+    {
+      id: "partitive_negatives_puhekieli",
+      title: "14. Partitive, Negatives & Spoken Finnish",
+      duration: "~19–22 min",
+      items: [
+        { fi: "yksi kahvi — kaksi kahvia", en: "one coffee, two coffees" },
+        { fi: "yksi omena — kolme omenaa", en: "one apple, three apples" },
+        { fi: "yksi euro — viisi euroa", en: "one euro, five euros" },
+        { fi: "juon vettä", en: "I drink water" },
+        { fi: "juon kahvia ja maitoa", en: "I drink coffee and milk" },
+        { fi: "syön leipää ja juustoa", en: "I eat bread and cheese" },
+        { fi: "puhun suomea", en: "I speak Finnish" },
+        { fi: "opiskelen suomea", en: "I study Finnish" },
+        { fi: "rakastan sinua", en: "I love you" },
+        { fi: "minulla on auto — minulla ei ole autoa", en: "I have a car, I do not have a car" },
+        { fi: "minulla ei ole aikaa", en: "I do not have time" },
+        { fi: "en tiedä", en: "I do not know" },
+        { fi: "en ymmärrä", en: "I do not understand" },
+        { fi: "en puhu vielä hyvin", en: "I do not speak well yet" },
+        { fi: "sinä et mene", en: "you do not go" },
+        { fi: "hän ei ole kotona", en: "he or she is not at home" },
+        { fi: "me emme tiedä", en: "we do not know" },
+        { fi: "he eivät tule tänään", en: "they are not coming today" },
+        { fi: "nukkua — minä nukun", en: "to sleep, I sleep" },
+        { fi: "lukea — minä luen", en: "to read, I read" },
+        { fi: "ottaa — minä otan", en: "to take, I take" },
+        { fi: "odottaa — minä odotan", en: "to wait, I wait" },
+        { fi: "lähteä — minä lähden", en: "to leave, I leave" },
+        { fi: "kauppa — kaupassa", en: "store, in the store" },
+        { fi: "pankki — pankissa", en: "bank, in the bank" },
+        { fi: "minä olen — mä oon", en: "I am, formal and spoken" },
+        { fi: "sinä olet — sä oot", en: "you are, formal and spoken" },
+        { fi: "hän on — se on", en: "he or she is, formal and spoken" },
+        { fi: "me olemme — me ollaan", en: "we are, formal and spoken" },
+        { fi: "he ovat — ne on", en: "they are, formal and spoken" },
+        { fi: "minulla on — mulla on", en: "I have, formal and spoken" },
+        { fi: "sinulla on — sulla on", en: "you have, formal and spoken" },
+        { fi: "en tiedä — en tiiä", en: "I do not know, formal and spoken" },
+        { fi: "mitä sinä teet? — mitä sä teet?", en: "what are you doing, formal and spoken" },
       ],
     },
   ];
@@ -881,7 +1168,14 @@
   }
 
   function getAllPodcastEpisodes() {
-    return [...(state.customPodcastEpisodes || []), ...PODCAST_EPISODES];
+    const sortedBuiltins = [...PODCAST_EPISODES].sort((a, b) => {
+      if (a.dynamicToday) return -1;
+      if (b.dynamicToday) return 1;
+      const na = parseInt(String(a.title || ""), 10) || 99;
+      const nb = parseInt(String(b.title || ""), 10) || 99;
+      return na - nb;
+    });
+    return [...(state.customPodcastEpisodes || []), ...sortedBuiltins];
   }
 
   let _walkAudioEl = null;
@@ -1144,6 +1438,16 @@
     return ep.items || [];
   }
 
+  function getActivePodcastItems(ep) {
+    const all = getPodcastItems(ep);
+    if (all.length <= 16) return all;
+    const ck = state.podcastChunk || "all";
+    if (ck === "p1") return all.slice(0, 12);
+    if (ck === "p2") return all.slice(12, 24);
+    if (ck === "p3") return all.slice(24);
+    return all;
+  }
+
   function speakUtteranceAsync(text, lang, rate) {
     return new Promise((resolve) => {
       if (!state.podcastPlaying || state.isLiveTranslating || !("speechSynthesis" in window)) {
@@ -1184,7 +1488,7 @@
       return;
     }
     const ep = getAllPodcastEpisodes().find((x) => x.id === epId) || PODCAST_EPISODES[0];
-    const items = getPodcastItems(ep);
+    const items = getActivePodcastItems(ep);
     if (!items.length) {
       toast("Save a few flashcards first to play your personal Walk & Listen course!", "warning");
       return;
@@ -1193,10 +1497,11 @@
     const fiSpeed = Number(state.podcastSpeed) || 0.85;
     const fiVoice = state.podcastVoice || "fi-FI-NooraNeural";
     const audioMode = state.podcastRecallMode ? "recall" : "normal";
+    const chunkKey = state.podcastChunk || "all";
     const targetIdx = typeof startIndex === "number" ? Math.max(0, Math.min(items.length - 1, startIndex)) : (state.podcastItemIdx || 0);
 
-    // If same track + voice + speed + mode is already loaded in HTML5 <audio>, seek & resume instantaneously!
-    const trackKey = `${ep.id}|${fiVoice}|${fiSpeed.toFixed(2)}|${audioMode}|${items.length}`;
+    // If same track + chunk + voice + speed + mode is already loaded in HTML5 <audio>, seek & resume instantaneously!
+    const trackKey = `${ep.id}|${chunkKey}|${fiVoice}|${fiSpeed.toFixed(2)}|${audioMode}|${items.length}`;
     if (state.podcastTrackKey === trackKey && state.podcastAudioUrl && _walkAudioEl && _walkAudioEl.src) {
       const aud = getWalkAudioEl();
       const offs = state.podcastItemOffsets || [];
@@ -2936,10 +3241,12 @@
   function renderTabWalkAndListen() {
     const allEps = getAllPodcastEpisodes();
     const ep = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
-    const items = getPodcastItems(ep);
+    const fullItems = getPodcastItems(ep);
+    const items = getActivePodcastItems(ep);
+    const curChunk = state.podcastChunk || "all";
     const activeIdx = Math.min(Math.max(0, state.podcastItemIdx || 0), Math.max(0, items.length - 1));
     const currentItem = items[activeIdx] || { fi: "kevät", en: "spring" };
-    const estTotalSec = state.podcastTotalDur > 0 ? state.podcastTotalDur : Math.round(items.length * 36);
+    const estTotalSec = state.podcastTotalDur > 0 ? state.podcastTotalDur : Math.round(items.length * 10);
     const curSec = state.podcastCurSec || 0;
     const pct = estTotalSec > 0 ? Math.min(100, Math.max(0, (curSec / estTotalSec) * 100)) : 0;
 
@@ -2954,17 +3261,28 @@
             </h2>
           </div>
 
-          <!-- 1 Clean Chapter Dropdown (Zero Duplicate Topic Grids) -->
+          <!-- 1 Clean Chapter Dropdown (01–14 A1 Curriculum + Saved Courses) -->
           <div style="margin-bottom:10px;">
             <label for="fl-walk-chapter-select" style="display:block;font-size:0.72rem;font-weight:600;color:#94A3B8;margin-bottom:5px;">A1 Book Chapters &amp; Saved Courses</label>
             <select id="fl-walk-chapter-select" class="fl3-select" aria-label="Select A1 Finnish Book Chapter">
               ${allEps
                 .map(
-                  (e) => `<option value="${esc(e.id)}" ${e.id === ep.id ? "selected" : ""}>${esc(e.title)} (${getPodcastItems(e).length} items • ${esc(e.duration || "~20 min")})</option>`
+                  (e) => `<option value="${esc(e.id)}" ${e.id === ep.id ? "selected" : ""}>${esc(e.title)} (${getPodcastItems(e).length} items)</option>`
                 )
                 .join("")}
             </select>
           </div>
+
+          ${
+            fullItems.length > 16
+              ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;" role="group" aria-label="Memorization Chunks">
+                  <button type="button" class="fl3-btn ${curChunk === "p1" ? "active" : ""}" data-fl-pod-chunk="p1" style="padding:6px 4px;font-size:0.73rem;">Part 1 (1–12)</button>
+                  <button type="button" class="fl3-btn ${curChunk === "p2" ? "active" : ""}" data-fl-pod-chunk="p2" style="padding:6px 4px;font-size:0.73rem;">Part 2 (13–24)</button>
+                  <button type="button" class="fl3-btn ${curChunk === "p3" ? "active" : ""}" data-fl-pod-chunk="p3" style="padding:6px 4px;font-size:0.73rem;">Part 3 (25–${fullItems.length})</button>
+                  <button type="button" class="fl3-btn ${curChunk === "all" ? "active" : ""}" data-fl-pod-chunk="all" style="padding:6px 4px;font-size:0.73rem;">All (${fullItems.length})</button>
+                </div>`
+              : ""
+          }
 
           <!-- 1 Smart Create Bar: Type ANY Topic OR Upload Homework Photo -->
           <div style="display:flex;gap:6px;margin-bottom:14px;">
@@ -4109,6 +4427,23 @@
       state.activeTab = "notebook";
       state.mode = "study";
       renderActiveView();
+    });
+    root.querySelectorAll("[data-fl-pod-chunk]").forEach((b) => {
+      b.onclick = () => {
+        const nextChunk = b.getAttribute("data-fl-pod-chunk") || "all";
+        if ((state.podcastChunk || "all") === nextChunk) return;
+        const wasPlaying = Boolean(state.podcastPlaying);
+        state.podcastChunk = nextChunk;
+        state.podcastItemIdx = 0;
+        state.podcastCurSec = 0;
+        state.podcastTotalDur = 0;
+        state.podcastTrackKey = "";
+        if (wasPlaying) {
+          generateAndPlayPodcast(state.podcastEpisodeId, 0);
+        } else {
+          renderActiveView();
+        }
+      };
     });
     root.querySelectorAll("[data-fl-pod-voice]").forEach((b) => {
       b.onclick = () => {
