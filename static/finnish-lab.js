@@ -1586,15 +1586,26 @@
     }
   }
 
-  /* ---------- SMART SCENARIO-AWARE LIVE LISTEN & CONVERSATION SUBTITLES (v73.0) ---------- */
-  async function sendLiveAudioChunk(blob, cleanMime) {
-    if (!blob || blob.size < 1600) return; // Skip truly empty blobs
+  /* ---------- SMART SCENARIO-AWARE LIVE LISTEN & STANDBY 15s BUFFER (v117.0) ---------- */
+  async function sendLiveAudioChunk(blobOrBlobs, cleanMime, isTeacherAsked) {
+    const rawList = Array.isArray(blobOrBlobs) ? blobOrBlobs : [blobOrBlobs];
+    const validBlobs = rawList.filter((b) => b && b.size >= 1400);
+    if (!validBlobs.length) {
+      if (isTeacherAsked) {
+        toast("No classroom audio buffered yet — wait 2–3 seconds and tap again.", "info");
+      }
+      return;
+    }
     try {
-      const b64 = await blobToBase64(blob);
-      const conv = await ensureActiveConv("🌐 Live Class Subtitles");
+      state.liveCapturing = Boolean(isTeacherAsked);
+      const attachments = [];
+      for (const b of validBlobs.slice(-2)) {
+        const b64 = await blobToBase64(b);
+        attachments.push({ mime_type: cleanMime, data_base64: b64 });
+      }
+      const conv = await ensureActiveConv("Live Class Subtitles");
       const settings = DB.getSettings();
 
-      // Lightweight 3-turn text-only live history (keeps classroom translations ~1.5s fast & under free-tier RPM!)
       const recentLiveHistory = [];
       for (const m of (conv.messages || []).filter((x) => x.isLiveSubtitle).slice(-3)) {
         recentLiveHistory.push({
@@ -1604,28 +1615,46 @@
         });
       }
 
-      state.liveInterimText = "⚡ Translating teacher silently...";
+      state.liveInterimText = isTeacherAsked
+        ? "Analyzing teacher's question (last 15s)..."
+        : "Translating teacher silently...";
       renderLiveBannerOnly();
+      if (isTeacherAsked) renderActiveView();
+
+      const promptMsg = isTeacherAsked
+        ? "URGENT CLASSROOM QUESTION: The Finnish teacher just called on the student in this last 15-second audio clip (clips are in chronological order). " +
+          "Focus on the MOST RECENT question or instruction addressed to the student. " +
+          "Transcribe what the teacher asked in Finnish, translate to clear English, and give 3 natural, ready-to-say A1 Finnish answers specifically answering that exact question. " +
+          "If truly only silence or room noise with zero speech, reply ONLY [SILENCE]."
+        : "Listen carefully to this live Finnish classroom audio clip (the teacher may be across the room). " +
+          "Transcribe what was said in Finnish, translate to English, and give 2-3 ready short A1 Finnish replies. " +
+          "If truly only silence or room noise with zero speech, reply ONLY [SILENCE].";
+
       const resp = await flApi("/api/finnish-lab/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message:
-            "Listen carefully to this live Finnish classroom audio clip (the teacher may be across the room). " +
-            "Transcribe what was said in Finnish, translate to English, and give 2-3 ready short A1 Finnish replies. " +
-            "If truly only silence or room noise with zero speech, reply ONLY [SILENCE].",
+          message: promptMsg,
           mode: "live_translate",
           level: settings.level || "A1",
           roast_mode: false,
           history: recentLiveHistory,
-          attachments: [{ mime_type: cleanMime, data_base64: b64 }],
+          attachments,
         }),
       });
+      state.liveCapturing = false;
       const reply = (resp && resp.reply ? resp.reply : "").trim();
       if (!reply || reply.toUpperCase().includes("[SILENCE]")) {
         if (state.isLiveTranslating) {
-          state.liveInterimText = "🎙️ Listening live...";
+          state.liveInterimText =
+            (state.liveMode || "standby") === "standby"
+              ? "Standby active • 15s buffer ready (0 quota used)"
+              : "Listening live...";
           renderLiveBannerOnly();
+        }
+        if (isTeacherAsked) {
+          toast("Heard only room noise in the last 15s — try tapping again right after she speaks.", "info");
+          renderActiveView();
         }
         return;
       }
@@ -1634,20 +1663,30 @@
         role: "assistant",
         text: reply,
         isLiveSubtitle: true,
+        isTeacherQuestion: Boolean(isTeacherAsked),
         finnishTts: resp.finnish_tts || "",
         at: new Date().toISOString(),
       });
       await DB.saveConversation(conv);
       scheduleAutoSync();
-      if (state.isLiveTranslating) state.liveInterimText = "🎙️ Listening live...";
+      if (state.isLiveTranslating) {
+        state.liveInterimText =
+          (state.liveMode || "standby") === "standby"
+            ? "Standby active • 15s buffer ready (0 quota used)"
+            : "Listening live...";
+      }
       renderActiveView();
       renderSidePanel();
+      const trEl = document.getElementById("fl-live-transcript");
+      if (trEl) trEl.scrollTop = trEl.scrollHeight;
       scrollChatsToBottom(false);
     } catch (err) {
+      state.liveCapturing = false;
       if (state.isLiveTranslating) {
-        state.liveInterimText = `⚠️ ${(err && err.message ? err.message : "Retrying...").slice(0, 60)}`;
+        state.liveInterimText = `${(err && err.message ? err.message : "Retrying...").slice(0, 60)}`;
         renderLiveBannerOnly();
       }
+      if (isTeacherAsked) renderActiveView();
     }
   }
 
@@ -1660,7 +1699,11 @@
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       state.liveStream = stream;
       state.isLiveTranslating = true;
-      state.liveInterimText = "🎙️ Listening live...";
+      state.liveRingBuffer = [];
+      const isStandby = (state.liveMode || "standby") === "standby";
+      state.liveInterimText = isStandby
+        ? "Standby active • 15s buffer ready (0 quota used)"
+        : "Listening live...";
       renderActiveView();
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -1670,7 +1713,7 @@
         : "audio/webm";
       const cleanMime = mimeType.split(";")[0];
 
-      // Smart VAD with iOS Safari AudioContext.resume() fix + 5s safety fallback
+      // Smart VAD with iOS Safari AudioContext.resume() fix
       let analyser = null;
       let freqBuf = null;
       let vadReady = false;
@@ -1694,7 +1737,7 @@
       } catch (_) {}
 
       const getVolume = () => {
-        if (!vadReady || !analyser || !freqBuf) return 15; // Fallback: always send chunk
+        if (!vadReady || !analyser || !freqBuf) return 15;
         analyser.getByteTimeDomainData(freqBuf);
         let sum = 0;
         for (let i = 0; i < freqBuf.length; i++) {
@@ -1719,29 +1762,48 @@
         let lastLoudMs = Date.now();
         const chunkStartMs = Date.now();
         let peakVol = 0;
+        let flushAsTeacherAsked = false;
 
         rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
         rec.onstop = () => {
-          // Classroom-distance sensitivity: send whenever any audible speech (peakVol > 0.45) or fallback is active
+          const blob = new Blob(chunks, { type: cleanMime });
+          const curMode = state.liveMode || "standby";
+          if (flushAsTeacherAsked) {
+            const prevClip = state.liveRingBuffer.length ? state.liveRingBuffer[state.liveRingBuffer.length - 1] : null;
+            const payloadClips = prevClip ? [prevClip, blob] : [blob];
+            state.liveRingBuffer = [];
+            sendLiveAudioChunk(payloadClips, cleanMime, true);
+            return;
+          }
+          if (curMode === "standby") {
+            // Keep rolling last 2 complete 7s clips in RAM (zero API calls!)
+            if (blob.size >= 1200) {
+              state.liveRingBuffer.push(blob);
+              if (state.liveRingBuffer.length > 2) state.liveRingBuffer.shift();
+            }
+            return;
+          }
+          // Live Subtitles mode: send when audible speech detected
           if (heardSpeech || peakVol > 0.45 || !vadReady) {
-            const blob = new Blob(chunks, { type: cleanMime });
-            sendLiveAudioChunk(blob, cleanMime);
+            sendLiveAudioChunk(blob, cleanMime, false);
           }
         };
         rec.start();
 
-        const cutAndRestart = (forceSend) => {
+        const cutAndRestart = (forceSend, asTeacherAsked) => {
           if (state.liveVadInterval) {
             clearInterval(state.liveVadInterval);
             state.liveVadInterval = null;
           }
           if (forceSend) heardSpeech = true;
+          if (asTeacherAsked) flushAsTeacherAsked = true;
           if (rec.state === "recording") {
             try { rec.stop(); } catch (_) {}
           }
           if (state.isLiveTranslating) recordOneUtterance();
         };
-        state.liveForceCutFn = () => cutAndRestart(true);
+        state.liveForceCutFn = () => cutAndRestart(true, false);
+        state.liveTeacherAskedFn = () => cutAndRestart(true, true);
 
         if (state.liveVadInterval) clearInterval(state.liveVadInterval);
         state.liveVadInterval = setInterval(() => {
@@ -1751,32 +1813,41 @@
             return;
           }
           const now = Date.now();
+          const elapsed = now - chunkStartMs;
+          const curMode = state.liveMode || "standby";
+
+          if (curMode === "standby") {
+            // Clean 7-second rolling ring buffer segments (zero API calls, ~14-21s memory)
+            if (elapsed >= 7000) {
+              cutAndRestart(false, false);
+            }
+            return;
+          }
+
           const vol = getVolume();
           if (vol > peakVol) peakVol = vol;
-          // Classroom sensitivity (0.55 picks up teacher speaking 3–6m away!)
           if (vol > 0.55) {
             if (!heardSpeech) {
               heardSpeech = true;
               speechStartMs = now;
-              state.liveInterimText = "🗣️ Hearing teacher...";
+              state.liveInterimText = "Hearing teacher...";
               renderLiveBannerOnly();
             }
             lastLoudMs = now;
           }
-          const elapsed = now - chunkStartMs;
           const silenceAfterSpeech = heardSpeech ? now - lastLoudMs : 0;
           const speechDur = heardSpeech ? now - speechStartMs : 0;
 
-          // Clean 8-second rolling window (stays safely under 8 RPM free-tier limit) or 1.4s natural pause
-          const shouldCutForPause = vadReady && heardSpeech && speechDur >= 1500 && silenceAfterSpeech >= 1400;
-          const shouldCutMaxSpeech = heardSpeech && speechDur >= 8000;
-          const shouldFallbackCut = !vadReady && elapsed >= 8000;
-          const shouldResetSilent = vadReady && !heardSpeech && elapsed >= 9000;
+          // Gentle 10-second rolling window for 15-45 min classes (stays safely inside free RPM)
+          const shouldCutForPause = vadReady && heardSpeech && speechDur >= 1800 && silenceAfterSpeech >= 1500;
+          const shouldCutMaxSpeech = heardSpeech && speechDur >= 10000;
+          const shouldFallbackCut = !vadReady && elapsed >= 10000;
+          const shouldResetSilent = vadReady && !heardSpeech && elapsed >= 10000;
 
           if (shouldCutForPause || shouldCutMaxSpeech || shouldFallbackCut || shouldResetSilent) {
-            cutAndRestart(false);
+            cutAndRestart(false, false);
           }
-        }, 180);
+        }, 200);
       };
 
       recordOneUtterance();
@@ -1797,7 +1868,13 @@
     stopPodcastPlayback(true);
     state.livePanelOpen = true;
 
-    // On iOS / iPadOS (including iPadOS desktop UA) / Safari, webkitSpeechRecognition breaks continuous mode — ALWAYS use MediaRecorder rolling audio!
+    // Standby 15s rolling audio buffer ALWAYS uses MediaRecorder across all devices (iPhone, iPad, Mac, Chrome)
+    if ((state.liveMode || "standby") === "standby") {
+      startRollingLiveListen();
+      return;
+    }
+
+    // In Live Subtitles mode: on iOS / iPadOS / Safari, webkitSpeechRecognition breaks continuous mode — use MediaRecorder!
     const ua = navigator.userAgent || "";
     const isIOSOrSafari =
       /iPad|iPhone|iPod/.test(ua) ||
@@ -2538,15 +2615,42 @@
     };
   }
 
-  function parseAllLiveCards(msgs) {
+  function isLikelyTeacherQuestion(fiText, enText, firstName) {
+    const fi = String(fiText || "").trim();
+    const en = String(enText || "").trim();
+    if (fi.includes("?") || en.includes("?")) return true;
+    const low = fi.toLowerCase();
+    if (/^(mikä|mitä|missä|mistä|mihin|milloin|kuinka|paljonko|kuka|kenen|miksi|onko|oletko|voiko|voitko|haluatko|puhutko|asutko|ymmärrätkö|tiedätkö|voisitko|saako)\b/.test(low)) {
+      return true;
+    }
+    if (firstName && firstName.length >= 3 && low.includes(firstName.toLowerCase())) {
+      return true;
+    }
+    return false;
+  }
+
+  function parseAllLiveCards(msgs, firstName) {
     const liveMsgs = (msgs || []).filter((m) => m.role === "assistant" && m.isLiveSubtitle && !m.isError);
     if (!liveMsgs.length) {
-      return { latest: parseSingleLiveMsg(null), history: [] };
+      return { latest: parseSingleLiveMsg(null), spotlight: null, transcript: [], history: [] };
     }
-    const parsed = liveMsgs.slice(-8).reverse().map(parseSingleLiveMsg);
+    const recent = liveMsgs.slice(-40);
+    const transcript = recent.map((m) => {
+      const p = parseSingleLiveMsg(m);
+      p.isQuestion = Boolean(m.isTeacherQuestion || isLikelyTeacherQuestion(p.fiHeard, p.enMeaning, firstName));
+      p.at = m.at || "";
+      return p;
+    });
+    const latest = transcript[transcript.length - 1];
+    // Pin the latest question if it was asked within the last 4 turns (or explicitly triggered via Teacher Asked Me!)
+    const tail = transcript.slice(-4).reverse();
+    const spotlight = tail.find((x) => x.isQuestion) || null;
+    const history = transcript.slice(0, -1).reverse();
     return {
-      latest: parsed[0],
-      history: parsed.slice(1),
+      latest,
+      spotlight,
+      transcript,
+      history,
     };
   }
 
@@ -2609,7 +2713,9 @@
     const tutorMsgs = allMsgs
       .map((m, idx) => ({ m, idx }))
       .filter(({ m }) => !isLegacyLiveBubble(m));
-    const { latest: liveData, history: liveHistory } = parseAllLiveCards(allMsgs);
+    const { latest: liveData, spotlight: liveSpotlight, transcript: liveTranscript } = parseAllLiveCards(allMsgs, firstName);
+    const liveMode = state.liveMode || "standby";
+    const activeReplySource = liveSpotlight || liveData;
     const hasPendingPhoto = state.pendingAttachments.some((a) => (a.mime_type || "").startsWith("image/"));
     const showLiveDrawer = Boolean(state.livePanelOpen || state.isLiveTranslating);
     const greeting = firstName ? `How can I help, ${esc(firstName)}?` : "How can I help with your Finnish?";
@@ -2619,55 +2725,124 @@
         ${
           showLiveDrawer
             ? `<div class="fl3-live-drawer" role="region" aria-label="Silent Classroom Live Helper">
-                <div class="fl3-waveform-box ${state.isLiveTranslating ? "active" : ""}" style="margin-bottom:10px;">
-                  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-                    <div class="fl3-wave-bars" aria-hidden="true">
-                      <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                    <div style="min-width:0;">
-                      <div id="fl-live-interim" style="font-size:0.82rem;font-weight:700;color:${state.isLiveTranslating ? "#6EE7B7" : "#CBD5E1"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                        ${esc(state.isLiveTranslating ? (state.liveInterimText || "Listening silently for Finnish...") : "Silent Classroom Live • Speaker 100% muted")}
-                      </div>
-                    </div>
+                <!-- Clean Mode Switcher + Start/Stop Header (Zero Emojis) -->
+                <div class="fl3-live-head-row">
+                  <div class="fl3-live-mode-switch" role="tablist" aria-label="Classroom Live Mode">
+                    <button type="button" role="tab" aria-selected="${liveMode === "standby"}" class="fl3-live-mode-pill ${liveMode === "standby" ? "active" : ""}" data-fl-live-mode="standby">
+                      Standby (15s)
+                    </button>
+                    <button type="button" role="tab" aria-selected="${liveMode === "subtitles"}" class="fl3-live-mode-pill ${liveMode === "subtitles" ? "active" : ""}" data-fl-live-mode="subtitles">
+                      Live Subtitles
+                    </button>
                   </div>
+
                   <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-                    ${state.isLiveTranslating && state.liveForceCutFn ? `<button type="button" class="fl3-btn" id="fl-live-now" style="padding:6px 9px;" title="Translate captured audio right now">⚡</button>` : ""}
-                    <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn" style="padding:7px 12px;">
-                      ${state.isLiveTranslating ? "⏹ Stop" : "🎙️ Start Live"}
+                    <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn" style="padding:7px 13px;">
+                      ${
+                        state.isLiveTranslating
+                          ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> Stop`
+                          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg> ${liveMode === "standby" ? "Start Standby" : "Start Subtitles"}`
+                      }
                     </button>
                     ${!state.isLiveTranslating ? `<button type="button" class="fl3-btn" id="fl-close-live-panel" style="padding:6px 10px;" aria-label="Close Silent Classroom Live">✕</button>` : ""}
                   </div>
                 </div>
 
-                <div class="fl3-live-split">
-                  <div class="fl3-live-field" style="margin:0;">
-                    <div class="fl3-live-label">🇫🇮 Finnish Heard</div>
-                    <div style="font-size:0.93rem;font-weight:700;color:#FFFFFF;line-height:1.4;">
-                      ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Live" when your teacher speaks Finnish...</span>`}
+                <!-- Live Status Bar -->
+                <div class="fl3-waveform-box ${state.isLiveTranslating ? "active" : ""}" style="margin-bottom:10px;padding:8px 12px;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                    <div class="fl3-wave-bars" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <div id="fl-live-interim" style="font-size:0.8rem;font-weight:600;color:${state.isLiveTranslating ? "#6EE7B7" : "#94A3B8"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                      ${esc(
+                        state.isLiveTranslating
+                          ? state.liveInterimText || (liveMode === "standby" ? "Standby active • 15s buffer ready (0 quota used)" : "Listening live...")
+                          : liveMode === "standby"
+                          ? "Silent 15s buffer • 0 quota used until you tap Teacher Asked Me"
+                          : "Scrolling Finnish → English class subtitles • Speaker 100% muted"
+                      )}
                     </div>
                   </div>
-                  <div class="fl3-live-field" style="margin:0;">
-                    <div class="fl3-live-label">🇬🇧 English Meaning</div>
-                    <div style="font-size:0.9rem;color:#38BDF8;font-weight:600;line-height:1.4;">
-                      ${liveData.hasCapture ? esc(liveData.enMeaning || "—") : `<span style="color:#64748B;font-weight:500;">Instant English translation appears silently here.</span>`}
-                    </div>
-                  </div>
+                  ${
+                    state.isLiveTranslating && liveMode === "subtitles" && state.liveForceCutFn
+                      ? `<button type="button" class="fl3-btn" id="fl-live-now" style="padding:5px 10px;font-size:0.75rem;" title="Translate captured audio right now">Now</button>`
+                      : ""
+                  }
                 </div>
+
+                ${
+                  state.isLiveTranslating && liveMode === "standby"
+                    ? `<button type="button" class="fl3-teacher-asked-btn" id="fl-live-teacher-asked" ${state.liveCapturing ? "disabled" : ""}>
+                        ${
+                          state.liveCapturing
+                            ? `<span class="fl3-spin" aria-hidden="true"></span><span>Analyzing teacher's question (last 15s)...</span>`
+                            : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span>Teacher Asked Me! (Translate Last 15s)</span>`
+                        }
+                      </button>`
+                    : ""
+                }
+
+                ${
+                  liveSpotlight
+                    ? `<div class="fl3-question-spotlight">
+                        <div class="fl3-live-label" style="color:#38BDF8;margin-bottom:4px;">Teacher Question Detected</div>
+                        <div style="font-size:0.96rem;font-weight:700;color:#FFFFFF;line-height:1.4;">${esc(liveSpotlight.fiHeard)}</div>
+                        <div style="font-size:0.88rem;color:#7DD3FC;font-weight:600;margin-top:3px;line-height:1.35;">${esc(liveSpotlight.enMeaning || "")}</div>
+                      </div>`
+                    : liveMode === "standby"
+                    ? `<div class="fl3-live-split">
+                        <div class="fl3-live-field" style="margin:0;">
+                          <div class="fl3-live-label">Finnish Heard</div>
+                          <div style="font-size:0.92rem;font-weight:700;color:#FFFFFF;line-height:1.4;">
+                            ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Standby", listen to class, then tap "Teacher Asked Me!" anytime.</span>`}
+                          </div>
+                        </div>
+                        <div class="fl3-live-field" style="margin:0;">
+                          <div class="fl3-live-label">English Meaning</div>
+                          <div style="font-size:0.89rem;color:#38BDF8;font-weight:600;line-height:1.4;">
+                            ${liveData.hasCapture ? esc(liveData.enMeaning || "—") : `<span style="color:#64748B;font-weight:500;">Instant English translation + 3 ready Finnish answers appear here.</span>`}
+                          </div>
+                        </div>
+                      </div>`
+                    : ""
+                }
+
+                ${
+                  liveMode === "subtitles"
+                    ? `<div class="fl3-live-transcript" id="fl-live-transcript" aria-label="Live Class Transcript">
+                        ${
+                          liveTranscript.length
+                            ? liveTranscript
+                                .map(
+                                  (line) => `
+                                <div class="fl3-transcript-row ${line.isQuestion ? "is-question" : ""}">
+                                  <div class="fl3-tr-fi">${esc(line.fiHeard)}</div>
+                                  ${line.enMeaning ? `<div class="fl3-tr-en">${esc(line.enMeaning)}</div>` : ""}
+                                </div>
+                              `
+                                )
+                                .join("")
+                            : `<div style="padding:14px 8px;text-align:center;font-size:0.82rem;color:#64748B;">Tap "Start Subtitles" for continuous scrolling Finnish → English captions during class.</div>`
+                        }
+                      </div>`
+                    : ""
+                }
 
                 <div style="margin-top:10px;">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-                    <div class="fl3-live-label" style="margin:0;">💬 Ready Written Finnish Answers (Tap to Copy)</div>
+                    <div class="fl3-live-label" style="margin:0;">Ready Written Finnish Answers (Tap to Copy)</div>
                     ${
                       liveData.hasCapture
                         ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <button type="button" class="fl3-speaker-btn" id="fl-live-save-words">⭐ Save Words</button>
-                            <button type="button" class="fl3-speaker-btn" id="fl-live-to-podcast">🎧 Class → Podcast</button>
+                            <button type="button" class="fl3-speaker-btn" id="fl-live-save-words"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg> Save Words</button>
+                            <button type="button" class="fl3-speaker-btn" id="fl-live-to-podcast"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg> Class → Podcast</button>
                           </div>`
                         : ""
                     }
                   </div>
                   <div class="fl3-reply-row">
-                    ${liveData.replies
+                    ${activeReplySource.replies
                       .map(
                         (r) => `
                       <button type="button" class="fl3-reply-chip" data-fl-use-reply="${esc(r.fi)}" title="Tap to copy &amp; place in chat input (silent)">
@@ -2679,26 +2854,6 @@
                       .join("")}
                   </div>
                 </div>
-
-                ${
-                  liveHistory.length
-                    ? `<details style="margin-top:8px;">
-                        <summary style="cursor:pointer;font-size:0.75rem;font-weight:700;color:#94A3B8;user-select:none;">🕒 Earlier in Class (${liveHistory.length})</summary>
-                        <div style="display:flex;flex-direction:column;gap:5px;max-height:125px;overflow-y:auto;margin-top:6px;">
-                          ${liveHistory
-                            .map(
-                              (h) => `
-                            <div style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:7px 10px;">
-                              <div style="font-size:0.8rem;font-weight:700;color:#E2E8F0;">${esc(h.fiHeard)}</div>
-                              ${h.enMeaning ? `<div style="font-size:0.74rem;color:#38BDF8;margin-top:2px;">${esc(h.enMeaning)}</div>` : ""}
-                            </div>
-                          `
-                            )
-                            .join("")}
-                        </div>
-                      </details>`
-                    : ""
-                }
               </div>`
             : ""
         }
@@ -3732,6 +3887,23 @@
     });
 
     // Tab 1 Right Panel: Silent Classroom Live Card controls (100% silent — never speaks!)
+    root.querySelectorAll("[data-fl-live-mode]").forEach((b) => {
+      b.onclick = () => {
+        const nextMode = b.getAttribute("data-fl-live-mode") === "subtitles" ? "subtitles" : "standby";
+        if ((state.liveMode || "standby") === nextMode) return;
+        const wasLive = Boolean(state.isLiveTranslating);
+        state.liveMode = nextMode;
+        if (wasLive) {
+          stopLiveTranslation();
+          setTimeout(() => toggleLiveTranslation(), 60);
+        } else {
+          renderActiveView();
+        }
+      };
+    });
+    root.querySelector("#fl-live-teacher-asked")?.addEventListener("click", () => {
+      if (state.liveTeacherAskedFn) state.liveTeacherAskedFn();
+    });
     root.querySelector("#fl-live-btn")?.addEventListener("click", toggleLiveTranslation);
     root.querySelector("#fl-live-now")?.addEventListener("click", () => { if (state.liveForceCutFn) state.liveForceCutFn(); });
     root.querySelector("#fl-stop-live")?.addEventListener("click", stopLiveTranslation);
