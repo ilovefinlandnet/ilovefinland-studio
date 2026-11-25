@@ -2675,7 +2675,7 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
     who corrects pronunciation & grammar, and stitches alternating English (AvaNeural)
     + native Finnish (NooraNeural / SelmaNeural at 0.85x) clips into ONE smooth MP3.
     """
-    user_text = (payload.get("text") or "").strip()[:800]
+    user_text = (payload.get("text") or "").strip()[:1600]
     attachments = payload.get("attachments") or []
     history = payload.get("history") or []
     level = (payload.get("level") or "A1").strip().upper()
@@ -2691,15 +2691,15 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
 
     sys_prompt = (
         f"You are a warm, fast, human-sounding Finnish pronunciation AND A1–A2 grammar voice coach for a learner in Finland (level: {level}). "
-        "Keep every reply super short, natural, and crisp (1–2 brief sentences).\n"
+        "Keep feedback natural, clear, and encouraging.\n"
         "RULES:\n"
-        "1. Always check BOTH pronunciation (vowel length a/aa, ä/ö, double consonants, 1st-syllable stress) AND A1/A2 grammar (location cases -ssa/-sta/-Vn/-lla, partitive -a/-ä/-ta, verb endings, K-P-T gradation, negative en/et/ei, A2 past tense).\n"
-        "2. If there is a grammar or pronunciation mistake, clearly point out the exact fix in 1 friendly sentence and model the correct Finnish.\n"
+        "1. Always check BOTH pronunciation (vowel length a/aa, ä/ö, double consonants, 1st-syllable stress) AND A1/A2 grammar (location cases -ssa/-sta/-Vn/-lla, partitive -a/-ä/-ta, verb endings, K-P-T gradation, negative en/et/ei, compound words like 'suora tukka', redundant words, A2 past tense) across ALL sentences the student said or typed (even 3–6 sentences!).\n"
+        "2. Point out EVERY grammar or pronunciation fix clearly and give the full natural corrected Finnish text.\n"
         "3. Return ONLY valid JSON with keys:\n"
-        "   - heard: short transcript of what the student said/asked (max 120 chars)\n"
-        "   - display_text: concise written coaching note (show Fix → **correct Finnish** + tiny grammar/syllable reason)\n"
-        "   - segments: array of 2 to 3 short spoken turns, each {\"lang\": \"en\" or \"fi\", \"text\": \"...\"}. "
-        "Put English in lang='en' and Finnish in lang='fi'. Keep total spoken time under 8 seconds."
+        "   - heard: clean transcript of what the student said/asked (max 400 chars)\n"
+        "   - display_text: concise written coaching note (briefly list fixes + show **full corrected Finnish**)\n"
+        "   - segments: array of 2 to 6 spoken turns, each {\"lang\": \"en\" or \"fi\", \"text\": \"...\"}. "
+        "Put English coaching in lang='en' and the corrected Finnish sentence(s) in lang='fi'."
     )
 
     contents: List[Dict[str, Any]] = []
@@ -2709,7 +2709,7 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
         if htext:
             contents.append({"role": role, "parts": [{"text": htext}]})
 
-    ask_prompt = user_text or "Listen carefully to my Finnish audio. Transcribe what I said, gently correct my pronunciation or grammar if needed, and model the correct Finnish clearly."
+    ask_prompt = user_text or "Listen carefully to my Finnish audio (it may have multiple sentences). Transcribe everything I said, gently correct ALL pronunciation and A1/A2 grammar mistakes, and model the full corrected Finnish clearly."
     parts, val_err = _validate_and_build_parts(ask_prompt, attachments)
     if val_err:
         return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
@@ -2720,7 +2720,7 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
         contents=contents,
         expect_json=True,
         temperature=0.3,
-        max_output_tokens=360,
+        max_output_tokens=900,
     )
     if ai_err:
         status = 429 if "QUOTA" in ai_err.get("error", "") else 503
@@ -2733,20 +2733,23 @@ def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PA
         raw_clean = re.sub(r"\s*```$", "", raw_clean)
         parsed = json.loads(raw_clean)
     except Exception:
+        # Clean fallback: extract display_text if JSON was slightly truncated so raw JSON is never shown
+        m_dt = re.search(r'"display_text"\s*:\s*"((?:[^"\\]|\\.)*)', text_out or "")
+        fallback_txt = m_dt.group(1).replace("\\n", "\n").replace('\\"', '"') if m_dt else "Nice try! Try saying that again a little more slowly."
         parsed = {
             "heard": user_text or "(voice)",
-            "display_text": (text_out or "Try saying that once more slowly.").strip(),
-            "segments": [{"lang": "en", "text": (text_out or "Try saying that once more slowly.").strip()[:280]}],
+            "display_text": fallback_txt,
+            "segments": [{"lang": "en", "text": re.sub(r"[*_`#>]+", "", fallback_txt)[:360]}],
         }
 
-    heard = str(parsed.get("heard") or user_text or "").strip()[:200]
+    heard = str(parsed.get("heard") or user_text or "").strip()[:400]
     display_text = str(parsed.get("display_text") or "").strip()
     raw_segs = parsed.get("segments") or []
     segments: List[Dict[str, str]] = []
     for s in raw_segs[:8]:
         if not isinstance(s, dict):
             continue
-        stext = str(s.get("text") or "").strip()[:320]
+        stext = str(s.get("text") or "").strip()[:480]
         slang = "fi" if str(s.get("lang") or "en").strip().lower().startswith("fi") else "en"
         if stext:
             segments.append({"lang": slang, "text": stext})
