@@ -3273,4 +3273,8 @@ body:has(#view-finnish-lab:not(.hidden)),
     min-height: calc(100dvh - 285px);
     max-height: calc(100dvh - 255px);
   }
+
+  .fl3-app-frame.has-mini-player .fl3-main-col {
+    padding-bottom: 86px !important;
+  }
 }

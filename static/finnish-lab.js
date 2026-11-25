@@ -1571,48 +1571,26 @@
       const conv = await ensureActiveConv("🌐 Live Class Subtitles");
       const settings = DB.getSettings();
 
-      // Build 8-turn scenario memory + auto-link the latest uploaded worksheet photo ([Picture #1]) if present!
+      // Lightweight 3-turn text-only live history (keeps classroom translations ~1.5s fast & under free-tier RPM!)
       const recentLiveHistory = [];
-      let linkedWorksheet = null;
-      for (const m of (conv.messages || []).slice(-8)) {
-        const histAtts = [];
-        if (!linkedWorksheet && (m.attachments || []).length) {
-          for (const a of m.attachments) {
-            const mt = a.mime_type || "";
-            if (mt.startsWith("image/") || mt === "application/pdf") {
-              const cached = a.id ? state.sessionMediaMap[a.id] : null;
-              if (cached && cached.data_base64) {
-                linkedWorksheet = { mime_type: cached.mime_type, data_base64: cached.data_base64, refLabel: cached.refLabel || "Picture #1" };
-                histAtts.push({ mime_type: cached.mime_type, data_base64: cached.data_base64 });
-                break;
-              } else if (mt.startsWith("image/") && a.previewUrl && a.previewUrl.startsWith("data:image/")) {
-                const tb64 = a.previewUrl.includes(",") ? a.previewUrl.split(",")[1] : "";
-                if (tb64) {
-                  linkedWorksheet = { mime_type: "image/jpeg", data_base64: tb64, refLabel: a.refLabel || "Picture #1" };
-                  histAtts.push({ mime_type: "image/jpeg", data_base64: tb64 });
-                  break;
-                }
-              }
-            }
-          }
-        }
+      for (const m of (conv.messages || []).filter((x) => x.isLiveSubtitle).slice(-3)) {
         recentLiveHistory.push({
           role: m.role,
-          text: (m.text || "").slice(0, 320),
-          attachments: histAtts,
+          text: (m.text || "").slice(0, 240),
+          attachments: [],
         });
       }
 
-      state.liveInterimText = linkedWorksheet ? "⚡ Translating live (with worksheet)..." : "⚡ Translating live...";
+      state.liveInterimText = "⚡ Translating teacher silently...";
       renderLiveBannerOnly();
       const resp = await flApi("/api/finnish-lab/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message:
-            "Listen to this live classroom audio chunk using the ongoing scenario & any worksheet photo in history. " +
-            "Transcribe into fast Finnish + English subtitles (or Speaker 1 / Speaker 2 dialogue). " +
-            "If a question or exercise is asked, give the short A1 Finnish Answer. If only silence/noise, reply ONLY [SILENCE].",
+            "Listen carefully to this live Finnish classroom audio clip (the teacher may be across the room). " +
+            "Transcribe what was said in Finnish, translate to English, and give 2-3 ready short A1 Finnish replies. " +
+            "If truly only silence or room noise with zero speech, reply ONLY [SILENCE].",
           mode: "live_translate",
           level: settings.level || "A1",
           roast_mode: false,
@@ -1721,7 +1699,8 @@
 
         rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
         rec.onstop = () => {
-          if (heardSpeech || peakVol > 1.8 || !vadReady) {
+          // Classroom-distance sensitivity: send whenever any audible speech (peakVol > 0.45) or fallback is active
+          if (heardSpeech || peakVol > 0.45 || !vadReady) {
             const blob = new Blob(chunks, { type: cleanMime });
             sendLiveAudioChunk(blob, cleanMime);
           }
@@ -1751,11 +1730,12 @@
           const now = Date.now();
           const vol = getVolume();
           if (vol > peakVol) peakVol = vol;
-          if (vol > 2.2) {
+          // Classroom sensitivity (0.55 picks up teacher speaking 3–6m away!)
+          if (vol > 0.55) {
             if (!heardSpeech) {
               heardSpeech = true;
               speechStartMs = now;
-              state.liveInterimText = "🗣️ Hearing Finnish...";
+              state.liveInterimText = "🗣️ Hearing teacher...";
               renderLiveBannerOnly();
             }
             lastLoudMs = now;
@@ -1764,16 +1744,16 @@
           const silenceAfterSpeech = heardSpeech ? now - lastLoudMs : 0;
           const speechDur = heardSpeech ? now - speechStartMs : 0;
 
-          // Cut cleanly on 1.0s natural pause after speech, OR max 5.5s continuous speech, OR 5s fallback if AudioContext wasn't running
-          const shouldCutForPause = vadReady && heardSpeech && speechDur >= 800 && silenceAfterSpeech >= 1000;
-          const shouldCutMaxSpeech = heardSpeech && speechDur >= 5500;
-          const shouldFallbackCut = !vadReady && elapsed >= 5000;
-          const shouldResetSilent = vadReady && !heardSpeech && elapsed >= 7000;
+          // Clean 8-second rolling window (stays safely under 8 RPM free-tier limit) or 1.4s natural pause
+          const shouldCutForPause = vadReady && heardSpeech && speechDur >= 1500 && silenceAfterSpeech >= 1400;
+          const shouldCutMaxSpeech = heardSpeech && speechDur >= 8000;
+          const shouldFallbackCut = !vadReady && elapsed >= 8000;
+          const shouldResetSilent = vadReady && !heardSpeech && elapsed >= 9000;
 
           if (shouldCutForPause || shouldCutMaxSpeech || shouldFallbackCut || shouldResetSilent) {
             cutAndRestart(false);
           }
-        }, 160);
+        }, 180);
       };
 
       recordOneUtterance();
@@ -1792,10 +1772,16 @@
     // CRITICAL: Mute & cancel all audio before entering Silent Classroom Live mode!
     stopActiveAudio(true);
     stopPodcastPlayback(true);
+    state.livePanelOpen = true;
 
-    // Prefer native browser SpeechRecognition / webkitSpeechRecognition (fi-FI, $0 cost, 100% silent)
+    // On iOS / iPadOS (including iPadOS desktop UA) / Safari, webkitSpeechRecognition breaks continuous mode — ALWAYS use MediaRecorder rolling audio!
+    const ua = navigator.userAgent || "";
+    const isIOSOrSafari =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.maxTouchPoints > 1 && /Mac/i.test(ua)) ||
+      (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua));
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
+    if (isIOSOrSafari || !SR) {
       startRollingLiveListen();
       return;
     }
@@ -1807,14 +1793,14 @@
       rec.interimResults = true;
       state.liveRecognition = rec;
       state.isLiveTranslating = true;
-      state.liveInterimText = "🔇 Silent Classroom Mode ON — Listening for teacher's Finnish (Speaker 100% Muted)...";
+      state.liveInterimText = "🔇 Listening silently for teacher's Finnish...";
 
       rec.onresult = (ev) => {
         let interim = "";
         for (let i = ev.resultIndex; i < ev.results.length; i++) {
           const transcript = (ev.results[i][0].transcript || "").trim();
           if (ev.results[i].isFinal && transcript.length > 1) {
-            state.liveInterimText = "🔇 Translating teacher silently...";
+            state.liveInterimText = "⚡ Translating teacher silently...";
             renderLiveBannerOnly();
             sendMessage(transcript, { mode: "live_translate", silentLive: true });
           } else {
@@ -1822,7 +1808,7 @@
           }
         }
         if (interim.trim()) {
-          state.liveInterimText = "🔇 Hearing: " + interim.trim();
+          state.liveInterimText = "🗣️ Hearing: " + interim.trim();
           renderLiveBannerOnly();
         }
       };
@@ -1831,7 +1817,8 @@
         if (ev.error === "not-allowed") {
           toast("Microphone permission denied.", "error");
           stopLiveTranslation();
-        } else if (ev.error === "service-not-allowed" || ev.error === "network") {
+        } else if (ev.error !== "no-speech") {
+          // Auto-fallback to MediaRecorder rolling audio on ANY browser speech error
           stopLiveTranslation();
           startRollingLiveListen();
         }
@@ -1839,7 +1826,12 @@
 
       rec.onend = () => {
         if (state.isLiveTranslating) {
-          try { rec.start(); } catch (_) { stopLiveTranslation(); }
+          try {
+            rec.start();
+          } catch (_) {
+            stopLiveTranslation();
+            startRollingLiveListen();
+          }
         }
       };
 
@@ -2346,7 +2338,6 @@
                 <div class="fl3-rail-head">
                   <div class="fl3-title" style="font-size:0.94rem;">
                     <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
-                    <span>Finnish Lab</span>
                   </div>
                   <button type="button" class="fl3-icon-btn" id="fl-toggle-rail" title="Hide chat sidebar" aria-label="Hide chat sidebar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
@@ -2354,7 +2345,8 @@
                 </div>
 
                 <button type="button" class="fl3-rail-new-btn" id="fl-new-chat-top">
-                  <span>✏️</span><span>New chat</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  <span>New chat</span>
                 </button>
 
                 <div class="fl3-rail-section-label">Recents</div>
@@ -2402,9 +2394,8 @@
               <button type="button" class="fl3-icon-btn ${activeTab === "chat" && railVisible ? "fl3-mobile-only" : ""}" id="fl-open-drawer" title="Chats, Cards, Notes &amp; Settings" aria-label="Open Finnish Lab menu">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
               </button>
-              <div class="fl3-title ${railVisible ? "fl3-mobile-only" : ""}" style="font-size:0.95rem;">
+              <div class="fl3-title ${railVisible ? "fl3-mobile-only" : ""}" style="font-size:0.95rem;" title="ILoveFinland Finnish Lab">
                 <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
-                <span>Finnish Lab</span>
               </div>
             </div>
 
@@ -2418,7 +2409,9 @@
             </nav>
 
             <div class="fl3-float-right">
-              <button type="button" class="fl3-icon-btn ${railVisible ? "fl3-mobile-only" : ""}" id="fl-new-chat-mobile" title="New chat" aria-label="Start new chat">✏️</button>
+              <button type="button" class="fl3-icon-btn ${railVisible ? "fl3-mobile-only" : ""}" id="fl-new-chat-mobile" title="New chat" aria-label="Start new chat">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              </button>
             </div>
           </header>
 

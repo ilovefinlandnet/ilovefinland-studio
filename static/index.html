@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=110.0" />
+  <link rel="stylesheet" href="/styles.css?v=111.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
-  <link rel="stylesheet" href="/finnish-lab.css?v=109.0" />
+  <link rel="stylesheet" href="/finnish-lab.css?v=111.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
 </head>
 <body>
@@ -1311,762 +1311,385 @@
 
           <div class="workspace-grid">
             <!-- Article Preview Card: WordPress Article Form (ilovefinland.net) -->
+            <!-- Article Workspace: Clean Notion/Substack Writing Canvas + Sticky 3-Tab Inspector (v111.0) -->
             <section id="panel-article" class="card panel active-tab-panel active-mobile" data-panel="article">
-              <div class="panel-header">
+              <!-- Slim Top Bar: Single Place for Primary Actions (Zero Duplicates) -->
+              <div class="panel-header" style="gap:10px;flex-wrap:wrap;">
                 <div class="card-header-left">
                   <div class="card-header-icon bg-blue">
-                    <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <svg class="lucide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                   </div>
-                  <div>
-                    <h2 class="panel-title">1. WordPress Article (ilovefinland.net)</h2>
-                    <div class="panel-subtitle-row">
-                      <span class="badge badge-sample" id="article-source-label">WordPress Article Draft</span>
-                      <span class="badge badge-check" id="article-lang-badge">Language: English</span>
-                      <span class="badge badge-origin" id="article-taxonomy-badge">News → Transport</span>
-                    </div>
-                  </div>
+                  <h2 class="panel-title" style="margin:0;">WordPress Article</h2>
                 </div>
-                <div class="card-header-actions">
+
+                <div class="card-header-actions" style="gap:8px;flex-wrap:wrap;">
                   <button type="button" id="btn-save-article-edits" class="btn btn-ghost btn-sm" title="Save in-Studio changes (⌘+S / Ctrl+S)">
-                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    <span>Save Edits</span>
-                    <span class="kbd-shortcut-hint">⌘S</span>
+                    <span>💾 Save</span>
                   </button>
-                  <button type="button" id="btn-copy-all-wp-direct" class="btn btn-ghost btn-sm" title="Copy All WordPress Fields to Clipboard" style="border:1px solid rgba(75, 137, 188, 0.28);color:#CBD5E1;">
-                    <span>📋 Copy All for WP</span>
+                  <button type="button" id="btn-copy-all-wp-direct" class="btn btn-ghost btn-sm" title="Copy All WordPress Fields to Clipboard">
+                    <span>📋 Copy WP</span>
                   </button>
-                  <button type="button" id="btn-push-wordpress-draft" class="btn btn-primary btn-sm" title="Push Draft directly to WordPress (ilovefinland.net)" style="background:#003882;color:#ffffff;border:none;">
-                    <span>🚀 Push Draft to WordPress</span>
-                  </button>
-                  <button type="button" id="btn-convert-article-to-reel" class="btn btn-sm" title="Generate a 9:16 Video Reel from this Article" style="background:#0284c7;color:#ffffff;border:none;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;cursor:pointer;">
-                    <span>🎬 Convert to Reel</span>
-                  </button>
-                  <button type="button" id="btn-study-story-in-finnish" class="btn btn-sm" title="Generate an A1/A2 selkosuomi reading lesson from this story in Finnish Study Lab" style="background:linear-gradient(135deg,#003580 0%,#10b981 100%);color:#ffffff;border:none;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;cursor:pointer;">
-                    <span>🇫🇮 Study Story in Finnish</span>
+                  <button type="button" id="btn-push-wordpress-draft" class="btn btn-primary btn-sm" title="Push Draft directly to WordPress (ilovefinland.net)" style="background:linear-gradient(135deg,#003580 0%,#029CD8 100%);color:#ffffff;border:none;font-weight:700;">
+                    <span>🚀 Push to WordPress</span>
                   </button>
                   <button id="btn-approve-article" class="btn btn-approve">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     <span>For Approval</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Recommendation & Search Phrase Drawer (Progressive Disclosure) -->
               <div id="wp-verification-banner" class="hidden" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#FCD34D;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:0.82rem;"></div>
-              <details class="inspector-drawer" style="margin:0 0 14px;">
-                <summary>
-                  <span>🔍 SEO &amp; Section Recommendation</span>
-                  <span style="font-size:0.72rem;color:#94A3B8;font-weight:500;">Tap to expand ▾</span>
-                </summary>
-                <div class="inspector-drawer-body">
-                  <div class="wp-recommendation-box" id="wp-recommendation-box" style="margin:0;">
-                    <div class="wp-rec-row">
-                      <div class="wp-rec-col">
-                        <span class="label-xs">Website Section &amp; Category Recommendation</span>
-                        <div class="wp-rec-val" id="wp-rec-taxonomy">News → Transport &amp; Infrastructure</div>
-                        <p class="hint-text" id="wp-rec-reason" style="margin:2px 0 0;"></p>
-                      </div>
-                      <div class="wp-rec-col">
-                        <span class="label-xs">Natural Google Search Phrase</span>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                          <code class="wp-search-phrase" id="wp-search-phrase">is tesla assisted driving allowed in finland</code>
-                          <button type="button" class="btn-copy-field" data-copy-target="wp-search-phrase" title="Copy Search Phrase">📋 Copy</button>
-                        </div>
-                        <p class="hint-text" id="wp-search-integration" style="margin:2px 0 0;"></p>
-                      </div>
-                    </div>
-                  </div>
-                  <div id="wp-prior-coverage-detail" style="background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;border-radius:8px;padding:10px 12px;margin-top:10px;font-size:0.8rem;"></div>
-                </div>
-              </details>
 
-              <!-- PART 1: CLEAN WORDPRESS ARTICLE WORKSPACE (ESSENTIALS VISIBLE, EXTRAS IN CLOSED ACCORDION) -->
+              <!-- COMPACT 2-COLUMN WORKSPACE: CLEAN WRITING LEFT + STICKY 3-TAB SIDEBAR RIGHT -->
               <div class="article-3zone-grid">
-                <!-- Left: Clean Article Copy Canvas (Headline, Summary, Section/Category, Body) -->
+                <!-- LEFT COLUMN: CLEAN WRITING CANVAS ONLY -->
                 <div class="article-canvas-stage">
-                  <!-- ANCHOR 1: STORY & COPY (Sections 1 & 2) -->
-              <div id="sec-art-content" class="article-section-anchor">
-              <!-- SECTION 1: ARTICLE DETAILS -->
-              <div class="wp-section-block">
-                <div class="wp-section-title">
-                  <span class="wp-step-num">1</span>
-                  <strong>Article Details</strong>
-                  <span class="hint-text" style="margin-left:auto;">ilovefinland.net Form</span>
-                </div>
-
-                <!-- Headline / Title * -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-headline">Headline / Title <span class="req-star">*</span></label>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-headline">📋 Copy</button>
-                  </div>
-                  <input type="text" id="wp-field-headline" class="wp-input" />
-                </div>
-
-                <!-- Short description (Summary) * -->
-                <div class="wp-field-wrap">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-dek">Short description (Summary) <span class="req-star">*</span></label>
-                    <button type="button" class="btn-copy-field" data-copy-target="wp-field-dek">📋 Copy</button>
-                  </div>
-                  <textarea id="wp-field-dek" class="wp-textarea" rows="2"></textarea>
-                </div>
-
-                <!-- Language *, Website section *, Category * -->
-                <div class="wp-field-row-3">
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-lang">Language <span class="req-star">*</span></label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-lang">📋 Copy</button>
-                    </div>
-                    <select id="wp-field-lang" class="wp-select">
-                      <option value="English">English (Default)</option>
-                      <option value="Finnish">Finnish (Suomi)</option>
-                    </select>
-                  </div>
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-section">Website section <span class="req-star">*</span></label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-section">📋 Copy</button>
-                    </div>
-                    <select id="wp-field-section" class="wp-select"></select>
-                  </div>
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-category">Category <span class="req-star">*</span></label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-category">📋 Copy</button>
-                    </div>
-                    <select id="wp-field-category" class="wp-select"></select>
-                  </div>
-                </div>
-
-                <!-- Writing Style & Tone Selector -->
-                <div class="wp-field-wrap" style="margin-top:10px;">
-                  <div class="wp-field-label-row">
-                    <label class="label-sm" for="wp-field-writing-style">Writing Style &amp; Editorial Tone</label>
-                    <span class="hint-inline" style="font-size:0.75rem;color:#94a3b8;">Format rules for ilovefinland.net</span>
-                  </div>
-                  <select id="wp-field-writing-style" class="wp-select" style="background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;padding:7px 10px;border-radius:6px;font-size:0.86rem;">
-                    <option value="guide">🧭 Local Insider Guide (Deep Tips, Costs, Hidden Secrets &amp; Etiquette)</option>
-                    <option value="news">📰 Fast News Wire (Factual, Inverted Pyramid, 5-Ws &amp; Urgent Impact)</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- SECTION 2: ARTICLE CONTENT (Visual & Code Views) -->
-              <div class="wp-section-block">
-                <div class="wp-section-title">
-                  <span class="wp-step-num">2</span>
-                  <strong>Article Content <span class="req-star">*</span></strong>
-                  <div class="wp-view-tabs" style="margin-left:auto;">
-                    <button type="button" class="wp-tab-btn active" id="wp-tab-visual">👁️ Visual View</button>
-                    <button type="button" class="wp-tab-btn" id="wp-tab-code">💻 Code (HTML) View</button>
-                  </div>
-                </div>
-
-                
-                <div class="wp-content-actions">
-                  <button type="button" id="btn-copy-visual-article" class="btn btn-secondary btn-sm">
-                    📋 Copy formatted article <span class="hint-inline">(WordPress Visual Editor)</span>
-                  </button>
-                  <button type="button" id="btn-copy-html-article" class="btn btn-ghost btn-sm">
-                    📋 Copy HTML <span class="hint-inline">(WordPress Code Editor)</span>
-                  </button>
-                </div>
-
-                <!-- Visual View Container -->
-                <div id="wp-visual-view" class="wp-visual-view">
-                  <article class="article-preview-body" id="article-body-visual"></article>
-                </div>
-
-                <!-- Code View Container -->
-                <div id="wp-code-view" class="wp-code-view hidden">
-                  <textarea id="wp-code-textarea" class="wp-code-textarea" rows="12" spellcheck="false"></textarea>
-                </div>
-              </div>
-              </div> <!-- /#sec-art-content -->
-                </div>
-
-                <!-- Right: Featured Photo + Auto Alt Text + Editable Credit + Readiness + Push to WP -->
-                <div class="article-inspector-column">
-                  <div class="studio-inspector-card" style="padding:16px;">
-                    <!-- Clear Photo & Credit Readiness Indicator -->
-                    <div id="wp-photo-readiness-pill" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);color:#6EE7B7;font-size:0.78rem;font-weight:700;margin-bottom:12px;">
-                      <span id="wp-photo-readiness-text">📷 Checking photo, alt text &amp; credit...</span>
-                      <span class="badge" style="background:rgba(2,156,216,0.25);color:#38BDF8;font-size:0.66rem;padding:2px 7px;">Auto-Synced</span>
+                  <div id="sec-art-content" class="article-section-anchor">
+                    <!-- Headline & Short Summary (Clean — Zero 18 Copy Button Spam) -->
+                    <div class="wp-field-wrap" style="margin-bottom:12px;">
+                      <label class="label-sm" for="wp-field-headline">Headline / Title <span class="req-star">*</span></label>
+                      <input type="text" id="wp-field-headline" class="wp-input" style="font-size:1.05rem;font-weight:700;padding:10px 12px;" placeholder="Article headline..." />
                     </div>
 
-                    <!-- ANCHOR 2: FEATURED & PHOTOS (Section 3) -->
-              <div id="sec-art-photos" class="article-section-anchor">
-              <!-- SECTION 3: FEATURED IMAGE (Verified Rights & Downloads) -->
-              <div class="wp-section-block">
-                <div class="wp-section-title">
-                  <span class="wp-step-num">3</span>
-                  <strong>Featured Image <span class="req-star">*</span></strong>
-                  <span id="feat-img-status-badge" class="badge badge-check" style="margin-left:auto;">Verified Rights Cleared</span>
-                </div>
-
-                <!-- Missing photo warning banner (when flagged) -->
-                <div id="wp-photo-flag-banner" class="wp-flag-banner hidden">
-                  <div style="display:flex;align-items:flex-start;gap:8px;">
-                    <span style="font-size:1.2rem;">⚠️</span>
-                    <div>
-                      <strong>No verified reuse-rights photo found in archive for this story.</strong>
-                      <p class="hint-text" style="margin:2px 0 0;">Please upload a licensed replacement photo (JPEG, PNG, WebP up to 5 MB) with photographer credit and license.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Featured Image Card & Downloads -->
-                <div class="wp-image-card">
-                  <div class="wp-image-preview-col">
-                    <!-- Clean No Image Placeholder State -->
-                    <div id="wp-feat-img-empty" class="wp-empty-photo-card hidden">
-                      <div class="empty-photo-icon">📷</div>
-                      <div class="empty-photo-title">No Image Uploaded</div>
-                      <div class="empty-photo-desc">Upload an authentic photo to complete your article and social post.</div>
-                      <button type="button" class="btn btn-primary btn-sm btn-upload-photo-cta" onclick="document.getElementById('input-upload-featured').click()">
-                        📸 Upload Photo
-                      </button>
+                    <div class="wp-field-wrap" style="margin-bottom:12px;">
+                      <label class="label-sm" for="wp-field-dek">Short Summary (Lead) <span class="req-star">*</span></label>
+                      <textarea id="wp-field-dek" class="wp-textarea" rows="2" placeholder="1–2 sentence summary..."></textarea>
                     </div>
 
-                    <!-- Uploaded Image Preview State -->
-                    <div id="wp-feat-img-wrap">
-                      <img id="wp-feat-img-preview" src="" alt="Featured Photo" class="wp-feat-img" />
-                      <div class="wp-image-downloads-row">
-                        <button type="button" class="btn-save-photos-direct" id="btn-save-photos-featured" title="Save directly to iPhone Photos / Android Gallery without iCloud or Google Drive">
-                          📲 Save to Photos
-                        </button>
-                        <button type="button" class="btn-download-img" data-format="jpeg" id="btn-dl-jpeg">📥 JPEG</button>
-                        <button type="button" class="btn-download-img" data-format="png" id="btn-dl-png">📥 PNG</button>
-                        <button type="button" class="btn-download-img" data-format="webp" id="btn-dl-webp">📥 WebP</button>
-                        <span class="hint-text" id="wp-img-size" style="font-size:0.7rem;margin-left:auto;">Max 5 MB</span>
+                    <!-- Compact 1-Row Taxonomy & Editorial Tone Bar -->
+                    <div class="art-compact-meta-bar">
+                      <div class="wp-field-wrap" style="margin:0;">
+                        <label class="label-sm" for="wp-field-lang">Language</label>
+                        <select id="wp-field-lang" class="wp-select">
+                          <option value="English">English</option>
+                          <option value="Finnish">Finnish (Suomi)</option>
+                        </select>
+                      </div>
+                      <div class="wp-field-wrap" style="margin:0;">
+                        <label class="label-sm" for="wp-field-section">Section</label>
+                        <select id="wp-field-section" class="wp-select"></select>
+                      </div>
+                      <div class="wp-field-wrap" style="margin:0;">
+                        <label class="label-sm" for="wp-field-category">Category</label>
+                        <select id="wp-field-category" class="wp-select"></select>
+                      </div>
+                      <div class="wp-field-wrap" style="margin:0;">
+                        <label class="label-sm" for="wp-field-writing-style">Editorial Tone</label>
+                        <select id="wp-field-writing-style" class="wp-select">
+                          <option value="guide">🧭 Local Guide</option>
+                          <option value="news">📰 News Wire</option>
+                        </select>
                       </div>
                     </div>
-                  </div>
 
-                  <div class="wp-image-meta-col">
-                    <!-- Featured image alt text * -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="wp-field-img-alt">Featured image alt text <span class="req-star">*</span></label>
-                        <button type="button" class="btn-copy-field" data-copy-target="wp-field-img-alt">📋 Copy</button>
-                      </div>
-                      <input type="text" id="wp-field-img-alt" class="wp-input" />
-                    </div>
-
-                    <!-- Image caption (optional) -->
-                    <div class="wp-field-wrap">
-                      <div class="wp-field-label-row">
-                        <label class="label-sm" for="wp-field-img-caption">Image caption (optional)</label>
-                        <button type="button" class="btn-copy-field" data-copy-target="wp-field-img-caption">📋 Copy</button>
-                      </div>
-                      <input type="text" id="wp-field-img-caption" class="wp-input" />
-                    </div>
-
-                    <!-- Photographer, source URL and licence -->
-                    <div class="wp-credit-box">
-                      <div class="wp-field-wrap" style="margin-bottom:8px;">
-                        <div class="wp-field-label-row">
-                          <label class="label-sm" for="wp-field-img-credit" style="color:#38BDF8;font-weight:700;">Photo Credit (Photo: ...) <span class="req-star">*</span></label>
-                          <button type="button" class="btn-copy-field" data-copy-target="wp-field-img-credit">📋 Copy</button>
+                    <!-- Article Content Toolbar + Body -->
+                    <div style="border-top:1px solid rgba(75,137,188,0.2);padding-top:14px;margin-top:14px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                        <div class="wp-view-tabs">
+                          <button type="button" class="wp-tab-btn active" id="wp-tab-visual">👁️ Visual</button>
+                          <button type="button" class="wp-tab-btn" id="wp-tab-code">💻 HTML</button>
                         </div>
-                        <input type="text" id="wp-field-img-credit" class="wp-input" placeholder="Photo: ILF" value="" />
+
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                          <button type="button" id="btn-insert-aff-tours" class="btn btn-ghost btn-xs" style="color:#38BDF8;border-color:rgba(56,189,248,0.35);" title="Insert Tours affiliate card">❄️ + Tour</button>
+                          <button type="button" id="btn-insert-aff-hotels" class="btn btn-ghost btn-xs" style="color:#38BDF8;border-color:rgba(56,189,248,0.35);" title="Insert Hotel affiliate card">🏨 + Hotel</button>
+                          <button type="button" id="btn-insert-aff-esim" class="btn btn-ghost btn-xs" style="color:#34D399;border-color:rgba(16,185,129,0.35);" title="Insert eSIM affiliate card">📶 + eSIM</button>
+                          <button type="button" id="btn-copy-visual-article" class="btn btn-ghost btn-xs" title="Copy formatted article for WordPress Visual Editor">📋 Copy Text</button>
+                          <button type="button" id="btn-copy-html-article" class="btn btn-ghost btn-xs" title="Copy raw HTML for WordPress Code Editor">📋 HTML</button>
+                        </div>
                       </div>
-                      <div class="wp-field-label-row">
-                        <span class="label-sm">Photographer, Source URL &amp; Licence</span>
-                        <button type="button" id="btn-copy-full-credit" class="btn-copy-field">📋 Copy image credit</button>
+
+                      <div id="wp-visual-view" class="wp-visual-view">
+                        <article class="article-preview-body" id="article-body-visual"></article>
                       </div>
-                      <div class="wp-credit-row">
-                        <span class="meta-label">Photographer / Agency:</span>
-                        <span id="wp-photo-photographer" class="meta-val">Jesse Peltola / Unsplash</span>
-                        <button type="button" class="btn-copy-field-mini" data-copy-target="wp-photo-photographer">Copy</button>
-                      </div>
-                      <div class="wp-credit-row">
-                        <span class="meta-label">Original Source URL:</span>
-                        <a id="wp-photo-source-link" href="#" target="_blank" rel="noopener" class="meta-link">—</a>
-                        <button type="button" class="btn-copy-field-mini" data-copy-target="wp-photo-source-link">Copy</button>
-                      </div>
-                      <div class="wp-credit-row">
-                        <span class="meta-label">Reuse Licence:</span>
-                        <span id="wp-photo-licence" class="meta-val">Unsplash Editorial Cleared</span>
-                        <button type="button" class="btn-copy-field-mini" data-copy-target="wp-photo-licence">Copy</button>
+
+                      <div id="wp-code-view" class="wp-code-view hidden">
+                        <textarea id="wp-code-textarea" class="wp-code-textarea" rows="16" spellcheck="false"></textarea>
                       </div>
                     </div>
-
-                    <!-- Upload Replacement Photo Trigger & AI Photo Generator -->
-                    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-                      <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                        <span>📷 Upload Replacement Photo (Max 5 MB)</span>
-                        <input type="file" id="input-upload-featured" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                      </label>
-                      <button type="button" id="btn-quick-ai-photo" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
-                        <span>🖼️ Browse Archive / Media</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
-              </div>
-              </div> <!-- /#sec-art-photos -->
 
-                    <!-- Compact Gemini Quick Edit Bar -->
-                    <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(6,18,36,0.75);border:1px solid rgba(56,189,248,0.28);display:flex;flex-direction:column;gap:8px;">
-                      <div style="font-size:0.72rem;font-weight:800;color:#38BDF8;text-transform:uppercase;letter-spacing:0.05em;">✨ Gemini Quick Edit ($0 Free Tier)</div>
-                      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                        <button type="button" onclick="document.getElementById('btn-claude-article')?.click()" class="btn btn-ghost btn-xs" style="flex:1;font-size:0.74rem;">✨ Rewrite Article</button>
-                        <button type="button" onclick="document.getElementById('btn-study-story-in-finnish')?.click()" class="btn btn-ghost btn-xs" style="flex:1;font-size:0.74rem;color:#6EE7B7;">🇫🇮 Study in Finnish</button>
+                <!-- RIGHT COLUMN: STICKY 3-TAB SIDEBAR (PHOTO | DETAILS & SEO | AI CO-PILOT) -->
+                <div class="article-inspector-column">
+                  <div class="studio-inspector-card">
+                    <div class="studio-inspector-tab-bar" role="tablist">
+                      <button type="button" class="btn-inspector-tab active" data-art-tab="photo">📸 Photo</button>
+                      <button type="button" class="btn-inspector-tab" data-art-tab="seo">🔍 Details &amp; SEO</button>
+                      <button type="button" class="btn-inspector-tab" data-art-tab="ai">✨ AI Co-Pilot</button>
+                    </div>
+
+                    <!-- TAB 1: PHOTO, ALT TEXT & CREDIT -->
+                    <div id="art-pane-photo" class="inspector-pane active">
+                      <div id="sec-art-photos" class="article-section-anchor">
+                        <div id="wp-photo-readiness-pill" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;border-radius:10px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);color:#6EE7B7;font-size:0.76rem;font-weight:700;margin-bottom:10px;">
+                          <span id="wp-photo-readiness-text">📷 Checking photo, alt text &amp; credit...</span>
+                          <span id="feat-img-status-badge" class="badge badge-check" style="font-size:0.65rem;padding:2px 6px;">Cleared</span>
+                        </div>
+
+                        <div id="wp-photo-flag-banner" class="wp-flag-banner hidden" style="margin-bottom:10px;">
+                          <strong>⚠️ Missing verified photo</strong> — upload a replacement with credit below.
+                        </div>
+
+                        <div class="wp-image-card">
+                          <div class="wp-image-preview-col">
+                            <div id="wp-feat-img-empty" class="wp-empty-photo-card hidden">
+                              <div class="empty-photo-icon">📷</div>
+                              <div class="empty-photo-title">No Image Uploaded</div>
+                              <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('input-upload-featured').click()">📸 Upload Photo</button>
+                            </div>
+
+                            <div id="wp-feat-img-wrap">
+                              <img id="wp-feat-img-preview" src="" alt="Featured Photo" class="wp-feat-img" style="border-radius:10px;margin-bottom:8px;" />
+                              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                                <label class="btn btn-primary btn-xs" style="cursor:pointer;background:#029CD8;border:none;color:#fff;font-weight:700;padding:6px 10px;">
+                                  <span>📷 Replace</span>
+                                  <input type="file" id="input-upload-featured" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                                </label>
+                                <button type="button" id="btn-quick-ai-photo" class="btn btn-ghost btn-xs" style="padding:6px 9px;">🖼️ Archive</button>
+                                <button type="button" class="btn btn-ghost btn-xs" id="btn-save-photos-featured" style="padding:6px 9px;">📲 Save</button>
+                                <button type="button" class="btn btn-ghost btn-xs btn-download-img" data-format="jpeg" id="btn-dl-jpeg" style="padding:6px 9px;">JPG</button>
+                                <button type="button" class="btn btn-ghost btn-xs btn-download-img" data-format="png" id="btn-dl-png" style="padding:6px 9px;">PNG</button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="wp-image-meta-col">
+                            <div class="wp-field-wrap">
+                              <label class="label-sm" for="wp-field-img-alt">Alt Text <span class="req-star">*</span></label>
+                              <input type="text" id="wp-field-img-alt" class="wp-input" placeholder="Describe photo for SEO &amp; screen readers..." />
+                            </div>
+
+                            <div class="wp-field-wrap">
+                              <label class="label-sm" for="wp-field-img-credit" style="color:#38BDF8;font-weight:700;">Photo Credit <span class="req-star">*</span></label>
+                              <input type="text" id="wp-field-img-credit" class="wp-input" placeholder="Photo: Photographer / Source" value="" />
+                            </div>
+
+                            <details class="inspector-drawer" style="margin-top:6px;">
+                              <summary style="padding:8px 10px;font-size:0.76rem;">
+                                <span>Caption &amp; License Info</span>
+                                <span style="color:#94A3B8;">▾</span>
+                              </summary>
+                              <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:8px;">
+                                <div class="wp-field-wrap" style="margin:0;">
+                                  <label class="label-sm" for="wp-field-img-caption">Image Caption (Optional)</label>
+                                  <input type="text" id="wp-field-img-caption" class="wp-input" />
+                                </div>
+                                <div style="font-size:0.74rem;color:#CBD5E1;display:flex;flex-direction:column;gap:4px;">
+                                  <div><span style="color:#94A3B8;">Photographer:</span> <span id="wp-photo-photographer">—</span></div>
+                                  <div><span style="color:#94A3B8;">Source:</span> <a id="wp-photo-source-link" href="#" target="_blank" rel="noopener" class="meta-link">—</a></div>
+                                  <div><span style="color:#94A3B8;">Licence:</span> <span id="wp-photo-licence">—</span></div>
+                                  <button type="button" id="btn-copy-full-credit" class="btn btn-ghost btn-xs" style="align-self:flex-start;margin-top:4px;">📋 Copy Credit</button>
+                                </div>
+                              </div>
+                            </details>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <!-- Anchored Primary Actions -->
-                    <div class="inspector-sticky-save" style="margin-top:14px;border-radius:10px;flex-wrap:wrap;justify-content:space-between;">
-                      <button type="button" onclick="document.getElementById('btn-save-article-edits')?.click()" class="btn btn-ghost btn-sm" style="font-weight:700;">💾 Save Edits</button>
-                      <button type="button" onclick="document.getElementById('btn-push-wordpress-draft')?.click()" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #003580 0%, #029CD8 100%);color:#fff;font-weight:800;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;box-shadow:0 4px 14px rgba(2,156,216,0.35);">🚀 Push Draft to WordPress</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    <!-- TAB 2: DETAILS, SEO, GALLERY & SCHEDULE -->
+                    <div id="art-pane-seo" class="inspector-pane">
+                      <div id="sec-art-details" class="article-section-anchor" style="display:flex;flex-direction:column;gap:10px;">
+                        <!-- SEO & Tags -->
+                        <div class="wp-field-wrap" style="margin:0;">
+                          <label class="label-sm" for="wp-field-seo-title">SEO Title <span id="wp-seo-title-count" class="hint-inline">(0/60)</span></label>
+                          <input type="text" id="wp-field-seo-title" class="wp-input" maxlength="60" placeholder="Optional Google title override..." />
+                        </div>
 
-              <!-- CLOSED ACCORDION: MORE ARTICLE OPTIONS -->
-              <details id="more-article-options-drawer" class="inspector-drawer" style="margin-top:16px;">
-                <summary style="padding:12px 16px;font-size:0.86rem;">
-                  <span>⚙️ More Article Options (Monetization, Extra Gallery, Location/Events, SEO, Tags, Notes, AI Revisions &amp; Schedule)</span>
-                  <span style="font-size:0.74rem;color:#94A3B8;font-weight:500;">Click to expand ▾</span>
-                </summary>
-                <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:16px;">
-                  <!-- Monetization Quick Inserters -->
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 8px;padding:8px 12px;background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:8px;">
-                  <span style="font-size:0.75rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.5px;">💰 Monetize:</span>
-                  <button type="button" id="btn-insert-aff-tours" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #38BDF8;color:#38BDF8;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Lapland &amp; Helsinki Tours affiliate card">
-                    ❄️ + Lapland / Helsinki Tour
-                  </button>
-                  <button type="button" id="btn-insert-aff-hotels" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #38BDF8;color:#38BDF8;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Hotel &amp; Glass Igloo booking card">
-                    🏨 + Hotel / Glass Igloo
-                  </button>
-                  <button type="button" id="btn-insert-aff-esim" class="btn btn-ghost btn-sm" style="font-size:0.75rem;background:#082347;border:1px solid #10B981;color:#34D399;padding:4px 10px;cursor:pointer;border-radius:6px;" title="Insert Tourist eSIM card">
-                    📶 + Travel eSIM Data
-                  </button>
-                </div>
+                        <div class="wp-field-wrap" style="margin:0;">
+                          <label class="label-sm" for="wp-field-meta-desc">Meta Description <span id="wp-meta-desc-count" class="hint-inline">(0/155)</span></label>
+                          <textarea id="wp-field-meta-desc" class="wp-textarea" rows="2" maxlength="155" placeholder="Optional Google snippet override..."></textarea>
+                        </div>
 
-                  <!-- ANCHOR 3: WORDPRESS DETAILS & META (Section 4) -->
-              <div id="sec-art-details" class="article-section-anchor">
-              <!-- SECTION 4: REMAINING WORDPRESS FIELDS (Exact Order) -->
-              <div class="wp-section-block">
-                <div class="wp-section-title">
-                  <span class="wp-step-num">4</span>
-                  <strong>Remaining Fields (In Exact Order)</strong>
-                </div>
+                        <div class="wp-field-wrap" style="margin:0;">
+                          <label class="label-sm" for="wp-field-tags">Tags (comma-separated)</label>
+                          <input type="text" id="wp-field-tags" class="wp-input" placeholder="finland, helsinki, travel..." />
+                        </div>
 
-                <!-- Location & Events Rules Cheat Sheet -->
-                <details class="location-rules-accordion" style="background:#0F172A;border:1px solid #1E293B;border-left:4px solid #38BDF8;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
-                  <summary style="font-size:0.84rem;font-weight:700;color:#38BDF8;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
-                    <span>💡 Location &amp; Event Rules (Cheat Sheet)</span>
-                    <span style="font-size:0.75rem;color:#94A3B8;font-weight:normal;">Tap to expand ▾</span>
-                  </summary>
-                  <div style="font-size:0.78rem;color:#94A3B8;margin-top:10px;line-height:1.55;">
-                    • <strong>📰 General News &amp; National Stories:</strong> Leave City, Address, and Event <strong>completely empty</strong>.<br/>
-                    • <strong>🏙️ City Guides:</strong> Only type the City name (e.g. <em>Helsinki</em> or <em>Tampere</em>). Leave Address empty.<br/>
-                    • <strong>🏛️ Venue Reviews:</strong> Only type street address if reviewing an exact restaurant, sauna, or museum.<br/>
-                    • <strong>🎟️ Events Section:</strong> Only fill Event date &amp; venue if writing about an upcoming concert or festival.
-                    <div style="margin-top:10px;">
-                      <button type="button" id="btn-copy-ai-prompt" class="btn btn-sm" style="background:#003882;color:#ffffff;border:none;padding:6px 12px;font-size:0.75rem;font-weight:700;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" title="Copy editorial prompt for Google Gemini">
-                        <span>✨ Copy Prompt for Google Gemini</span>
-                      </button>
-                    </div>
-                  </div>
-                </details>
+                        <!-- Location & Event Fields -->
+                        <div style="border-top:1px solid rgba(75,137,188,0.2);padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                          <div class="wp-field-wrap" style="margin:0;">
+                            <label class="label-sm" for="wp-field-region">Region</label>
+                            <input type="text" id="wp-field-region" class="wp-input" placeholder="Finland" />
+                          </div>
+                          <div class="wp-field-wrap" style="margin:0;">
+                            <label class="label-sm" for="wp-field-city">City (if local)</label>
+                            <input type="text" id="wp-field-city" class="wp-input" placeholder="Leave blank for national" />
+                          </div>
+                          <div class="wp-field-wrap" style="margin:0;">
+                            <label class="label-sm" for="wp-field-address">Exact Address</label>
+                            <input type="text" id="wp-field-address" class="wp-input" placeholder="Venue reviews only" />
+                          </div>
+                          <div class="wp-field-wrap" style="margin:0;">
+                            <label class="label-sm" for="wp-field-event">Event Date &amp; Venue</label>
+                            <input type="text" id="wp-field-event" class="wp-input" placeholder="Events section only" />
+                          </div>
+                        </div>
 
-                <!-- Grid 1: Region & City (2-Column Responsive) -->
-                <div class="wp-field-grid-2">
-                  <!-- 1. Region -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <div class="wp-label-title-group">
-                        <label class="label-sm" for="wp-field-region">Region</label>
-                        <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Default: Finland</span>
-                      </div>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-region">📋 Copy</button>
-                    </div>
-                    <input type="text" id="wp-field-region" class="wp-input" placeholder="e.g. Finland (Default) or Lapland, Uusimaa" />
-                  </div>
+                        <!-- Extra Gallery Photos -->
+                        <div id="article-additional-images-section" style="background:#061224;border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:10px;">
+                          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+                            <span style="font-size:0.78rem;font-weight:700;color:#38BDF8;">📸 Extra Gallery (<span id="article-additional-count">0</span>)</span>
+                            <label class="btn btn-primary btn-xs" style="cursor:pointer;background:#0284c7;color:#fff;border:none;padding:5px 10px;font-weight:700;">
+                              <span>+ Add Photos</span>
+                              <input type="file" id="input-upload-additional-multi" multiple accept="image/jpeg,image/png,image/webp,image/avif" style="display:none;" />
+                            </label>
+                          </div>
+                          <div id="article-img-upload-spinner" class="hidden" style="margin-bottom:8px;font-size:0.75rem;color:#38bdf8;">⏳ <span id="article-img-upload-text">Uploading...</span></div>
+                          <div id="article-additional-images-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+                          <div id="article-additional-empty" style="font-size:0.74rem;color:#94a3b8;text-align:center;padding:8px;">No extra gallery photos yet.</div>
+                        </div>
 
-                  <!-- 2. City / Location (required for location-specific articles) -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <div class="wp-label-title-group">
-                        <label class="label-sm" for="wp-field-city">City / Location <span class="hint-inline">(for city stories)</span></label>
-                        <span class="badge" style="background:#1e293b;color:#38bdf8;font-size:0.7rem;padding:2px 6px;">Only for city stories (else blank)</span>
-                      </div>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-city">📋 Copy</button>
-                    </div>
-                    <input type="text" id="wp-field-city" class="wp-input" placeholder="Leave empty for national news / general guides" />
-                  </div>
-                </div>
+                        <!-- Publishing Schedule -->
+                        <div style="background:#061224;border:1px solid rgba(75,137,188,0.25);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+                          <strong style="font-size:0.78rem;color:#FFFFFF;">📅 Schedule (Helsinki Time)</strong>
+                          <div class="wp-field-wrap" style="margin:0;">
+                            <label class="label-sm" for="sched-article-dt">Article Slot (WP)</label>
+                            <input id="sched-article-dt" type="datetime-local" class="wp-input" />
+                          </div>
+                          <div class="wp-field-wrap" style="margin:0;">
+                            <label class="label-sm" for="sched-reel-dt">Social Post Slot</label>
+                            <input id="sched-reel-dt" type="datetime-local" class="wp-input" />
+                          </div>
+                          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <button id="btn-save-schedule" type="button" class="btn btn-secondary btn-xs" style="padding:6px 12px;">📅 Save Schedule</button>
+                            <span id="schedule-msg" class="hint-text" style="font-size:0.72rem;margin:0;"></span>
+                          </div>
+                        </div>
 
-                <!-- Grid 2: Exact Address & Event Date (2-Column Responsive) -->
-                <div class="wp-field-grid-2">
-                  <!-- 3. Exact place or address, where applicable -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <div class="wp-label-title-group">
-                        <label class="label-sm" for="wp-field-address">Exact Place / Address</label>
-                        <span class="badge" style="background:#1e293b;color:#94a3b8;font-size:0.7rem;padding:2px 6px;">Leave empty for 95% of articles</span>
-                      </div>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-address">📋 Copy</button>
-                    </div>
-                    <input type="text" id="wp-field-address" class="wp-input" placeholder="Leave empty unless reviewing a specific restaurant or museum" />
-                  </div>
-
-                  <!-- 4. Event date, time and venue (for Events) -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <div class="wp-label-title-group">
-                        <label class="label-sm" for="wp-field-event">Event Date, Time &amp; Venue</label>
-                        <span class="badge" style="background:#1e293b;color:#f59e0b;font-size:0.7rem;padding:2px 6px;">Only for 'Events' section</span>
-                      </div>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-event">📋 Copy</button>
-                    </div>
-                    <input type="text" id="wp-field-event" class="wp-input" placeholder="Leave empty unless writing about a scheduled festival or concert" />
-                  </div>
-                </div>
-
-                <!-- 5. Additional Article Images (Multiple Photos Supported) -->
-                <div class="wp-field-wrap" id="article-additional-images-section" style="background:rgba(15, 23, 42, 0.65);border:1px solid rgba(56, 189, 248, 0.2);border-radius:10px;padding:14px;margin:16px 0;">
-                  <div class="additional-photos-header-row" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                    <div>
-                      <label class="label-sm" style="font-weight:700;color:#38bdf8;font-size:0.86rem;display:flex;align-items:center;gap:6px;margin:0;">
-                        <span>📸</span> Additional Article Images (<span id="article-additional-count">0</span>)
-                      </label>
-                      <div class="hint-text" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">
-                        Upload multiple photos for galleries or inline story visuals. Supports JPG, PNG, WebP (Max 10 MB each).
+                        <!-- Sources, Links & Private Notes -->
+                        <details class="inspector-drawer">
+                          <summary style="padding:8px 10px;font-size:0.76rem;">
+                            <span>Sources, Search Phrase &amp; Notes</span>
+                            <span style="color:#94A3B8;">▾</span>
+                          </summary>
+                          <div class="inspector-drawer-body" style="display:flex;flex-direction:column;gap:8px;">
+                            <div id="wp-recommendation-box" style="font-size:0.75rem;color:#CBD5E1;">
+                              <div><strong>Recommended:</strong> <span id="wp-rec-taxonomy">—</span></div>
+                              <div id="wp-rec-reason" class="hint-text" style="margin:2px 0;"></div>
+                              <div style="margin-top:4px;"><strong>Search:</strong> <code id="wp-search-phrase">—</code></div>
+                              <div id="wp-search-integration" class="hint-text" style="margin:2px 0;"></div>
+                            </div>
+                            <div id="wp-prior-coverage-detail" style="font-size:0.74rem;color:#94A3B8;"></div>
+                            <div>
+                              <div style="display:flex;justify-content:space-between;align-items:center;"><span class="label-sm">Sources</span><button type="button" class="btn-copy-field" id="btn-copy-all-sources">Copy</button></div>
+                              <div id="wp-source-links-list" class="wp-sources-list"></div>
+                            </div>
+                            <div>
+                              <div style="display:flex;justify-content:space-between;align-items:center;"><span class="label-sm">Internal Links</span><button type="button" class="btn-copy-field" id="btn-copy-internal-links">Copy</button></div>
+                              <div id="wp-internal-links-list" class="wp-sources-list"></div>
+                            </div>
+                            <div class="wp-field-wrap" style="margin:0;">
+                              <label class="label-sm" for="wp-field-private-notes" style="color:#FCD34D;">🔒 Private Editor Notes</label>
+                              <textarea id="wp-field-private-notes" class="wp-textarea" rows="2"></textarea>
+                            </div>
+                            <button type="button" id="btn-copy-ai-prompt" class="btn btn-ghost btn-xs" style="align-self:flex-start;">✨ Copy Editorial Prompt</button>
+                          </div>
+                        </details>
                       </div>
                     </div>
-                    <div class="additional-photos-btn-wrap" style="display:flex;gap:6px;align-items:center;width:auto;max-width:100%;">
-                      <label class="btn btn-primary btn-sm btn-upload-multi-touch" style="cursor:pointer;padding:8px 18px;font-size:0.82rem;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#0284c7;color:#fff;border-radius:6px;font-weight:700;min-height:38px;white-space:nowrap;">
-                        <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        <span style="white-space:nowrap;">+ Upload Photos</span>
-                        <input type="file" id="input-upload-additional-multi" multiple accept="image/jpeg,image/png,image/webp,image/avif" style="display:none;" />
-                      </label>
+
+                    <!-- TAB 3: AI CO-PILOT & REVISION DESK -->
+                    <div id="art-pane-ai" class="inspector-pane">
+                      <div id="sec-art-revisions" class="article-section-anchor" style="display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                          <button type="button" onclick="document.getElementById('btn-claude-article')?.click()" class="btn btn-primary btn-xs" style="flex:1;background:#0284c7;border:none;color:#fff;font-weight:700;padding:7px 10px;">✨ Rewrite with Gemini</button>
+                          <button type="button" id="btn-study-story-in-finnish" class="btn btn-ghost btn-xs" style="flex:1;color:#6EE7B7;border-color:rgba(16,185,129,0.4);font-weight:700;padding:7px 10px;">🇫🇮 Study in Finnish</button>
+                        </div>
+
+                        <!-- Target Checkboxes -->
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#061224;border:1px solid rgba(75,137,188,0.25);border-radius:8px;font-size:0.76rem;color:#E2E8F0;">
+                          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="rev-target-article" checked /> 📝 Article</label>
+                          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="rev-target-post" checked /> 📱 Social Post</label>
+                          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="rev-target-reel" /> 🎬 Reel</label>
+                        </div>
+
+                        <!-- Quick Prompt Chips -->
+                        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                          <button type="button" class="btn btn-ghost btn-xs chip-btn" data-comment="Tighten article headline for high mobile readability" style="font-size:0.7rem;padding:4px 8px;">📰 Tighten headline</button>
+                          <button type="button" class="btn btn-ghost btn-xs chip-btn" data-comment="Make the tone punchier and more journalistic with a stronger opening hook" style="font-size:0.7rem;padding:4px 8px;">⚡ Punchier tone</button>
+                          <button type="button" class="btn btn-ghost btn-xs chip-btn" data-comment="Add more background context, facts, and official statements into the body" style="font-size:0.7rem;padding:4px 8px;">✍️ Add context</button>
+                        </div>
+
+                        <form id="comment-form" class="stack-form" style="gap:8px;">
+                          <div class="voice-bar" data-voice-for="comment-input" style="background:#061224;border:1px solid rgba(75,137,188,0.25);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-ghost btn-xs btn-rec" style="color:#38bdf8;">🎙️ Voice Note</button>
+                            <button type="button" class="btn btn-ghost btn-xs btn-sim-voice" style="display:none;">Sample</button>
+                            <button type="button" class="btn btn-ghost btn-xs btn-replay hidden" style="color:#10b981;">▶ Replay</button>
+                            <button type="button" class="btn btn-ghost btn-xs btn-discard hidden" style="color:#ef4444;">✕</button>
+                            <span class="voice-status hint-text" style="font-size:0.72rem;color:#38bdf8;margin:0;"></span>
+                            <audio class="voice-audio hidden"></audio>
+                          </div>
+
+                          <textarea id="comment-input" rows="3" class="wp-textarea" placeholder="Ask AI in plain English to update anything (headline, tone, photo credit, facts)..."></textarea>
+
+                          <details class="inspector-drawer">
+                            <summary style="padding:6px 10px;font-size:0.74rem;">
+                              <span>🎬 Attach Clip for Reel Revision (Optional)</span>
+                              <span>▾</span>
+                            </summary>
+                            <div class="inspector-drawer-body">
+                              <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" style="font-size:12px;width:100%;" />
+                              <button type="button" id="btn-feedback-clear-clip" class="btn btn-ghost btn-xs hidden" style="color:#ef4444;margin-top:4px;">✕ Remove</button>
+                              <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+                                <video id="feedback-clip-thumb" style="max-height:44px;max-width:70px;border-radius:4px;" muted playsinline></video>
+                                <img id="feedback-img-thumb" style="max-height:44px;max-width:70px;border-radius:4px;display:none;" />
+                                <div style="min-width:0;flex:1;font-size:0.74rem;">
+                                  <div id="feedback-clip-name" style="color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">clip.mp4</div>
+                                  <div id="feedback-clip-meta" style="color:#94a3b8;font-size:0.68rem;">Attached</div>
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+
+                          <button type="submit" id="btn-submit-comment" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;font-weight:700;">
+                            ✨ Submit &amp; Generate Revision
+                          </button>
+                          <div id="feedback-submit-status" class="hint-text" style="font-size:0.76rem;margin:0;"></div>
+                        </form>
+
+                        <details class="inspector-drawer">
+                          <summary style="padding:8px 10px;font-size:0.75rem;">
+                            <span>🕒 Revision History</span>
+                            <span>▾</span>
+                          </summary>
+                          <div class="inspector-drawer-body">
+                            <div id="comment-history" class="comment-history"></div>
+                          </div>
+                        </details>
+                      </div>
                     </div>
                   </div>
-
-                  <!-- Uploading progress indicator -->
-                  <div id="article-img-upload-spinner" class="hidden" style="margin-bottom:12px;padding:8px 12px;background:#0b1329;border:1px solid #1e3a66;border-radius:6px;font-size:0.78rem;color:#38bdf8;display:flex;align-items:center;gap:8px;">
-                    <div style="font-size:1.1rem;animation:spin 1s linear infinite;">⏳</div>
-                    <span id="article-img-upload-text">Uploading image(s)...</span>
-                  </div>
-
-                  <!-- Container for multiple image cards -->
-                  <div id="article-additional-images-list" style="display:flex;flex-direction:column;gap:12px;">
-                    <!-- Populated dynamically -->
-                  </div>
-
-                  <!-- Empty state when no extra images -->
-                  <div id="article-additional-empty" style="text-align:center;padding:18px 12px;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;color:#94a3b8;font-size:0.78rem;">
-                    No additional images uploaded yet. Click <strong>"+ Upload Photos"</strong> above or drag &amp; drop photos here to add gallery images to this article.
-                  </div>
-
-                  <!-- Legacy hidden inputs for compatibility -->
-                  <input type="file" id="input-upload-additional" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                  <div id="additional-image-preview-wrap" class="hidden"><img id="wp-add-img-preview" src="" style="display:none;" /></div>
-                  <input type="hidden" id="wp-field-add-alt" />
-                  <input type="hidden" id="wp-field-add-caption" />
-                  <input type="hidden" id="wp-field-add-credit" />
-                </div>
-
-                <!-- Grid 3: Sources & Internal Links (2-Column Responsive) -->
-                <div class="wp-field-grid-2">
-                  <!-- 9. Source links (for externally sourced reporting) -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm">Source links (externally sourced)</label>
-                      <button type="button" class="btn-copy-field" id="btn-copy-all-sources">📋 Copy sources</button>
-                    </div>
-                    <div id="wp-source-links-list" class="wp-sources-list"></div>
-                  </div>
-
-                  <!-- 10. Related article URLs / internal links -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm">Related internal links</label>
-                      <button type="button" class="btn-copy-field" id="btn-copy-internal-links">📋 Copy links</button>
-                    </div>
-                    <div id="wp-internal-links-list" class="wp-sources-list"></div>
-                  </div>
-                </div>
-
-                <!-- Grid 4: SEO Title & Meta Description (2-Column Responsive) -->
-                <div class="wp-field-grid-2">
-                  <!-- 13. SEO title (optional override) -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-seo-title">SEO title (override) <span id="wp-seo-title-count" class="hint-inline">(0/60)</span></label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-seo-title">📋 Copy</button>
-                    </div>
-                    <input type="text" id="wp-field-seo-title" class="wp-input" maxlength="60" />
-                  </div>
-
-                  <!-- 14. Meta description (optional override) -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-meta-desc">Meta description (override) <span id="wp-meta-desc-count" class="hint-inline">(0/155)</span></label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-meta-desc">📋 Copy</button>
-                    </div>
-                    <textarea id="wp-field-meta-desc" class="wp-textarea" rows="2" maxlength="155"></textarea>
-                  </div>
-                </div>
-
-                <!-- Grid 5: Tags & Private Notes (2-Column Responsive) -->
-                <div class="wp-field-grid-2">
-                  <!-- 12. Tags, separated by commas (optional) -->
-                  <div class="wp-field-wrap">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-tags">Tags, separated by commas (optional)</label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-tags">📋 Copy</button>
-                    </div>
-                    <input type="text" id="wp-field-tags" class="wp-input" />
-                  </div>
-
-                  <!-- 11. Private editorial verification notes (Editor/Admin only) -->
-                  <div class="wp-field-wrap wp-private-notes-box">
-                    <div class="wp-field-label-row">
-                      <label class="label-sm" for="wp-field-private-notes" style="color:#FCD34D;">
-                        🔒 Private notes <span class="hint-inline" style="color:#FBBF24;">(Editor only)</span>
-                      </label>
-                      <button type="button" class="btn-copy-field" data-copy-target="wp-field-private-notes">📋 Copy</button>
-                    </div>
-                    <textarea id="wp-field-private-notes" class="wp-textarea" rows="2" style="background:#082347;border-color:rgba(75, 137, 188, 0.28);color:#FFFFFF;font-size:0.8rem;"></textarea>
-                  </div>
-                </div>
-              </div>
-              </div> <!-- /#sec-art-details -->
-                  <!-- ANCHOR 4: VIRAL SOCIAL CAPTION (Section 5) -->
-              <div id="sec-art-social" class="article-section-anchor">
-              <!-- SECTION 5: VIRAL SOCIAL CAPTION (Instagram, TikTok, Facebook) -->
-              <div class="wp-section-block" id="social-caption-section">
-                <div class="wp-section-title">
-                  <span class="wp-step-num">5</span>
-                  <strong>Viral Social Caption (Instagram Reels, TikTok &amp; Facebook)</strong>
-                  <div style="margin-left:auto;display:flex;gap:8px;">
-                    <button type="button" id="btn-generate-social-caption" class="btn btn-ghost btn-sm" style="border:1px solid rgba(75, 137, 188, 0.28);color:#38bdf8;font-size:0.75rem;padding:4px 10px;cursor:pointer;">
-                      ✨ Generate Viral Caption
-                    </button>
-                    <button type="button" id="btn-copy-social-caption" class="btn btn-primary btn-sm" style="background:#0284c7;color:#fff;border:none;font-size:0.75rem;font-weight:700;padding:4px 12px;cursor:pointer;">
-                      📋 Copy Caption
-                    </button>
-                  </div>
-                </div>
-                <div class="wp-field-wrap">
-                  <textarea id="social-caption-textarea" class="wp-textarea" rows="6" placeholder="Click 'Generate Viral Caption' to create a high-converting Hook, Story, Bullets, and Call to Action..." style="font-family:inherit;font-size:0.86rem;line-height:1.5;"></textarea>
-                </div>
-              </div>
-              </div> <!-- /#sec-art-social -->
-                  <section id="sec-art-revisions" class="card feedback-copilot-card article-section-anchor">
-            <div class="panel-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(56,189,248,0.35);flex-shrink:0;">
-                  <svg class="lucide" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                </div>
-                <div>
-                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <h2 class="panel-title" style="margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-0.01em;">Editorial AI Co-Pilot &amp; Revision Desk</h2>
-                    <span class="badge" style="background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;">Google Gemini Free Tier</span>
-                  </div>
-                  <p class="hint-text" style="margin:3px 0 0;font-size:0.78rem;color:#94a3b8;line-height:1.4;">
-                    Instruct the AI in plain English to revise any part of this story — photo credits, captions, headline, tone, paragraphs, category, or city.
-                  </p>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span class="badge" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;">
-                  <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
-                  <span>Instant Multi-Field Sync</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Target Selection Checkboxes -->
-            <div class="revision-target-selector" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-              <div style="font-size:0.8rem;font-weight:700;color:#FFFFFF;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                <span>🎯 What should be updated in the new revision? (Tick all that apply):</span>
-                <span class="hint-text" style="font-size:0.75rem;font-weight:400;color:#94a3b8;">Selected components will be synchronized into the new version</span>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;">
-                <label class="rev-target-pill active" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #38bdf8;border-radius:8px;background:rgba(56,189,248,0.1);cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;transition:all 0.15s ease;">
-                  <input type="checkbox" id="rev-target-article" checked style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
-                  <div>
-                    <div style="font-weight:700;color:#FFFFFF;">📝 WordPress Article</div>
-                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">Headline, Body, Photo Credits &amp; Meta</div>
-                  </div>
-                </label>
-                <label class="rev-target-pill active" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #38bdf8;border-radius:8px;background:rgba(56,189,248,0.1);cursor:pointer;font-size:0.83rem;font-weight:600;color:#FFFFFF;user-select:none;transition:all 0.15s ease;">
-                  <input type="checkbox" id="rev-target-post" checked style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
-                  <div>
-                    <div style="font-weight:700;color:#FFFFFF;">📱 Static Social Post</div>
-                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">1080×1350 Graphic, Slide Text &amp; Caption</div>
-                  </div>
-                </label>
-                <label class="rev-target-pill" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid rgba(75, 137, 188, 0.28);border-radius:8px;background:#061224;cursor:pointer;font-size:0.83rem;font-weight:600;color:#B8C4D4;user-select:none;transition:all 0.15s ease;">
-                  <input type="checkbox" id="rev-target-reel" style="cursor:pointer;width:17px;height:17px;accent-color:#38bdf8;" />
-                  <div>
-                    <div style="font-weight:700;color:#FFFFFF;">🎬 Reel Video</div>
-                    <div style="font-size:0.7rem;color:#94a3b8;font-weight:400;">Script, Voiceover Narration &amp; Cuts</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Instant Editorial Prompt Chips -->
-            <div class="quick-chips" style="margin-bottom:12px;">
-              <span class="label-sm" style="color:#94a3b8;font-weight:700;margin-bottom:4px;display:block;">💡 Instant Editorial Prompts (Click to insert &amp; adapt):</span>
-              <div style="display:flex;flex-wrap:wrap;gap:7px;">
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Change image credit to Photo: [Photographer / Source / License]">
-                  🏷️ “Change image credit to Photo: [Photographer / Agency]”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Update photo caption to highlight [Specific story detail]">
-                  📸 “Update photo caption to highlight [Key Detail]”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Tighten article headline for high mobile readability">
-                  📰 “Tighten headline for mobile readers”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Make the tone punchier and more journalistic with a stronger opening hook">
-                  ⚡ “Make tone punchier &amp; journalistic”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Set location to Helsinki and add local Finnish context">
-                  📍 “Set location to Helsinki &amp; add context”
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm chip-btn" data-comment="Add more background context, facts, and official statements into the body">
-                  ✍️ “Add background facts &amp; context”
-                </button>
-              </div>
-            </div>
-
-            <form id="comment-form" class="stack-form">
-              <!-- Voice Note Bar -->
-              <div class="voice-bar" data-voice-for="comment-input" style="background:#061224;border:1px solid rgba(75, 137, 188, 0.28);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-ghost btn-sm btn-rec" style="border:1px solid rgba(56,189,248,0.3);background:rgba(56,189,248,0.1);color:#38bdf8;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                  <span>Record Voice Note</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-sim-voice" style="border:1px solid rgba(75, 137, 188, 0.28);color:#B8C4D4;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"></path></svg>
-                  <span>Sample Voice Note</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-replay hidden" style="border:1px solid #10b981;color:#10b981;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  <span>Replay</span>
-                </button>
-                <button type="button" class="btn btn-ghost btn-sm btn-discard hidden" style="border:1px solid #ef4444;color:#ef4444;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  <span>Discard</span>
-                </button>
-                <span class="voice-status hint-text" style="font-size:0.75rem;color:#38bdf8;"></span>
-                <audio class="voice-audio hidden"></audio>
-              </div>
-
-              <!-- Main Feedback Input Box -->
-              <div style="position:relative;">
-                <textarea
-                  id="comment-input"
-                  rows="3"
-                  style="background:#061224;border:1.5px solid rgba(75, 137, 188, 0.28);border-radius:8px;padding:12px 14px;color:#FFFFFF;font-size:0.88rem;line-height:1.5;box-shadow:inset 0 2px 4px rgba(0,0,0,0.4);transition:border-color 0.15s ease;"
-                  placeholder="Ask for any change in plain English (e.g. “change image credit to Photo: Aleksi Stenberg / CC BY 2.5 and tighten the headline for mobile readers”) or record a voice note above…"
-                ></textarea>
-              </div>
-
-              <!-- Clip / Video Upload Zone for Reel Feedback -->
-              <div class="feedback-clip-upload-zone" style="margin-top:4px;background:#061224;border:1px dashed rgba(75, 137, 188, 0.28);border-radius:8px;padding:12px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <label style="font-weight:600;font-size:0.82rem;color:#FFFFFF;display:flex;align-items:center;gap:6px;margin:0;">
-                    <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
-                    <span>🎬 Attach Custom Video Clip or Photo for Reel Revision (Optional)</span>
-                  </label>
-                  <span class="hint-text" style="font-size:0.72rem;color:#94a3b8;">MP4, MOV, WebM, JPG (Max 100 MB)</span>
-                </div>
-
-                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                  <input type="file" id="feedback-clip-file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png" class="form-control" style="font-size:12px;padding:6px;flex:1;background:#082347;border:1px solid rgba(75, 137, 188, 0.28);color:#FFFFFF;" />
-                  <button type="button" id="btn-feedback-clear-clip" class="btn btn-ghost btn-sm hidden" style="color:#ef4444;white-space:nowrap;">✕ Remove Clip</button>
-                </div>
-
-                <!-- Live Preview Pill when Clip is Chosen -->
-                <div id="feedback-clip-preview-wrap" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:12px;background:#082347;padding:8px 12px;border-radius:6px;border:1px solid rgba(75, 137, 188, 0.28);">
-                  <video id="feedback-clip-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;background:#000;" muted playsinline></video>
-                  <img id="feedback-img-thumb" style="max-height:56px;max-width:90px;border-radius:4px;object-fit:cover;display:none;" />
-                  <div style="flex:1;min-width:0;">
-                    <div id="feedback-clip-name" style="font-weight:600;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#FFFFFF;">video_clip.mp4</div>
-                    <div id="feedback-clip-meta" style="font-size:0.72rem;color:#94a3b8;">Ready to attach • Will be stitched into new Reel revision</div>
-                  </div>
-                  <span class="badge badge-success" style="font-size:0.7rem;white-space:nowrap;">Attached</span>
                 </div>
               </div>
 
-              <div class="comment-actions" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:6px;">
-                <button type="submit" id="btn-submit-comment" class="btn btn-primary" style="padding:10px 20px;font-size:0.9rem;font-weight:700;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(22,139,255,0.4);">
-                  <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                  <span>Submit Feedback &amp; Generate Revision</span>
-                </button>
-                <div id="feedback-submit-status" class="hint-text" style="font-size:0.82rem;font-weight:600;"></div>
+              <!-- Floating Mobile Quick Action Bar -->
+              <div id="article-mobile-quickbar" class="article-mobile-quickbar">
+                <button type="button" id="btn-quick-save-art" class="btn-quick-pill" title="Save changes"><span>💾 Save</span></button>
+                <button type="button" id="btn-quick-push-art" class="btn-quick-pill primary" title="Push Draft to WordPress"><span>🚀 Push WP</span></button>
+                <button type="button" id="btn-quick-copy-wp" class="btn-quick-pill ghost" title="Copy All WordPress Fields"><span>📋 Copy</span></button>
+                <button type="button" id="btn-quick-jump-top" class="btn-quick-pill ghost" title="Scroll to top"><span>⬆️ Top</span></button>
               </div>
-            </form>
 
-            <!-- Modern History Block -->
-            <div class="history-block" style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(48,59,77,0.7);">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <div class="label-sm" style="color:#FFFFFF;font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:6px;">
-                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                  <span>Revision &amp; Decision History</span>
-                </div>
-                <span class="hint-text" style="font-size:0.72rem;color:#94a3b8;">All versions preserved with full rollback capability</span>
+              <!-- Hidden compatibility elements so existing JS bindings never hit null -->
+              <div style="display:none;" aria-hidden="true">
+                <span id="article-source-label"></span>
+                <span id="article-lang-badge"></span>
+                <span id="article-taxonomy-badge"></span>
+                <button type="button" id="btn-convert-article-to-reel"></button>
+                <button type="button" class="btn-download-img" data-format="webp" id="btn-dl-webp"></button>
+                <span id="wp-img-size"></span>
+                <input type="file" id="input-upload-additional" accept="image/jpeg,image/png,image/webp" />
+                <div id="additional-image-preview-wrap"><img id="wp-add-img-preview" src="" alt="" /></div>
+                <input type="hidden" id="wp-field-add-alt" />
+                <input type="hidden" id="wp-field-add-caption" />
+                <input type="hidden" id="wp-field-add-credit" />
+                <textarea id="social-caption-textarea"></textarea>
+                <button type="button" id="btn-generate-social-caption"></button>
+                <button type="button" id="btn-copy-social-caption"></button>
               </div>
-              <div id="comment-history" class="comment-history"></div>
-            </div>
-          </section>
-
-          <!-- Schedule Package Card -->
-          <section class="card">
-            <h2 class="panel-title">Publishing Schedule (Europe/Helsinki)</h2>
-            <p class="hint-text">
-              Scheduling is permitted only for the exact approved version. Articles and Social Posts can have separate publishing slots.
-            </p>
-            <div class="form-row" style="margin-top:12px;">
-              <div>
-                <label class="label-sm" for="sched-article-dt">Article Publishing Slot (WordPress)</label>
-                <input id="sched-article-dt" type="datetime-local" />
-              </div>
-              <div>
-                <label class="label-sm" for="sched-reel-dt">Social Post Publishing Slot (IG &amp; Facebook)</label>
-                <input id="sched-reel-dt" type="datetime-local" />
-              </div>
-            </div>
-            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-              <button id="btn-save-schedule" class="btn btn-secondary">
-                <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Save Schedule</span>
-              </button>
-              <span id="schedule-msg" class="hint-text"></span>
-            </div>
-          </section>
-
-          <!-- Floating Mobile Quick Action Bar (1-Click Save, Push & Teleport) -->
-          <div id="article-mobile-quickbar" class="article-mobile-quickbar">
-            <button type="button" id="btn-quick-save-art" class="btn-quick-pill" title="Save in-Studio changes">
-              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-              <span>Save</span>
-            </button>
-            <button type="button" id="btn-quick-push-art" class="btn-quick-pill primary" title="Push Draft directly to WordPress">
-              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-              <span>Push WP</span>
-            </button>
-            <button type="button" id="btn-quick-copy-wp" class="btn-quick-pill ghost" title="Copy All WordPress Fields">
-              <span>📋 Copy</span>
-            </button>
-            <button type="button" id="btn-quick-jump-top" class="btn-quick-pill ghost" title="Scroll to top of article">
-              <span>⬆️ Top</span>
-            </button>
-          </div>
-                </div>
-              </details>
             </section>
 
             <!-- Interactive Social Post & 6-Slide Carousel Studio (Clean 2-Mode + 2-Tab Layout) -->
@@ -3528,7 +3151,7 @@
   <script src="/app.js?v=110.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
-  <script src="/finnish-lab.js?v=109.0"></script>
+  <script src="/finnish-lab.js?v=111.0"></script>
   <script src="/finnish-lab-pro.js?v=105.0"></script>
   <script src="/studio-ai-chat.js?v=96.0"></script>
   <script>
