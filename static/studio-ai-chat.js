@@ -173,10 +173,14 @@
     const doScroll = () => {
       const el = document.getElementById("sai-chat-stage");
       if (el) el.scrollTop = el.scrollHeight;
+      const ws = document.querySelector(".workspace");
+      if (ws && document.getElementById("view-studio-ai") && !document.getElementById("view-studio-ai").classList.contains("hidden")) {
+        ws.scrollTop = ws.scrollHeight;
+      }
     };
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(doScroll);
-    setTimeout(doScroll, 60);
-    setTimeout(doScroll, 200);
+    setTimeout(doScroll, 80);
+    setTimeout(doScroll, 280);
   }
 
   async function openArticlePicker(intent, photoObj) {
@@ -352,8 +356,8 @@
       : "";
 
     const genHtml = m.generated_image
-      ? `<div style="margin-top:10px;max-width:340px;background:#0f172a;border:1px solid rgba(56,189,248,0.3);border-radius:14px;overflow:hidden;">
-           <img src="${esc(m.generated_image.url)}" alt="${esc(m.generated_image.prompt)}" style="width:100%;display:block;" />
+      ? `<div style="margin-top:10px;max-width:340px;background:#0A192F;border:1px solid rgba(56,189,248,0.3);border-radius:14px;overflow:hidden;">
+           <img src="${esc(m.generated_image.url)}" alt="${esc(m.generated_image.prompt)}" onload="window.StudioAIChat&&window.StudioAIChat.scrollBottom()" style="width:100%;min-height:140px;background:#0A192F;display:block;object-fit:cover;" />
            <div style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
              <span style="font-size:0.7rem;color:#94a3b8;">${esc(m.generated_image.provider || "Flux Editorial AI")}</span>
              <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
@@ -465,8 +469,9 @@
       <div class="fl-app">
         <header class="fl-header">
           <button type="button" class="fl-icon-circle" id="sai-open-drawer" title="Saved Studio Chats">${ICO.sidebar}</button>
-          <div style="display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:0.96rem;color:#fff;">
-            ${ICO.sparkle}<span>Studio AI</span>
+          <div style="display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:0.95rem;color:#fff;">
+            <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
+            <span>Studio AI</span>
           </div>
           <div style="display:inline-flex;align-items:center;gap:8px;margin-left:auto;">
             <button type="button" class="fl-btn sm" id="sai-open-newtab-btn" title="Open Studio AI in new tab for easy side-by-side copy/paste" style="background:rgba(56,189,248,0.14);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:999px;font-size:0.75rem;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-weight:700;">

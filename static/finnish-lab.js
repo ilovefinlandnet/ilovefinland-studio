@@ -2421,10 +2421,12 @@
               : `<div class="fl3-study-wrap">
                   <div class="fl3-study-subnav" role="tablist" aria-label="Study Sections">
                     <button type="button" role="tab" aria-selected="${studySubTab === "walk"}" class="fl3-sub-pill ${studySubTab === "walk" ? "active" : ""}" data-fl-study-sub="walk">
-                      <span>🎧</span><span>Walk &amp; Listen</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                      <span>Walk &amp; Listen</span>
                     </button>
                     <button type="button" role="tab" aria-selected="${studySubTab === "notebook"}" class="fl3-sub-pill ${studySubTab === "notebook" ? "active" : ""}" data-fl-study-sub="notebook">
-                      <span>🎯</span><span>Notebook &amp; Drills</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                      <span>Notebook &amp; Drills</span>
                     </button>
                   </div>
                   ${studySubTab === "walk" ? renderTabWalkAndListen() : renderTabNotebookAndDrills()}
@@ -2736,12 +2738,16 @@
             </label>
             <div style="display:flex;align-items:center;gap:6px;">
               <button type="button" class="fl3-composer-icon-btn ${state.isLiveTranslating ? "danger" : showLiveDrawer ? "active" : ""}" id="fl-toggle-live-panel" title="Silent Classroom Live (100% muted continuous teacher listener)" aria-label="Toggle Silent Classroom Live">
-                ${state.isLiveTranslating ? "🔴" : "🔇"}
+                ${
+                  state.isLiveTranslating
+                    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="6"></circle></svg>`
+                    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`
+                }
               </button>
               ${
                 state.isRecording
                   ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 10px;height:36px;min-height:36px;border-radius:999px;" title="Stop Voice Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
-                  : `<button type="button" class="fl3-composer-icon-btn" id="fl-start-rec" title="Record voice message in Finnish or English" aria-label="Record Voice Message">🎙️</button>`
+                  : `<button type="button" class="fl3-composer-icon-btn" id="fl-start-rec" title="Record voice message in Finnish or English" aria-label="Record Voice Message"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></button>`
               }
               <button type="button" class="fl3-send-round-btn" id="fl-chat-send" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
             </div>
