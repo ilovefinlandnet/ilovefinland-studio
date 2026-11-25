@@ -513,6 +513,16 @@
       window.ReelStudio?.closeEditor();
     }
 
+    // Auto-collapse main Studio sidebar on Desktop/iPad Landscape inside Finnish Lab for pure ChatGPT focus
+    const studioShellEl = $("studio-shell");
+    if (studioShellEl) {
+      if (viewName === "finnish-lab") {
+        studioShellEl.classList.add("desktop-sidebar-collapsed");
+      } else {
+        studioShellEl.classList.remove("desktop-sidebar-collapsed");
+      }
+    }
+
     // Maintain in-app history stack
     if (isBack) {
       // Stack already popped
@@ -5736,6 +5746,12 @@
 
     $("btn-sidebar-toggle")?.addEventListener("click", () => toggleSidebar(true));
     $("btn-close-sidebar")?.addEventListener("click", () => toggleSidebar(false));
+    $("btn-collapse-sidebar")?.addEventListener("click", () => {
+      $("studio-shell")?.classList.add("desktop-sidebar-collapsed");
+    });
+    $("btn-expand-sidebar")?.addEventListener("click", () => {
+      $("studio-shell")?.classList.remove("desktop-sidebar-collapsed");
+    });
     $("sidebar-backdrop")?.addEventListener("click", () => toggleSidebar(false));
     $("mobile-brand-link")?.addEventListener("click", () => {
       toggleSidebar(false);

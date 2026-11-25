@@ -1306,12 +1306,68 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border);
 }
 
 /* Desktop & Landscape Screens (>= 1024px) */
+.btn-desktop-collapse-sidebar,
+.btn-desktop-expand-sidebar {
+  display: none;
+}
+
 @media (min-width: 1024px) {
   .sidebar {
     display: flex !important;
     transform: none !important;
     position: sticky;
     top: 0;
+  }
+  .btn-desktop-collapse-sidebar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94A3B8;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .btn-desktop-collapse-sidebar:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #FFFFFF;
+  }
+  .studio-shell.desktop-sidebar-collapsed .sidebar {
+    display: none !important;
+  }
+  .studio-shell.desktop-sidebar-collapsed .btn-desktop-expand-sidebar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 13px;
+    left: 12px;
+    z-index: 60;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(13, 27, 50, 0.92);
+    color: #CBD5E1;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .studio-shell.desktop-sidebar-collapsed .btn-desktop-expand-sidebar:hover {
+    background: #112240;
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #FFFFFF;
+  }
+  .studio-shell.desktop-sidebar-collapsed .fl3-rail-head {
+    padding-left: 42px;
+  }
+  .studio-shell.desktop-sidebar-collapsed .fl3-main-col:not(:has(.fl3-chat-rail)) .fl3-floating-topbar .fl3-float-left {
+    padding-left: 42px;
   }
   .sidebar-backdrop, .mobile-header, .bottom-nav, .btn-hamburger, .btn-sidebar-close {
     display: none !important;

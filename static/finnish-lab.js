@@ -938,6 +938,7 @@
 
   function renderMarkdownLite(md) {
     let h = esc(md || "");
+    h = h.replace(/\$\\rightarrow\$/g, "→").replace(/\$\\leftarrow\$/g, "←").replace(/\$\\leftrightarrow\$/g, "↔");
     h = h.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
     h = h.replace(/^##\s+(.+)$/gm, "<h3>$1</h3>");
     // Convert BOTH "* item" and "- item" markdown bullets FIRST so "*" bullets never collide with italics!
@@ -2799,18 +2800,14 @@
           railVisible
             ? `<aside class="fl3-chat-rail" aria-label="Recent Finnish Chats">
                 <div class="fl3-rail-head">
-                  <div class="fl3-title" style="font-size:0.94rem;">
-                    <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
-                  </div>
+                  <button type="button" class="fl3-rail-new-btn" id="fl-new-chat-top" style="flex:1;margin:0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>New chat</span>
+                  </button>
                   <button type="button" class="fl3-icon-btn" id="fl-toggle-rail" title="Hide chat sidebar" aria-label="Hide chat sidebar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
                   </button>
                 </div>
-
-                <button type="button" class="fl3-rail-new-btn" id="fl-new-chat-top">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                  <span>New chat</span>
-                </button>
 
                 <div class="fl3-rail-section-label">Recents</div>
                 <div class="fl3-rail-list">
