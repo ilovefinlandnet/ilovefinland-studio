@@ -2334,7 +2334,7 @@ def synthesize_edge_tts_mp3(
 
     Returns: (local_path, public_url, voice_used, error_msg)
     """
-    clean = re.sub(r"[*_`#>]+", "", str(text or "")).strip()[:800]
+    clean = re.sub(r"[*_`#>]+", "", str(text or "")).strip()[:2400]
     if not clean:
         return None, None, None, "Empty text."
 

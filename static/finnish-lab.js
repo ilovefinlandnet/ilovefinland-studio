@@ -1366,7 +1366,8 @@
         items: res.items || [],
       };
       state.customPodcastEpisodes.unshift(ep);
-      state.podcastEpisodeId = ep.id;
+      state.miniPlayerDismissed = false;
+    state.podcastEpisodeId = ep.id;
       state.podcastItemIdx = 0;
       state.podcastShowScript = true;
       toast(`Created "${ep.title}" (${ep.items.length} items)! Tap Play to walk & listen 🎧`, "success");
@@ -1593,6 +1594,7 @@
       }
     } catch (_) {}
 
+    state.miniPlayerDismissed = false;
     state.podcastEpisodeId = ep.id;
     state.podcastItemIdx = targetIdx;
     state.podcastLoading = true;
@@ -2783,7 +2785,9 @@
     }
     const activeTab = state.activeTab === "study" ? "study" : "chat";
     const studySubTab = state.studySubTab === "notebook" ? "notebook" : "walk";
-    const showMiniPlayer = (activeTab === "study" && studySubTab === "walk") || state.podcastPlaying || state.podcastPaused;
+    const showMiniPlayer =
+      !state.miniPlayerDismissed &&
+      ((activeTab === "study" && studySubTab === "walk") || state.podcastPlaying || state.podcastPaused);
 
     const allEps = getAllPodcastEpisodes();
     const curEp = allEps.find((x) => x.id === state.podcastEpisodeId) || allEps[0];
@@ -2905,7 +2909,8 @@
                     ? `<button type="button" class="fl3-btn primary" id="fl-mini-pause-btn" style="width:40px;height:40px;padding:0;border-radius:12px;" aria-label="Pause Walk &amp; Listen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg></button>`
                     : `<button type="button" class="fl3-btn primary" id="fl-mini-play-btn" style="width:40px;height:40px;padding:0;border-radius:12px;" aria-label="Play Walk &amp; Listen"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg></button>`
                 }
-                <button type="button" class="fl3-btn" id="fl-mini-next-btn" style="width:40px;height:40px;padding:0;border-radius:12px;" aria-label="Next phrase"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg></button>
+                <button type="button" class="fl3-btn" id="fl-mini-next-btn" style="width:38px;height:38px;padding:0;border-radius:11px;" aria-label="Next phrase"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg></button>
+                <button type="button" class="fl3-btn" id="fl-mini-close-btn" style="width:36px;height:36px;padding:0;border-radius:11px;color:#94A3B8;" title="Close mini player" aria-label="Close mini player"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
               </div>
             </div>`
           : ""
@@ -3037,7 +3042,7 @@
         </div>`
       : "";
     const isSpeakingThis = Boolean(m.id && state.speakingMsgId === m.id);
-    const fullSpeakText = (m.finnishTts || m.text || "").slice(0, 900);
+    const fullSpeakText = (m.text || m.finnishTts || "").replace(/[*_`#>]+/g, "").trim().slice(0, 2400);
     const actionsHtml =
       m.role === "assistant" && !m.isError
         ? `<div class="fl-msg-actions" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
@@ -3841,16 +3846,25 @@
     return `
       <div class="fl-drawer-backdrop" id="fl-drawer-backdrop">
         <div class="fl-drawer-sheet">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong style="font-size:1rem;color:#fff;">🇫🇮 Finnish Lab</strong>
-            <button type="button" class="fl-btn sm" id="fl-close-drawer">✕</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div style="display:inline-flex;align-items:center;gap:8px;min-width:0;">
+              <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
+              <strong style="font-size:0.96rem;color:#fff;white-space:nowrap;">Finnish Lab</strong>
+            </div>
+            <div style="display:inline-flex;align-items:center;gap:6px;flex-shrink:0;">
+              <button type="button" class="fl-btn sm" id="fl-back-to-studio" title="Go to Studio Dashboard &amp; Articles" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span>Studio</span>
+              </button>
+              <button type="button" class="fl-btn sm" id="fl-close-drawer" aria-label="Close menu">✕</button>
+            </div>
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
             <button type="button" class="fl-btn sm ${t === "chats" ? "active" : ""}" data-fl-dtab="chats">Chats</button>
             <button type="button" class="fl-btn sm ${t === "flashcards" ? "active" : ""}" data-fl-dtab="flashcards">Cards${dueCount ? ` (${dueCount})` : ""}</button>
             <button type="button" class="fl-btn sm ${t === "notes" ? "active" : ""}" data-fl-dtab="notes">Notes</button>
-            <button type="button" class="fl-btn sm ${t === "settings" ? "active" : ""}" data-fl-dtab="settings">⚙️</button>
+            <button type="button" class="fl-btn sm ${t === "settings" ? "active" : ""}" data-fl-dtab="settings" aria-label="Settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
           </div>
 
           ${
@@ -4482,6 +4496,11 @@
     root.querySelector("#fl-mini-play-btn")?.addEventListener("click", () => generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx));
     root.querySelector("#fl-mini-pause-btn")?.addEventListener("click", handlePauseWalk);
     root.querySelector("#fl-mini-next-btn")?.addEventListener("click", handleNextWalk);
+    root.querySelector("#fl-mini-close-btn")?.addEventListener("click", () => {
+      stopPodcastPlayback(true);
+      state.miniPlayerDismissed = true;
+      renderActiveView();
+    });
 
     root.querySelector("#fl-pod-loop")?.addEventListener("click", () => {
       state.podcastLoop = !state.podcastLoop;
@@ -4700,6 +4719,13 @@
     });
 
     // Slide Drawer events
+    root.querySelector("#fl-back-to-studio")?.addEventListener("click", () => {
+      state.drawerOpen = false;
+      renderActiveView();
+      const dashBtn = document.getElementById("nav-item-projects");
+      if (dashBtn) dashBtn.click();
+      else window.location.hash = "#projects";
+    });
     root.querySelector("#fl-close-drawer")?.addEventListener("click", () => { state.drawerOpen = false; renderActiveView(); });
     root.querySelector("#fl-drawer-backdrop")?.addEventListener("click", (e) => { if (e.target.id === "fl-drawer-backdrop") { state.drawerOpen = false; renderActiveView(); } });
     root.querySelectorAll("[data-fl-dtab]").forEach((b) => { b.onclick = () => { state.drawerTab = b.getAttribute("data-fl-dtab"); renderActiveView(); }; });

@@ -1305,6 +1305,13 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border);
   }
 }
 
+/* Full-screen native ChatGPT-style Finnish Lab on iPhone & iPad Portrait (< 1024px) */
+@media (max-width: 1023px) {
+  .studio-shell.in-finnish-lab .mobile-header {
+    display: none !important;
+  }
+}
+
 /* Desktop & Landscape Screens (>= 1024px) */
 .btn-desktop-collapse-sidebar,
 .btn-desktop-expand-sidebar {

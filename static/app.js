@@ -513,13 +513,13 @@
       window.ReelStudio?.closeEditor();
     }
 
-    // Auto-collapse main Studio sidebar on Desktop/iPad Landscape inside Finnish Lab for pure ChatGPT focus
+    // Full-screen ChatGPT focus inside Finnish Lab (auto-collapse desktop sidebar + hide outer mobile bar)
     const studioShellEl = $("studio-shell");
     if (studioShellEl) {
       if (viewName === "finnish-lab") {
-        studioShellEl.classList.add("desktop-sidebar-collapsed");
+        studioShellEl.classList.add("desktop-sidebar-collapsed", "in-finnish-lab");
       } else {
-        studioShellEl.classList.remove("desktop-sidebar-collapsed");
+        studioShellEl.classList.remove("desktop-sidebar-collapsed", "in-finnish-lab");
       }
     }
 
