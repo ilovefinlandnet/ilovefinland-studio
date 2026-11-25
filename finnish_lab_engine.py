@@ -2242,7 +2242,7 @@ def handle_pronunciation_check(payload: Dict[str, Any], db_path: str = FINNISH_L
 # NATURAL NEURAL FINNISH & ENGLISH TTS (edge-tts — $0 Free, No API Key Required)
 # Cached persistently in /data/uploads/finnish_tts/
 # =============================================================================
-EDGE_FI_VOICES = ("fi-FI-NooraNeural", "fi-FI-HarriNeural", "fi-FI-SelmaNeural")
+EDGE_FI_VOICES = ("fi-FI-NooraNeural", "fi-FI-SelmaNeural")
 EDGE_EN_VOICES = ("en-US-AriaNeural", "en-GB-SoniaNeural")
 
 
@@ -2340,7 +2340,8 @@ def synthesize_edge_tts_mp3(
 
     rate_str = rate if isinstance(rate, str) and rate.endswith("%") else _rate_float_to_edge_str(rate)
     is_en = str(lang or "fi").lower().startswith("en")
-    voices_to_try = [voice] if voice else list(EDGE_EN_VOICES if is_en else EDGE_FI_VOICES)
+    base_voices = list(EDGE_EN_VOICES if is_en else EDGE_FI_VOICES)
+    voices_to_try = ([voice] + [v for v in base_voices if v != voice]) if voice else base_voices
 
     cache_dir = _resolve_tts_cache_dir()
     key_sig = f"edge_v1|{voices_to_try[0]}|{rate_str}|{clean}"

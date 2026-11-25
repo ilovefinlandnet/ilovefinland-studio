@@ -1230,7 +1230,7 @@
     state.podcastEpisodeId = ep.id;
     state.podcastItemIdx = targetIdx;
     state.podcastLoading = true;
-    const shortVoice = fiVoice.includes("Harri") ? "Harri (Native FI)" : "Noora (Native FI)";
+    const shortVoice = fiVoice.includes("Selma") ? "Selma (Native FI)" : "Noora (Native FI)";
     state.podcastPhase = state.podcastRecallMode
       ? `Preparing Recall Audio (${shortVoice})...`
       : `Preparing Native Finnish Audio (${shortVoice})...`;
@@ -2864,7 +2864,7 @@
               <div style="display:flex;gap:6px;">
                 ${[
                   { id: "fi-FI-NooraNeural", label: "Noora (FI)" },
-                  { id: "fi-FI-HarriNeural", label: "Harri (FI)" },
+                  { id: "fi-FI-SelmaNeural", label: "Selma (FI)" },
                 ].map((v) => {
                   const isAct = (state.podcastVoice || "fi-FI-NooraNeural") === v.id;
                   return `<button type="button" class="fl3-btn ${isAct ? "active" : ""}" data-fl-pod-voice="${v.id}" style="padding:7px 12px;">${v.label}</button>`;
@@ -3944,7 +3944,7 @@
         const wasPlaying = Boolean(state.podcastPlaying);
         state.podcastVoice = nextVoice;
         state.podcastTrackKey = "";
-        toast(`Voice set to ${nextVoice.includes("Harri") ? "Harri (Native Finnish)" : "Noora (Native Finnish)"}`, "info");
+        toast(`Voice set to ${nextVoice.includes("Selma") ? "Selma (Native Finnish)" : "Noora (Native Finnish)"}`, "info");
         if (wasPlaying) {
           generateAndPlayPodcast(state.podcastEpisodeId, state.podcastItemIdx);
         } else {
