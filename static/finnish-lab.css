@@ -3327,6 +3327,147 @@ body:has(#view-finnish-lab:not(.hidden)),
   line-height: 1.32;
 }
 
+/* Bilingual Siri/Gemini Voice Coach Overlay (v123.0) */
+.fl-vc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(2, 12, 27, 0.92);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+
+.fl-vc-shell {
+  width: 100%;
+  max-width: 560px;
+  height: min(86dvh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 25, 47, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 26px;
+  padding: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+}
+
+.fl-vc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fl-vc-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 4px;
+}
+
+.fl-vc-empty {
+  margin: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+}
+
+.fl-vc-msg {
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  line-height: 1.48;
+  color: #F8FAFC;
+}
+
+.fl-vc-msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #003580 0%, #0052B4 100%);
+  border-bottom-right-radius: 5px;
+}
+
+.fl-vc-msg.assistant {
+  align-self: flex-start;
+  background: rgba(17, 34, 64, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 5px;
+}
+
+.fl-vc-orb-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 14px;
+}
+
+.fl-vc-orb {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  background: radial-gradient(circle at 30% 30%, #38BDF8 0%, #0052B4 55%, #003580 100%);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 28px rgba(56, 189, 248, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.fl-vc-orb:hover {
+  transform: scale(1.04);
+}
+
+.fl-vc-orb.is-listening {
+  background: radial-gradient(circle at 30% 30%, #F87171 0%, #DC2626 60%, #991B1B 100%);
+  border-color: rgba(248, 113, 113, 0.8);
+  box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.18), 0 0 32px rgba(239, 68, 68, 0.5);
+}
+
+.fl-vc-orb.is-speaking {
+  box-shadow: 0 0 0 12px rgba(56, 189, 248, 0.18), 0 0 38px rgba(56, 189, 248, 0.6);
+}
+
+.fl-vc-status {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94A3B8;
+}
+
+.fl-vc-typebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  background: rgba(17, 34, 64, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.fl-vc-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #F8FAFC !important;
+  font-size: 0.88rem !important;
+  padding: 6px 0 !important;
+}
+
 .fl3-composer-actions {
   display: flex;
   align-items: center;

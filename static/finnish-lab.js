@@ -3094,12 +3094,266 @@
       }
 
       ${state.drawerOpen ? renderSlideDrawer(settings, prog, dueCount) : ""}
+      ${state.voiceCoachOpen ? renderVoiceCoachOverlay() : ""}
     `;
 
     bindMainEvents();
     if (activeTab === "chat") {
       scrollChatsToBottom(true);
     }
+    if (state.voiceCoachOpen) {
+      const vcf = document.getElementById("fl-vc-feed");
+      if (vcf) vcf.scrollTop = vcf.scrollHeight;
+    }
+  }
+
+  /* ---------- BILINGUAL SIRI/GEMINI VOICE COACH (EN + FI NEURAL AUDIO) ---------- */
+  let _vcAudioEl = null;
+  let _vcRecorder = null;
+  let _vcStream = null;
+  let _vcChunks = [];
+
+  function getVcAudioEl() {
+    if (!_vcAudioEl) {
+      _vcAudioEl = new Audio();
+      _vcAudioEl.setAttribute("playsinline", "");
+      _vcAudioEl.playsInline = true;
+    }
+    return _vcAudioEl;
+  }
+
+  function primeVcAudio() {
+    const a = getVcAudioEl();
+    try {
+      a.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+      const p = a.play();
+      if (p && typeof p.then === "function") p.then(() => { try { a.pause(); } catch (_) {} }).catch(() => {});
+    } catch (_) {}
+  }
+
+  function stopVoiceCoachPlayback() {
+    if (_vcAudioEl) {
+      try { _vcAudioEl.pause(); _vcAudioEl.currentTime = 0; } catch (_) {}
+    }
+    state.vcSpeaking = false;
+  }
+
+  function stopVoiceCoachMic(cancelSend) {
+    if (_vcRecorder && _vcRecorder.state === "recording") {
+      if (cancelSend) _vcRecorder._cancelSend = true;
+      try { _vcRecorder.stop(); } catch (_) {}
+    }
+    if (_vcStream) {
+      try { _vcStream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+      _vcStream = null;
+    }
+    state.vcRecording = false;
+  }
+
+  function playVcAudioUrl(url) {
+    if (!url) return;
+    stopActiveAudio(true);
+    stopPodcastPlayback(true);
+    const a = getVcAudioEl();
+    a.src = url;
+    state.vcSpeaking = true;
+    renderActiveView();
+    a.onended = () => { state.vcSpeaking = false; renderActiveView(); };
+    a.onerror = () => { state.vcSpeaking = false; renderActiveView(); };
+    a.play().catch(() => {
+      state.vcSpeaking = false;
+      renderActiveView();
+      toast("Tap Replay to hear Voice Coach.", "info");
+    });
+  }
+
+  async function sendVoiceCoachTurn(textInput, audioBlob, cleanMime) {
+    const turns = Array.isArray(state.vcTurns) ? state.vcTurns : (state.vcTurns = []);
+    const cleanText = String(textInput || "").trim();
+    if (!cleanText && !audioBlob) return;
+    primeVcAudio();
+    state.vcThinking = true;
+    renderActiveView();
+    try {
+      const attachments = [];
+      if (audioBlob && audioBlob.size > 600) {
+        const b64 = await blobToBase64(audioBlob);
+        attachments.push({ mime_type: cleanMime || "audio/webm", data_base64: b64 });
+      }
+      const settings = DB.getSettings();
+      const hist = turns.slice(-4).map((t) => ({ role: t.role, text: t.text }));
+      const res = await flApi("/api/finnish-lab/voice-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: cleanText,
+          attachments,
+          history: hist,
+          level: settings.level || "A1",
+          voice: state.podcastVoice || "fi-FI-NooraNeural",
+        }),
+        timeoutMs: 45000,
+      });
+      state.vcThinking = false;
+      if (res && res.ok) {
+        const heard = res.heard || cleanText || "(spoken Finnish)";
+        const reply = res.display_text || "Try saying that once more slowly.";
+        turns.push({ role: "user", text: heard });
+        turns.push({ role: "assistant", text: reply, audioUrl: res.audio_url || "" });
+        // Also persist to active Chat history so corrections are never lost
+        try {
+          const conv = await ensureActiveConv("Voice Coach");
+          conv.messages.push({ id: DB.uid("msg"), role: "user", text: heard, at: new Date().toISOString() });
+          conv.messages.push({ id: DB.uid("msg"), role: "assistant", text: reply, finnishTts: reply, at: new Date().toISOString() });
+          await DB.saveConversation(conv);
+          scheduleAutoSync();
+        } catch (_) {}
+        renderActiveView();
+        if (res.audio_url) playVcAudioUrl(res.audio_url);
+      } else {
+        toast((res && res.message) || "Voice Coach could not respond. Try again.", "error");
+        renderActiveView();
+      }
+    } catch (err) {
+      state.vcThinking = false;
+      toast((err && err.message) || "Voice Coach error. Try again.", "error");
+      renderActiveView();
+    }
+  }
+
+  async function toggleVoiceCoachOrb() {
+    if (state.vcSpeaking) {
+      stopVoiceCoachPlayback();
+      renderActiveView();
+      return;
+    }
+    if (state.vcThinking) return;
+    if (state.vcRecording) {
+      primeVcAudio();
+      stopVoiceCoachMic(false);
+      renderActiveView();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast("Microphone not available — you can type below to hear pronunciation!", "info");
+      return;
+    }
+    stopActiveAudio(true);
+    stopPodcastPlayback(true);
+    primeVcAudio();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      _vcStream = stream;
+      _vcChunks = [];
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "audio/webm";
+      const cleanMime = mimeType.split(";")[0];
+      const rec = new MediaRecorder(stream, { mimeType });
+      _vcRecorder = rec;
+      rec._cancelSend = false;
+      rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) _vcChunks.push(ev.data); };
+      rec.onstop = () => {
+        const shouldCancel = rec._cancelSend;
+        if (_vcStream) {
+          try { _vcStream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+          _vcStream = null;
+        }
+        state.vcRecording = false;
+        if (!shouldCancel && _vcChunks.length) {
+          const blob = new Blob(_vcChunks, { type: cleanMime });
+          sendVoiceCoachTurn("", blob, cleanMime);
+        } else {
+          renderActiveView();
+        }
+      };
+      rec.start();
+      state.vcRecording = true;
+      renderActiveView();
+    } catch (_) {
+      toast("Microphone permission denied — you can still type below!", "warning");
+      state.vcRecording = false;
+      renderActiveView();
+    }
+  }
+
+  function renderVoiceCoachOverlay() {
+    const turns = Array.isArray(state.vcTurns) ? state.vcTurns : [];
+    const orbClass = state.vcRecording ? "is-listening" : state.vcSpeaking ? "is-speaking" : state.vcThinking ? "is-thinking" : "";
+    const orbStatus = state.vcRecording
+      ? "Listening... Tap orb to send"
+      : state.vcThinking
+      ? "Coach is listening & preparing reply..."
+      : state.vcSpeaking
+      ? "Coach is speaking (Tap to stop)"
+      : "Tap orb to speak Finnish or English";
+
+    return `
+      <div class="fl-vc-overlay" id="fl-voice-coach-overlay" role="dialog" aria-modal="true" aria-label="Bilingual Finnish Voice Coach">
+        <div class="fl-vc-shell">
+          <div class="fl-vc-head">
+            <div style="display:inline-flex;align-items:center;gap:8px;">
+              <img src="/assets/ilf-heart.png" alt="ILoveFinland" class="fl3-brand-icon" />
+              <strong style="font-size:0.98rem;color:#FFFFFF;">Voice Coach</strong>
+              <span style="font-size:0.72rem;color:#38BDF8;font-weight:600;">EN + FI</span>
+            </div>
+            <button type="button" class="fl3-icon-btn" id="fl-vc-close" aria-label="Close Voice Coach">✕</button>
+          </div>
+
+          <div class="fl-vc-feed" id="fl-vc-feed">
+            ${
+              turns.length
+                ? turns
+                    .map(
+                      (t, i) => `
+                  <div class="fl-vc-msg ${t.role === "user" ? "user" : "assistant"}">
+                    <div>${renderMarkdownLite(t.text)}</div>
+                    ${
+                      t.role === "assistant" && t.audioUrl
+                        ? `<button type="button" class="fl3-speaker-btn" data-fl-vc-replay="${i}" style="margin-top:7px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            <span>Replay</span>
+                          </button>`
+                        : ""
+                    }
+                  </div>
+                `
+                    )
+                    .join("")
+                : `<div class="fl-vc-empty">
+                    <div style="font-size:1.12rem;font-weight:700;color:#FFFFFF;margin-bottom:6px;">Speak or type — I'll coach you back</div>
+                    <div style="font-size:0.83rem;color:#94A3B8;max-width:340px;line-height:1.45;margin-bottom:14px;">English voice for tips &amp; grammar, native Finnish voice for pronunciation.</div>
+                    <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center;">
+                      <button type="button" class="fl3-btn" data-fl-vc-prompt="How do I pronounce ystävällinen?">Pronounce "ystävällinen"</button>
+                      <button type="button" class="fl3-btn" data-fl-vc-prompt="Is this Finnish right: Minä menen kauppa?">Check "Minä menen kauppa"</button>
+                      <button type="button" class="fl3-btn" data-fl-vc-prompt="Teach me how to order coffee politely in Finnish and let me practice.">Order coffee practice</button>
+                    </div>
+                  </div>`
+            }
+          </div>
+
+          <div class="fl-vc-orb-zone">
+            <button type="button" class="fl-vc-orb ${orbClass}" id="fl-vc-orb" aria-label="${esc(orbStatus)}">
+              ${
+                state.vcThinking
+                  ? `<span class="fl3-spin fl3-spin-lg" aria-hidden="true"></span>`
+                  : state.vcRecording
+                  ? `<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3"></rect></svg>`
+                  : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`
+              }
+            </button>
+            <div class="fl-vc-status">${esc(orbStatus)}</div>
+          </div>
+
+          <div class="fl-vc-typebar">
+            <input type="text" id="fl-vc-input" class="fl-vc-input" placeholder="Or type a word to pronounce or check grammar..." autocomplete="off" />
+            <button type="button" class="fl3-send-round-btn" id="fl-vc-send" ${state.vcThinking ? "disabled" : ""} aria-label="Send to Voice Coach">↑</button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   /* ---------- PARSE SILENT CLASSROOM LIVE HELPER CARDS (NEWEST FIRST + HISTORY) ---------- */
@@ -3466,6 +3720,9 @@
                   ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 10px;height:36px;min-height:36px;border-radius:999px;" title="Stop Voice Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
                   : `<button type="button" class="fl3-composer-icon-btn" id="fl-start-rec" title="Record voice message in Finnish or English" aria-label="Record Voice Message"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></button>`
               }
+              <button type="button" class="fl3-composer-icon-btn" id="fl-open-voice-coach" title="Voice Coach — Talk &amp; Pronunciation Practice (EN + FI)" aria-label="Open Bilingual Voice Coach">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="10" x2="4" y2="14"></line><line x1="8" y1="6" x2="8" y2="18"></line><line x1="12" y1="3" x2="12" y2="21"></line><line x1="16" y1="7" x2="16" y2="17"></line><line x1="20" y1="10" x2="20" y2="14"></line></svg>
+              </button>
               <button type="button" class="fl3-send-round-btn" id="fl-chat-send" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
             </div>
           </div>
@@ -4419,6 +4676,40 @@
       };
     });
 
+    root.querySelector("#fl-open-voice-coach")?.addEventListener("click", () => {
+      stopActiveAudio(true);
+      stopPodcastPlayback(true);
+      state.voiceCoachOpen = true;
+      renderActiveView();
+    });
+    root.querySelector("#fl-vc-close")?.addEventListener("click", () => {
+      stopVoiceCoachMic(true);
+      stopVoiceCoachPlayback();
+      state.voiceCoachOpen = false;
+      renderActiveView();
+    });
+    root.querySelector("#fl-vc-orb")?.addEventListener("click", toggleVoiceCoachOrb);
+    const submitVcText = () => {
+      const inp = document.getElementById("fl-vc-input");
+      const val = inp ? inp.value.trim() : "";
+      if (!val || state.vcThinking) return;
+      if (inp) inp.value = "";
+      sendVoiceCoachTurn(val, null, null);
+    };
+    root.querySelector("#fl-vc-send")?.addEventListener("click", submitVcText);
+    root.querySelector("#fl-vc-input")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); submitVcText(); }
+    });
+    root.querySelectorAll("[data-fl-vc-prompt]").forEach((b) => {
+      b.onclick = () => sendVoiceCoachTurn(b.getAttribute("data-fl-vc-prompt") || "", null, null);
+    });
+    root.querySelectorAll("[data-fl-vc-replay]").forEach((b) => {
+      b.onclick = () => {
+        const idx = Number(b.getAttribute("data-fl-vc-replay"));
+        const t = (state.vcTurns || [])[idx];
+        if (t && t.audioUrl) playVcAudioUrl(t.audioUrl);
+      };
+    });
     root.querySelector("#fl-start-rec")?.addEventListener("click", startRecording);
     root.querySelector("#fl-stop-rec")?.addEventListener("click", stopRecording);
 

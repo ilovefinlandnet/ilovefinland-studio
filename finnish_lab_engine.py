@@ -2666,3 +2666,178 @@ def handle_walk_listen_audio(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], i
     except Exception:
         pass
     return meta, 200
+
+
+def handle_voice_coach(payload: Dict[str, Any], db_path: str = FINNISH_LAB_DB_PATH) -> Tuple[Dict[str, Any], int]:
+    """Bilingual Siri/Gemini-style Finnish Voice Coach ($0).
+
+    Accepts voice audio OR typed text, responds like a warm human Finnish teacher
+    who corrects pronunciation & grammar, and stitches alternating English (AvaNeural)
+    + native Finnish (NooraNeural / SelmaNeural at 0.85x) clips into ONE smooth MP3.
+    """
+    user_text = (payload.get("text") or "").strip()[:800]
+    attachments = payload.get("attachments") or []
+    history = payload.get("history") or []
+    level = (payload.get("level") or "A1").strip().upper()
+    req_voice = str(payload.get("voice") or "").strip()
+    fi_voice = req_voice if req_voice in EDGE_FI_VOICES else EDGE_FI_VOICES[0]
+
+    if not user_text and not attachments:
+        return {"ok": False, "error": "INVALID_INPUT", "message": "Speak or type a Finnish word or sentence."}, 400
+
+    limit_err = _check_rate_limits(db_path)
+    if limit_err:
+        return limit_err, 429
+
+    sys_prompt = (
+        f"You are a warm, encouraging, normal-sounding personal Finnish pronunciation and grammar voice coach for an {level}-level learner in Finland. "
+        "Speak like a friendly human tutor — short, natural, crystal-clear, never robotic or overly long.\n"
+        "RULES:\n"
+        "1. If the student spoke Finnish audio, listen closely to their pronunciation (vowel length like a/aa, ä/ö, double consonants, stress on first syllable) AND grammar. Gently praise what sounded good, clearly correct any mistake, and give the natural Finnish form.\n"
+        "2. If the student asked how to pronounce a word/sentence or asked a grammar question, explain it simply in 1-2 short conversational sentences and demonstrate the Finnish clearly (plus syllable breakdown in display_text if helpful).\n"
+        "3. Return ONLY valid JSON with keys:\n"
+        "   - heard: short transcript of what the student said/asked (max 140 chars)\n"
+        "   - display_text: clean written coaching note (concise, warm, Finnish words in **bold**, optional syllable tip like ys-tä-väl-li-nen)\n"
+        "   - segments: array of 2 to 6 short spoken audio turns, each {\"lang\": \"en\" or \"fi\", \"text\": \"...\"}. "
+        "CRITICAL: Put ALL English words in lang='en' segments and ALL Finnish words/sentences in lang='fi' segments so the English voice speaks English and the native Finnish voice speaks Finnish! Keep total spoken time calm and brief (under ~15 seconds)."
+    )
+
+    contents: List[Dict[str, Any]] = []
+    for h in (history or [])[-4:]:
+        role = "model" if h.get("role") in ("assistant", "model") else "user"
+        htext = str(h.get("text") or "").strip()[:300]
+        if htext:
+            contents.append({"role": role, "parts": [{"text": htext}]})
+
+    ask_prompt = user_text or "Listen carefully to my Finnish audio. Transcribe what I said, gently correct my pronunciation or grammar if needed, and model the correct Finnish clearly."
+    parts, val_err = _validate_and_build_parts(ask_prompt, attachments)
+    if val_err:
+        return {"ok": False, "error": "INVALID_INPUT", "message": val_err}, 400
+    contents.append({"role": "user", "parts": parts})
+
+    text_out, model_used, ai_err = _call_gemini_generate(
+        system_instruction=sys_prompt,
+        contents=contents,
+        expect_json=True,
+        temperature=0.35,
+        max_output_tokens=900,
+    )
+    if ai_err:
+        status = 429 if "QUOTA" in ai_err.get("error", "") else 503
+        ai_err["usage"] = get_usage_stats(db_path)
+        return ai_err, status
+
+    try:
+        raw_clean = (text_out or "{}").strip()
+        raw_clean = re.sub(r"^```(?:json)?\s*", "", raw_clean, flags=re.IGNORECASE)
+        raw_clean = re.sub(r"\s*```$", "", raw_clean)
+        parsed = json.loads(raw_clean)
+    except Exception:
+        parsed = {
+            "heard": user_text or "(voice)",
+            "display_text": (text_out or "Try saying that once more slowly.").strip(),
+            "segments": [{"lang": "en", "text": (text_out or "Try saying that once more slowly.").strip()[:280]}],
+        }
+
+    heard = str(parsed.get("heard") or user_text or "").strip()[:200]
+    display_text = str(parsed.get("display_text") or "").strip()
+    raw_segs = parsed.get("segments") or []
+    segments: List[Dict[str, str]] = []
+    for s in raw_segs[:8]:
+        if not isinstance(s, dict):
+            continue
+        stext = str(s.get("text") or "").strip()[:320]
+        slang = "fi" if str(s.get("lang") or "en").strip().lower().startswith("fi") else "en"
+        if stext:
+            segments.append({"lang": slang, "text": stext})
+    if not segments and display_text:
+        segments.append({"lang": "en", "text": re.sub(r"[*_`#>]+", "", display_text)[:320]})
+    if not display_text:
+        display_text = " ".join(s["text"] for s in segments)
+
+    # Synthesize each bilingual segment in parallel with true native voice (en -> AvaNeural, fi -> NooraNeural @ 0.85x)
+    cache_dir = _resolve_tts_cache_dir()
+    sil_breath = _ensure_silence_mp3(0.28, cache_dir)
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _synth_seg(seg: Dict[str, str]):
+        if seg["lang"] == "fi":
+            p, _, _, err = synthesize_edge_tts_mp3(seg["text"], lang="fi", rate="-15%", voice=fi_voice)
+            return p, err
+        p, _, _, err = synthesize_edge_tts_mp3(seg["text"], lang="en", rate="+0%")
+        return p, err
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        seg_results = list(pool.map(_synth_seg, segments))
+
+    clip_paths: List[str] = []
+    for p, err in seg_results:
+        if p and not err and os.path.exists(p):
+            if clip_paths and sil_breath:
+                clip_paths.append(sil_breath)
+            clip_paths.append(p)
+
+    audio_url = None
+    if clip_paths:
+        sig = json.dumps({"v": 1, "fi": fi_voice, "segs": segments}, ensure_ascii=False, sort_keys=True)
+        digest = hashlib.sha256(sig.encode("utf-8")).hexdigest()[:20]
+        out_name = f"coach_{digest}.mp3"
+        out_path = os.path.join(cache_dir, out_name)
+        public_url = f"/assets/uploads/finnish_tts/{out_name}"
+        if not (os.path.exists(out_path) and os.path.getsize(out_path) > 500):
+            import shutil
+            import subprocess
+            built_ok = False
+            ffmpeg_bin = shutil.which("ffmpeg")
+            if ffmpeg_bin and len(clip_paths) > 1:
+                list_file = os.path.join(cache_dir, f".coach_{digest}.txt")
+                try:
+                    with open(list_file, "w", encoding="utf-8") as lf:
+                        for cp in clip_paths:
+                            lf.write(f"file '{cp.replace(chr(39), chr(92) + chr(39))}'\n")
+                    r = subprocess.run(
+                        [ffmpeg_bin, "-y", "-f", "concat", "-safe", "0", "-i", list_file, "-c:a", "libmp3lame", "-ar", "24000", "-ac", "1", "-b:a", "48k", out_path],
+                        capture_output=True,
+                        timeout=30,
+                    )
+                    built_ok = r.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 500
+                except Exception:
+                    built_ok = False
+                finally:
+                    try:
+                        if os.path.exists(list_file):
+                            os.remove(list_file)
+                    except Exception:
+                        pass
+            if not built_ok:
+                try:
+                    with open(out_path, "wb") as out_f:
+                        for cp in clip_paths:
+                            with open(cp, "rb") as in_f:
+                                out_f.write(in_f.read())
+                    built_ok = os.path.exists(out_path) and os.path.getsize(out_path) > 500
+                except Exception:
+                    built_ok = False
+            if built_ok:
+                local_mirror_dir = os.path.join(BASE_DIR, "static", "assets", "uploads", "finnish_tts")
+                if os.path.abspath(cache_dir) != os.path.abspath(local_mirror_dir):
+                    try:
+                        os.makedirs(local_mirror_dir, exist_ok=True)
+                        shutil.copy2(out_path, os.path.join(local_mirror_dir, out_name))
+                    except Exception:
+                        pass
+        if os.path.exists(out_path) and os.path.getsize(out_path) > 500:
+            audio_url = public_url
+
+    _record_usage(is_cache_hit=False, db_path=db_path)
+    return {
+        "ok": True,
+        "heard": heard,
+        "display_text": display_text,
+        "segments": segments,
+        "audio_url": audio_url,
+        "fi_voice": fi_voice,
+        "en_voice": EDGE_EN_VOICES[0],
+        "model": model_used,
+        "usage": get_usage_stats(db_path),
+    }, 200

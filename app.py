@@ -2874,6 +2874,11 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(res, status=status_code)
                 return
 
+            if path == "/api/finnish-lab/voice-coach":
+                res, status_code = finnish_lab_engine.handle_voice_coach(body or {})
+                self._send_json(res, status=status_code)
+                return
+
             if path == "/api/finnish-lab/podcast-topic":
                 res, status_code = finnish_lab_engine.handle_generate_podcast_episode(body or {})
                 self._send_json(res, status=status_code)
