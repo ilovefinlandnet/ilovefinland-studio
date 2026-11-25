@@ -170,10 +170,13 @@
   }
 
   function scrollBottom() {
-    setTimeout(() => {
+    const doScroll = () => {
       const el = document.getElementById("sai-chat-stage");
       if (el) el.scrollTop = el.scrollHeight;
-    }, 40);
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(doScroll);
+    setTimeout(doScroll, 60);
+    setTimeout(doScroll, 200);
   }
 
   async function openArticlePicker(intent, photoObj) {
@@ -352,10 +355,11 @@
       ? `<div style="margin-top:10px;max-width:340px;background:#0f172a;border:1px solid rgba(56,189,248,0.3);border-radius:14px;overflow:hidden;">
            <img src="${esc(m.generated_image.url)}" alt="${esc(m.generated_image.prompt)}" style="width:100%;display:block;" />
            <div style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
-             <span style="font-size:0.7rem;color:#94a3b8;">${esc(m.generated_image.provider || "AI Image")}</span>
-             <div style="display:flex;gap:6px;align-items:center;">
+             <span style="font-size:0.7rem;color:#94a3b8;">${esc(m.generated_image.provider || "Flux Editorial AI")}</span>
+             <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+               <button type="button" data-sai-regen-gen="${msgIdx}" class="fl-btn sm" style="padding:4px 8px;font-size:0.72rem;" title="Generate a fresh variation">🔄</button>
                <button type="button" data-sai-attach-gen="${msgIdx}" class="fl-btn primary sm" style="padding:4px 9px;font-size:0.72rem;">+ Article</button>
-               <a href="${esc(m.generated_image.url)}" download="ilovefinland-ai-image.png" target="_blank" rel="noopener" class="fl-btn sm" style="text-decoration:none;padding:4px 9px;font-size:0.72rem;">Download ↓</a>
+               <a href="${esc(m.generated_image.url)}" download="ilovefinland-ai-image.jpg" target="_blank" rel="noopener" class="fl-btn sm" style="text-decoration:none;padding:4px 9px;font-size:0.72rem;">Download ↓</a>
              </div>
            </div>
          </div>`
@@ -682,6 +686,15 @@
         if (gen) openArticlePicker("attach", gen);
       };
     });
+    root.querySelectorAll("[data-sai-regen-gen]").forEach((b) => {
+      b.onclick = () => {
+        const mi = Number(b.getAttribute("data-sai-regen-gen"));
+        const gen = chat?.messages?.[mi]?.generated_image;
+        if (gen && gen.prompt) {
+          sendStudioMessage(`Generate another editorial image of ${gen.prompt}`);
+        }
+      };
+    });
     root.querySelectorAll("[data-sai-attach-user-img]").forEach((b) => {
       b.onclick = () => {
         const [mi, ii] = String(b.getAttribute("data-sai-attach-user-img") || "").split(":").map(Number);
@@ -831,9 +844,17 @@
   function init() {
     loadChats();
     render();
+    scrollBottom();
   }
 
-  window.StudioAIChat = { init, render };
+  window.StudioAIChat = {
+    init,
+    render() {
+      render();
+      scrollBottom();
+    },
+    scrollBottom,
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=111.0" />
+  <link rel="stylesheet" href="/styles.css?v=112.0" />
   <link rel="stylesheet" href="/reel-studio.css?v=55.0" />
   <link rel="stylesheet" href="/finnish-lab.css?v=111.0" />
   <link rel="icon" type="image/png" href="/assets/ilf-heart.png" />
@@ -130,6 +130,11 @@
           <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
           <span>Dashboard</span>
         </button>
+        <button class="nav-item" data-view="ideas" id="nav-item-ideas" title="AI Article Suggestions &amp; Story Pitches">
+          <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"></path></svg>
+          <span>Article Suggestions</span>
+          <span id="badge-ideas-count" class="badge" style="margin-left:auto;font-size:0.65rem;padding:2px 6px;background:rgba(56,189,248,0.2);color:#38BDF8;border-radius:999px;font-weight:800;">17</span>
+        </button>
         <button class="nav-item" data-workspace-shortcut="article" id="nav-item-web-publisher">
           <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
           <span>Article &amp; Web</span>
@@ -241,10 +246,6 @@
           </div>
 
           <div class="studio-utility-pill-group">
-            <button type="button" class="btn-utility-pill" data-view="ideas" id="nav-item-ideas" title="Open AI Article Suggestions & Story Pitches">
-              <span>💡 Article Suggestions</span>
-              <span id="badge-ideas-count" class="utility-pill-badge">17</span>
-            </button>
             <button type="button" class="btn-utility-pill is-ai" data-view="studio-ai" id="nav-item-studio-ai" title="Open Studio AI Co-Pilot Chat">
               <span>✨ Studio AI</span>
             </button>
@@ -397,43 +398,41 @@
               </div>
             </div>
 
-            <!-- 2. Compact Single-Row Filters Toolbar -->
-            <div class="studio-compact-toolbar" style="margin-bottom:18px;">
-              <!-- Scope Segmented Control: All | Finland | International -->
-              <div style="display:inline-flex;background:#082347;border:1px solid rgba(75, 137, 188, 0.28);padding:2px;border-radius:8px;gap:2px;flex:0 0 auto;">
-                <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all" style="padding:4px 10px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:#029CD8;color:#fff;">All</button>
-                <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland" style="padding:4px 10px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">Finland</button>
-                <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international" style="padding:4px 10px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;background:transparent;color:#B8C4D4;">International</button>
+            <!-- 2. Clean 2-Row Filters Toolbar (Row 1: Search + Scope, Row 2: Section | Status | Sort) -->
+            <div class="ideas-filter-bar" style="margin-bottom:18px;">
+              <div class="ideas-filter-row-1">
+                <div class="search-wrap" style="flex:1;min-width:0;position:relative;">
+                  <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." />
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div class="ideas-scope-pills" role="tablist" aria-label="Story Scope">
+                  <button type="button" class="btn btn-sm filter-idea-scope active" data-scope="all">All</button>
+                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="finland">Finland</button>
+                  <button type="button" class="btn btn-sm filter-idea-scope" data-scope="international">International</button>
+                </div>
               </div>
 
-              <!-- Website Section Dropdown -->
-              <select id="ideas-section-select">
-                <option value="all">All Sections</option>
-                <option value="News">News</option>
-                <option value="Finland Guide">Finland Guide</option>
-                <option value="Things to Do">Things to Do</option>
-                <option value="Travel">Travel</option>
-                <option value="Food & Restaurants">Food &amp; Restaurants</option>
-                <option value="Events">Events</option>
-              </select>
+              <div class="ideas-filter-row-2">
+                <select id="ideas-section-select" aria-label="Filter by Website Section">
+                  <option value="all">All Sections</option>
+                  <option value="News">News</option>
+                  <option value="Finland Guide">Finland Guide</option>
+                  <option value="Things to Do">Things to Do</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Food & Restaurants">Food &amp; Restaurants</option>
+                  <option value="Events">Events</option>
+                </select>
 
-              <!-- Status View Selector (Active Suggestions | Saved Stories | Dismissed) -->
-              <select id="ideas-status-select">
-                <option value="suggested">Active Suggestions</option>
-                <option value="saved">Saved Stories</option>
-                <option value="dismissed">Dismissed (Archive)</option>
-              </select>
+                <select id="ideas-status-select" aria-label="Filter by Status">
+                  <option value="suggested">Active Suggestions</option>
+                  <option value="saved">Saved Stories</option>
+                  <option value="dismissed">Dismissed (Archive)</option>
+                </select>
 
-              <!-- Sort Dropdown -->
-              <select id="ideas-sort-select">
-                <option value="latest" selected>Latest Stories (Today First)</option>
-                <option value="relevant">Most Relevant (Today First)</option>
-              </select>
-
-              <!-- Search Input -->
-              <div class="search-wrap">
-                <input type="text" id="ideas-search-input" placeholder="Search stories by headline, keyword, or place..." />
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B8C4D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <select id="ideas-sort-select" aria-label="Sort Stories">
+                  <option value="latest" selected>Latest First</option>
+                  <option value="relevant">Most Relevant</option>
+                </select>
               </div>
             </div>
 
@@ -3148,12 +3147,12 @@
 
   <script src="/reel-player.js?v=55.0"></script>
   <script src="/reel-studio.js?v=55.0"></script>
-  <script src="/app.js?v=110.0"></script>
+  <script src="/app.js?v=112.0"></script>
   <script src="/finnish-lab-db.js?v=82.0"></script>
   <script src="/finnish-lab-curriculum.js?v=82.0"></script>
   <script src="/finnish-lab.js?v=111.0"></script>
   <script src="/finnish-lab-pro.js?v=105.0"></script>
-  <script src="/studio-ai-chat.js?v=96.0"></script>
+  <script src="/studio-ai-chat.js?v=112.0"></script>
   <script>
     function updateHelsinkiClock() {
       var el = document.getElementById('clock-helsinki-val');

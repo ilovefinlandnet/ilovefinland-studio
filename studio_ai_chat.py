@@ -648,21 +648,62 @@ def _search_real_photos(query: str, limit: int = 6) -> List[Dict[str, str]]:
 
 
 def _generate_ai_image(prompt_text: str) -> Tuple[Optional[Dict[str, str]], Optional[str]]:
+    import random
+    import uuid as _uuid
+
     clean_prompt = re.sub(
-        r"\b(create|generate|make|an?|ai|picture|image|photo|for|this|title|article|please)\b",
+        r"\b(create|generate|make|regenerate|another|an?|ai|picture|image|photo|for|this|title|article|please)\b",
         " ",
         prompt_text,
         flags=re.I,
     )
     subject = re.sub(r"\s+", " ", clean_prompt).strip() or prompt_text.strip()
-    editorial_prompt = (
-        f"Authentic editorial DSLR photograph, {subject}, Finland Nordic natural lighting, "
-        "sharp 35mm lens, realistic colors, zero text, zero watermark, magazine quality"
-    )
 
+    # Step 1: Use Gemini ($0 free tier) as an Editorial Art Director for a vivid, realistic photography prompt
+    editorial_prompt = (
+        f"Authentic editorial DSLR photograph of {subject}, Nordic natural lighting, "
+        "sharp 35mm f/2.0 lens, lifelike textures, magazine quality, zero text, zero watermark, no logos"
+    )
+    try:
+        dir_prompt, _, _ = _call_studio_gemini(
+            contents=[{
+                "role": "user",
+                "parts": [{
+                    "text": (
+                        f"Write ONE concise photorealistic editorial photography prompt (max 38 words) for: {subject}. "
+                        "Describe subject, camera framing, Nordic natural lighting, realistic colors, and atmosphere. "
+                        "Include 'no text, no watermarks'. Return ONLY the prompt sentence."
+                    )
+                }],
+            }],
+            system_instruction="You are an award-winning Nordic magazine photo director. Output ONLY a single clean image generation prompt.",
+            use_search=False,
+            max_tokens=120,
+            temperature=0.55,
+        )
+        if dir_prompt and len(dir_prompt.strip()) > 15:
+            cleaned_dir = dir_prompt.strip().strip('"').strip("'").replace("\n", " ")
+            editorial_prompt = cleaned_dir[:320]
+    except Exception:
+        pass
+
+    uploads_dir = db.resolve_uploads_dir()
+
+    def _save_image_bytes(img_bytes: bytes, ext: str = "jpg") -> Optional[str]:
+        try:
+            if not img_bytes or len(img_bytes) < 2500:
+                return None
+            fname = f"ai_gen_{_uuid.uuid4().hex[:10]}.{ext}"
+            fpath = uploads_dir / fname
+            fpath.write_bytes(img_bytes)
+            return f"/assets/uploads/{fname}"
+        except Exception:
+            return None
+
+    # Step 2: Try Gemini native image generation models first ($0 free tier when enabled)
     key = _get_gemini_key()
     if key:
-        for model in ("models/gemini-2.0-flash-exp-image-generation", "models/gemini-2.5-flash-image"):
+        for model in ("models/gemini-2.5-flash-image-preview", "models/gemini-2.5-flash-image", "models/gemini-2.0-flash-exp-image-generation"):
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent?key={key}"
                 body = json.dumps({
@@ -677,14 +718,32 @@ def _generate_ai_image(prompt_text: str) -> Tuple[Optional[Dict[str, str]], Opti
                         inl = part.get("inlineData") or part.get("inline_data")
                         if inl and inl.get("data"):
                             mime = inl.get("mimeType") or inl.get("mime_type") or "image/png"
-                            data_url = f"data:{mime};base64,{inl['data']}"
-                            return {"url": data_url, "prompt": subject, "provider": "Gemini Image"}, None
+                            ext = "png" if "png" in mime else "jpg"
+                            raw_bytes = base64.b64decode(inl["data"])
+                            local_url = _save_image_bytes(raw_bytes, ext=ext)
+                            final_url = local_url or f"data:{mime};base64,{inl['data']}"
+                            return {"url": final_url, "prompt": subject, "provider": "Gemini Image (Editorial)"}, None
             except Exception:
                 continue
 
+    # Step 3: High-Quality Flux Photorealistic Engine ($0 free) + server-side caching into /assets/uploads/
+    seed = random.randint(1000, 999999)
     encoded = urllib.parse.quote(editorial_prompt[:320])
-    img_url = f"https://image.pollinations.ai/prompt/{encoded}?width=1080&height=1350&nologo=true"
-    return {"url": img_url, "prompt": subject, "provider": "AI Image Generator"}, None
+    flux_url = f"https://image.pollinations.ai/prompt/{encoded}?model=flux&width=1080&height=1350&enhance=true&nologo=true&seed={seed}"
+    try:
+        req = urllib.request.Request(flux_url, headers={"User-Agent": "ILoveFinlandStudio/1.0"})
+        with urllib.request.urlopen(req, timeout=32) as resp:
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            img_bytes = resp.read()
+        if "image" in ctype or len(img_bytes) > 8000:
+            ext = "png" if "png" in ctype else "jpg"
+            local_url = _save_image_bytes(img_bytes, ext=ext)
+            if local_url:
+                return {"url": local_url, "prompt": subject, "provider": "Flux Editorial AI"}, None
+    except Exception:
+        pass
+
+    return {"url": flux_url, "prompt": subject, "provider": "Flux Editorial AI"}, None
 
 
 def _call_studio_gemini(

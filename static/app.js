@@ -3907,6 +3907,94 @@
   let projectsData = [];
   let pendingCreatedPhoto = null;
 
+  const ARTICLE_BACKUP_KEY = "ilf_article_backup_v1";
+
+  function backupArticleLocally(pkgId, fields) {
+    try {
+      const title = String((fields && fields.headline) || "").trim();
+      if (!title) return;
+      const list = JSON.parse(localStorage.getItem(ARTICLE_BACKUP_KEY) || "[]");
+      const norm = title.toLowerCase();
+      const filtered = Array.isArray(list) ? list.filter((x) => String(x.headline || "").toLowerCase() !== norm) : [];
+      filtered.unshift({
+        pkgId: pkgId || null,
+        headline: title,
+        fields: Object.assign({}, fields),
+        savedAt: Date.now(),
+      });
+      localStorage.setItem(ARTICLE_BACKUP_KEY, JSON.stringify(filtered.slice(0, 15)));
+    } catch (_) {}
+  }
+
+  function checkLocalArticleBackups() {
+    try {
+      const grid = $("articles-posts-grid");
+      if (!grid || !grid.parentElement) return;
+      const existingBar = $("ilf-backup-restore-bar");
+      if (existingBar) existingBar.remove();
+
+      const raw = JSON.parse(localStorage.getItem(ARTICLE_BACKUP_KEY) || "[]");
+      if (!Array.isArray(raw) || !raw.length) return;
+      const serverTitles = new Set((projectsData || []).map((p) => String(p.title || "").trim().toLowerCase()));
+      const twoWeeks = 14 * 24 * 60 * 60 * 1000;
+      const missing = raw.filter(
+        (b) => b && b.headline && (Date.now() - (b.savedAt || 0)) < twoWeeks && !serverTitles.has(String(b.headline).trim().toLowerCase())
+      );
+      if (!missing.length) return;
+
+      const bar = document.createElement("div");
+      bar.id = "ilf-backup-restore-bar";
+      bar.style.cssText =
+        "margin-bottom:14px;padding:12px 14px;border-radius:10px;background:rgba(2,132,199,0.16);border:1px solid rgba(56,189,248,0.45);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;";
+      bar.innerHTML = `
+        <div style="font-size:0.84rem;color:#E0F2FE;">
+          <strong>🛡️ ${missing.length} locally backed-up article${missing.length > 1 ? "s" : ""} found</strong>
+          <span style="color:#94A3B8;"> (${missing.map((m) => m.headline.slice(0, 32)).join(", ")})</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" id="btn-restore-local-articles" class="btn btn-primary btn-xs" style="background:#029CD8;border:none;color:#fff;font-weight:700;padding:6px 12px;">↺ Restore Now</button>
+          <button type="button" id="btn-dismiss-local-articles" class="btn btn-ghost btn-xs" style="padding:6px 10px;">✕</button>
+        </div>
+      `;
+      grid.parentElement.insertBefore(bar, grid);
+
+      $("btn-dismiss-local-articles")?.addEventListener("click", () => {
+        localStorage.removeItem(ARTICLE_BACKUP_KEY);
+        bar.remove();
+      });
+      $("btn-restore-local-articles")?.addEventListener("click", async () => {
+        const btn = $("btn-restore-local-articles");
+        if (btn) { btn.disabled = true; btn.textContent = "⏳ Restoring..."; }
+        let restored = 0;
+        for (const item of missing) {
+          try {
+            const f = item.fields || {};
+            const created = await api("/api/assignments/create", {
+              method: "POST",
+              body: JSON.stringify({
+                title: item.headline,
+                story_type: f.section || "News",
+                notes: f.short_description || "",
+                language: f.language || "English",
+              }),
+            });
+            const newId = created?.package_id || created?.package?.id || created?.id;
+            if (newId) {
+              await api("/api/package/update-article", {
+                method: "POST",
+                body: JSON.stringify({ package_id: newId, fields: f }),
+              });
+              restored++;
+            }
+          } catch (_) {}
+        }
+        bar.remove();
+        await loadProjects();
+        showToast(restored ? `✅ Restored ${restored} article(s) from local backup!` : "Could not restore automatically.", restored ? "success" : "warning");
+      });
+    } catch (_) {}
+  }
+
   async function loadProjects() {
     try {
       const data = await api("/api/projects?archived=1");
@@ -3915,6 +4003,7 @@
       updatePipelineKpis();
       loadIdeasPool();
       renderArticlesPostsList();
+      checkLocalArticleBackups();
     } catch (err) {
       console.error("Failed to load projects:", err);
     }
@@ -8377,6 +8466,7 @@
         method: "POST",
         body: JSON.stringify({ package_id: currentPackageId, fields }),
       });
+      backupArticleLocally(currentPackageId, fields);
       await loadPackage(currentPackageId);
       const btn = $("btn-save-article-edits");
       if (btn) {
