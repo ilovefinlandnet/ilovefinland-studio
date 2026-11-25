@@ -3142,17 +3142,77 @@ body:has(#view-finnish-lab:not(.hidden)),
 }
 
 .fl3-chatgpt-composer {
-  border-radius: 18px;
-  padding: 10px 14px 10px;
-  background: #112240;
-  border: 1px solid #1E3A5F;
-  box-shadow: 0 10px 28px rgba(2, 12, 27, 0.48);
+  border-radius: 26px !important;
+  padding: 10px 14px 8px !important;
+  background: rgba(17, 34, 64, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 32px rgba(2, 12, 27, 0.52) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .fl3-chatgpt-composer:focus-within {
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 10px 28px rgba(2, 12, 27, 0.48), 0 0 0 2px rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  box-shadow: 0 12px 32px rgba(2, 12, 27, 0.52), 0 0 0 2px rgba(56, 189, 248, 0.14) !important;
+}
+
+.fl3-chatgpt-composer textarea.fl3-composer-input,
+.fl3-chatgpt-composer .fl3-composer-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 6px 6px 4px !important;
+  min-height: 36px !important;
+  max-height: 140px !important;
+  color: #F8FAFC !important;
+  font-size: 0.96rem !important;
+  line-height: 1.45 !important;
+  resize: none !important;
+}
+
+.fl3-chatgpt-composer .fl3-composer-input::placeholder {
+  color: #7C92B2 !important;
+}
+
+/* Clean Apple / Gemini Study Surfaces & Monochrome Spinner */
+.fl3-study-wrap .fl3-card {
+  background: rgba(13, 27, 50, 0.72) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 28px rgba(2, 12, 27, 0.36) !important;
+}
+
+.fl3-study-subnav {
+  background: rgba(17, 34, 64, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+}
+
+.fl3-study-subnav .fl3-sub-pill {
+  border-radius: 999px !important;
+}
+
+.fl3-spin {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-top-color: #FFFFFF;
+  display: inline-block;
+  animation: fl3Spin 0.75s linear infinite;
+}
+
+.fl3-spin-lg {
+  width: 22px;
+  height: 22px;
+  border-width: 2.5px;
+}
+
+@keyframes fl3Spin {
+  to { transform: rotate(360deg); }
 }
 
 .fl3-composer-actions {
