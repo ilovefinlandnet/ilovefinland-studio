@@ -4559,9 +4559,9 @@ def get_last_scan_info(db_path: str = DB_PATH) -> Dict[str, Any]:
 
 
 def reclassify_misplaced_travel_ideas(db_path: str = DB_PATH) -> int:
-    """Re-run section/category classification on existing 'Travel' plan_ideas
-    so crime, layoffs, politics, and emergency alerts that only mentioned a
-    Finnish city/region move to their true section (e.g. News -> Finland).
+    """Re-run section/category classification on existing lifestyle/guide/travel plan_ideas
+    so crime, layoffs, politics, university news, and emergency alerts move to their
+    true section (e.g. News -> Finland).
     """
     updated = 0
     try:
@@ -4569,7 +4569,7 @@ def reclassify_misplaced_travel_ideas(db_path: str = DB_PATH) -> int:
         conn = get_connection(db_path)
         try:
             rows = conn.execute(
-                "SELECT id, title, angle, source_claim, section, category FROM plan_ideas WHERE section = 'Travel'"
+                "SELECT id, title, angle, source_claim, section, category FROM plan_ideas WHERE section IN ('Travel', 'Things to Do', 'Finland Guide', 'Events', 'Food & Restaurants')"
             ).fetchall()
             for r in rows:
                 title = (r["title"] or "").strip()

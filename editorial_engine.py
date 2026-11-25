@@ -526,18 +526,22 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
     # --- FINLAND CONTENT: ROUTE TO PROPER ILF SECTION ---
 
     # 0. Hard News Guard: Police/Crime, Emergency Alerts, Politics, Layoffs & Weekly Roundups
-    # Must run BEFORE Travel/Lifestyle so regional mentions (Lapland, Rovaniemi, Jyväskylä, Rauma)
-    # in crime, healthcare, politics, or emergency stories never leak into Travel.
+    # Must run BEFORE Travel/Lifestyle/Guides so regional mentions or generic nouns
+    # in crime, healthcare, politics, or emergency stories never leak into Travel/Guides/Things to Do.
     if any(k in combined for k in [
         "fi-alert", "112 suomi", "emergency warning", "emergency alert", "emergency system", "vaaratiedote",
         "this week in finland", "week's headlines", "news roundup",
         "police investigate", "police station", "poliisi", "poliisiasema", "resisted arrest", "arrested",
         "threat against", "uhkaus", "suspect", "stabbing", "shooting", "murder", "homicide", "crime",
-        "prison", "court rules", "district court", "käräjäoikeus", "drove into", "törmäsi", "onnettomuus",
+        "victimized", "raped", "abuse", "dark secret", "prison", "court rules", "district court",
+        "käräjäoikeus", "drove into", "törmäsi", "onnettomuus",
         "laid off", "layoffs", "layoff", "työpaikkaa", "muutosneuvottelu", "yt-neuvottelu", "bankruptcies", "bankruptcy",
+        "unemployment", "ministry says", "ombudsman", "exceed legal deadlines", "tightens visa restrictions",
         "social democrats", "sdp", "kokoomus", "perussuomalaiset", "keskusta", "council group", "valtuusto",
         "demari", "parliament", "eduskunta", "prime minister", "minister", "coalition", "election", "strike", "lakko",
-        "migri backlogs", "hospital doors", "sairaalasta", "nurses laid off"
+        "migri backlogs", "hospital doors", "sairaalasta", "nurses laid off",
+        "trump", "tariff", "threatened huge taxes", "mining disputes", "dissertation", "new rector",
+        "forest protection", "bolt ride prices", "noise from recycling", "halt on independence day"
     ]):
         return ("News", "Finland", "Timely Finnish national news, public safety, civic, or political reporting.", 0.97)
 
@@ -604,11 +608,11 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
         return ("Things to Do", "Culture & Traditions", "Finnish sauna lifestyle, authentic löyly etiquette, and cultural traditions.", 0.96)
     if any(k in combined for k in ["amos rex", "museum", "art space", "exhibition", "modern art", "gallery", "lasipalatsi", "ateneum", "kiasma"]):
         return ("Things to Do", "Museums", "Helsinki museum highlights, contemporary art spaces, and visitor exhibitions.", 0.96)
-    if any(k in combined for k in ["reindeer", "nuuksio", "family", "kids", "zoo", "aquarium", "theme park", "mumin", "moomin"]):
+    if any(k in combined for k in ["reindeer park", "nuuksio", "family activities", "family-friendly", "family day", "kids activities", "zoo", "aquarium", "theme park", "mumin", "moomin"]):
         return ("Things to Do", "Family Activities", "Family-friendly activities and outdoor days out across Finland.", 0.95)
     if any(k in combined for k in ["skiing", "cross-country skiing", "snowshoe", "ice skating", "winter activity", "hiihto"]):
         return ("Things to Do", "Winter Activities", "Seasonal winter outdoor sports and recreational activities across Finland.", 0.95)
-    if any(k in combined for k in ["hiking", "national park", "outdoor trail", "cycling", "kayak", "canoe", "wilderness trail", "foraging", "everyman's right", "jokamiehenoikeus"]):
+    if any(k in combined for k in ["hiking", "national park", "outdoor trail", "kayak", "canoe", "wilderness trail", "foraging", "everyman's right", "jokamiehenoikeus"]) or re.search(r"\bcycling\b", combined):
         return ("Things to Do", "Outdoor Activities", "Outdoor exploration, trails, and national park guides.", 0.95)
 
     # 5. Events
@@ -624,7 +628,7 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
         return ("Finland Guide", "Driving", "Practical driving rules, seasonal tyre regulations, and road safety in Finland.", 0.96)
 
     # 8. Immigration & Permits (Finland Guide -> Residence Permits)
-    if any(k in combined for k in ["residence permit", "migri", "enterfinland", "d-visa", "visa", "citizenship", "relocation", "immigration", "specialist permit"]):
+    if any(k in combined for k in ["residence permit", "migri", "enterfinland", "d-visa", "citizenship", "relocation", "immigration", "specialist permit", "moving to finland"]):
         return ("Finland Guide", "Residence Permits", "Official Finnish residence permit processes, legal criteria, and Migri guidance.", 0.96)
 
     # 9. Public Transport Guides (Finland Guide -> Public Transport)
@@ -632,13 +636,13 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
         return ("Finland Guide", "Public Transport", "Public transit guides, ticket zones, and travel connections in Finland.", 0.94)
 
     # 10. Work & Study (Finland Guide -> Work / Study in Finland)
-    if any(k in combined for k in ["work in finland", "job market", "te-palvelut", "employment", "salary", "cv", "working hours"]):
+    if any(k in combined for k in ["work in finland", "job search", "te-palvelut", "working hours guide", "worker rights", "cv tips"]):
         return ("Finland Guide", "Work", "Official guidance on employment, job search, and worker rights in Finland.", 0.94)
-    if any(k in combined for k in ["study in finland", "university", "amk", "student visa", "tuition"]):
+    if any(k in combined for k in ["study in finland", "student visa", "tuition", "international students", "apply to university"]):
         return ("Finland Guide", "Study in Finland", "Higher education guide for international students studying in Finland.", 0.94)
 
     # 11. Taxes & Banking (Finland Guide -> Taxes / Banking)
-    if any(k in combined for k in ["vero", "tax card", "verokortti", "tax return", "tax rate", "income tax", "capital gains", "withholding"]):
+    if any(k in combined for k in ["tax card", "verokortti", "tax return", "verohallinto", "income tax", "capital gains", "withholding"]) or re.search(r"\bvero\b", combined):
         return ("Finland Guide", "Taxes", "Finnish Tax Administration (Verohallinto) rules and tax guidance.", 0.96)
     if any(k in combined for k in ["bank account", "banking", "bankid", "verkkopankki", "nordea", "danske", "s-pankki"]) or re.search(r'\b(?:op-pankki|op-ryhmä|op ryhmä|op financial|osuuspankki|op mobiili)\b', combined):
         return ("Finland Guide", "Banking", "Everyday banking, electronic identification, and payment guides in Finland.", 0.95)
@@ -648,7 +652,7 @@ def recommend_section_and_category(topic: str, instructions: str = "") -> Tuple[
         return ("Finland Guide", "Cost of Living", "Breakdown of practical living costs and everyday budgeting in Finland.", 0.94)
     if any(k in combined for k in ["healthcare", "kela", "health centre", "terveyskeskus", "omakanta", "prescription"]):
         return ("Finland Guide", "Healthcare", "Finnish public healthcare system, Kela benefits, and pharmacy access.", 0.94)
-    if any(k in combined for k in ["finnish language", "suomi", "learn finnish", "kielikurssi"]):
+    if any(k in combined for k in ["finnish language", "learn finnish", "kielikurssi", "finnish phrases", "finnish grammar"]):
         return ("Finland Guide", "Finnish Language", "Finnish language learning resources and conversational phrases.", 0.94)
     if any(k in combined for k in ["guide", "how to", "explainer", "living in finland", "winter survival", "waste sorting", "recycling"]):
         return ("Finland Guide", "Everyday Life", "Essential everyday life guidance for residents and newcomers in Finland.", 0.92)
