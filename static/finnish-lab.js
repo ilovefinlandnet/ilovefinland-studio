@@ -2071,9 +2071,19 @@
   }
 
   /* ---------- AUDIO RECORDING (ATTACHES CLEANLY INTO INPUT BAR) ---------- */
+  let _recAudioCtx = null;
+  let _recRafId = null;
+
+  function stopRecVisualizer() {
+    if (_recRafId) { cancelAnimationFrame(_recRafId); _recRafId = null; }
+    if (_recAudioCtx) { try { _recAudioCtx.close(); } catch (_) {} _recAudioCtx = null; }
+  }
+
   async function startRecording() {
     if (state.isRecording) return;
     if (state.isLiveTranslating) stopLiveTranslation();
+    stopActiveAudio(true);
+    stopPodcastPlayback(true);
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       toast("Microphone not supported here. You can type or attach an audio file.", "warning");
       return;
@@ -2090,24 +2100,23 @@
       state.mediaChunks = [];
       state.isRecording = true;
       state.recordStartMs = Date.now();
+      rec._cancelRecording = false;
 
       rec.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) state.mediaChunks.push(ev.data); };
       rec.onstop = async () => {
+        stopRecVisualizer();
         stream.getTracks().forEach((t) => t.stop());
         clearInterval(state.recordTimer);
         state.isRecording = false;
-        const durationSec = Math.max(1, Math.round((Date.now() - state.recordStartMs) / 1000));
+        const wasCancelled = Boolean(rec._cancelRecording);
         const cleanMime = (rec.mimeType || "audio/webm").split(";")[0];
         const blob = new Blob(state.mediaChunks, { type: cleanMime });
-        const b64 = await blobToBase64(blob);
-        state.pendingAttachments.push({
-          id: DB.uid("aud"),
-          name: `Audio (${durationSec}s)`,
-          mime_type: cleanMime,
-          data_base64: b64,
-          previewUrl: URL.createObjectURL(blob),
-        });
-        renderActiveView();
+        if (wasCancelled || blob.size < 600) {
+          renderActiveView();
+          return;
+        }
+        // Send spoken audio directly to Bilingual Voice Coach straight in Chat!
+        await sendChatVoiceCoachAudio(blob, cleanMime);
       };
 
       rec.start();
@@ -2116,16 +2125,109 @@
         const mm = String(Math.floor(sec / 60)).padStart(2, "0");
         const ss = String(sec % 60).padStart(2, "0");
         document.querySelectorAll(".fl-rec-timer").forEach((el) => { el.textContent = `${mm}:${ss}`; });
-      }, 400);
+      }, 300);
       renderActiveView();
+
+      // Live 16-bar real-time voice waveform visualizer inside Chat composer
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          const ctx = new AC();
+          if (ctx.state === "suspended") await ctx.resume().catch(() => {});
+          if (ctx.state === "running") {
+            const src = ctx.createMediaStreamSource(stream);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 64;
+            src.connect(analyser);
+            _recAudioCtx = ctx;
+            const freqData = new Uint8Array(analyser.frequencyBinCount);
+            const animateBars = () => {
+              if (!state.isRecording) return;
+              analyser.getByteFrequencyData(freqData);
+              const bars = document.querySelectorAll("#fl-live-wave-bars span");
+              for (let i = 0; i < bars.length; i++) {
+                const v = freqData[i % freqData.length] || 0;
+                const h = Math.max(5, Math.min(28, Math.round(5 + (v / 255) * 24)));
+                bars[i].style.height = `${h}px`;
+              }
+              _recRafId = requestAnimationFrame(animateBars);
+            };
+            _recRafId = requestAnimationFrame(animateBars);
+          }
+        }
+      } catch (_) {}
     } catch (_) {
       toast("Microphone permission denied.", "error");
     }
   }
 
-  function stopRecording() {
+  function stopRecording(cancel) {
     if (state.mediaRecorder && state.isRecording) {
+      if (cancel) state.mediaRecorder._cancelRecording = true;
+      else primeVcAudio(); // Unlock iOS Safari audio synchronously inside the Send tap!
       try { state.mediaRecorder.stop(); } catch (_) {}
+    }
+  }
+
+  async function sendChatVoiceCoachAudio(audioBlob, cleanMime) {
+    if (!audioBlob || audioBlob.size < 600) return;
+    state.isSending = true;
+    state.sendingLabel = "Listening & checking your Finnish...";
+    renderActiveView();
+    scrollChatsToBottom(true);
+    try {
+      const b64 = await blobToBase64(audioBlob);
+      const conv = await ensureActiveConv("Finnish Chat");
+      const settings = DB.getSettings();
+      const hist = (conv.messages || [])
+        .filter((m) => !m.isLiveSubtitle && !m.isError)
+        .slice(-4)
+        .map((m) => ({ role: m.role, text: (m.text || "").slice(0, 280) }));
+
+      const res = await flApi("/api/finnish-lab/voice-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: "",
+          attachments: [{ mime_type: cleanMime || "audio/webm", data_base64: b64 }],
+          history: hist,
+          level: settings.level || "A1",
+          voice: state.podcastVoice || "fi-FI-NooraNeural",
+        }),
+        timeoutMs: 45000,
+      });
+      state.isSending = false;
+      state.sendingLabel = "";
+      if (res && res.ok) {
+        const heard = res.heard || "(Spoken Finnish)";
+        const reply = res.display_text || "Nice try! Try saying that once more slowly.";
+        conv.messages.push({ id: DB.uid("msg"), role: "user", text: heard, isVoiceTurn: true, at: new Date().toISOString() });
+        conv.messages.push({
+          id: DB.uid("msg"),
+          role: "assistant",
+          text: reply,
+          finnishTts: reply,
+          isVoiceCoach: true,
+          coachAudioUrl: res.audio_url || "",
+          at: new Date().toISOString(),
+        });
+        await DB.saveConversation(conv);
+        scheduleAutoSync();
+        renderActiveView();
+        scrollChatsToBottom(true);
+        // Automatically talk back in English + Native Finnish (unless Silent Live is active)
+        if (res.audio_url && !state.isLiveTranslating) {
+          playVcAudioUrl(res.audio_url);
+        }
+      } else {
+        toast((res && res.message) || "Could not process voice. Please try again.", "error");
+        renderActiveView();
+      }
+    } catch (err) {
+      state.isSending = false;
+      state.sendingLabel = "";
+      toast((err && err.message) || "Voice Coach error. Please try again.", "error");
+      renderActiveView();
     }
   }
 
@@ -3514,8 +3616,41 @@
     };
   }
 
-  /* ---------- MESSAGE BUBBLE RENDERER (SHARED BY TUTOR CARD & SIDE PANEL) ---------- */
-  function renderMessageBubble(m, idx) {
+  /* ---------- MESSAGE BUBBLE RENDERER (UNIFIED TUTOR + VOICE COACH + SILENT CLASSROOM LIVE) ---------- */
+  function renderMessageBubble(m, idx, firstName) {
+    // 1. Silent Classroom Live Card rendered directly inside full-height Chat feed
+    if (m.isLiveSubtitle && m.role === "assistant" && !m.isError) {
+      const parsed = parseSingleLiveMsg(m);
+      const isQ = Boolean(m.isTeacherQuestion || isLikelyTeacherQuestion(parsed.fiHeard, parsed.enMeaning, firstName));
+      return `
+        <div class="fl3-bubble assistant fl3-live-msg-card ${isQ ? "is-question" : ""}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
+            <span style="font-size:0.68rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:${isQ ? "#38BDF8" : "#94A3B8"};">
+              ${isQ ? "Teacher Question · Muted" : "Classroom Live · Muted"}
+            </span>
+          </div>
+          <div style="font-size:0.95rem;font-weight:700;color:#FFFFFF;line-height:1.4;">${esc(parsed.fiHeard)}</div>
+          ${parsed.enMeaning ? `<div style="font-size:0.86rem;color:#38BDF8;font-weight:600;margin-top:3px;line-height:1.38;">${esc(parsed.enMeaning)}</div>` : ""}
+          ${
+            parsed.replies && parsed.replies.length
+              ? `<div class="fl3-reply-row" style="margin-top:9px;">
+                  ${parsed.replies
+                    .map(
+                      (r) => `
+                    <button type="button" class="fl3-reply-chip" data-fl-use-reply="${esc(r.fi)}" title="Tap to copy &amp; place in chat input (silent)">
+                      <strong style="font-size:0.82rem;color:#FFFFFF;">${esc(r.fi)}</strong>
+                      <span style="font-size:0.72rem;color:#94A3B8;">${esc(r.en)}</span>
+                    </button>
+                  `
+                    )
+                    .join("")}
+                </div>`
+              : ""
+          }
+        </div>
+      `;
+    }
+
     const hasImgAtt = (m.attachments || []).some((a) => (a.mime_type || "").startsWith("image/"));
     const attHtml = (m.attachments || []).length
       ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
@@ -3524,14 +3659,14 @@
               a.previewUrl && (a.mime_type || "").startsWith("image/")
                 ? `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;">
                     <img src="${a.previewUrl}" style="max-width:160px;max-height:115px;border-radius:8px;border:1px solid #1E3A5F;" alt="" />
-                    ${a.refLabel ? `<span style="font-size:0.68rem;color:#94A3B8;font-weight:700;">📷 ${esc(a.refLabel)}</span>` : ""}
+                    ${a.refLabel ? `<span style="font-size:0.68rem;color:#94A3B8;font-weight:700;">${esc(a.refLabel)}</span>` : ""}
                   </div>`
-                : `<span class="fl-att-chip">${(a.mime_type || "").startsWith("audio/") ? "🎙️" : "📄"} ${esc(a.refLabel || a.name || "File")}</span>`
+                : `<span class="fl-att-chip">${esc(a.refLabel || a.name || "File")}</span>`
             )
             .join("")}
           ${
             m.role === "user" && hasImgAtt
-              ? `<button type="button" class="fl3-btn" style="padding:6px 10px;font-size:0.75rem;min-height:34px;" data-fl-msg-to-walk="${idx}" title="Build a Walk &amp; Listen audio episode from this photo">🎧 Send to Walk &amp; Listen</button>`
+              ? `<button type="button" class="fl3-btn" style="padding:6px 10px;font-size:0.75rem;min-height:34px;" data-fl-msg-to-walk="${idx}" title="Build a Walk &amp; Listen audio episode from this photo">Send to Walk &amp; Listen</button>`
               : ""
           }
         </div>`
@@ -3544,6 +3679,8 @@
             ${
               state.isLiveTranslating
                 ? `<span class="fl3-badge silent">Muted (Silent Live ON)</span>`
+                : m.coachAudioUrl
+                ? `<button type="button" class="fl3-speaker-btn" data-fl-play-coach="${esc(m.coachAudioUrl)}" title="Replay Bilingual Voice Coach (EN + FI)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Replay</button>`
                 : isSpeakingThis
                 ? `<button type="button" class="fl3-speaker-btn" data-fl-stop-speak="1" style="color:#FCA5A5;border-color:rgba(248,113,113,0.5);"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> Stop</button>`
                 : `<button type="button" class="fl3-speaker-btn" data-fl-speak-slow="${esc(fullSpeakText)}" data-fl-speak-id="${esc(m.id || ("m" + idx))}" title="Listen slowly (0.75× Neural Finnish)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> 0.75×</button>`
@@ -3553,6 +3690,7 @@
         : "";
     return `
       <div class="fl3-bubble ${m.role === "user" ? "user" : "assistant"}">
+        ${m.isVoiceCoach ? `<div style="font-size:0.68rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:#38BDF8;margin-bottom:5px;">Voice Coach · EN + FI</div>` : ""}
         ${attHtml}
         <div>${renderMarkdownLite(m.text)}</div>
         ${actionsHtml}
@@ -3560,236 +3698,134 @@
     `;
   }
 
-  /* ---------- TAB 1: CHATGPT-STYLE FULL-HEIGHT CHAT + ON-DEMAND SILENT LIVE CLASS ---------- */
+  /* ---------- TAB 1: UNIFIED CHATGPT-STYLE CHAT + LIVE VOICE COACH + SLIM CLASSROOM BAR ---------- */
   function renderTabChatAndClass(firstName) {
     const conv = getActiveConv();
     const allMsgs = conv ? conv.messages || [] : [];
-    const isLegacyLiveBubble = (m) =>
-      Boolean(
-        m.isLiveSubtitle ||
-          (m.role === "user" && String(m.text || "").startsWith("🌐 ")) ||
-          (m.role === "assistant" && /^\s*(?:🇫🇮\s*)?\*{0,2}What was said \(Finnish\)/i.test(String(m.text || "")))
-      );
-    const tutorMsgs = allMsgs
+    const feedMsgs = allMsgs
       .map((m, idx) => ({ m, idx }))
-      .filter(({ m }) => !isLegacyLiveBubble(m));
-    const { latest: liveData, spotlight: liveSpotlight, transcript: liveTranscript } = parseAllLiveCards(allMsgs, firstName);
+      .filter(({ m }) => !(m.role === "user" && String(m.text || "").startsWith("🌐 ")));
+    const hasLiveMsgs = allMsgs.some((m) => m.isLiveSubtitle && !m.isError);
     const liveMode = state.liveMode || "standby";
-    const activeReplySource = liveSpotlight || liveData;
     const hasPendingPhoto = state.pendingAttachments.some((a) => (a.mime_type || "").startsWith("image/"));
-    const showLiveDrawer = Boolean(state.livePanelOpen || state.isLiveTranslating);
+    const showLiveBar = Boolean(state.livePanelOpen || state.isLiveTranslating);
     const greeting = firstName ? `How can I help, ${esc(firstName)}?` : "How can I help with your Finnish?";
 
     return `
       <div class="fl3-chatgpt-wrap" aria-label="AI Finnish Tutor">
         ${
-          showLiveDrawer
-            ? `<div class="fl3-live-drawer" role="region" aria-label="Silent Classroom Live Helper">
-                <!-- Clean Mode Switcher + Start/Stop Header (Zero Emojis) -->
-                <div class="fl3-live-head-row">
+          showLiveBar
+            ? `<div class="fl3-live-slim-bar" role="region" aria-label="Silent Classroom Live Controls">
+                <div class="fl3-live-head-row" style="margin-bottom:${state.isLiveTranslating && liveMode === "standby" ? "8px" : "0"};">
                   <div class="fl3-live-mode-switch" role="tablist" aria-label="Classroom Live Mode">
-                    <button type="button" role="tab" aria-selected="${liveMode === "standby"}" class="fl3-live-mode-pill ${liveMode === "standby" ? "active" : ""}" data-fl-live-mode="standby">
-                      Standby (15s)
-                    </button>
-                    <button type="button" role="tab" aria-selected="${liveMode === "subtitles"}" class="fl3-live-mode-pill ${liveMode === "subtitles" ? "active" : ""}" data-fl-live-mode="subtitles">
-                      Live Subtitles
-                    </button>
+                    <button type="button" role="tab" aria-selected="${liveMode === "standby"}" class="fl3-live-mode-pill ${liveMode === "standby" ? "active" : ""}" data-fl-live-mode="standby">Standby (15s)</button>
+                    <button type="button" role="tab" aria-selected="${liveMode === "subtitles"}" class="fl3-live-mode-pill ${liveMode === "subtitles" ? "active" : ""}" data-fl-live-mode="subtitles">Subtitles</button>
                   </div>
-
-                  <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-                    <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn" style="padding:7px 13px;">
-                      ${
-                        state.isLiveTranslating
-                          ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg> Stop`
-                          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg> ${liveMode === "standby" ? "Start Standby" : "Start Subtitles"}`
-                      }
+                  <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                    ${hasLiveMsgs && !state.isLiveTranslating ? `<button type="button" class="fl3-speaker-btn" id="fl-live-to-podcast" title="Turn class transcript into Walk &amp; Listen podcast">Class → Podcast</button>` : ""}
+                    <button type="button" class="fl3-btn ${state.isLiveTranslating ? "danger" : "primary"}" id="fl-live-btn" style="padding:6px 12px;font-size:0.78rem;min-height:32px;">
+                      ${state.isLiveTranslating ? "Stop" : "Start"}
                     </button>
-                    ${!state.isLiveTranslating ? `<button type="button" class="fl3-btn" id="fl-close-live-panel" style="padding:6px 10px;" aria-label="Close Silent Classroom Live">✕</button>` : ""}
+                    ${!state.isLiveTranslating ? `<button type="button" class="fl3-btn" id="fl-close-live-panel" style="padding:5px 9px;min-height:32px;" aria-label="Close Classroom Live">✕</button>` : ""}
                   </div>
                 </div>
-
-                <!-- Live Status Bar -->
-                <div class="fl3-waveform-box ${state.isLiveTranslating ? "active" : ""}" style="margin-bottom:10px;padding:8px 12px;">
-                  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
-                    <div class="fl3-wave-bars" aria-hidden="true">
-                      <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                    <div id="fl-live-interim" style="font-size:0.8rem;font-weight:600;color:${state.isLiveTranslating ? "#6EE7B7" : "#94A3B8"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                      ${esc(
-                        state.isLiveTranslating
-                          ? state.liveInterimText || (liveMode === "standby" ? "Standby active • 15s buffer ready (0 quota used)" : "Listening live...")
-                          : liveMode === "standby"
-                          ? "Silent 15s buffer • 0 quota used until you tap Teacher Asked Me"
-                          : "Scrolling Finnish → English class subtitles • Speaker 100% muted"
-                      )}
-                    </div>
-                  </div>
-                  ${
-                    state.isLiveTranslating && liveMode === "subtitles" && state.liveForceCutFn
-                      ? `<button type="button" class="fl3-btn" id="fl-live-now" style="padding:5px 10px;font-size:0.75rem;" title="Translate captured audio right now">Now</button>`
-                      : ""
-                  }
-                </div>
-
+                ${
+                  state.isLiveTranslating
+                    ? `<div id="fl-live-interim" style="font-size:0.75rem;color:#6EE7B7;font-weight:600;margin-top:6px;">${esc(state.liveInterimText || (liveMode === "standby" ? "Standby active • 15s buffer (0 quota used)" : "Listening silently..."))}</div>`
+                    : ""
+                }
                 ${
                   state.isLiveTranslating && liveMode === "standby"
-                    ? `<button type="button" class="fl3-teacher-asked-btn" id="fl-live-teacher-asked" ${state.liveCapturing ? "disabled" : ""}>
-                        ${
-                          state.liveCapturing
-                            ? `<span class="fl3-spin" aria-hidden="true"></span><span>Analyzing teacher's question (last 15s)...</span>`
-                            : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span>Teacher Asked Me! (Translate Last 15s)</span>`
-                        }
+                    ? `<button type="button" class="fl3-teacher-asked-btn" id="fl-live-teacher-asked" style="margin:8px 0 0;padding:10px 14px;font-size:0.86rem;" ${state.liveCapturing ? "disabled" : ""}>
+                        ${state.liveCapturing ? `<span class="fl3-spin" aria-hidden="true"></span><span>Analyzing last 15s...</span>` : `<span>Teacher Asked Me! (Last 15s)</span>`}
                       </button>`
                     : ""
                 }
-
-                ${
-                  liveSpotlight
-                    ? `<div class="fl3-question-spotlight">
-                        <div class="fl3-live-label" style="color:#38BDF8;margin-bottom:4px;">Teacher Question Detected</div>
-                        <div style="font-size:0.96rem;font-weight:700;color:#FFFFFF;line-height:1.4;">${esc(liveSpotlight.fiHeard)}</div>
-                        <div style="font-size:0.88rem;color:#7DD3FC;font-weight:600;margin-top:3px;line-height:1.35;">${esc(liveSpotlight.enMeaning || "")}</div>
-                      </div>`
-                    : liveMode === "standby"
-                    ? `<div class="fl3-live-split">
-                        <div class="fl3-live-field" style="margin:0;">
-                          <div class="fl3-live-label">Finnish Heard</div>
-                          <div style="font-size:0.92rem;font-weight:700;color:#FFFFFF;line-height:1.4;">
-                            ${liveData.hasCapture ? esc(liveData.fiHeard) : `<span style="color:#64748B;font-weight:500;">Tap "Start Standby", listen to class, then tap "Teacher Asked Me!" anytime.</span>`}
-                          </div>
-                        </div>
-                        <div class="fl3-live-field" style="margin:0;">
-                          <div class="fl3-live-label">English Meaning</div>
-                          <div style="font-size:0.89rem;color:#38BDF8;font-weight:600;line-height:1.4;">
-                            ${liveData.hasCapture ? esc(liveData.enMeaning || "—") : `<span style="color:#64748B;font-weight:500;">Instant English translation + 3 ready Finnish answers appear here.</span>`}
-                          </div>
-                        </div>
-                      </div>`
-                    : ""
-                }
-
-                ${
-                  liveMode === "subtitles"
-                    ? `<div class="fl3-live-transcript" id="fl-live-transcript" aria-label="Live Class Transcript">
-                        ${
-                          liveTranscript.length
-                            ? liveTranscript
-                                .map(
-                                  (line) => `
-                                <div class="fl3-transcript-row ${line.isQuestion ? "is-question" : ""}">
-                                  <div class="fl3-tr-fi">${esc(line.fiHeard)}</div>
-                                  ${line.enMeaning ? `<div class="fl3-tr-en">${esc(line.enMeaning)}</div>` : ""}
-                                </div>
-                              `
-                                )
-                                .join("")
-                            : `<div style="padding:14px 8px;text-align:center;font-size:0.82rem;color:#64748B;">Tap "Start Subtitles" for continuous scrolling Finnish → English captions during class.</div>`
-                        }
-                      </div>`
-                    : ""
-                }
-
-                <div style="margin-top:10px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-                    <div class="fl3-live-label" style="margin:0;">Ready Written Finnish Answers (Tap to Copy)</div>
-                    ${
-                      liveData.hasCapture
-                        ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <button type="button" class="fl3-speaker-btn" id="fl-live-save-words"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg> Save Words</button>
-                            <button type="button" class="fl3-speaker-btn" id="fl-live-to-podcast"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg> Class → Podcast</button>
-                          </div>`
-                        : ""
-                    }
-                  </div>
-                  <div class="fl3-reply-row">
-                    ${activeReplySource.replies
-                      .map(
-                        (r) => `
-                      <button type="button" class="fl3-reply-chip" data-fl-use-reply="${esc(r.fi)}" title="Tap to copy &amp; place in chat input (silent)">
-                        <strong style="font-size:0.84rem;color:#FFFFFF;">${esc(r.fi)}</strong>
-                        <span style="font-size:0.74rem;color:#94A3B8;">${esc(r.en)}</span>
-                      </button>
-                    `
-                      )
-                      .join("")}
-                  </div>
-                </div>
               </div>`
             : ""
         }
 
         <div class="fl3-chatgpt-feed" id="fl-chat-stage">
           ${
-            tutorMsgs.length
-              ? tutorMsgs.map(({ m, idx }) => renderMessageBubble(m, idx)).join("")
+            feedMsgs.length
+              ? feedMsgs.map(({ m, idx }) => renderMessageBubble(m, idx, firstName)).join("")
               : `<div style="margin:auto 0;padding:36px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;">
                   <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#003580,#0052B4);border:1px solid #38BDF8;display:flex;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;">
                     <img src="/assets/ilf-heart.png" alt="ILoveFinland" style="width:100%;height:100%;object-fit:contain;" />
                   </div>
                   <h2 style="margin:0;font-size:1.5rem;font-weight:700;color:#FFFFFF;letter-spacing:-0.02em;">${greeting}</h2>
                   <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
-                    <button type="button" class="fl3-btn" data-fl-starter="How is the weather today in Pori? Teach me how to ask and say it in Finnish.">🌤️ Weather</button>
-                    <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am ordering coffee and food at a Finnish café. Start with 1 simple line.">🛒 Store / Café</button>
-                    <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am at the doctor or Kela in Finland. Start with 1 simple line.">🏥 Doctor / Kela</button>
-                    <button type="button" class="fl3-btn" data-fl-starter="Let's practice: you are my Finnish teacher asking me 1 easy A1 question. Wait for my reply.">🏫 Teacher Q&amp;A</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="How is the weather today in Pori? Teach me how to ask and say it in Finnish.">Weather</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am ordering coffee and food at a Finnish café. Start with 1 simple line.">Store / Café</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="Let's do a short A1 roleplay: I am at the doctor or Kela in Finland. Start with 1 simple line.">Doctor / Kela</button>
+                    <button type="button" class="fl3-btn" data-fl-starter="Let's practice: you are my Finnish teacher asking me 1 easy A1 question. Wait for my reply.">Teacher Q&amp;A</button>
                   </div>
                 </div>`
           }
-          ${state.isSending ? `<div class="fl3-bubble assistant">⏳ Thinking...</div>` : ""}
+          ${state.isSending ? `<div class="fl3-bubble assistant" style="display:inline-flex;align-items:center;gap:8px;"><span class="fl3-spin" aria-hidden="true"></span><span>${esc(state.sendingLabel || "Thinking...")}</span></div>` : ""}
         </div>
 
         <button type="button" id="fl-scroll-down-btn" class="fl3-scroll-latest-btn" style="display:none;" title="Jump to latest message" aria-label="Jump to latest message">↓ Latest</button>
 
         <div class="fl3-chatgpt-composer">
           ${
-            state.pendingAttachments.length
-              ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
-                  ${state.pendingAttachments
-                    .map(
-                      (a, i) => `
-                    <div class="fl-att-chip" style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;">
-                      ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;" alt="" />` : a.mime_type.startsWith("audio/") ? "🎙️" : "📄"}
-                      <span style="font-size:0.76rem;color:#E2E8F0;">${esc(a.name.slice(0, 18))}</span>
-                      <button type="button" class="fl-mini-btn" style="padding:2px 5px;" data-fl-rm-pending="${i}" aria-label="Remove attachment">✕</button>
+            state.isRecording
+              ? `<div class="fl-rec-wave-bar" role="region" aria-label="Recording voice message">
+                  <button type="button" class="fl3-composer-icon-btn" id="fl-cancel-rec" title="Cancel recording" aria-label="Cancel recording">✕</button>
+                  <div class="fl-rec-wave-mid">
+                    <div class="fl-rec-bars" id="fl-live-wave-bars" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
                     </div>
-                  `
-                    )
-                    .join("")}
-                  ${
-                    hasPendingPhoto
-                      ? `<button type="button" class="fl3-btn primary" id="fl-pending-to-walk" style="padding:6px 12px;font-size:0.78rem;">🎧 Make 20-Min Podcast</button>`
-                      : ""
-                  }
+                    <span class="fl-rec-timer" style="font-size:0.8rem;font-weight:700;color:#38BDF8;font-variant-numeric:tabular-nums;">00:00</span>
+                  </div>
+                  <button type="button" class="fl3-send-round-btn" id="fl-send-rec" title="Send voice to Bilingual Coach" aria-label="Send voice">↑</button>
                 </div>`
-              : ""
-          }
-
-          <textarea id="fl-chat-input" class="fl3-composer-input" rows="1" placeholder="Ask anything in English or Finnish..."></textarea>
-
-          <div class="fl3-composer-actions">
-            <label class="fl3-composer-icon-btn" style="cursor:pointer;" title="Add homework photo, camera snap, or PDF" aria-label="Add photo or file">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
-            </label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <button type="button" class="fl3-composer-icon-btn ${state.isLiveTranslating ? "danger" : showLiveDrawer ? "active" : ""}" id="fl-toggle-live-panel" title="Silent Classroom Live (100% muted continuous teacher listener)" aria-label="Toggle Silent Classroom Live">
-                ${
-                  state.isLiveTranslating
-                    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="6"></circle></svg>`
-                    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`
+              : `${
+                  state.pendingAttachments.length
+                    ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+                        ${state.pendingAttachments
+                          .map(
+                            (a, i) => `
+                          <div class="fl-att-chip" style="background:#0A192F;border:1px solid #1E3A5F;border-radius:8px;padding:4px 8px;display:inline-flex;align-items:center;gap:6px;">
+                            ${a.previewUrl && a.mime_type.startsWith("image/") ? `<img src="${a.previewUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;" alt="" />` : "📄"}
+                            <span style="font-size:0.76rem;color:#E2E8F0;">${esc(a.name.slice(0, 18))}</span>
+                            <button type="button" class="fl-mini-btn" style="padding:2px 5px;" data-fl-rm-pending="${i}" aria-label="Remove attachment">✕</button>
+                          </div>
+                        `
+                          )
+                          .join("")}
+                        ${
+                          hasPendingPhoto
+                            ? `<button type="button" class="fl3-btn primary" id="fl-pending-to-walk" style="padding:6px 12px;font-size:0.78rem;">Make 20-Min Podcast</button>`
+                            : ""
+                        }
+                      </div>`
+                    : ""
                 }
-              </button>
-              ${
-                state.isRecording
-                  ? `<button type="button" class="fl3-btn danger" id="fl-stop-rec" style="padding:0 10px;height:36px;min-height:36px;border-radius:999px;" title="Stop Voice Recording">⏹ <span class="fl-rec-timer">00:00</span></button>`
-                  : `<button type="button" class="fl3-composer-icon-btn" id="fl-start-rec" title="Record voice message in Finnish or English" aria-label="Record Voice Message"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></button>`
-              }
-              <button type="button" class="fl3-composer-icon-btn" id="fl-open-voice-coach" title="Voice Coach — Talk &amp; Pronunciation Practice (EN + FI)" aria-label="Open Bilingual Voice Coach">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="10" x2="4" y2="14"></line><line x1="8" y1="6" x2="8" y2="18"></line><line x1="12" y1="3" x2="12" y2="21"></line><line x1="16" y1="7" x2="16" y2="17"></line><line x1="20" y1="10" x2="20" y2="14"></line></svg>
-              </button>
-              <button type="button" class="fl3-send-round-btn" id="fl-chat-send" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
-            </div>
-          </div>
+
+                <textarea id="fl-chat-input" class="fl3-composer-input" rows="1" placeholder="Ask anything in English or Finnish..."></textarea>
+
+                <div class="fl3-composer-actions">
+                  <label class="fl3-composer-icon-btn" style="cursor:pointer;" title="Add homework photo, camera snap, or PDF" aria-label="Add photo or file">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <input type="file" id="fl-input-files" accept="image/*,application/pdf,audio/*" multiple style="display:none;" />
+                  </label>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <button type="button" class="fl3-composer-icon-btn ${state.isLiveTranslating ? "danger" : showLiveBar ? "active" : ""}" id="fl-toggle-live-panel" title="Silent Classroom Live (100% muted)" aria-label="Toggle Silent Classroom Live">
+                      ${
+                        state.isLiveTranslating
+                          ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="6"></circle></svg>`
+                          : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`
+                      }
+                    </button>
+                    <button type="button" class="fl3-composer-icon-btn" id="fl-start-rec" title="Tap to Talk — Bilingual Voice Coach (EN + FI)" aria-label="Speak to Voice Coach">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </button>
+                    <button type="button" class="fl3-send-round-btn" id="fl-chat-send" ${state.isSending ? "disabled" : ""} aria-label="Send message">↑</button>
+                  </div>
+                </div>`
+          }
         </div>
       </div>
     `;
@@ -4785,7 +4821,12 @@
       };
     });
     root.querySelector("#fl-start-rec")?.addEventListener("click", startRecording);
-    root.querySelector("#fl-stop-rec")?.addEventListener("click", stopRecording);
+    root.querySelector("#fl-stop-rec")?.addEventListener("click", () => stopRecording(false));
+    root.querySelector("#fl-send-rec")?.addEventListener("click", () => stopRecording(false));
+    root.querySelector("#fl-cancel-rec")?.addEventListener("click", () => stopRecording(true));
+    root.querySelectorAll("[data-fl-play-coach]").forEach((b) => {
+      b.onclick = () => playVcAudioUrl(b.getAttribute("data-fl-play-coach") || "");
+    });
 
     // Tab 1: Chat scroll-to-latest pill & Silent Live Save Words
     const chatStageEl = root.querySelector("#fl-chat-stage");

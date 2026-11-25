@@ -3621,3 +3621,55 @@ body:has(#view-finnish-lab:not(.hidden)),
     padding-bottom: 84px !important;
   }
 }
+
+/* Unified Chat v126.0 — Live 16-Bar Voice Waveform + Slim 1-Row Classroom Bar */
+.fl3-live-slim-bar {
+  flex-shrink: 0;
+  background: rgba(13, 27, 50, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.fl3-live-msg-card {
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+.fl3-live-msg-card.is-question {
+  background: rgba(0, 82, 180, 0.22) !important;
+  border-color: rgba(56, 189, 248, 0.52) !important;
+}
+
+.fl-rec-wave-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.fl-rec-wave-mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.fl-rec-bars {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 30px;
+}
+
+.fl-rec-bars span {
+  width: 3px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #38BDF8 0%, #0052B4 100%);
+  transition: height 0.08s ease;
+}
